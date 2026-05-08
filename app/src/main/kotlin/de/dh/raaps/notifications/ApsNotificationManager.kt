@@ -11,7 +11,6 @@ import androidx.core.app.NotificationCompat
 import androidx.core.content.getSystemService
 import de.dh.raaps.R
 import de.dh.raaps.common.api.ToDo
-import de.dh.raaps.common.api.data.BgReading
 import de.dh.raaps.common.api.data.BgValue
 import de.dh.raaps.ui.screens.common.MainActivity
 import de.dh.raaps.ui.screens.permissions.canPostNotifications
@@ -34,15 +33,15 @@ class ApsNotificationManager(
     fun getBgValueString(sample: BgValue?, forceSign: Boolean): String? {
         if (sample == null) return null
         return if (forceSign) {
-            String.format(Locale.getDefault(), "%+d", sample.mgdl)
+            String.format(Locale.getDefault(), "%+d mg/dl", sample.mgdl)
         } else {
-            "${sample.mgdl}"
+            "${sample.mgdl} mg/dl"
         }
     }
 
     fun getBgDeltaString(delta: BgValue?): String? {
         val bgDeltaStr = getBgValueString(delta, true)
-        return if (bgDeltaStr == null) null else "Δ$bgDeltaStr mg/dl"
+        return if (bgDeltaStr == null) null else "Delta: $bgDeltaStr"
     }
 
     fun createForegroundServiceNotification(data: ApsNotificationData): Notification {

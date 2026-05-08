@@ -7,6 +7,7 @@ import de.dh.raaps.common.api.data.BgReading
 import de.dh.raaps.common.api.data.BgSampleKind
 import de.dh.raaps.common.api.data.Minutes
 import de.dh.raaps.common.api.data.SensorType
+import de.dh.raaps.common.api.data.Tick
 import de.dh.raaps.data.DataRepository
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
@@ -127,7 +128,7 @@ class Core(
             )
             currentBg = currentBgTick?.bg
             lastBg = if (currentBgTick != null) rollingHistory.findBackward(
-                currentBgTick.tick,
+                Tick(currentBgTick.tick.value - 1),
                 bgPresentPredicate()
             )?.bg else null
             onDataUpdated()
