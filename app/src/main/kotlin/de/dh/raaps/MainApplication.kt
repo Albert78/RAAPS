@@ -12,7 +12,8 @@ import de.dh.raaps.notifications.ApsNotificationManager
 import de.dh.raaps.plugin.glucose.receiver.ExternalSourceType
 import de.dh.raaps.plugin.glucose.receiver.ReceiverGlucosePlugin
 import de.dh.raaps.plugin.pump.SamplePumpPlugin
-import de.dh.raaps.service.ApsService
+import de.dh.raaps.services.ApsService
+import de.dh.raaps.services.BootReceiver
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -55,6 +56,8 @@ class MainApplication : Application() {
         aps.glucosePlugin = ReceiverGlucosePlugin(this, ExternalSourceType.xDrip5Min)
 
         installNotificationUpdater()
+
+        BootReceiver.enableBootReceiver(this)
     }
 
     override fun onTerminate() {

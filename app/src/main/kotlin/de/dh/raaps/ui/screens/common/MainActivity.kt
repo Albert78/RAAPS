@@ -30,7 +30,9 @@ import androidx.navigation3.runtime.rememberSaveableStateHolderNavEntryDecorator
 import androidx.navigation3.ui.NavDisplay
 import de.dh.raaps.MainApplication
 import de.dh.raaps.common.ui.composables.EdgeToEdgeHandler
-import de.dh.raaps.service.ApsService
+import de.dh.raaps.common.ui.theme.AppTheme
+import de.dh.raaps.common.ui.theme.rememberUseDarkTheme
+import de.dh.raaps.services.ApsService
 import de.dh.raaps.ui.controls.history.HistoryViewModel
 import de.dh.raaps.ui.screens.dashboard.DashboardScreen
 import de.dh.raaps.ui.screens.dashboard.DashboardViewModel
@@ -44,8 +46,6 @@ import de.dh.raaps.ui.screens.permissions.openNotificationSettings
 import de.dh.raaps.ui.screens.permissions.requestIgnoreBatteryOptimizations
 import de.dh.raaps.ui.screens.preferences.PreferencesScreen
 import de.dh.raaps.ui.screens.preferences.PreferencesViewModel
-import de.dh.raaps.common.ui.theme.AppTheme
-import de.dh.raaps.common.ui.theme.rememberUseDarkTheme
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.serialization.Serializable

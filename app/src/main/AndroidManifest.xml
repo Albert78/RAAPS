@@ -40,9 +40,17 @@
         </activity>
 
         <service
-            android:name=".service.ApsService"
+            android:name=".services.ApsService"
             android:exported="false"
             android:foregroundServiceType="health" />
+
+        <receiver android:name=".services.BootReceiver"
+            android:exported="true"
+            android:enabled="false">
+            <intent-filter>
+                <action android:name="android.intent.action.BOOT_COMPLETED" />
+            </intent-filter>
+        </receiver>
 
     </application>
 

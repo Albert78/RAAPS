@@ -1,4 +1,4 @@
-package de.dh.raaps.service
+package de.dh.raaps.services
 
 import android.app.Notification
 import android.app.Service
