@@ -8,11 +8,11 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.CreationExtras
 import de.dh.raaps.MainApplication
-import de.dh.raaps.common.api.ToDo
-import de.dh.raaps.common.api.data.BgValue
-import de.dh.raaps.common.api.data.GlucoseUnit
-import de.dh.raaps.common.api.data.Minutes
-import de.dh.raaps.common.api.data.Timestamp
+import de.dh.raaps.common.model.ToDo
+import de.dh.raaps.common.model.data.BgValue
+import de.dh.raaps.common.model.data.GlucoseUnit
+import de.dh.raaps.common.model.data.Minutes
+import de.dh.raaps.common.model.data.Timestamp
 import de.dh.raaps.model.APS
 import de.dh.raaps.model.ApsHistorySnapshot
 import de.dh.raaps.model.CoreState

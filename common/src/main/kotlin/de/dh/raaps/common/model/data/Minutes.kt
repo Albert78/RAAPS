@@ -1,7 +1,7 @@
-package de.dh.raaps.common.api.data
+package de.dh.raaps.common.model.data
 
-import de.dh.raaps.common.api.MINUTES_PER_DAY
-import de.dh.raaps.common.api.MINUTES_PER_HOUR
+import de.dh.raaps.common.model.MINUTES_PER_DAY
+import de.dh.raaps.common.model.MINUTES_PER_HOUR
 
 /**
  * A memory-efficient, type-safe representation of a small number of minutes, supported range is

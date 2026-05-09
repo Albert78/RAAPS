@@ -1,4 +1,4 @@
-package de.dh.raaps.common.api.data
+package de.dh.raaps.common.model.data
 
 /**
  * Represents a raw blood glucose reading in a form which is often provided by CGM systems;

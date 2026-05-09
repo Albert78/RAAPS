@@ -30,9 +30,9 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import de.dh.raaps.common.api.data.BgValue
-import de.dh.raaps.common.api.data.GlucoseUnit
-import de.dh.raaps.common.api.data.Timestamp
+import de.dh.raaps.common.model.data.BgValue
+import de.dh.raaps.common.model.data.GlucoseUnit
+import de.dh.raaps.common.model.data.Timestamp
 import de.dh.raaps.common.ui.composables.AppColorBlue
 import de.dh.raaps.common.ui.composables.LightGreenA700
 import de.dh.raaps.common.ui.composables.Red

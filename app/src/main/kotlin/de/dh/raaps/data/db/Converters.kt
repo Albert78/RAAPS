@@ -1,8 +1,8 @@
 package de.dh.raaps.data.db
 
-import de.dh.raaps.common.api.DataProvider
-import de.dh.raaps.common.api.data.BgReading
-import de.dh.raaps.common.api.data.SensorType
+import de.dh.raaps.common.model.DataProvider
+import de.dh.raaps.common.model.data.BgReading
+import de.dh.raaps.common.model.data.SensorType
 import de.dh.raaps.data.db.entities.DataProviderEntity
 import de.dh.raaps.data.db.entities.GlucoseReadingEntity
 import de.dh.raaps.data.db.entities.SensorTypeEntity

@@ -1,6 +1,6 @@
-package de.dh.raaps.common.api.data
+package de.dh.raaps.common.model.data
 
-import de.dh.raaps.common.api.ID_UNDEFINED
+import de.dh.raaps.common.model.ID_UNDEFINED
 
 data class TherapyData(
     val id: Long = ID_UNDEFINED,

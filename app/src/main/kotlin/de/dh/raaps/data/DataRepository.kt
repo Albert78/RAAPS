@@ -1,13 +1,13 @@
 package de.dh.raaps.data
 
-import de.dh.raaps.common.api.DataProvider
-import de.dh.raaps.common.api.ToDo
-import de.dh.raaps.common.api.data.BgReading
-import de.dh.raaps.common.api.data.SensorType
-import de.dh.raaps.common.api.data.TherapyData
-import de.dh.raaps.common.api.data.Tick
-import de.dh.raaps.common.api.data.Timestamp
-import de.dh.raaps.common.api.mock.mockSimpleTherapyData
+import de.dh.raaps.common.model.DataProvider
+import de.dh.raaps.common.model.ToDo
+import de.dh.raaps.common.model.data.BgReading
+import de.dh.raaps.common.model.data.SensorType
+import de.dh.raaps.common.model.data.TherapyData
+import de.dh.raaps.common.model.data.Tick
+import de.dh.raaps.common.model.data.Timestamp
+import de.dh.raaps.common.model.mock.mockSimpleTherapyData
 import de.dh.raaps.data.db.AppDatabase
 import de.dh.raaps.data.db.entities.DataProviderEntity
 import de.dh.raaps.data.db.entities.SensorTypeEntity

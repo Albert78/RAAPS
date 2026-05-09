@@ -1,10 +1,10 @@
-package de.dh.raaps.common.api.mock
+package de.dh.raaps.common.model.mock
 
-import de.dh.raaps.common.api.data.BgValue
-import de.dh.raaps.common.api.data.Block
-import de.dh.raaps.common.api.data.Minutes
-import de.dh.raaps.common.api.data.TargetBlock
-import de.dh.raaps.common.api.data.TherapyData
+import de.dh.raaps.common.model.data.BgValue
+import de.dh.raaps.common.model.data.Block
+import de.dh.raaps.common.model.data.Minutes
+import de.dh.raaps.common.model.data.TargetBlock
+import de.dh.raaps.common.model.data.TherapyData
 
 fun mockSimpleTherapyData() =
     TherapyData(

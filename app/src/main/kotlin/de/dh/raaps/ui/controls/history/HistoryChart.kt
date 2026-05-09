@@ -7,6 +7,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.withSave
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -37,13 +38,13 @@ import com.patrykandpatrick.vico.compose.common.Fill
 import com.patrykandpatrick.vico.compose.common.Position
 import com.patrykandpatrick.vico.compose.common.component.rememberShapeComponent
 import com.patrykandpatrick.vico.compose.common.data.ExtraStore
-import de.dh.raaps.common.api.ID_UNDEFINED
-import de.dh.raaps.common.api.data.BgReading
-import de.dh.raaps.common.api.data.BgSampleKind
-import de.dh.raaps.common.api.data.BgValue
-import de.dh.raaps.common.api.data.Minutes
-import de.dh.raaps.common.api.data.Tick
-import de.dh.raaps.common.api.data.Timestamp
+import de.dh.raaps.common.model.ID_UNDEFINED
+import de.dh.raaps.common.model.data.BgReading
+import de.dh.raaps.common.model.data.BgSampleKind
+import de.dh.raaps.common.model.data.BgValue
+import de.dh.raaps.common.model.data.Minutes
+import de.dh.raaps.common.model.data.Tick
+import de.dh.raaps.common.model.data.Timestamp
 import de.dh.raaps.common.ui.composables.BlueA200
 import de.dh.raaps.common.ui.composables.DeepOrangeA700
 import de.dh.raaps.common.ui.composables.RedA700
@@ -316,6 +317,7 @@ fun BgHistoryChart(
                 lineProvider = LineCartesianLayer.LineProvider.series(
                     // Style for BG values (Blue)
                     LineCartesianLayer.rememberLine(
+                        fill = LineCartesianLayer.LineFill.single(Fill(Color.Transparent)),
                         pointProvider = LineCartesianLayer.PointProvider.single(
                             LineCartesianLayer.Point(
                                 rememberShapeComponent(
@@ -369,9 +371,8 @@ fun BgHistoryChartOrDefault(
 }
 
 fun generatedBg(minsInterval: Short, index: Int, startTs: Timestamp): BgReading {
-    // Base curve: average 120, fluctuation of +/- 50 using overlapping sine waves
     val base = 170.0
-    val curve = 100.0 * sin(index * minsInterval / 50.0) + 15.0 * sin(index / 12.0)
+    val curve = 100.0 * sin(index * minsInterval / 50.0) + 15.0 * sin(index * minsInterval / 60.0)
     val noise = Random.nextDouble(-5.0, 5.0)
 
     val bgValue = (base + curve + noise).toInt().coerceIn(40, 400)
@@ -385,8 +386,9 @@ fun generatedBg(minsInterval: Short, index: Int, startTs: Timestamp): BgReading 
 
 fun createSampleHistoryTicks(size: Int, minsInterval: Short, startTs: Timestamp = Timestamp.now()): List<TickState> {
     return List(size) { index ->
+        val bg = generatedBg(minsInterval, index, startTs)
         TickState(
-            ID_UNDEFINED, Tick(index), generatedBg(minsInterval, index, startTs)
+            ID_UNDEFINED, Tick((bg.timestamp.ms / (minsInterval * 60_000L)).toInt()), bg
         )
     }
 }

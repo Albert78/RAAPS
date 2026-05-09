@@ -4,8 +4,8 @@ import android.app.Application
 import android.content.Context
 import android.content.IntentFilter
 import android.util.Log
-import de.dh.raaps.common.api.GlucosePlugin
-import de.dh.raaps.common.api.data.BgReading
+import de.dh.raaps.common.model.GlucosePlugin
+import de.dh.raaps.common.model.data.BgReading
 import kotlinx.coroutines.channels.BufferOverflow
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow

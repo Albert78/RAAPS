@@ -1,4 +1,4 @@
-package de.dh.raaps.common.api.data
+package de.dh.raaps.common.model.data
 
 enum class BgReadingsInterval {
     OneMinute,

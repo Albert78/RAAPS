@@ -20,14 +20,14 @@ import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import de.dh.raaps.R
-import de.dh.raaps.common.api.data.Minutes
+import de.dh.raaps.common.model.data.Minutes
 import de.dh.raaps.common.ui.composables.screenTitle
+import de.dh.raaps.common.ui.theme.AppTheme
 import de.dh.raaps.ui.controls.history.BgHistoryChartOrDefault
 import de.dh.raaps.ui.controls.history.DiagramData
 import de.dh.raaps.ui.controls.history.HistoryUiState
 import de.dh.raaps.ui.controls.history.HistoryViewModel
 import de.dh.raaps.ui.controls.history.createSampleHistoryTicks
-import de.dh.raaps.common.ui.theme.AppTheme
 
 @Composable
 fun HistoryScreen(

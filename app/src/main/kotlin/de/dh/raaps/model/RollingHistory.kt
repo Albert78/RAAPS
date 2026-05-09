@@ -1,9 +1,9 @@
 package de.dh.raaps.model
 
 import android.util.Log
-import de.dh.raaps.common.api.data.Minutes
-import de.dh.raaps.common.api.data.Tick
-import de.dh.raaps.common.api.data.Timestamp
+import de.dh.raaps.common.model.data.Minutes
+import de.dh.raaps.common.model.data.Tick
+import de.dh.raaps.common.model.data.Timestamp
 
 data class ApsHistorySnapshot(
     val ticks: List<TickState?>,

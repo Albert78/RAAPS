@@ -4,8 +4,8 @@ import androidx.room.Entity
 import androidx.room.ForeignKey
 import androidx.room.Index
 import androidx.room.PrimaryKey
-import de.dh.raaps.common.api.ID_UNDEFINED
-import de.dh.raaps.common.api.data.BgSampleKind
+import de.dh.raaps.common.model.ID_UNDEFINED
+import de.dh.raaps.common.model.data.BgSampleKind
 
 /**
  * Types of glucose sensors like "Libre3", "Dexcom G6", ...

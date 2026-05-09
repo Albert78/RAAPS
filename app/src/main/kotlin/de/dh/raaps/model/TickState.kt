@@ -1,8 +1,8 @@
 package de.dh.raaps.model
 
-import de.dh.raaps.common.api.ID_UNDEFINED
-import de.dh.raaps.common.api.data.BgReading
-import de.dh.raaps.common.api.data.Tick
+import de.dh.raaps.common.model.ID_UNDEFINED
+import de.dh.raaps.common.model.data.BgReading
+import de.dh.raaps.common.model.data.Tick
 
 /**
  * Contains the calculation data contained at a discrete time tick in the APS rolling history window.

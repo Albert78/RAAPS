@@ -1,8 +1,8 @@
 package de.dh.raaps.notifications
 
-import de.dh.raaps.common.api.data.BgReading
-import de.dh.raaps.common.api.data.BgSampleKind
-import de.dh.raaps.common.api.data.BgValue
+import de.dh.raaps.common.model.data.BgReading
+import de.dh.raaps.common.model.data.BgSampleKind
+import de.dh.raaps.common.model.data.BgValue
 import de.dh.raaps.model.APS
 
 data class ApsNotificationData(

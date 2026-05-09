@@ -1,4 +1,4 @@
-package de.dh.raaps.common.api
+package de.dh.raaps.common.model
 
 const val ID_UNDEFINED = 0L
 

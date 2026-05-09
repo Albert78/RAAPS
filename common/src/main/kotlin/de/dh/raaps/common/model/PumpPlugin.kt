@@ -1,4 +1,4 @@
-package de.dh.raaps.common.api
+package de.dh.raaps.common.model
 
 interface PumpPlugin {
     val name: String

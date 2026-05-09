@@ -1,7 +1,7 @@
 package de.dh.raaps.plugin.pump
 
-import de.dh.raaps.common.api.PumpPlugin
-import de.dh.raaps.common.api.ToDo
+import de.dh.raaps.common.model.PumpPlugin
+import de.dh.raaps.common.model.ToDo
 
 class SamplePumpPlugin : PumpPlugin {
     override val name: String = "Sample Pump Plugin"

@@ -1,13 +1,13 @@
 package de.dh.raaps.model
 
 import android.util.Log
-import de.dh.raaps.common.api.DataProvider
-import de.dh.raaps.common.api.GlucosePlugin
-import de.dh.raaps.common.api.data.BgReading
-import de.dh.raaps.common.api.data.BgSampleKind
-import de.dh.raaps.common.api.data.Minutes
-import de.dh.raaps.common.api.data.SensorType
-import de.dh.raaps.common.api.data.Tick
+import de.dh.raaps.common.model.DataProvider
+import de.dh.raaps.common.model.GlucosePlugin
+import de.dh.raaps.common.model.data.BgReading
+import de.dh.raaps.common.model.data.BgSampleKind
+import de.dh.raaps.common.model.data.Minutes
+import de.dh.raaps.common.model.data.SensorType
+import de.dh.raaps.common.model.data.Tick
 import de.dh.raaps.data.DataRepository
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock

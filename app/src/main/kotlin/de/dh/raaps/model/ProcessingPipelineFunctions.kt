@@ -1,14 +1,14 @@
 package de.dh.raaps.model
 
 import android.util.Log
-import de.dh.raaps.common.api.DataProvider
-import de.dh.raaps.common.api.data.BgReading
-import de.dh.raaps.common.api.data.BgSampleKind
-import de.dh.raaps.common.api.data.BgValue
-import de.dh.raaps.common.api.data.Minutes
-import de.dh.raaps.common.api.data.SensorType
-import de.dh.raaps.common.api.data.Tick
-import de.dh.raaps.common.api.data.Timestamp
+import de.dh.raaps.common.model.DataProvider
+import de.dh.raaps.common.model.data.BgReading
+import de.dh.raaps.common.model.data.BgSampleKind
+import de.dh.raaps.common.model.data.BgValue
+import de.dh.raaps.common.model.data.Minutes
+import de.dh.raaps.common.model.data.SensorType
+import de.dh.raaps.common.model.data.Tick
+import de.dh.raaps.common.model.data.Timestamp
 import de.dh.raaps.data.DataRepository
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.filter

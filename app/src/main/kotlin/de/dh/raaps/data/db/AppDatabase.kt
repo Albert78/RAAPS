@@ -9,7 +9,7 @@ import androidx.room.Room
 import androidx.room.RoomDatabase
 import androidx.room.TypeConverters
 import androidx.room.Upsert
-import de.dh.raaps.common.api.data.Tick
+import de.dh.raaps.common.model.data.Tick
 import de.dh.raaps.data.db.entities.DataProviderEntity
 import de.dh.raaps.data.db.entities.GlucoseReadingEntity
 import de.dh.raaps.data.db.entities.SensorTypeEntity

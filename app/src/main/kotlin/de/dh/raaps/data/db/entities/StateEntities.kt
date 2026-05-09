@@ -3,11 +3,11 @@ package de.dh.raaps.data.db.entities
 import androidx.room.Entity
 import androidx.room.Index
 import androidx.room.PrimaryKey
-import de.dh.raaps.common.api.ID_UNDEFINED
-import de.dh.raaps.common.api.data.BgSampleKind
-import de.dh.raaps.common.api.data.BgValue
-import de.dh.raaps.common.api.data.Tick
-import de.dh.raaps.common.api.data.Timestamp
+import de.dh.raaps.common.model.ID_UNDEFINED
+import de.dh.raaps.common.model.data.BgSampleKind
+import de.dh.raaps.common.model.data.BgValue
+import de.dh.raaps.common.model.data.Tick
+import de.dh.raaps.common.model.data.Timestamp
 
 @Entity(
     tableName = "tick_state",
