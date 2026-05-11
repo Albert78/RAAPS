@@ -2,12 +2,12 @@ package de.dh.raaps
 
 import android.content.Context
 import androidx.datastore.core.DataStore
+import androidx.datastore.preferences.core.MutablePreferences
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
-import de.dh.raaps.AppStateRepository.Companion.USER_DECLINED_PERMISSIONS_KEY
 import de.dh.raaps.common.ui.ThemeMode
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.SharingStarted
@@ -19,10 +19,25 @@ import kotlinx.coroutines.flow.stateIn
 val Context.dataStore: DataStore<Preferences> by preferencesDataStore(name = "settings")
 
 val Preferences?.themeMode: ThemeMode
-    get() = this?.get(AppStateRepository.THEME_MODE_KEY)?.let { ThemeMode.fromValue(it) } ?: ThemeMode.SYSTEM
+    get() = this?.get(THEME_MODE_KEY)?.let { ThemeMode.fromValue(it) } ?: ThemeMode.SYSTEM
 
 val Preferences?.userDeclinedPermissions: Boolean
     get() = this?.get(USER_DECLINED_PERMISSIONS_KEY) ?: false
+
+suspend fun AppStateRepository.setThemeMode(value: ThemeMode) {
+    editPreferences { mutablePreferences ->
+        mutablePreferences[THEME_MODE_KEY] = value.value
+    }
+}
+
+suspend fun AppStateRepository.setUserDeclinedPermissions(value: Boolean) {
+    editPreferences { mutablePreferences ->
+        mutablePreferences[USER_DECLINED_PERMISSIONS_KEY] = value
+    }
+}
+
+val THEME_MODE_KEY = stringPreferencesKey("theme_mode")
+val USER_DECLINED_PERMISSIONS_KEY = booleanPreferencesKey("user_declined_permissions")
 
 class AppStateRepository(private val context: Context, private val scope: CoroutineScope) {
     /**
@@ -44,20 +59,9 @@ class AppStateRepository(private val context: Context, private val scope: Corout
         return cachedPreferences.filterNotNull().first()
     }
 
-    suspend fun setThemeMode(value: ThemeMode) {
+    suspend fun editPreferences(block: (MutablePreferences) -> Unit) {
         context.dataStore.edit { mutablePreferences ->
-            mutablePreferences[THEME_MODE_KEY] = value.value
+            block(mutablePreferences)
         }
-    }
-
-    suspend fun setUserDeclinedPermissions(value: Boolean) {
-        context.dataStore.edit { mutablePreferences ->
-            mutablePreferences[USER_DECLINED_PERMISSIONS_KEY] = value
-        }
-    }
-
-    companion object {
-        val THEME_MODE_KEY = stringPreferencesKey("theme_mode")
-        val USER_DECLINED_PERMISSIONS_KEY = booleanPreferencesKey("user_declined_permissions")
     }
 }

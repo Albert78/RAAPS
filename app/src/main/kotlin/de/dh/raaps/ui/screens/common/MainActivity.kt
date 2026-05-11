@@ -33,6 +33,7 @@ import de.dh.raaps.common.ui.composables.EdgeToEdgeHandler
 import de.dh.raaps.common.ui.theme.AppTheme
 import de.dh.raaps.common.ui.theme.rememberUseDarkTheme
 import de.dh.raaps.services.ApsService
+import de.dh.raaps.setUserDeclinedPermissions
 import de.dh.raaps.ui.controls.history.HistoryViewModel
 import de.dh.raaps.ui.screens.dashboard.DashboardScreen
 import de.dh.raaps.ui.screens.dashboard.DashboardViewModel
