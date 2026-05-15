@@ -22,7 +22,7 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = "APSTest"
+rootProject.name = "RAAPS"
 include(":app")
 include(":common")
 include(":plugin-pump-sample")
