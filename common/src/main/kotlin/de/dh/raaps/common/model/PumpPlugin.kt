@@ -1,6 +1,6 @@
 package de.dh.raaps.common.model
 
-interface PumpPlugin {
+interface PumpPlugin: Plugin {
     val name: String
     // TODO
 

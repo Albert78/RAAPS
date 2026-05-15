@@ -35,6 +35,17 @@ enum class CoreState {
     Calculating,
 
     /**
+     * Either CGM input or pump connection is missing, APS Core is not able to do its work.
+     * The work will be continued when the connection is available again.
+     */
+    ConnectionMissing,
+
+    /**
+     * The APS Core is suspended by the user.
+     */
+    Suspended,
+
+    /**
      * The system is being shut down. No more calculation will take place anymore.
      */
     Shutdown,
@@ -48,6 +59,8 @@ enum class CoreState {
 
 /**
  * The computation core of the APS system.
+ *
+ * **Architecture**
  * This class is NOT thread-safe by itself and must be called from a controlled threading environment (like APS facade).
  * This class should remain as free as possible of workarounds for the Android system.
  * We only need to signal the internal calculation state by setting the [busyState] flag. The surrounding app
@@ -71,21 +84,21 @@ class Core(
         private set
 
     /**
-     * Time delay between a glucose value in blood and the announced Timestamp of the bg reading.
-     * Typically, the announced timestamp represents the time of measure of the CGM system, which
+     * Time delay between a glucose value in blood and the given Timestamp of the bg reading.
+     * Typically, the bg reading timestamp represents the time of measure of the CGM system, which
      * is about 5 minutes behind blood glucose.
      */
-    var glucoseReadingsTimeDelay: Minutes = Minutes(0)
+    var glucoseReadingsTimeDelay: Minutes = Minutes(5)
 
     /**
      * Lock which is acquired in situations where a suspend function
-     * must be atomic. Other functions don't need to be locked since
+     * must be atomic. Other (non-suspend) functions don't need to be locked since
      * we're single-threaded inside this class by design.
      */
     private val atomicOperationLock = Mutex()
 
     /**
-     * Block marker for code blocks which need a wake lock in the system.
+     * Block marker for code blocks which need a wake lock in the system during their executions.
      * If blocks are not marked with this marker, the processor can go into sleep mode any time.
      */
     private suspend fun <T> busyWork(block: suspend () -> T): T {
@@ -182,8 +195,8 @@ class Core(
     }
 
     /**
-     * Processes a new glucose reading. This can also be called from outside to provide an additional
-     * bg value, e.g. from a bloody measure.
+     * Processes a new glucose reading. This is called from the glucose readings pipeline but
+     * can also be called from outside to provide an additional bg value, e.g. from a bloody measure.
      */
     suspend fun updateBg(bg: BgReading) {
         busyWork {
@@ -201,7 +214,8 @@ class Core(
 
                 val tick = rollingHistory.tick(bg.timestamp)
                 val lastAnchorTick = rollingHistory.anchorTick
-                val tickState = rollingHistory.getOrCreateTickState(tick) ?: return@atomic
+                val tickState = rollingHistory.getOrCreateTickState(tick) ?: return@atomic // Ignore if outside our window
+
                 tickState.bg = bg
                 dataRepository.insertOrUpdateTickState(tickState)
                 if (tick != lastAnchorTick) {
