@@ -2,6 +2,7 @@ package de.dh.raaps.model
 
 import de.dh.raaps.common.model.ID_UNDEFINED
 import de.dh.raaps.common.model.data.BgReading
+import de.dh.raaps.common.model.data.BgValue
 import de.dh.raaps.common.model.data.Tick
 
 /**
@@ -19,11 +20,11 @@ data class TickState(
      * to 1 minute in the future.
      */
     val tick: Tick,
-
+) {
     /**
      * The blood glucose value from our source,either via CGM or bloody measure.
      */
-    var bg: BgReading? = null,
+    var bg: BgReading? = null
 
     // Calculated fields
 
@@ -65,15 +66,17 @@ data class TickState(
      * The IOB value is just a compacted value which is the integral of all
      * insulinActivity over the future.
      */
-    var supposedEffectiveInsulin: Double = 0.0,
+    var supposedEffectiveInsulin: Double = 0.0
 
     /**
      * The calculated amount of carbs in g/min which we know about and which is supposed to be
      * effective at the time of this tick.
      * TODO: Describe calculation.
      */
-    var supposedEffectiveCarbs: Double = 0.0,
-) {
+    var supposedEffectiveCarbs: Double = 0.0
+
+    val expectedBgToleranceRange: Pair<BgValue, BgValue>? = null
+
     companion object {
         fun empty(tick: Tick) = TickState(id = ID_UNDEFINED, tick = tick)
     }

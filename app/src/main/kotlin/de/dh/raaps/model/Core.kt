@@ -8,9 +8,11 @@ import de.dh.raaps.common.model.data.BgSampleKind
 import de.dh.raaps.common.model.data.Minutes
 import de.dh.raaps.common.model.data.SensorType
 import de.dh.raaps.common.model.data.Tick
+import de.dh.raaps.common.model.data.Timestamp
 import de.dh.raaps.data.DataRepository
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
+import kotlin.math.abs
 
 enum class CoreState {
     /**
@@ -82,6 +84,9 @@ class Core(
 
     var coreState: CoreState = CoreState.Uninitialized
         private set
+
+    // Calculation algorithm
+    var calculationAlgorithm: ApsAlgorithm = ApsAlgorithmImpl(this)
 
     /**
      * Time delay between a glucose value in blood and the given Timestamp of the bg reading.
@@ -206,6 +211,10 @@ class Core(
             } else {
                 Log.d(TAG, "New BG: $bg")
             }
+            if (bg.timestamp.ms > Timestamp.now().ms + EARLY_BG_GUARD.inMs()) {
+                Log.w(TAG, "Rejecting BG reading because it's timestamp is in the future (now() = ${Timestamp.now().ms}, BG timestamp = ${bg.timestamp.ms}")
+                return@busyWork
+            }
             atomic {
                 if (currentBg == null || bg.timestamp >= currentBg!!.timestamp) {
                     lastBg = currentBg
@@ -216,22 +225,18 @@ class Core(
                 val lastAnchorTick = rollingHistory.anchorTick
                 val tickState = rollingHistory.getOrCreateTickState(tick) ?: return@atomic // Ignore if outside our window
 
+                val isRecent = abs(bg.timestamp.ms - Timestamp.now().ms) < RECENT_BG_THRESHOLD.inMs()
+                val isRecalculationNecessary = isRecent && calculationAlgorithm.isRecalculationNecessary(bg, tick)
                 tickState.bg = bg
                 dataRepository.insertOrUpdateTickState(tickState)
-                if (tick != lastAnchorTick) {
-                    // TODO: Only start a recalculation if new BG value differs too much from predicted value
-                    recalculate()
+                if (tick != lastAnchorTick || isRecalculationNecessary) {
+                    setCoreState(CoreState.Calculating)
+                    calculationAlgorithm.recalculate(tick)
+                    setCoreState(CoreState.Idle)
                 }
             }
             onDataUpdated()
         }
-    }
-
-    /**
-     * Core therapy calculation logic.
-     */
-    fun recalculate() {
-        // TODO: Implement therapy algorithm (IOB, COB, Prediction, Temp Basal)
     }
 
     companion object {

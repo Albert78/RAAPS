@@ -60,7 +60,7 @@ class RollingHistory(
      * Tries to get an entry of our state history.
      * Only succeeds if the given tick falls within the current history window.
      */
-    fun getApsTickState(tick: Tick): TickState? {
+    fun tryGetApsTickState(tick: Tick): TickState? {
         val minValidTick = getFirstTick().value
 
         if (tick.value in minValidTick..anchorTick.value) {
