@@ -43,7 +43,7 @@ import de.dh.raaps.common.ui.theme.AppTheme
 @Composable
 fun CurrentBgView(
     centerText: String,
-    textBgColor: Color,
+    textColor: Color,
     textBold: Boolean,
     deltaText: String?,
     timestamp: Timestamp?,
@@ -142,7 +142,7 @@ fun CurrentBgView(
                     fontWeight = if (textBold) FontWeight.Bold else FontWeight.Light,
                     lineHeight = 48.sp
                 ),
-                color = textBgColor
+                color = textColor
             )
             val timeAgoText = if (diffMs != null) shortRelativeTimeAgo(diffMs!!) else ""
             Text(
@@ -166,7 +166,7 @@ fun CurrentBgView(
         else -> currentBgValue.bgValue.toString(currentBgValue.glucoseUnit)
     }
 
-    val textBgColor =
+    val textColor =
         if (currentBgValue == null) {
             Color.DarkGray
         } else if (currentBgValue.isValueOld) {
@@ -198,7 +198,7 @@ fun CurrentBgView(
 
     CurrentBgView(
         centerText,
-        textBgColor,
+        textColor,
         !textLight,
         deltaText,
         currentBgValue?.timestamp,

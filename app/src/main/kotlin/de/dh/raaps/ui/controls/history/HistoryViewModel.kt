@@ -212,6 +212,9 @@ class HistoryViewModel(
                     else -> BgTrend.Flat
                 }
 
+                // TODO: Mark a BG value as "old" if the last known trend was rising or falling and
+                // the last known BG value is some time ago
+
                 // Valid value
                 CurrentBgUiState(
                     isLoading = false,
