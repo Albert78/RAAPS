@@ -12,6 +12,8 @@ class ApsAlgorithmImpl(
     val predictionModel: PredictionModel,
     val carbsInsulinCalculation: CarbsInsulinCalculation
 ): ApsAlgorithm {
+    val sampledBgReadings = SampledBgReadings(timeline, bgReadingsHistory)
+
     /**
      * Calculate the deviation between previous forecasts and the blood glucose values actually received.
      * This is done by comparing recent blood glucose slopes to the predicted BGI (Blood Glucose Impact) values.
@@ -60,6 +62,11 @@ class ApsAlgorithmImpl(
 
     override suspend fun recalculate(currentBG: BgReading) {
         bgReadingsHistory.add(currentBG)
+
+        // Sample our unaligned input values to our fixed sample buffer.
+        // This makes us independent of different input frequencies for BG values and minimizes
+        // calculation costs when we access the input BG readings.
+        sampledBgReadings.sampleAvgValues()
 
         // Most of our calculations below are based on a static prediction model for insulin and carbs.
         // To react to dynamic changes (e.g. unannounced snacks), we calculate an average deviation of our
