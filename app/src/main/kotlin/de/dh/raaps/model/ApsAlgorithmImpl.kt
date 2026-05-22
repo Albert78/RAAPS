@@ -2,15 +2,15 @@ package de.dh.raaps.model
 
 import de.dh.raaps.common.model.data.BgDelta
 import de.dh.raaps.common.model.data.BgReading
-import de.dh.raaps.common.model.data.BgValue
 import de.dh.raaps.common.model.data.Minutes
 import de.dh.raaps.common.model.data.Tick
 import de.dh.raaps.common.model.data.Timestamp
 import de.dh.raaps.common.model.data.plus
 import de.dh.raaps.common.model.data.times
-import kotlin.compareTo
-import kotlin.math.min
+import de.dh.raaps.common.model.pump.PumpActions
+import kotlin.math.max
 
+// TODO: Document the models needed for calculation, document calculation algorithm
 class ApsAlgorithmImpl(
     val timeline: ApsTimeline,
     val metabolicEventsModel: MetabolicEventsModel,
@@ -85,33 +85,43 @@ class ApsAlgorithmImpl(
         predictionModel.advanceToTimestamp(Timestamp.now().minus(PRESERVE_PREDICTIONS_PAST_TIME))
 
         // Materialize assumed ISF and IC values, update predicted BGI if changed, update BG if changed
-        val bgPredictionChanged = predictionModel.calculatePredictions(currentBgFiltered, avgCurrentDeviation, therapyModel)
+        val continueCalculations = predictionModel.calculatePredictionStates_2_3_4(currentBgFiltered, avgCurrentDeviation, therapyModel)
+
+        if (!continueCalculations) {
+            // Predictions have not changed from the previous ones, just keep all decisions already made.
+            return
+        }
+
+        val pumpActionsBuilder = PumpActions.Builder()
+        pumpActionsBuilder.clearTempBasals()
+        predictionModel.clearTempBasalsStage_5()
 
         val targetBg = therapyModel.getTarget()
 
-        // 1. Goal: Get out of a current or impending low by lowering your basal rate early
+        // Goal 1: Get out of a current or impending low by lowering your basal rate early
         // Find the next occurrence where the value falls below the minimum; find the minimum with time
         predictionModel.findNext(startAt = Timestamp.now()) {
             it.predictedBg < targetBg.lower
         }?.let { minStart ->
             val basalRate = therapyModel.getBasalPerHour(minStart.timestamp)
             val isf = therapyModel.getIsfFactor(minStart.timestamp)
-            val lowTempDeltaBgPerTick = (basalRate * isf).mgdl.toDouble() / timeline.ticksPerHour()
+            val zeroTempDeltaBgPerHour = (basalRate * isf).mgdl.toDouble()
             val nextMin = predictionModel.findNextBgMin(startAt = minStart.timestamp, returnLatestIfFalling = true)!!
-            val bgError = targetBg.lower - nextMin.bg
-            val minNumTicksForCorrection = min(
-                (bgError.mgdl / lowTempDeltaBgPerTick).toInt(),
-                ((nextMin.timestamp - Timestamp.now()) / timeline.tickSizeMs).toInt())
+            val bgError = targetBg.lower - nextMin.bg + MIN_BG_SAFETY_MARGIN
+            val startZeroTemp = Timestamp(
+                max(
+                    nextMin.timestamp.minusHours(bgError.mgdl / zeroTempDeltaBgPerHour).ms,
+                    Timestamp.now().ms
+                )
+            )
+            pumpActionsBuilder.setTempBasal(0.0, startZeroTemp, nextMin.timestamp)
+            predictionModel.setTempBasalDeviationStage_5(-basalRate, startZeroTemp, nextMin.timestamp)
         }
 
-        val nextMin: PredictionPoint = prediction.findNextBgMin(startAt = nextMinStart.timestamp)
-        // Korrektur durch Temp-Basal absenken von Minimum zurückgerechnet, um Error weg zu bekommen
-        val startLowTemp = TODO: vom Minimum zurückgerechnet
-        // TODO: Plane Low temp ein
-        prediction.setLowTemp(from = startLowTemp, to = nextMin)
-        prediction.updateBGIPredictions(startAt = startLowTemp)
+        predictionModel.calculatePredictionsWithTempBasal()
 
-
+        // Goal 2: Correct the next upcoming high by administering insulin early, without subsequently dropping into a low
+        // Find the next high along with the time, then find the next low along with the time
 
         TODO: Weiter Code aus ApsAlgorithmTest übernehmen
 
@@ -129,6 +139,8 @@ class ApsAlgorithmImpl(
 
         const val DEVIATION_DECAY_FACTOR_PER_TICK = 0.9
 
+        val MIN_BG_SAFETY_MARGIN = BgDelta(10)
+
         suspend fun create(
             metabolicEventsModel: MetabolicEventsModel,
             readingsHistory: List<BgReading>,
@@ -141,7 +153,7 @@ class ApsAlgorithmImpl(
             )
             predictionModel.initializeToTick(Timestamp.now().minus(PRESERVE_PREDICTIONS_PAST_TIME))
             val carbsInsulinCalculationModel = CarbsInsulinCalculationModel(tickInterval)
-            predictionModel.calculateInsulinAndCarbs(
+            predictionModel.calculatePredictionStage_1(
                 metabolicEventsModel,
                 carbsInsulinCalculationModel
             )

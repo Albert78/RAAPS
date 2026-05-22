@@ -41,7 +41,7 @@ class PredictionModel(
      * Initialize the predictions to the first state where all effective insulin and effective carbs
      * are calculated.
      */
-    fun calculateInsulinAndCarbs(
+    fun calculatePredictionStage_1(
         metabolicEventsModel: MetabolicEventsModel,
         carbsInsulinCalculationModel: CarbsInsulinCalculationModel
     ) {
@@ -65,26 +65,30 @@ class PredictionModel(
 
     /**
      * Calculates all "prediction stages" of the future ticks in our prediction model.
-     * @return `true` if the predicted blood glucose value changed in any of the ticks due to a changed
-     * prediction, else `false`.
+     * @return `true` if values have changed compared to the previous settings; next stages must be
+     * calculated. Else `false`.
      */
-    fun calculatePredictions(currentBG: BgValue, avgCurrentDeviation: BgDelta, therapyModel: TherapyModel): Boolean {
+    fun calculatePredictionStates_2_3_4(currentBG: BgValue, avgCurrentDeviation: BgDelta, therapyModel: TherapyModel): Boolean {
         var bg = currentBG
         var deviation = avgCurrentDeviation
-        var bgChange = false
+        var continueCalculations = false
         forEach(from = timeline.getNowTick() + 1, to = getLastTick()) { tick, state ->
             val timestamp = timeline.timestamp(tick)
             val isf = therapyModel.getIsfFactor(timestamp)
             val ic = therapyModel.getIcFactor(timestamp)
+            val basalPerHour = therapyModel.getBasalPerHour(timestamp)
 
-            if (isf != state.isf || ic != state.ic) {
+            if (isf != state.isf || ic != state.ic || basalPerHour != state.basalPerHour) {
                 state.isf = isf
                 state.ic = ic
+                state.basalPerHour = basalPerHour
 
                 val insulinEquivalentOfCarbs = state.effectiveCarbs / ic
                 val bgi = (insulinEquivalentOfCarbs - state.effectiveInsulin) * isf
 
                 state.bgi = bgi
+
+                continueCalculations = true
             }
 
             // Ease out the deviation
@@ -93,10 +97,43 @@ class PredictionModel(
             bg = bg + state.bgi + deviation
             if (bg != state.predictedBg) {
                 state.predictedBg = bg
-                bgChange = true
+                continueCalculations = true
             }
         }
-        return bgChange
+        return continueCalculations
+    }
+
+    /**
+     * Clears all temporary basal derivation decisions.
+     */
+    fun clearTempBasalsStage_5() {
+        forEach { _, state ->
+            state.basalDeviationPerHour = 0.0
+        }
+    }
+
+    /**
+     * Sets the temporary basal derivation per hour for the given timespan.
+     * The basal derivation must be higher than the scheduled basal for that timespan.
+     */
+    fun setTempBasalDeviationStage_5(
+        basalDeviationPerHour: Double,
+        tempBasalStart: Timestamp,
+        tempBasalEnd: Timestamp
+    ) {
+        forEach(from = timeline.tick(tempBasalStart), to = timeline.tick(tempBasalEnd)) { _, state ->
+            state.basalDeviationPerHour = basalDeviationPerHour
+        }
+    }
+
+    fun calculatePredictionsWithTempBasal(
+        from: Tick = getFirstTick(),
+        to: Tick = getLastTick()
+    ) {
+        forEach(from = from, to = to) { _, state ->
+            val tempBgi = state.basalDeviationPerHour * state.isf
+            state.predictedBg2 = state.predictedBg + tempBgi
+        }
     }
 
     fun advanceToTimestamp(newAnchor: Timestamp) {
