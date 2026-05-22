@@ -78,7 +78,7 @@ data class CarbCurveComponent(
 }
 
 /**
- * Samples the carbs activity and carbs absorbed fraction functions for all discrete time intervals
+ * Samples the carbs absorbed fraction functions for all discrete time intervals
  * in the carbs absorption time for meals and caches the calculation vectors to avoid repeating the
  * expensive calculations.
  */
@@ -86,46 +86,10 @@ class SampledCarbsCalculationCache(
     val sampleIntervalSize: Minutes
 ) {
     /**
-     * Cached sampled, normalized carbs activity values, per meal type.
-     * For the value of each meal type, this is true:
-     * Each element represents the absorption rate for a [sampleIntervalSize] duration,
-     * starting from the time of consumption.
-     * Unit: fraction of total carbs absorbed per interval.
-     * The length of the arrays are different and depend on the declared carbs absorption time for the meal.
-     */
-    val intervalActivity: MutableMap<MealType, DoubleArray> = mutableMapOf()
-
-    /**
-     * Cached sampled cumulative absorbed fraction values, per meal type.
-     * For the value of each meal type, this is true:
-     * Each element contains the average absorbed fraction (0.0 to 1.0) up to that interval.
+     * Cached sampled cumulative absorbed fraction values at each interval start, per meal type.
      * The length of the arrays are different and depend on the declared carbs absorption time for the meal.
      */
     val absorbedFractionSamples: MutableMap<MealType, DoubleArray> = mutableMapOf()
-
-    /**
-     * Samples the carbs activity for the given meal type to an array of activity values per interval.
-     */
-    private fun sampleCarbsIntervalActivity(mealType: MealType): DoubleArray {
-        val numSamples = mealType.cat.value / sampleIntervalSize.value
-        return DoubleArray(numSamples) { index ->
-            val intervalStartTime = index * sampleIntervalSize.value
-            var result = 0.0
-            for (cccd in mealType.components) {
-                val ccc = CarbCurveComponent(cccd.peakMinutes.value.toDouble())
-                var componentValue = 0.0
-                for (i in 0..<sampleIntervalSize.value) {
-                    componentValue += ccc.normalizedActivity((intervalStartTime + i).toDouble())
-                }
-                result += componentValue * cccd.weight
-            }
-            result
-        }
-    }
-
-    private fun getOrCreateSampledIntervalActivity(mealType: MealType): DoubleArray {
-        return intervalActivity.computeIfAbsent(mealType, { mealType-> sampleCarbsIntervalActivity(mealType) })
-    }
 
     /**
      * Samples the absorbed fraction of carbs for the given meal type to an array of activity values per interval.
@@ -137,11 +101,7 @@ class SampledCarbsCalculationCache(
             var result = 0.0
             for (cccd in mealType.components) {
                 val ccc = CarbCurveComponent(cccd.peakMinutes.value.toDouble())
-                var componentValueSum = 0.0
-                for (i in 0..<sampleIntervalSize.value) {
-                    componentValueSum += ccc.absorbedFraction((intervalStartTime + i).toDouble())
-                }
-                result += (componentValueSum / sampleIntervalSize.value) * cccd.weight
+                result += ccc.absorbedFraction(intervalStartTime.toDouble()) * cccd.weight
             }
             result
         }
@@ -155,7 +115,6 @@ class SampledCarbsCalculationCache(
      * Clears all cached samples.
      */
     fun clearCache() {
-        intervalActivity.clear()
         absorbedFractionSamples.clear()
     }
 
@@ -163,7 +122,6 @@ class SampledCarbsCalculationCache(
      * Removes the cached data for the given meal type.
      */
     fun dropMealType(mealType: MealType) {
-        intervalActivity.remove(mealType)
         absorbedFractionSamples.remove(mealType)
     }
 
@@ -175,7 +133,6 @@ class SampledCarbsCalculationCache(
         if (forceRefresh) {
             dropMealType(mealType)
         }
-        getOrCreateSampledIntervalActivity(mealType)
         getOrCreateSampledCarbsAbsorbedFraction(mealType)
     }
 
@@ -200,9 +157,11 @@ class SampledCarbsCalculationCache(
     ): Double {
         if (intervalsSinceMeal <= 0.0) return 0.0
 
-        val carbsActivitySamples = getOrCreateSampledIntervalActivity(mealType)
-        if (intervalsSinceMeal >= carbsActivitySamples.size) return 0.0
-        return carbGrams * carbsActivitySamples[intervalsSinceMeal]
+        val samples = getOrCreateSampledCarbsAbsorbedFraction(mealType)
+        if (intervalsSinceMeal >= samples.size - 1) return 0.0
+        val absorbedFractionAtIntervalStart = samples[intervalsSinceMeal]
+        val absorbedFractionAtIntervalEnd = samples[intervalsSinceMeal + 1]
+        return carbGrams * (absorbedFractionAtIntervalEnd - absorbedFractionAtIntervalStart)
     }
 
     /**
@@ -216,9 +175,10 @@ class SampledCarbsCalculationCache(
     ): Double {
         if (intervalsSinceMeal <= 0.0) return 0.0
 
-        val carbsAbsorbedFractionSamples = getOrCreateSampledCarbsAbsorbedFraction(mealType)
-        if (intervalsSinceMeal >= intervalActivity.size) return 0.0
-        val absorbedFraction = carbsAbsorbedFractionSamples[intervalsSinceMeal]
-        return (carbGrams * (1.0 - absorbedFraction)).coerceAtLeast(0.0)
+        val samples = getOrCreateSampledCarbsAbsorbedFraction(mealType)
+        if (intervalsSinceMeal >= samples.size - 1) return 0.0
+        val absorbedFractionAtIntervalStart = samples[intervalsSinceMeal]
+        val absorbedFractionAtIntervalEnd = samples[intervalsSinceMeal + 1]
+        return carbGrams * (absorbedFractionAtIntervalStart + absorbedFractionAtIntervalEnd) / 2.0
     }
 }
