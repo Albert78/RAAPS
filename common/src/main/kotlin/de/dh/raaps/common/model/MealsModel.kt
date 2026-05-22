@@ -2,6 +2,7 @@ package de.dh.raaps.common.model
 
 import de.dh.raaps.common.model.data.Minutes
 import de.dh.raaps.common.model.data.Timestamp
+import java.util.UUID
 import kotlin.math.abs
 
 /**
@@ -29,6 +30,7 @@ data class CarbCurveComponentData(
  * Represents a meal absorption profile.
  */
 data class MealType(
+    val id: String = UUID.randomUUID().toString(),
     val name: String,
     val components: List<CarbCurveComponentData>,
 
@@ -86,7 +88,7 @@ object MealTypes {
                 peakMinutes = Minutes(150)
             )
         ),
-        cat = Minutes.ONE_HOUR * 4
+        cat = Minutes.ofHours(4)
     )
 
     /**
@@ -104,7 +106,7 @@ object MealTypes {
                 peakMinutes = Minutes(240)
             )
         ),
-        cat = Minutes.ONE_HOUR * 6
+        cat = Minutes.ofHours(6)
     )
 
     /**
@@ -122,7 +124,7 @@ object MealTypes {
                 peakMinutes = Minutes(300)
             )
         ),
-        cat = Minutes.ONE_HOUR * 8
+        cat = Minutes.ofHours(8)
     )
 
     val DEFAULTS = listOf(
@@ -137,6 +139,7 @@ object MealTypes {
  * A historical meal event.
  */
 data class MealEntry(
+    var id: Long = ID_UNDEFINED,
     val timestamp: Timestamp,
     val carbGrams: Double,
     val mealType: MealType

@@ -2,6 +2,7 @@ package de.dh.raaps.model
 
 import android.content.Context
 import android.os.PowerManager
+import de.dh.raaps.AppPreferencesRepository
 import de.dh.raaps.common.model.GlucosePlugin
 import de.dh.raaps.common.model.PumpPlugin
 import de.dh.raaps.common.model.data.BgReading
@@ -26,8 +27,9 @@ import java.util.concurrent.atomic.AtomicInteger
  * on a single background thread.
  */
 class APS(
-    val context: Context,
-    val dataRepository: DataRepository
+    val dataRepository: DataRepository,
+    val appPreferencesRepository: AppPreferencesRepository,
+    val context: Context
 ) {
     // Threading: Single background thread to avoid race conditions in the core logic
     private val apsDispatcher = Executors.newSingleThreadExecutor().asCoroutineDispatcher()
@@ -40,8 +42,9 @@ class APS(
     private val wakeLock = powerManager.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, "raaps:ApsCoreLock")
 
     // Computation Core: Pure logic and state, completely thread-agnostic
-    private val core: Core = Core(
+    private val core: Core = Core.createProductiveCore(
         dataRepository = dataRepository,
+        appPreferencesRepository = appPreferencesRepository,
         onDataUpdated = { emitDataUpdateEvent() },
         onCoreStateChanged = { emitCoreStateChangedEvent() },
         onAcquireBusyState = { acquireBusyState() },
@@ -66,8 +69,6 @@ class APS(
             field?.start()
             // TODO: restart calculation or subscription for pump
         }
-
-    val rollingHistory: RollingHistory get() = core.rollingHistory
 
     // Observers: Exposed from the internal core
     // Observers (Updated by the core, read by the facade/UI)

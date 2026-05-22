@@ -86,7 +86,7 @@ class MainActivity : ComponentActivity() {
         )[PermissionsViewModel::class.java]
 
         setContent {
-            val useDarkTheme = rememberUseDarkTheme(application.appStateRepository)
+            val useDarkTheme = rememberUseDarkTheme(application.mAppPreferencesRepository)
             EdgeToEdgeHandler(useDarkTheme)
             AppTheme(darkTheme = useDarkTheme) {
                 Surface(
@@ -177,7 +177,7 @@ class MainActivity : ComponentActivity() {
                         onDispose {
                             lifecycleScope.launch(Dispatchers.IO) {
                                 val userDeclinedPermissions = isPermissionsMissing(this@MainActivity)
-                                application.appStateRepository.setUserDeclinedPermissions(userDeclinedPermissions)
+                                application.mAppPreferencesRepository.setUserDeclinedPermissions(userDeclinedPermissions)
 
                                 // Not really the right place to trigger the update but there is no
                                 // better place.

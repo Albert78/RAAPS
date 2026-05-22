@@ -24,13 +24,13 @@ val Preferences?.themeMode: ThemeMode
 val Preferences?.userDeclinedPermissions: Boolean
     get() = this?.get(USER_DECLINED_PERMISSIONS_KEY) ?: false
 
-suspend fun AppStateRepository.setThemeMode(value: ThemeMode) {
+suspend fun AppPreferencesRepository.setThemeMode(value: ThemeMode) {
     editPreferences { mutablePreferences ->
         mutablePreferences[THEME_MODE_KEY] = value.value
     }
 }
 
-suspend fun AppStateRepository.setUserDeclinedPermissions(value: Boolean) {
+suspend fun AppPreferencesRepository.setUserDeclinedPermissions(value: Boolean) {
     editPreferences { mutablePreferences ->
         mutablePreferences[USER_DECLINED_PERMISSIONS_KEY] = value
     }
@@ -39,7 +39,7 @@ suspend fun AppStateRepository.setUserDeclinedPermissions(value: Boolean) {
 val THEME_MODE_KEY = stringPreferencesKey("theme_mode")
 val USER_DECLINED_PERMISSIONS_KEY = booleanPreferencesKey("user_declined_permissions")
 
-class AppStateRepository(private val context: Context, private val scope: CoroutineScope) {
+class AppPreferencesRepository(private val context: Context, private val scope: CoroutineScope) {
     /**
      * Gets the eagerly loaded state of the preferences as StateFlow, i.e. it can be queried
      * without the use of a suspend function, but the value will initially be {@ null} until

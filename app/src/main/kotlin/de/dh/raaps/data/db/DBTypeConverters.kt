@@ -1,12 +1,26 @@
 package de.dh.raaps.data.db
 
 import androidx.room.TypeConverter
+import de.dh.raaps.common.model.data.Minutes
+import de.dh.raaps.common.model.data.Timestamp
 import de.dh.raaps.data.db.entities.DBBlock
 import de.dh.raaps.data.db.entities.DBTargetBlock
 import org.json.JSONArray
 import org.json.JSONObject
 
 class DbTypeConverters {
+    @TypeConverter
+    fun fromMinutes(minutes: Minutes?): Short? = minutes?.value
+
+    @TypeConverter
+    fun toMinutes(value: Short?): Minutes? = value?.let { Minutes(it) }
+
+    @TypeConverter
+    fun fromTimestamp(timestamp: Timestamp?): Long? = timestamp?.ms
+
+    @TypeConverter
+    fun toTimestamp(value: Long?): Timestamp? = value?.let { Timestamp(it) }
+
     @TypeConverter
     fun fromListOfBlocks(blocks: List<DBBlock>?): String? {
         if (blocks == null) return null
@@ -64,4 +78,3 @@ class DbTypeConverters {
         return list
     }
 }
-

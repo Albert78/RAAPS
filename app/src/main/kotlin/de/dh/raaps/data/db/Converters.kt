@@ -1,15 +1,27 @@
 package de.dh.raaps.data.db
 
+import de.dh.raaps.common.model.CarbCurveComponentData
 import de.dh.raaps.common.model.DataProvider
+import de.dh.raaps.common.model.InsulinApplication
+import de.dh.raaps.common.model.InsulinType
+import de.dh.raaps.common.model.MealEntry
+import de.dh.raaps.common.model.MealType
 import de.dh.raaps.common.model.data.BgReading
+import de.dh.raaps.common.model.data.BgValue
+import de.dh.raaps.common.model.data.Minutes
 import de.dh.raaps.common.model.data.SensorType
+import de.dh.raaps.common.model.data.Timestamp
 import de.dh.raaps.data.db.entities.DataProviderEntity
 import de.dh.raaps.data.db.entities.GlucoseReadingEntity
+import de.dh.raaps.data.db.entities.InsulinApplicationEntity
+import de.dh.raaps.data.db.entities.InsulinTypeEntity
+import de.dh.raaps.data.db.entities.MealEntity
+import de.dh.raaps.data.db.entities.MealTypeEntity
 import de.dh.raaps.data.db.entities.SensorTypeEntity
-import de.dh.raaps.data.db.entities.TickStateEntity
-import de.dh.raaps.model.TickState
 
-fun BgReading.toNewEntity(dataProviderId: Long, sourceSensorId: Long) = GlucoseReadingEntity(
+// BgReading Converters
+fun BgReading.toEntity(dataProviderId: Long, sourceSensorId: Long) = GlucoseReadingEntity(
+    id = this.id,
     value_mgdl = this.value.mgdl,
     sample_kind = this.sampleKind,
     timestamp_ms = this.timestamp.ms,
@@ -17,6 +29,14 @@ fun BgReading.toNewEntity(dataProviderId: Long, sourceSensorId: Long) = GlucoseR
     fk_source_sensor = sourceSensorId
 )
 
+fun GlucoseReadingEntity.toModel() = BgReading(
+    id = this.id,
+    value = BgValue.fromMgDl(this.value_mgdl),
+    sampleKind = this.sample_kind,
+    timestamp = Timestamp(timestamp_ms)
+)
+
+// SensorType Converters
 fun SensorType.toEntity() = SensorTypeEntity(
     id = this.id,
     name = this.name
@@ -27,6 +47,7 @@ fun SensorTypeEntity.toModel() = SensorType(
     name = this.name
 )
 
+// DataProvider Converters
 fun DataProvider.toEntity() = DataProviderEntity(
     id = this.id,
     name = this.name,
@@ -39,36 +60,77 @@ fun DataProviderEntity.toModel() = DataProvider(
     type = this.type
 )
 
-fun TickState.toEntity() = TickStateEntity(
+// Meal Converters
+fun carbCurveComponentListToString(components: List<CarbCurveComponentData>): String {
+    return components.joinToString(";", prefix = "[", postfix = "]") {
+        "(weight=${it.weight};peak=${it.peakMinutes.value})"
+    }
+}
+
+fun stringToCarbCurveComponentList(value: String): List<CarbCurveComponentData> {
+    val componentsStr = value.removeSurrounding("[", "]")
+    return componentsStr.split(");(").map { componentStr ->
+        val cleanStr = componentStr.removeSurrounding("(", ")")
+        val props = cleanStr.split(";")
+        val weight = props[0].substringAfter("weight=").toInt()
+        val peak = props[1].substringAfter("peak=").toShort()
+        CarbCurveComponentData(weight, Minutes(peak))
+    }
+}
+
+fun MealType.toEntity() = MealTypeEntity(
     id = this.id,
-    tick = this.tick,
-    bg_value = this.bg?.value,
-    bg_sample_kind = this.bg?.sampleKind,
-    bg_readig_timestamp = this.bg?.timestamp
+    name = this.name,
+    curve_components = carbCurveComponentListToString(this.components),
+    cat = this.cat
 )
 
-fun TickStateEntity.toModel(): TickState {
-    val bgValue = this.bg_value
-    val sampleKind = this.bg_sample_kind
-    val timestamp = this.bg_readig_timestamp
-    val bg = if (bgValue != null && sampleKind != null && timestamp != null)
-        BgReading(
-            bgValue,
-            sampleKind,
-            timestamp
-        )
-    else null
-    return TickState(
-        id = this.id,
-        tick = this.tick,
-        bg = bg
-    )
-}
+fun MealTypeEntity.toModel() = MealType(
+    id = this.id,
+    name = this.name,
+    components = stringToCarbCurveComponentList(this.curve_components),
+    cat = this.cat
+)
 
-fun List<TickStateEntity>.toModel(): List<TickState> {
-    return List(this.size, { index -> this[index].toModel() })
-}
+fun MealEntry.toEntity() = MealEntity(
+    id = this.id,
+    meal_type_id = this.mealType.id,
+    timestamp = this.timestamp,
+    carbGrams = this.carbGrams
+)
 
-fun List<TickState>.toEntity(): List<TickStateEntity> {
-    return List(this.size, { index -> this[index].toEntity() })
-}
+fun MealEntity.toModel(type: MealType) = MealEntry(
+    id = this.id,
+    timestamp = this.timestamp,
+    carbGrams = this.carbGrams,
+    mealType = type
+)
+
+// Insulin Converters
+fun InsulinType.toEntity() = InsulinTypeEntity(
+    id = this.id,
+    name = this.name,
+    peak = this.peak,
+    dia = this.dia
+)
+
+fun InsulinTypeEntity.toModel() = InsulinType(
+    id = this.id,
+    name = this.name,
+    peak = this.peak,
+    dia = this.dia
+)
+
+fun InsulinApplication.toEntity() = InsulinApplicationEntity(
+    id = this.id,
+    insulin_type_id = this.insulinType.id,
+    timestamp = this.timestamp,
+    insulinUnits = this.insulinUnits
+)
+
+fun InsulinApplicationEntity.toModel(type: InsulinType) = InsulinApplication(
+    id = this.id,
+    timestamp = this.timestamp,
+    insulinUnits = this.insulinUnits,
+    insulinType = type
+)

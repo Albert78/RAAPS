@@ -1,15 +1,16 @@
 package de.dh.raaps.model
 
 import android.util.Log
+import de.dh.raaps.AppPreferencesRepository
 import de.dh.raaps.common.model.DataProvider
 import de.dh.raaps.common.model.GlucosePlugin
 import de.dh.raaps.common.model.data.BgReading
 import de.dh.raaps.common.model.data.BgSampleKind
 import de.dh.raaps.common.model.data.Minutes
 import de.dh.raaps.common.model.data.SensorType
-import de.dh.raaps.common.model.data.Tick
 import de.dh.raaps.common.model.data.Timestamp
 import de.dh.raaps.data.DataRepository
+import kotlinx.coroutines.flow.asFlow
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlin.math.abs
@@ -64,19 +65,34 @@ enum class CoreState {
  *
  * **Architecture**
  * This class is NOT thread-safe by itself and must be called from a controlled threading environment (like APS facade).
+ *
+ * **Android integration**
  * This class should remain as free as possible of workarounds for the Android system.
- * We only need to signal the internal calculation state by setting the [busyState] flag. The surrounding app
- * is responsible for acquiring a wake lock.
+ * We only need to signal the internal calculation state by calling [onAcquireBusyState] and [onReleaseBusyState].
+ * The surrounding app is responsible for acquiring a wake lock.
  */
 class Core(
-    val dataRepository: DataRepository,
+    private val dataRepository: DataRepository,
+    private val appPreferencesRepository: AppPreferencesRepository,
+    private val metabolicEventsModel: MetabolicEventsModel,
+    private var calculationAlgorithm: ApsAlgorithm,
     private val onDataUpdated: () -> Unit,
     private val onCoreStateChanged: () -> Unit,
     private val onAcquireBusyState: () -> Unit,
     private val onReleaseBusyState: () -> Unit
 ) {
+    private val predictionModel = PredictionModel(
+        predictionWindowHours = PREDICTION_WINDOW_HOURS,
+        tickInterval = TICK_INTERVAL
+    )
+    private val bgReadingsHistory = BgReadingHistory(
+        historyHours = BG_READINGS_HISTORY_HOURS,
+        tickInterval = TICK_INTERVAL
+    )
+    private val carbsInsulinCalculation: CarbsInsulinCalculation =
+        CarbsInsulinCalculation(Minutes.ofHours(METABOLIC_EVENTS_HISTORY_HOURS))
+
     // State
-    var rollingHistory: RollingHistory = RollingHistory(historyHours = 0, tickDuration = Minutes(5))
     var currentBg: BgReading? = null
         private set
     var lastBg: BgReading? = null
@@ -84,9 +100,6 @@ class Core(
 
     var coreState: CoreState = CoreState.Uninitialized
         private set
-
-    // Calculation algorithm
-    var calculationAlgorithm: ApsAlgorithm = ApsAlgorithmImpl(this)
 
     /**
      * Time delay between a glucose value in blood and the given Timestamp of the bg reading.
@@ -131,28 +144,34 @@ class Core(
     }
 
     suspend fun initialize() {
-        atomic {
-            Log.d(TAG, "Initializing...")
-            setCoreState(CoreState.Initializing)
-            rollingHistory = initializeRollingHistory(dataRepository)
+        busyWork {
+            atomic {
+                Log.d(TAG, "Initializing...")
+                setCoreState(CoreState.Initializing)
 
-            fun bgPresentPredicate(): (TickState) -> Boolean = { state ->
-                state.bg?.sampleKind != BgSampleKind.Invalid
+                val tickInterval = predictionModel.tickInterval
+                bgReadingsHistory.clear()
+                predictionModel.clear()
+
+                dataRepository.loadBgReadings(from = Timestamp.now().minusHours(bgReadingsHistory.historyHours))
+                    .asFlow()
+                    .sampleByTickStable(tickInterval)
+                    .collect { (bg, tick) ->
+                        if (currentBg == null || bg.timestamp >= currentBg!!.timestamp) {
+                            lastBg = currentBg
+                            currentBg = bg
+                        }
+                        bgReadingsHistory.add(
+                            tick = tick,
+                            reading = bg
+                        )
+                    }
+                calculationAlgorithm.initialize(predictionModel, metabolicEventsModel, carbsInsulinCalculation)
+                onDataUpdated()
+
+                Log.d(TAG, "Finished initialization...")
+                setCoreState(CoreState.Idle)
             }
-
-            val currentBgTick = rollingHistory.findBackward(
-                rollingHistory.anchorTick,
-                bgPresentPredicate()
-            )
-            currentBg = currentBgTick?.bg
-            lastBg = if (currentBgTick != null) rollingHistory.findBackward(
-                Tick(currentBgTick.tick.value - 1),
-                bgPresentPredicate()
-            )?.bg else null
-            onDataUpdated()
-
-            Log.d(TAG, "Finished initialization...")
-            setCoreState(CoreState.Idle)
         }
     }
 
@@ -177,26 +196,17 @@ class Core(
             .persist(dataRepository, dataProvider, sensorType)
 
         // Collect for core calculation
-        val tickInterval = rollingHistory.tickDuration
+        val tickInterval = predictionModel.tickInterval
         persistedValues
             .sampleByTickStable(tickInterval)
-            .fillGaps(tickInterval)
             // Threading notice:
             // The .collect call will block our coroutine, so it must be the last action in this method.
             // But since we're in a coroutine, the call won't block our (single) thread while
             // waiting for new values; instead, it will just suspend and free the thread for other work.
-            .collect { (bg, _) ->
+            .collect { (bg, tick) ->
+                bgReadingsHistory.add(tick, bg)
                 updateBg(bg)
             }
-    }
-
-    private suspend fun initializeRollingHistory(dataRepository: DataRepository): RollingHistory {
-        val result = RollingHistory(historyHours = 10, tickDuration = Minutes(5))
-        val anchorTick = result.getNowTick()
-        result.advanceTo(anchorTick)
-        val tickStates = dataRepository.getTickStates(result.getFirstTick(), anchorTick)
-        result.replaceBufferTickStates(tickStates)
-        return result
     }
 
     /**
@@ -221,17 +231,14 @@ class Core(
                     currentBg = bg
                 }
 
-                val tick = rollingHistory.tick(bg.timestamp)
-                val lastAnchorTick = rollingHistory.anchorTick
-                val tickState = rollingHistory.getOrCreateTickState(tick) ?: return@atomic // Ignore if outside our window
-
                 val isRecent = abs(bg.timestamp.ms - Timestamp.now().ms) < RECENT_BG_THRESHOLD.inMs()
-                val isRecalculationNecessary = isRecent && calculationAlgorithm.isRecalculationNecessary(bg, tick)
-                tickState.bg = bg
-                dataRepository.insertOrUpdateTickState(tickState)
-                if (tick != lastAnchorTick || isRecalculationNecessary) {
+                if (isRecent) {
                     setCoreState(CoreState.Calculating)
-                    calculationAlgorithm.recalculate(tick)
+                    calculationAlgorithm.recalculate(
+                        predictionModel,
+                        bgReadingsHistory,
+                        carbsInsulinCalculation!!
+                    )
                     setCoreState(CoreState.Idle)
                 }
             }
@@ -241,5 +248,33 @@ class Core(
 
     companion object {
         val TAG = Core::class.simpleName
+
+        const val PREDICTION_WINDOW_HOURS = 10
+        const val BG_READINGS_HISTORY_HOURS = 10
+        const val METABOLIC_EVENTS_HISTORY_HOURS = 10
+        const val TICK_INTERVAL_MINUTES: Short = 5
+        val TICK_INTERVAL = Minutes(TICK_INTERVAL_MINUTES)
+
+        fun createProductiveCore(
+            dataRepository: DataRepository,
+            appPreferencesRepository: AppPreferencesRepository,
+            onDataUpdated: () -> Unit,
+            onCoreStateChanged: () -> Unit,
+            onAcquireBusyState: () -> Unit,
+            onReleaseBusyState: () -> Unit
+        ): Core {
+            val metabolicEventsModel = MetabolicEventsModel(Minutes.ofHours(METABOLIC_EVENTS_HISTORY_HOURS), dataRepository)
+            val calculationAlgorithm = ApsAlgorithmImpl()
+            return Core(
+                dataRepository = dataRepository,
+                appPreferencesRepository = appPreferencesRepository,
+                metabolicEventsModel = metabolicEventsModel,
+                calculationAlgorithm = calculationAlgorithm,
+                onDataUpdated = onDataUpdated,
+                onCoreStateChanged = onCoreStateChanged,
+                onAcquireBusyState = onAcquireBusyState,
+                onReleaseBusyState = onReleaseBusyState
+            )
+        }
     }
 }

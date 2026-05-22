@@ -4,7 +4,7 @@ import androidx.datastore.preferences.core.Preferences
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
-import de.dh.raaps.AppStateRepository
+import de.dh.raaps.AppPreferencesRepository
 import de.dh.raaps.MainApplication
 import de.dh.raaps.common.ui.ThemeMode
 import de.dh.raaps.setThemeMode
@@ -26,7 +26,7 @@ data class PreferencesUiState(
 
 class PreferencesViewModel(
     private val application: MainApplication,
-    private val appStateRepository: AppStateRepository = application.appStateRepository
+    private val appPreferencesRepository: AppPreferencesRepository = application.mAppPreferencesRepository
 ) : ViewModel() {
     private val _uiState = MutableStateFlow(PreferencesUiState(isLoading = true, isError = false))
     val uiState: StateFlow<PreferencesUiState> = _uiState.asStateFlow()
@@ -38,7 +38,7 @@ class PreferencesViewModel(
     fun reload() {
         viewModelScope.launch {
             try {
-                appStateRepository.cachedPreferences.collect {
+                appPreferencesRepository.cachedPreferences.collect {
                     preferences -> updateUiModel(preferences)
                 }
             } catch (_: Exception) {
@@ -67,7 +67,7 @@ class PreferencesViewModel(
      */
     fun setThemeMode(newMode: ThemeMode) {
         viewModelScope.launch {
-            appStateRepository.setThemeMode(newMode)
+            appPreferencesRepository.setThemeMode(newMode)
         }
     }
 
@@ -77,8 +77,8 @@ class PreferencesViewModel(
         ) : ViewModelProvider.Factory {
             @Suppress("UNCHECKED_CAST")
             override fun <T : ViewModel> create(modelClass: Class<T>): T {
-                val appStateRepository = MainApplication.instance.appStateRepository
-                return PreferencesViewModel(application, appStateRepository = appStateRepository) as T
+                val appStateRepository = MainApplication.instance.mAppPreferencesRepository
+                return PreferencesViewModel(application, appPreferencesRepository = appStateRepository) as T
             }
         }
     }

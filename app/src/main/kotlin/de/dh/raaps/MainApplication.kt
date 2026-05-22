@@ -25,7 +25,7 @@ import kotlinx.coroutines.launch
 class MainApplication : Application() {
     lateinit var notificationManager: ApsNotificationManager
         private set
-    lateinit var appStateRepository: AppStateRepository
+    lateinit var mAppPreferencesRepository: AppPreferencesRepository
         private set
     lateinit var dataRepository: DataRepository
         private set
@@ -42,13 +42,13 @@ class MainApplication : Application() {
         instance = this
 
         notificationManager = ApsNotificationManager(this)
-        appStateRepository = AppStateRepository(context = this, scope = applicationScope)
+        mAppPreferencesRepository = AppPreferencesRepository(context = this, scope = applicationScope)
         val appDatabase = AppDatabase.getInstance(this)
         dataRepository = DataRepository(appDatabase)
 
         startApsService()
 
-        aps = APS(this, dataRepository)
+        aps = APS(dataRepository, mAppPreferencesRepository, this)
         aps.startInitialization()
 
         // TODO: Read plugins from preferences

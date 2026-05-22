@@ -9,9 +9,11 @@ private const val MMOL_TO_MGDL = 18.0182
  * A memory-efficient, type-safe representation of a blood glucose value.
  */
 @JvmInline
-value class BgValue(val mgdl: Short) {
+value class BgValue(val mgdl: Short): Comparable<BgValue> {
     val mmol: Double
         get() = (mgdl / MMOL_TO_MGDL * 10.0).roundToInt() / 10.0
+
+    override fun compareTo(other: BgValue): Int = mgdl.compareTo(other.mgdl)
 
     fun toString(glucoseUnit: GlucoseUnit) =
         when (glucoseUnit) {

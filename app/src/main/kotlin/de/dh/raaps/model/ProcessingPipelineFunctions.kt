@@ -3,8 +3,6 @@ package de.dh.raaps.model
 import android.util.Log
 import de.dh.raaps.common.model.DataProvider
 import de.dh.raaps.common.model.data.BgReading
-import de.dh.raaps.common.model.data.BgSampleKind
-import de.dh.raaps.common.model.data.BgValue
 import de.dh.raaps.common.model.data.Minutes
 import de.dh.raaps.common.model.data.SensorType
 import de.dh.raaps.common.model.data.Tick
@@ -15,7 +13,6 @@ import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onEach
-import kotlinx.coroutines.flow.transform
 import kotlin.math.abs
 
 /**
@@ -139,33 +136,5 @@ fun Flow<BgReading>.sampleByTickStable(
                 centerOn(bg.timestamp)
             }
         }
-    }
-}
-
-fun Flow<Pair<BgReading, Tick>>.fillGaps(tickInterval: Minutes): Flow<Pair<BgReading, Tick>> {
-    var lastTickValue: Int? = null
-    var lastBgTimestamp: Timestamp = Timestamp(0)
-    val tickSizeMs = tickInterval.value.toLong() * 60 * 1000L
-
-    return transform { (bg, tick) ->
-        val currentTickValue = tick.value
-
-        if (lastTickValue != null) {
-            // Fill all ticks between last and current
-            for (gapTick in (lastTickValue!! + 1) until currentTickValue) {
-                // Align at previous reading's time
-                val gapTimestamp = Timestamp(lastBgTimestamp.ms + tickSizeMs)
-                val invalidReading = BgReading(
-                    value = BgValue(0),
-                    sampleKind = BgSampleKind.Invalid,
-                    timestamp = gapTimestamp
-                )
-                emit(invalidReading to Tick(gapTick))
-            }
-        }
-
-        lastTickValue = currentTickValue
-        lastBgTimestamp = bg.timestamp
-        emit(bg to tick)
     }
 }

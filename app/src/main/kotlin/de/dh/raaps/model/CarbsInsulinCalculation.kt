@@ -1,6 +1,6 @@
 package de.dh.raaps.model
 
-import de.dh.raaps.common.model.InsulinEntry
+import de.dh.raaps.common.model.InsulinApplication
 import de.dh.raaps.common.model.InsulinType
 import de.dh.raaps.common.model.MealEntry
 import de.dh.raaps.common.model.data.Minutes
@@ -45,7 +45,7 @@ class CarbsInsulinCalculation(
      * consumptions in the interval at the given timestamp.
      * @return Absorption rate in grams / interval.
      */
-    fun totalCarbAbsorption(
+    fun carbAbsorption(
         meals: List<MealEntry>,
         timestamp: Timestamp
     ): Double {
@@ -67,10 +67,10 @@ class CarbsInsulinCalculation(
      * @return Effective insulin in Units / interval
      */
     fun effectiveInsulin(
-        insulinEntries: List<InsulinEntry>,
+        insulinApplications: List<InsulinApplication>,
         timestamp: Timestamp
     ): Double {
-        return insulinEntries.sumOf { entry ->
+        return insulinApplications.sumOf { entry ->
             val intervalsSinceApplication =
                 Minutes.timeDifference(entry.timestamp, timestamp).value / intervalSize.value
 
@@ -87,7 +87,7 @@ class CarbsInsulinCalculation(
      * @return IOB in Units
      */
     fun iob(
-        insulinEntries: List<InsulinEntry>,
+        insulinEntries: List<InsulinApplication>,
         timestamp: Timestamp
     ): Double {
         return insulinEntries.sumOf { entry ->
@@ -107,12 +107,12 @@ class CarbsInsulinCalculation(
      * Unit: Depending on isf unit, mg/dL or mmol/L
      */
     fun bgi(
-        insulinEntries: List<InsulinEntry>,
+        insulinEntries: List<InsulinApplication>,
         isf: Double,
         timestamp: Timestamp
     ): Double {
         val effectiveInsulin = effectiveInsulin(
-            insulinEntries = insulinEntries,
+            insulinApplications = insulinEntries,
             timestamp
         )
 

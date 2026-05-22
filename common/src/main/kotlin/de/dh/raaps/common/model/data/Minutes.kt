@@ -24,5 +24,13 @@ value class Minutes(val value: Short) : Comparable<Minutes> {
 
         fun timeDifference(ts1: Timestamp, ts2: Timestamp) =
             Minutes(((ts2.ms - ts1.ms) / 60_000.0).toInt().toShort())
+
+        fun ofHours(hours: Int): Minutes {
+            return ONE_HOUR * hours
+        }
+
+        fun ofDays(days: Int): Minutes {
+            return ONE_DAY * days
+        }
     }
 }

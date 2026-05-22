@@ -7,10 +7,11 @@ import kotlin.time.Instant
  * the Unix Epoch (January 1, 1970).
  */
 @JvmInline
-value class Timestamp(val ms: Long) : Comparable<Timestamp> {
+value class Timestamp(val ms: Long): Comparable<Timestamp> {
     override fun compareTo(other: Timestamp): Int = ms.compareTo(other.ms)
 
     operator fun minus(other: Timestamp): Long = ms - other.ms
+    operator fun minus(minutes: Minutes) = minusMinutes(minutes.value.toInt())
 
     fun toInstant(): Instant = Instant.fromEpochMilliseconds(ms)
     fun plusSeconds(sec: Int) = Timestamp(ms + sec * 1000)

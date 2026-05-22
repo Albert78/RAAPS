@@ -26,7 +26,7 @@ import kotlinx.coroutines.flow.update
 class PermissionsViewModel(
     application: MainApplication
 ) : AndroidViewModel(application) {
-    private val appStateRepository = application.appStateRepository
+    private val appStateRepository = application.mAppPreferencesRepository
 
     private val _uiState = MutableStateFlow(PermissionsUiModel.loading())
     val uiState = _uiState.asStateFlow()
@@ -107,4 +107,3 @@ class PermissionsViewModel(
         }
     }
 }
-

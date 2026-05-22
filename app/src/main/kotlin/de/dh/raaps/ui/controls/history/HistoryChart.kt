@@ -49,7 +49,7 @@ import de.dh.raaps.common.ui.composables.BlueA200
 import de.dh.raaps.common.ui.composables.DeepOrangeA700
 import de.dh.raaps.common.ui.composables.RedA700
 import de.dh.raaps.common.ui.theme.AppTheme
-import de.dh.raaps.model.TickState
+import de.dh.raaps.model.PredictionTickState
 import java.util.Calendar
 import java.util.Locale
 import kotlin.math.sin
@@ -58,7 +58,7 @@ import kotlin.random.Random
 private const val INITIAL_SHOW_HOURS = 4.0
 
 data class DiagramData(
-    val tickStates: List<TickState?>,
+    val tickStates: List<PredictionTickState?>,
     val tickInterval: Minutes,
     val validIndices: List<Int>,
     val tickAtIndex0: Int,
@@ -66,7 +66,7 @@ data class DiagramData(
     val maxX: Int
 ) {
     companion object {
-        fun fromTickStates(tickStates: List<TickState?>, tickInterval: Minutes): DiagramData? {
+        fun fromTickStates(tickStates: List<PredictionTickState?>, tickInterval: Minutes): DiagramData? {
             // Our tick states array contains an entry every tickInterval minutes, but some tick states
             // are empty or contain an invalid glucose value. Create index on valid values.
             val validBgValueIndices = tickStates.indices.filter {
@@ -384,10 +384,10 @@ fun generatedBg(minsInterval: Short, index: Int, startTs: Timestamp): BgReading 
     )
 }
 
-fun createSampleHistoryTicks(size: Int, minsInterval: Short, startTs: Timestamp = Timestamp.now()): List<TickState> {
+fun createSampleHistoryTicks(size: Int, minsInterval: Short, startTs: Timestamp = Timestamp.now()): List<PredictionTickState> {
     return List(size) { index ->
         val bg = generatedBg(minsInterval, index, startTs)
-        TickState(
+        PredictionTickState(
             ID_UNDEFINED, Tick((bg.timestamp.ms / (minsInterval * 60_000L)).toInt()), bg
         )
     }

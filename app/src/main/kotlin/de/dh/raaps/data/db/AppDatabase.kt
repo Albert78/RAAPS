@@ -8,13 +8,15 @@ import androidx.room.Query
 import androidx.room.Room
 import androidx.room.RoomDatabase
 import androidx.room.TypeConverters
-import androidx.room.Upsert
-import de.dh.raaps.common.model.data.Tick
+import androidx.room.Update
 import de.dh.raaps.data.db.entities.DataProviderEntity
 import de.dh.raaps.data.db.entities.GlucoseReadingEntity
+import de.dh.raaps.data.db.entities.InsulinApplicationEntity
+import de.dh.raaps.data.db.entities.InsulinTypeEntity
+import de.dh.raaps.data.db.entities.MealEntity
+import de.dh.raaps.data.db.entities.MealTypeEntity
 import de.dh.raaps.data.db.entities.SensorTypeEntity
 import de.dh.raaps.data.db.entities.TherapyDataEntity
-import de.dh.raaps.data.db.entities.TickStateEntity
 import java.util.concurrent.Executors
 
 @Dao
@@ -50,16 +52,73 @@ interface TherapyDao {
 }
 
 @Dao
-interface StateDao {
-    /**
-     * Inserts the given tick state into the DB, if it not yet exists. Else, the tick state in the
-     * DB will be updated. Returns the new or existing database ID of the entity.
-     */
-    @Upsert
-    suspend fun insertOrUpdateTickState(tickState: TickStateEntity): Long
+interface MetabolicEventsDao {
+    // Meal Types
+    @Query("SELECT * FROM meal_type")
+    suspend fun getAllMealTypes(): List<MealTypeEntity>
 
-    @Query("SELECT * FROM tick_state WHERE tick >= :fromTick AND tick <= :toTick ORDER BY tick")
-    suspend fun getTickStates(fromTick: Tick, toTick: Tick): List<TickStateEntity>
+    @Query("SELECT * FROM meal_type WHERE id = :id")
+    suspend fun getMealTypeById(id: String): MealTypeEntity?
+
+    @Insert
+    suspend fun insertMealType(mealType: MealTypeEntity)
+
+    @Update
+    suspend fun updateMealType(mealType: MealTypeEntity)
+
+    @Query("DELETE FROM meal_type where id = :mealTypeId")
+    suspend fun deleteMealType(mealTypeId: String)
+
+    // Meals
+    @Query("SELECT * FROM meal ORDER BY timestamp ASC")
+    suspend fun getAllMeals(): List<MealEntity>
+
+    @Query("SELECT * FROM meal WHERE timestamp >= :from AND timestamp <= :to ORDER BY timestamp ASC")
+    suspend fun getMealsInRange(from: Long, to: Long): List<MealEntity>
+
+    @Insert
+    suspend fun insertMeal(meal: MealEntity): Long
+
+    @Update
+    suspend fun updateMeal(meal: MealEntity)
+
+    @Query("DELETE FROM meal where id = :mealId")
+    suspend fun deleteMeal(mealId: Long)
+
+    // Insulin Types
+    @Query("SELECT * FROM insulin_type")
+    suspend fun getAllInsulinTypes(): List<InsulinTypeEntity>
+
+    @Query("SELECT * FROM insulin_type WHERE id = :id")
+    suspend fun getInsulinTypeById(id: String): InsulinTypeEntity?
+
+    @Query("SELECT * FROM insulin_type WHERE name = :name")
+    suspend fun getInsulinTypeByName(name: String): InsulinTypeEntity?
+
+    @Insert
+    suspend fun insertInsulinType(insulinType: InsulinTypeEntity)
+
+    @Update
+    suspend fun updateInsulinType(insulinType: InsulinTypeEntity)
+
+    @Query("DELETE FROM INSULIN_TYPE where id = :insulinTypeId")
+    suspend fun deleteInsulinType(insulinTypeId: String)
+
+    // Insulin Applications
+    @Query("SELECT * FROM insulin_application ORDER BY timestamp ASC")
+    suspend fun getAllInsulinApplications(): List<InsulinApplicationEntity>
+
+    @Query("SELECT * FROM insulin_application WHERE timestamp >= :from AND timestamp <= :to ORDER BY timestamp ASC")
+    suspend fun getInsulinApplicationsInRange(from: Long, to: Long): List<InsulinApplicationEntity>
+
+    @Insert
+    suspend fun insertInsulinApplication(insulin: InsulinApplicationEntity): Long
+
+    @Update
+    suspend fun updateInsulinApplication(insulin: InsulinApplicationEntity)
+
+    @Query("DELETE FROM insulin_application where id = :insulinApplicationId")
+    suspend fun deleteInsulinApplication(insulinApplicationId: Long)
 }
 
 @Database(entities = [
@@ -71,8 +130,11 @@ interface StateDao {
     // Therapy
     TherapyDataEntity::class,
 
-    // States
-    TickStateEntity::class
+    // Metabolic events
+    MealTypeEntity::class,
+    MealEntity::class,
+    InsulinTypeEntity::class,
+    InsulinApplicationEntity::class
 ], version = 1)
 @TypeConverters(
     DbTypeConverters::class
@@ -80,7 +142,7 @@ interface StateDao {
 abstract class AppDatabase : RoomDatabase() {
     abstract fun providerDao(): ProviderDao
     abstract fun therapyDao(): TherapyDao
-    abstract fun stateDao(): StateDao
+    abstract fun metabolicEventsDao(): MetabolicEventsDao
 
     companion object {
         const val CURRENT_DATABASE_VERSION = "1.0"

@@ -1,23 +1,36 @@
 package de.dh.raaps.model
 
-import de.dh.raaps.common.model.data.BgReading
-import de.dh.raaps.common.model.data.Tick
-
-class ApsAlgorithmImpl(
-    val core: Core
-): ApsAlgorithm {
-    override fun isRecalculationNecessary(
-        newBgReading: BgReading,
-        tick: Tick
-    ): Boolean {
-        val tickState = core.rollingHistory.tryGetApsTickState(tick)
-        return tickState?.expectedBgToleranceRange?.let {
-            toleranceRange -> newBgReading.value.mgdl in toleranceRange.first.mgdl..toleranceRange.second.mgdl
-        } ?: false
+class ApsAlgorithmImpl: ApsAlgorithm {
+    override suspend fun initialize(
+        predictionModel: PredictionModel,
+        metabolicEventsModel: MetabolicEventsModel,
+        carbsInsulinCalculation: CarbsInsulinCalculation
+    ) {
+        metabolicEventsModel.load()
+        val meals = metabolicEventsModel.getMeals()
+        val insulinApplications = metabolicEventsModel.getInsulinApplications()
+        predictionModel.forEach { tick, tickState ->
+            tickState.initializeToTick(tick)
+            // We only need to initialize insulin and carbs, since they only depend on the treatments.
+            // They only need to be touched when we have more meals or insulin applications.
+            // All other data is calculated in each tick cycle.
+            tickState.effectiveInsulin = carbsInsulinCalculation.effectiveInsulin(
+                insulinApplications,
+                predictionModel.rollingHistory.timestamp(tick)
+            )
+            tickState.effectiveCarbs = carbsInsulinCalculation.carbAbsorption(
+                meals,
+                predictionModel.rollingHistory.timestamp(tick)
+            )
+        }
     }
 
-    override fun recalculate(fromCurrentTick: Tick) {
-        // TODO
+    override suspend fun recalculate(
+        predictionModel: PredictionModel,
+        bgReadingsHistory: BgReadingHistory,
+        carbsInsulinCalculation: CarbsInsulinCalculation
+    ) {
+        TODO: Code aus ApsAlgorithmTest übernehmen
         // IOB, COB, BG kommen aus der Vergangenheit
         // BG Predictions berechnen für verschiedene Szenarien
         // Bewerten aufgrund von Aggressivitätseinstellungen

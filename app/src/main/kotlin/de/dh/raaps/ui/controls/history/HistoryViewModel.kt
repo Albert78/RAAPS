@@ -16,7 +16,7 @@ import de.dh.raaps.common.model.data.Timestamp
 import de.dh.raaps.model.APS
 import de.dh.raaps.model.ApsHistorySnapshot
 import de.dh.raaps.model.CoreState
-import de.dh.raaps.model.TickState
+import de.dh.raaps.model.PredictionTickState
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.first
@@ -84,7 +84,7 @@ data class CurrentBgUiState(
 data class HistoryUiState(
     val isLoading: Boolean,
     val isError: Boolean,
-    val historyTicks: List<TickState?> = listOf(),
+    val historyTicks: List<PredictionTickState?> = listOf(),
     val tickInterval: Minutes = Minutes(5)
 )
 
