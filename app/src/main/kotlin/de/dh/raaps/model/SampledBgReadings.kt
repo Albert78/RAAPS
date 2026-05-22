@@ -19,6 +19,8 @@ class SampledBgReadings(
 ) {
     private val capacity = history.historySize.value / timeline.tickDuration.value
     private val buffer = ShortArray(capacity)
+    var recentTick: Tick = Tick.invalid()
+        private set
 
     /**
      * Samples the entire history.
@@ -26,9 +28,9 @@ class SampledBgReadings(
      * index 1 to (now - 1 tick), and so on.
      */
     fun sampleAvgValues() {
-        val nowTick = timeline.getNowTick()
+        recentTick = timeline.getNowTick()
         for (i in 0 until capacity) {
-            val tick = nowTick - i
+            val tick = recentTick - i
             val avg = history.avgBgValue(
                 start = timeline.timestamp(tick),
                 startInclusive = true,
@@ -39,17 +41,34 @@ class SampledBgReadings(
         }
     }
 
+    fun calculateSavitzkyGolayEndBorder3(): BgValue {
+        val current0 = buffer[0] // Last value
+        val current1 = buffer[1] // Second to last value
+        val current2 = buffer[2] // Third to last value
+        if (current0 == 0.toShort() || current1 == 0.toShort() || current2 == 0.toShort()) return BgValue.INVALID
+
+        val coeffs = SavitzkyGolayFilterWin5Order2.COEFFS
+        // We want the smoothed value for the LAST point, so we cannot apply all 5 coeffs.
+        // -> Border treatment for the filter: Center the coeffs at the last entry in the window
+        // (at this time we need the smoothed value) and use the last window entry (the most current one)
+        // for the last three coeffs. This border treatment seems to be a good compromise.
+        val sum = current2 * coeffs[0] + // Center the coeffs at the 3rd value from behind
+                current1 * coeffs[1] +
+                current0 * (coeffs[2] + coeffs[3] + coeffs[4]) // Use the last entry for the right part of the filter coeffs
+        return BgValue.fromMgDl(sum.toInt())
+    }
+
     /**
-     * Returns the sampled value at the given tick, if it falls within the sampled history.
+     * Returns the sampled value at the given tick, if it falls within the sampled history,
+     * else `BgValue.INVALID`.
      */
-    fun getAt(tick: Tick): BgValue? {
-        val nowTick = timeline.getNowTick()
-        val index = nowTick.value - tick.value
+    fun getAt(tick: Tick): BgValue {
+        val index = recentTick.value - tick.value
 
         if (index in 0 until capacity) {
             val mgdl = buffer[index]
-            return if (mgdl > 0) BgValue.fromMgDl(mgdl) else null
+            return if (mgdl > 0) BgValue.fromMgDl(mgdl) else BgValue.INVALID
         }
-        return null
+        return BgValue.INVALID
     }
 }

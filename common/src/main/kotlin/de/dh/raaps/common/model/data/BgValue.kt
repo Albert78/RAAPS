@@ -22,7 +22,12 @@ value class BgValue(val mgdl: Short): Comparable<BgValue> {
             GlucoseUnit.MMOL -> String.format(Locale.getDefault(), "%.1f", mmol)
         }
 
+    fun isValid(): Boolean = mgdl > 0
+    fun isInvalid(): Boolean = mgdl == 0.toShort()
+
     companion object {
+        val INVALID = BgValue(0)
+
         fun fromMgDl(value: Short): BgValue {
             return BgValue(value)
         }

@@ -31,6 +31,7 @@ class DataReceiver : BroadcastReceiver() {
                 val valueMgDl = round(bundle.getDouble(Intents.XDRIP_EXTRA_BG_ESTIMATE, 0.0))
                 val raw = round(bundle.getDouble(Intents.XDRIP_EXTRA_RAW, 0.0))
                 val sourceSensorName = bundle.getString(Intents.XDRIP_DATA_SOURCE)
+                // TODO: Receive/handle more of the input fields: Sensor id, battery etc.
 
                 val now = System.currentTimeMillis()
                 var sensorStartTime: Long? = bundle.getLong(Intents.XDRIP_EXTRA_SENSOR_STARTED_AT, 0)

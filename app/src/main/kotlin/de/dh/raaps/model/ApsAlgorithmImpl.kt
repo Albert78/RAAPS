@@ -2,7 +2,9 @@ package de.dh.raaps.model
 
 import de.dh.raaps.common.model.data.BgDelta
 import de.dh.raaps.common.model.data.BgReading
+import de.dh.raaps.common.model.data.BgValue
 import de.dh.raaps.common.model.data.Minutes
+import de.dh.raaps.common.model.data.Tick
 import de.dh.raaps.common.model.data.Timestamp
 
 class ApsAlgorithmImpl(
@@ -21,43 +23,36 @@ class ApsAlgorithmImpl(
      * compared to the prediction model.
      */
     private fun calcAvgDeviation(): BgDelta {
-        // Since our readings history contains bg readings which are 1) not sampled and 2) we might have
-        // more than 1 reading per tick (e.g. if we get one reading per minute in a 5 minutes sample interval),
-        // we first calculate the average bg value in each tick:
+        val startTick = predictionModel.getFirstTick()
+        val endTick = timeline.getNowTick()
 
-        // Last value in BgReadingHistory should be at nowTick + 1, so after the end of the iterated
-        // tick range, we should have a last reading
-        val ticksToAvgValues = (predictionModel.getFirstTick()..timeline.getNowTick())
-            .map { tick ->
-                val tick1 = timeline.timestamp(tick)
-                val tick2 = timeline.timestamp(tick + 1)
-
-                tick to bgReadingsHistory.avgBgValue(
-                    tick1,
-                    true,
-                    tick2,
-                    false
-                )
-            }
-
-        // Each slope is the difference of two bg values:
-        val slopes = ticksToAvgValues.zipWithNext { a, b ->
-            val slope = if (a.second == null || b.second == null) null else (b.second!! - a.second!!)
-            // The slope must be associated with the tick of the first element - it will be compared later
-            // with the BGI (which contains the prediction of the slope to the next value)
-            a.first to slope
-        }
-        if (slopes.isEmpty()) return BgDelta(0)
+        var sumDeviationsMgdl = 0
         var numValues = 0
-        val sumDeviations = slopes
-            .sumOf { (tick, slope) ->
-                val predictionTickState = predictionModel.rollingHistory.tryGetTickState(tick)
-                if (predictionTickState == null || slope == null) return@sumOf 0
-                numValues++
-                // The difference of the real bg slope and the predicted bg slope (= bgi) is the deviation
-                (slope - predictionTickState.bgi).mgdl.toInt()
-            }
-        return BgDelta.fromMgDl(sumDeviations / numValues)
+
+        for (t in startTick.value until endTick.value) {
+            val tick = Tick(t)
+            val bgA = sampledBgReadings.getAt(tick)
+            if (!bgA.isValid()) continue
+            val bgB = sampledBgReadings.getAt(Tick(t + 1))
+            if (!bgB.isValid()) continue
+
+            val predictionTickState = predictionModel.rollingHistory.tryGetTickState(tick) ?: continue
+
+            // The difference of the real bg slope and the predicted bg slope (= bgi) is the deviation
+            val actualSlope = bgB - bgA
+            sumDeviationsMgdl += (actualSlope - predictionTickState.bgi).mgdl.toInt()
+            numValues++
+        }
+
+        return if (numValues == 0) BgDelta(0) else BgDelta.fromMgDl(sumDeviationsMgdl / numValues)
+    }
+
+    fun calculatePredictions(currentBG: BgValue, avgCurrentDeviation: BgDelta) {
+        var lastBg = currentBG
+        predictionModel.forEach(from = timeline.getNowTick() + 1, to = predictionModel.getLastTick()) { tick, state ->
+            weiter: Pipeline durchrechnen
+            state.predictedBg = lastBg
+        }
     }
 
     override suspend fun recalculate(currentBG: BgReading) {
@@ -68,6 +63,18 @@ class ApsAlgorithmImpl(
         // calculation costs when we access the input BG readings.
         sampledBgReadings.sampleAvgValues()
 
+        // Filter BG values to avoid big jumps caused by measurement errors.
+        // If we have enough input values, we can use the better SavitzkyGolay filter, else fallback to PTWMA
+        var currentBgFiltered = sampledBgReadings.calculateSavitzkyGolayEndBorder3()
+        if (currentBgFiltered.isInvalid()) {
+            currentBgFiltered = bgReadingsHistory.calculatePTWMA(0.7)
+        }
+
+        if (currentBgFiltered.isInvalid()) {
+            // We cannot create any new predictions if we don't have fresh values
+            return
+        }
+
         // Most of our calculations below are based on a static prediction model for insulin and carbs.
         // To react to dynamic changes (e.g. unannounced snacks), we calculate an average deviation of our
         // model predictions to the real blood glucose.
@@ -75,11 +82,8 @@ class ApsAlgorithmImpl(
         val avgCurrentDeviation = calcAvgDeviation()
         // Assumption: That deviation will be continued in the future but will fade away
 
-        // Filter BG values to avoid big jumps caused by measurement errors
-        bgReadingsHistory.getReadings()
-        SavitzkyGolayFilterWin5Order2.calculateFilteredValue()
-
-        predictionModel.calculateBgPredictions(currentBG, avgCurrentDeviation)
+        // Materialize assumed ISF and IC values, update predicted BGI if changed, update BG if changed
+        calculatePredictions(currentBgFiltered, avgCurrentDeviation)
 
         TODO: Weiter Code aus ApsAlgorithmTest übernehmen
         // IOB, COB, BG kommen aus der Vergangenheit

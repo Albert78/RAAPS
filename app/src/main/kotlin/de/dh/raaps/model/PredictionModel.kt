@@ -1,6 +1,5 @@
 package de.dh.raaps.model
 
-import de.dh.raaps.common.model.data.BgDelta
 import de.dh.raaps.common.model.data.BgValue
 import de.dh.raaps.common.model.data.Tick
 import de.dh.raaps.common.model.data.Timestamp
@@ -60,10 +59,6 @@ class PredictionModel(
         }
     }
 
-    fun calculateBgPredictions(currentBG: BgValue, avgCurrentDeviation: BgDelta) {
-        weiter
-    }
-
     fun toPredictionPoint(tickState: PredictionTickState): PredictionPoint {
         return PredictionPoint(tickState.predictedBg, timeline.timestamp(tickState.tick))
     }
@@ -71,7 +66,7 @@ class PredictionModel(
     fun findNextBgMax(startAt: Timestamp): PredictionPoint? {
         val startTick = timeline.tick(startAt)
 
-        var lastValue: BgValue = BgValue(0)
+        var lastValue: BgValue = BgValue.INVALID
 
         return rollingHistory.findForward(startTick) { tickState ->
             val currentBg = tickState.predictedBg
@@ -95,7 +90,10 @@ class PredictionModel(
         }?.let { tickState -> toPredictionPoint(tickState) }
     }
 
-    fun forEach(action: (Tick, PredictionTickState) -> Unit) {
+    fun forEach(
+        from: Tick = getFirstTick(),
+        to: Tick = getLastTick(),
+        action: (Tick, PredictionTickState) -> Unit) {
         rollingHistory.forEach(action)
     }
 }

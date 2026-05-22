@@ -19,6 +19,11 @@ class RecentBgReadingsHistory(
     var size = 0
         private set
 
+    fun clear() {
+        size = 0
+        buffer.fill(null)
+    }
+
     /**
      * Adds a reading at the correct sorted position.
      * If the capacity is reached, the oldest entries are removed to make room.
@@ -62,7 +67,8 @@ class RecentBgReadingsHistory(
     /**
      * Adds multiple readings efficiently.
      */
-    fun addAll(newReadings: List<BgReading>) {
+    fun setAll(newReadings: List<BgReading>) {
+        clear()
         for (reading in newReadings) {
             add(reading)
         }
@@ -131,6 +137,39 @@ class RecentBgReadingsHistory(
         }
 
         return if (count == 0) null else BgValue.fromMgDl((sum / count).toInt())
+    }
+
+    /**
+     * Returns a filtered BG value by calculating the Parametrized Time-Weighted Moving Average.
+     * If there aren't enough valid values in the given window, this method returns `BgValue(0)`, else it
+     * returns the PTWMA-smoothed value.
+     */
+    fun calculatePTWMA(
+        weightSlope: Double
+    ): BgValue {
+        var weightedSum = 0.0
+        var weightTotal = 0.0
+
+        if (size == 1) {
+            return buffer[0]!!.value
+        } else if (size > 0) {
+            val windowStart = buffer[0]!!.timestamp
+            val windowMs = buffer[size - 1]!!.timestamp - windowStart
+
+            for (i in 0 until size) {
+                val reading = buffer[i]
+                if (reading != null && reading.sampleKind != BgSampleKind.Invalid) {
+                    val weight = weightSlope * (reading.timestamp.ms - windowStart.ms) + (1.0 - weightSlope) * windowMs
+                    weightedSum += reading.value.mgdl * weight
+                    weightTotal += weight
+                }
+            }
+        }
+
+        if (weightTotal <= 0) {
+            return BgValue.INVALID
+        }
+        return BgValue.fromMgDl((weightedSum / weightTotal).toInt())
     }
 
     /**

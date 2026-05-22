@@ -37,7 +37,7 @@ enum class BgTrend {
 
 data class CurrentBgData (
     val isValueOld: Boolean = false,
-    val bgValue: BgValue = BgValue(0),
+    val bgValue: BgValue = BgValue.INVALID,
     val delta: BgDelta? = null,
     val trend: BgTrend? = BgTrend.Flat,
     val timestamp: Timestamp = Timestamp(0),
@@ -45,7 +45,7 @@ data class CurrentBgData (
 ) {
     companion object {
         fun valid(
-            bgValue: BgValue = BgValue(0),
+            bgValue: BgValue,
             delta: BgDelta? = null,
             trend: BgTrend? = BgTrend.Flat,
             timestamp: Timestamp = Timestamp(0),
@@ -60,7 +60,7 @@ data class CurrentBgData (
         )
 
         fun oldValue(
-            bgValue: BgValue = BgValue(0),
+            bgValue: BgValue,
             timestamp: Timestamp = Timestamp(0),
             glucoseUnit: GlucoseUnit = GlucoseUnit.MG_DL
         ) = CurrentBgData(
