@@ -1,8 +1,12 @@
 package de.dh.raaps.model
 
+import de.dh.raaps.common.model.data.BgDelta
 import de.dh.raaps.common.model.data.BgValue
 import de.dh.raaps.common.model.data.Tick
 import de.dh.raaps.common.model.data.Timestamp
+import de.dh.raaps.common.model.data.plus
+import de.dh.raaps.common.model.data.times
+import de.dh.raaps.model.ApsAlgorithmImpl.Companion.DEVIATION_DECAY_FACTOR_PER_TICK
 
 data class PredictionPoint(
     val bg: BgValue,
@@ -39,7 +43,7 @@ class PredictionModel(
      */
     fun calculateInsulinAndCarbs(
         metabolicEventsModel: MetabolicEventsModel,
-        carbsInsulinCalculation: CarbsInsulinCalculation
+        carbsInsulinCalculationModel: CarbsInsulinCalculationModel
     ) {
         val meals = metabolicEventsModel.getMeals()
         val insulinApplications = metabolicEventsModel.getInsulinApplications()
@@ -48,27 +52,98 @@ class PredictionModel(
             // We only need to initialize insulin and carbs, since they only depend on the treatments.
             // They only need to be touched when we have more meals or insulin applications.
             // All other data is calculated in each tick cycle.
-            tickState.effectiveInsulin = carbsInsulinCalculation.effectiveInsulin(
+            tickState.effectiveInsulin = carbsInsulinCalculationModel.effectiveInsulin(
                 insulinApplications,
                 timeline.timestamp(tick)
             )
-            tickState.effectiveCarbs = carbsInsulinCalculation.carbAbsorption(
+            tickState.effectiveCarbs = carbsInsulinCalculationModel.carbAbsorption(
                 meals,
                 timeline.timestamp(tick)
             )
         }
     }
 
+    /**
+     * Calculates all "prediction stages" of the future ticks in our prediction model.
+     * @return `true` if the predicted blood glucose value changed in any of the ticks due to a changed
+     * prediction, else `false`.
+     */
+    fun calculatePredictions(currentBG: BgValue, avgCurrentDeviation: BgDelta, therapyModel: TherapyModel): Boolean {
+        var bg = currentBG
+        var deviation = avgCurrentDeviation
+        var bgChange = false
+        forEach(from = timeline.getNowTick() + 1, to = getLastTick()) { tick, state ->
+            val timestamp = timeline.timestamp(tick)
+            val isf = therapyModel.getIsfFactor(timestamp)
+            val ic = therapyModel.getIcFactor(timestamp)
+
+            if (isf != state.isf || ic != state.ic) {
+                state.isf = isf
+                state.ic = ic
+
+                val insulinEquivalentOfCarbs = state.effectiveCarbs / ic
+                val bgi = (insulinEquivalentOfCarbs - state.effectiveInsulin) * isf
+
+                state.bgi = bgi
+            }
+
+            // Ease out the deviation
+            deviation *= DEVIATION_DECAY_FACTOR_PER_TICK
+
+            bg = bg + state.bgi + deviation
+            if (bg != state.predictedBg) {
+                state.predictedBg = bg
+                bgChange = true
+            }
+        }
+        return bgChange
+    }
+
+    fun advanceToTimestamp(newAnchor: Timestamp) {
+        rollingHistory.moveWindowTo(timeline.tick(newAnchor))
+    }
+
     fun toPredictionPoint(tickState: PredictionTickState): PredictionPoint {
         return PredictionPoint(tickState.predictedBg, timeline.timestamp(tickState.tick))
     }
 
-    fun findNextBgMax(startAt: Timestamp): PredictionPoint? {
+    fun latestPredictionPoint(): PredictionPoint? {
+        return rollingHistory.tryGetTickState(rollingHistory.getLastTick())?.
+            let { tickState -> toPredictionPoint(tickState) }
+    }
+
+    fun findNextBgMin(startAt: Timestamp, returnLatestIfFalling: Boolean): PredictionPoint? {
         val startTick = timeline.tick(startAt)
 
         var lastValue: BgValue = BgValue.INVALID
 
-        return rollingHistory.findForward(startTick) { tickState ->
+        val tickState = rollingHistory.findForward(startTick) { tickState ->
+            val currentBg = tickState.predictedBg
+
+            // We are looking for the point at which the value starts to grow again (local minimum)
+            if (currentBg > lastValue) {
+                // The previous point was the minimum
+                true // Stop search
+            } else {
+                lastValue = currentBg
+                false // Continue searching
+            }
+        }
+        if (tickState != null) {
+            return toPredictionPoint(tickState)
+        } else if (returnLatestIfFalling) {
+            return latestPredictionPoint()
+        } else {
+            return null
+        }
+    }
+
+    fun findNextBgMax(startAt: Timestamp, returnLatestIfRising: Boolean): PredictionPoint? {
+        val startTick = timeline.tick(startAt)
+
+        var lastValue: BgValue = BgValue.INVALID
+
+        val tickState = rollingHistory.findForward(startTick) { tickState ->
             val currentBg = tickState.predictedBg
 
             // We are looking for the point at which the value starts to drop again (local maximum)
@@ -79,7 +154,14 @@ class PredictionModel(
                 lastValue = currentBg
                 false // Continue searching
             }
-        }?.let { tickState -> toPredictionPoint(tickState) }
+        }
+        if (tickState != null) {
+            return toPredictionPoint(tickState)
+        } else if (returnLatestIfRising) {
+            return latestPredictionPoint()
+        } else {
+            return null
+        }
     }
 
     fun findNext(startAt: Timestamp, predicate: (PredictionTickState) -> Boolean): PredictionPoint? {

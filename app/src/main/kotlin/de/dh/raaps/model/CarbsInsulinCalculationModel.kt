@@ -12,7 +12,7 @@ import de.dh.raaps.common.model.data.Timestamp
  * All values are cumulated for a whole interval or are the average for an interval.
  * Note that the accuracy of the calculation is +/- 1 interval for each meal and insulin application.
  */
-class CarbsInsulinCalculation(
+class CarbsInsulinCalculationModel(
     val intervalSize: Minutes,
     val insulinType: InsulinType
 ) {

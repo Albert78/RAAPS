@@ -16,8 +16,8 @@ class PredictionTickState {
     var effectiveCarbs: Double = 0.0 // Sum from all meals in the past
     var effectiveInsulin: Double = 0.0 // Sum from all insulin applications in the past
 
-    // State 2: ISF and IC. Might be adapted by user, so need to be checked each tick.
-    var isf: Double = 0.0 // ISF at the time of this tick, from profile
+    // Stage 2: ISF and IC. Might be adapted by user, so need to be checked each tick.
+    var isf: BgDelta = BgDelta(0) // ISF at the time of this tick, from profile
     var ic: Double = 0.0 // IC at the time of this tick, from profile
 
     // Stage 3: BGI values depend on stages 1 and 2.
@@ -33,7 +33,7 @@ class PredictionTickState {
         this.tick = tick
         effectiveCarbs = 0.0
         effectiveInsulin = 0.0
-        isf = 0.0
+        isf = BgDelta(0)
         ic = 0.0
         bgi = BgDelta(0)
         basal = 0.0

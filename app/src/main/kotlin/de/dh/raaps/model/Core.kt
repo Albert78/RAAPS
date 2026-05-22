@@ -218,7 +218,7 @@ class Core(
                 val alg = calculationAlgorithm
                 if (isRecent && alg != null) {
                     setCoreState(CoreState.Calculating)
-                    alg.recalculate(bg)
+                    alg.recalculateForNewBgValue(bg)
                     setCoreState(CoreState.Idle)
                 }
             }

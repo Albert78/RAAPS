@@ -31,4 +31,8 @@ class ApsTimeline(val tickDuration: Minutes) {
     fun getNowTick(): Tick {
         return tick(Timestamp.now())
     }
+
+    fun ticksPerHour(): Int {
+        return 60 / tickDuration.value
+    }
 }

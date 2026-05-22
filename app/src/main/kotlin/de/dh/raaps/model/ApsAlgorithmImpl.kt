@@ -6,13 +6,18 @@ import de.dh.raaps.common.model.data.BgValue
 import de.dh.raaps.common.model.data.Minutes
 import de.dh.raaps.common.model.data.Tick
 import de.dh.raaps.common.model.data.Timestamp
+import de.dh.raaps.common.model.data.plus
+import de.dh.raaps.common.model.data.times
+import kotlin.compareTo
+import kotlin.math.min
 
 class ApsAlgorithmImpl(
     val timeline: ApsTimeline,
     val metabolicEventsModel: MetabolicEventsModel,
     val bgReadingsHistory: RecentBgReadingsHistory,
     val predictionModel: PredictionModel,
-    val carbsInsulinCalculation: CarbsInsulinCalculation
+    val carbsInsulinCalculationModel: CarbsInsulinCalculationModel,
+    val therapyModel: TherapyModel
 ): ApsAlgorithm {
     val sampledBgReadings = SampledBgReadings(timeline, bgReadingsHistory)
 
@@ -47,15 +52,7 @@ class ApsAlgorithmImpl(
         return if (numValues == 0) BgDelta(0) else BgDelta.fromMgDl(sumDeviationsMgdl / numValues)
     }
 
-    fun calculatePredictions(currentBG: BgValue, avgCurrentDeviation: BgDelta) {
-        var lastBg = currentBG
-        predictionModel.forEach(from = timeline.getNowTick() + 1, to = predictionModel.getLastTick()) { tick, state ->
-            weiter: Pipeline durchrechnen
-            state.predictedBg = lastBg
-        }
-    }
-
-    override suspend fun recalculate(currentBG: BgReading) {
+    override suspend fun recalculateForNewBgValue(currentBG: BgReading) {
         bgReadingsHistory.add(currentBG)
 
         // Sample our unaligned input values to our fixed sample buffer.
@@ -71,7 +68,8 @@ class ApsAlgorithmImpl(
         }
 
         if (currentBgFiltered.isInvalid()) {
-            // We cannot create any new predictions if we don't have fresh values
+            // We cannot make any new predictions if we don't have fresh values.
+            // So we'll stick with the old ones.
             return
         }
 
@@ -82,13 +80,40 @@ class ApsAlgorithmImpl(
         val avgCurrentDeviation = calcAvgDeviation()
         // Assumption: That deviation will be continued in the future but will fade away
 
+        // Move the prediction window forward. It always covers roughly our BG readings history cache
+        // to be able to calculate deviations between the static predictions and the actual readings.
+        predictionModel.advanceToTimestamp(Timestamp.now().minus(PRESERVE_PREDICTIONS_PAST_TIME))
+
         // Materialize assumed ISF and IC values, update predicted BGI if changed, update BG if changed
-        calculatePredictions(currentBgFiltered, avgCurrentDeviation)
+        val bgPredictionChanged = predictionModel.calculatePredictions(currentBgFiltered, avgCurrentDeviation, therapyModel)
+
+        val targetBg = therapyModel.getTarget()
+
+        // 1. Goal: Get out of a current or impending low by lowering your basal rate early
+        // Find the next occurrence where the value falls below the minimum; find the minimum with time
+        predictionModel.findNext(startAt = Timestamp.now()) {
+            it.predictedBg < targetBg.lower
+        }?.let { minStart ->
+            val basalRate = therapyModel.getBasalPerHour(minStart.timestamp)
+            val isf = therapyModel.getIsfFactor(minStart.timestamp)
+            val lowTempDeltaBgPerTick = (basalRate * isf).mgdl.toDouble() / timeline.ticksPerHour()
+            val nextMin = predictionModel.findNextBgMin(startAt = minStart.timestamp, returnLatestIfFalling = true)!!
+            val bgError = targetBg.lower - nextMin.bg
+            val minNumTicksForCorrection = min(
+                (bgError.mgdl / lowTempDeltaBgPerTick).toInt(),
+                ((nextMin.timestamp - Timestamp.now()) / timeline.tickSizeMs).toInt())
+        }
+
+        val nextMin: PredictionPoint = prediction.findNextBgMin(startAt = nextMinStart.timestamp)
+        // Korrektur durch Temp-Basal absenken von Minimum zurückgerechnet, um Error weg zu bekommen
+        val startLowTemp = TODO: vom Minimum zurückgerechnet
+        // TODO: Plane Low temp ein
+        prediction.setLowTemp(from = startLowTemp, to = nextMin)
+        prediction.updateBGIPredictions(startAt = startLowTemp)
+
+
 
         TODO: Weiter Code aus ApsAlgorithmTest übernehmen
-        // IOB, COB, BG kommen aus der Vergangenheit
-        // BG Predictions berechnen für verschiedene Szenarien
-        // Bewerten aufgrund von Aggressivitätseinstellungen
 
         // Actions: Insulin. Aber wie mitteilen? Wir können eine optimale Kurve berechnen, das kann die Pumpe aber ggf nicht.
         // Einstellung des Benutzers:
@@ -102,6 +127,8 @@ class ApsAlgorithmImpl(
         val DEVIATION_TIME_BASE = Minutes(30)
         val PRESERVE_PREDICTIONS_PAST_TIME = DEVIATION_TIME_BASE
 
+        const val DEVIATION_DECAY_FACTOR_PER_TICK = 0.9
+
         suspend fun create(
             metabolicEventsModel: MetabolicEventsModel,
             readingsHistory: List<BgReading>,
@@ -113,10 +140,10 @@ class ApsAlgorithmImpl(
                 timeline = timeline
             )
             predictionModel.initializeToTick(Timestamp.now().minus(PRESERVE_PREDICTIONS_PAST_TIME))
-            val carbsInsulinCalculation = CarbsInsulinCalculation(tickInterval)
+            val carbsInsulinCalculationModel = CarbsInsulinCalculationModel(tickInterval)
             predictionModel.calculateInsulinAndCarbs(
                 metabolicEventsModel,
-                carbsInsulinCalculation
+                carbsInsulinCalculationModel
             )
             val bgReadingsHistory = RecentBgReadingsHistory(DEVIATION_TIME_BASE)
             bgReadingsHistory.setAll(readingsHistory)
@@ -125,7 +152,7 @@ class ApsAlgorithmImpl(
                 metabolicEventsModel = metabolicEventsModel,
                 bgReadingsHistory = bgReadingsHistory,
                 predictionModel = predictionModel,
-                carbsInsulinCalculation
+                carbsInsulinCalculationModel
             )
         }
     }
