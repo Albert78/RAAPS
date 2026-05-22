@@ -8,7 +8,7 @@ import de.dh.raaps.common.model.data.Timestamp
 class ApsAlgorithmImpl(
     val timeline: ApsTimeline,
     val metabolicEventsModel: MetabolicEventsModel,
-    val bgReadingsHistory: BgReadingHistory,
+    val bgReadingsHistory: RecentBgReadingsHistory,
     val predictionModel: PredictionModel,
     val carbsInsulinCalculation: CarbsInsulinCalculation
 ): ApsAlgorithm {
@@ -107,7 +107,7 @@ class ApsAlgorithmImpl(
                 metabolicEventsModel,
                 carbsInsulinCalculation
             )
-            val bgReadingsHistory = BgReadingHistory(DEVIATION_TIME_BASE)
+            val bgReadingsHistory = RecentBgReadingsHistory(DEVIATION_TIME_BASE)
             bgReadingsHistory.setAll(readingsHistory)
             return ApsAlgorithmImpl(
                 timeline = timeline,
