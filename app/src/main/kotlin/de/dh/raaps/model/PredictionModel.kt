@@ -27,8 +27,8 @@ class PredictionModel(
 ) {
     var rollingHistory = RollingPredictionWindow(predictionWindowHours = predictionWindowHours, tickDuration = tickInterval, timestamp = Timestamp.now())
 
-    fun clear() {
-        rollingHistory.init(rollingHistory.tick(Timestamp.now()))
+    fun initializeToTick(newAnchorTimestamp: Timestamp) {
+        rollingHistory.init(rollingHistory.tick(newAnchorTimestamp))
     }
 
     fun toPredictionPoint(tickState: PredictionTickState): PredictionPoint {

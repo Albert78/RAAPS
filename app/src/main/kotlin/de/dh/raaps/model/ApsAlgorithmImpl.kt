@@ -1,35 +1,18 @@
 package de.dh.raaps.model
 
-class ApsAlgorithmImpl: ApsAlgorithm {
-    override suspend fun initialize(
-        predictionModel: PredictionModel,
-        metabolicEventsModel: MetabolicEventsModel,
-        carbsInsulinCalculation: CarbsInsulinCalculation
-    ) {
-        metabolicEventsModel.load()
-        val meals = metabolicEventsModel.getMeals()
-        val insulinApplications = metabolicEventsModel.getInsulinApplications()
-        predictionModel.forEach { tick, tickState ->
-            tickState.initializeToTick(tick)
-            // We only need to initialize insulin and carbs, since they only depend on the treatments.
-            // They only need to be touched when we have more meals or insulin applications.
-            // All other data is calculated in each tick cycle.
-            tickState.effectiveInsulin = carbsInsulinCalculation.effectiveInsulin(
-                insulinApplications,
-                predictionModel.rollingHistory.timestamp(tick)
-            )
-            tickState.effectiveCarbs = carbsInsulinCalculation.carbAbsorption(
-                meals,
-                predictionModel.rollingHistory.timestamp(tick)
-            )
-        }
-    }
+import de.dh.raaps.common.model.data.Minutes
+import de.dh.raaps.common.model.data.Timestamp
 
-    override suspend fun recalculate(
-        predictionModel: PredictionModel,
-        bgReadingsHistory: BgReadingHistory,
-        carbsInsulinCalculation: CarbsInsulinCalculation
-    ) {
+class ApsAlgorithmImpl(
+    val metabolicEventsModel: MetabolicEventsModel,
+    val bgReadingsHistory: BgReadingHistory,
+    val predictionModel: PredictionModel,
+    val tickInterval: Minutes
+): ApsAlgorithm {
+    private val carbsInsulinCalculation: CarbsInsulinCalculation =
+        CarbsInsulinCalculation(tickInterval)
+
+    override suspend fun recalculate() {
         TODO: Code aus ApsAlgorithmTest übernehmen
         // IOB, COB, BG kommen aus der Vergangenheit
         // BG Predictions berechnen für verschiedene Szenarien
@@ -40,5 +23,44 @@ class ApsAlgorithmImpl: ApsAlgorithm {
         // - SMB nutzen? Vorteil: Bessere Steuerung. Nachteil: APS muss immer da sein, höhere Rechenlast.
         // - Pumpen-EB bzw. Dual-Bolus nutzen: Es passiert mehr in der Pumpe. Hierzu benötigen wir Zugriff auf die Pumpen-Fähigkeiten
         // Ausgabe dann: Insulinplan. Das Pumpenplugin muss das umsetzen.
+    }
+
+    companion object {
+        const val PREDICTION_WINDOW_HOURS = 10
+        val PRESERVE_PREDICTIONS_PAST_TIME = Minutes(30)
+
+        suspend fun create(
+            metabolicEventsModel: MetabolicEventsModel,
+            bgReadingsHistory: BgReadingHistory,
+            tickInterval: Minutes
+        ): ApsAlgorithm {
+            val predictionModel = PredictionModel(
+                predictionWindowHours = PREDICTION_WINDOW_HOURS,
+                tickInterval = tickInterval
+            )
+            predictionModel.initializeToTick(Timestamp.now().minusMinutes(PRESERVE_PREDICTIONS_PAST_TIME))
+            val meals = metabolicEventsModel.getMeals()
+            val insulinApplications = metabolicEventsModel.getInsulinApplications()
+            predictionModel.forEach { tick, tickState ->
+                tickState.initializeToTick(tick)
+                // We only need to initialize insulin and carbs, since they only depend on the treatments.
+                // They only need to be touched when we have more meals or insulin applications.
+                // All other data is calculated in each tick cycle.
+                tickState.effectiveInsulin = carbsInsulinCalculation.effectiveInsulin(
+                    insulinApplications,
+                    predictionModel.rollingHistory.timestamp(tick)
+                )
+                tickState.effectiveCarbs = carbsInsulinCalculation.carbAbsorption(
+                    meals,
+                    predictionModel.rollingHistory.timestamp(tick)
+                )
+            }
+            return ApsAlgorithmImpl(
+                metabolicEventsModel = metabolicEventsModel,
+                bgReadingsHistory = bgReadingsHistory,
+                predictionModel = predictionModel,
+                tickInterval = tickInterval
+            )
+        }
     }
 }
