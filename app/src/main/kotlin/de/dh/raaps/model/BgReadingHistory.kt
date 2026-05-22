@@ -2,82 +2,40 @@ package de.dh.raaps.model
 
 import de.dh.raaps.common.model.data.BgReading
 import de.dh.raaps.common.model.data.Minutes
-import de.dh.raaps.common.model.data.Tick
+import de.dh.raaps.common.model.data.Timestamp
+import java.util.NavigableMap
+import java.util.TreeMap
 
 /**
- * A simplified ring buffer to store a window of BgReadings.
- * The anchorTick represents the youngest (newest) tick in the window.
+ * Small facade for a [TreeMap] which automatically prunes old items.
  */
 class BgReadingHistory(
-    val historyHours: Int,
-    val tickInterval: Minutes
+    val historySize: Minutes
 ) {
-    private val capacity = historyHours * 60 / tickInterval.value
-
-    private val buffer = arrayOfNulls<BgReading>(capacity)
+    private val items = TreeMap<Timestamp, BgReading>()
 
     /**
-     * The youngest (newest) tick currently held in the buffer.
+     * Adds a reading to the history. Prunes the history, if needed.
      */
-    var anchorTick: Tick = Tick.invalid()
-        private set
-
-    fun clear() {
-        buffer.fill(null)
-        anchorTick = Tick.invalid()
+    fun add(reading: BgReading) {
+        prune()
+        items[reading.timestamp] = reading
     }
 
-    /**
-     * Adds or updates a reading at the given tick.
-     * If the tick is newer than the current anchorTick, the window advances.
-     */
-    fun add(tick: Tick, reading: BgReading) {
-        if (anchorTick == Tick.invalid()) {
-            anchorTick = tick
-        } else if (tick > anchorTick) {
-            advanceTo(tick)
-        }
-
-        // Only store if the tick is within the window [anchorTick - capacity + 1, anchorTick]
-        if (tick.value > anchorTick.value - capacity) {
-            buffer[bufferIndex(tick)] = reading
+    fun addAll(readingsHistory: List<BgReading>) {
+        prune()
+        for (reading in readingsHistory) {
+            items[reading.timestamp] = reading
         }
     }
 
-    /**
-     * Advances the window's end point. Slots that the window moves over are cleared.
-     */
-    fun advanceTo(newAnchorTick: Tick) {
-        if (anchorTick == Tick.invalid()) {
-            anchorTick = newAnchorTick
-            return
-        }
-
-        if (newAnchorTick > anchorTick) {
-            val ticksToClear = (newAnchorTick.value - anchorTick.value).coerceAtMost(capacity)
-            for (i in 1..ticksToClear) {
-                buffer[bufferIndex(Tick(anchorTick.value + i))] = null
-            }
-            anchorTick = newAnchorTick
-        }
+    fun prune() {
+        val pruneThreshold = Timestamp.now().minus(historySize)
+        items.headMap(pruneThreshold, false).clear() // Remove complete range of old items
     }
 
-    /**
-     * Returns all stored readings as a list, ordered by time (tick value).
-     */
-    fun toList(): List<BgReading> {
-        if (anchorTick == Tick.invalid()) return emptyList()
-
-        val result = ArrayList<BgReading>(capacity)
-        val startTickValue = anchorTick.value - capacity + 1
-        for (i in 0 until capacity) {
-            val reading = buffer[bufferIndex(Tick(startTickValue + i))]
-            if (reading != null) {
-                result.add(reading)
-            }
-        }
-        return result
+    fun items(): NavigableMap<Timestamp, BgReading> {
+        prune()
+        return items
     }
-
-    private fun bufferIndex(tick: Tick): Int = tick.value % capacity
 }

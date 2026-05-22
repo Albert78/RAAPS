@@ -1,5 +1,7 @@
 package de.dh.raaps.model
 
+import androidx.window.core.SpecificationComputer.Companion.startSpecification
+import de.dh.raaps.common.model.data.BgReading
 import de.dh.raaps.common.model.data.Minutes
 import de.dh.raaps.common.model.data.Timestamp
 
@@ -7,13 +9,27 @@ class ApsAlgorithmImpl(
     val metabolicEventsModel: MetabolicEventsModel,
     val bgReadingsHistory: BgReadingHistory,
     val predictionModel: PredictionModel,
+    val carbsInsulinCalculation: CarbsInsulinCalculation,
     val tickInterval: Minutes
 ): ApsAlgorithm {
-    private val carbsInsulinCalculation: CarbsInsulinCalculation =
-        CarbsInsulinCalculation(tickInterval)
+    private fun calcAvgDeviation(deviationTimeBase: Minutes): Double {
+        var tick = predictionModel.getFirstTick()
 
-    override suspend fun recalculate() {
-        TODO: Code aus ApsAlgorithmTest übernehmen
+        var ts = Timestamp.now().minus(deviationTimeBase)
+        weiter()
+    }
+
+    override suspend fun recalculate(bg: BgReading) {
+        bgReadingsHistory.add(bg)
+
+        // Most of our calculations below are based on a static prediction model for insulin and carbs.
+        // To react to dynamic changes (e.g. unannounced snacks), we calculate an average deviation of our
+        // model predictions to the real blood glucose.
+        // The deviation is the actual slope of bg values minus the bgi, which is the predicted slope.
+        val avgCurrentDeviation = calcDeviation(DEVIATION_TIME_BASE)
+        // Assumption: That deviation will be continued in the future but will fade away
+
+        TODO: Weiter Code aus ApsAlgorithmTest übernehmen
         // IOB, COB, BG kommen aus der Vergangenheit
         // BG Predictions berechnen für verschiedene Szenarien
         // Bewerten aufgrund von Aggressivitätseinstellungen
@@ -27,20 +43,22 @@ class ApsAlgorithmImpl(
 
     companion object {
         const val PREDICTION_WINDOW_HOURS = 10
-        val PRESERVE_PREDICTIONS_PAST_TIME = Minutes(30)
+        val DEVIATION_TIME_BASE = Minutes(30)
+        val PRESERVE_PREDICTIONS_PAST_TIME = DEVIATION_TIME_BASE
 
         suspend fun create(
             metabolicEventsModel: MetabolicEventsModel,
-            bgReadingsHistory: BgReadingHistory,
+            readingsHistory: List<BgReading>,
             tickInterval: Minutes
         ): ApsAlgorithm {
             val predictionModel = PredictionModel(
                 predictionWindowHours = PREDICTION_WINDOW_HOURS,
                 tickInterval = tickInterval
             )
-            predictionModel.initializeToTick(Timestamp.now().minusMinutes(PRESERVE_PREDICTIONS_PAST_TIME))
+            predictionModel.initializeToTick(Timestamp.now().minus(PRESERVE_PREDICTIONS_PAST_TIME))
             val meals = metabolicEventsModel.getMeals()
             val insulinApplications = metabolicEventsModel.getInsulinApplications()
+            val carbsInsulinCalculation = CarbsInsulinCalculation(tickInterval)
             predictionModel.forEach { tick, tickState ->
                 tickState.initializeToTick(tick)
                 // We only need to initialize insulin and carbs, since they only depend on the treatments.
@@ -55,10 +73,13 @@ class ApsAlgorithmImpl(
                     predictionModel.rollingHistory.timestamp(tick)
                 )
             }
+            val bgReadingsHistory = BgReadingHistory(DEVIATION_TIME_BASE)
+            bgReadingsHistory.addAll(readingsHistory)
             return ApsAlgorithmImpl(
                 metabolicEventsModel = metabolicEventsModel,
                 bgReadingsHistory = bgReadingsHistory,
                 predictionModel = predictionModel,
+                carbsInsulinCalculation,
                 tickInterval = tickInterval
             )
         }

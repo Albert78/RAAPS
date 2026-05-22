@@ -10,7 +10,6 @@ import de.dh.raaps.common.model.data.Minutes
 import de.dh.raaps.common.model.data.SensorType
 import de.dh.raaps.common.model.data.Timestamp
 import de.dh.raaps.data.DataRepository
-import kotlinx.coroutines.flow.asFlow
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlin.math.abs
@@ -80,11 +79,6 @@ class Core(
     private val onAcquireBusyState: () -> Unit,
     private val onReleaseBusyState: () -> Unit
 ) {
-    private val bgReadingsHistory = BgReadingHistory(
-        historyHours = BG_READINGS_HISTORY_HOURS,
-        tickInterval = TICK_INTERVAL
-    )
-
     private var calculationAlgorithm: ApsAlgorithm? = null
 
     // State
@@ -145,23 +139,18 @@ class Core(
                 setCoreState(CoreState.Initializing)
 
                 metabolicEventsModel.load()
-                bgReadingsHistory.clear()
-                dataRepository.loadBgReadings(from = Timestamp.now().minusHours(bgReadingsHistory.historyHours))
-                    .asFlow()
-                    .sampleByTickStable(TICK_INTERVAL)
-                    .collect { (bg, tick) ->
-                        if (currentBg == null || bg.timestamp >= currentBg!!.timestamp) {
-                            lastBg = currentBg
-                            currentBg = bg
-                        }
-                        bgReadingsHistory.add(
-                            tick = tick,
-                            reading = bg
-                        )
-                    }
+
+                // Not so nice, in fact, the readings history is part of the ApsAlgorithmImpl and should
+                // be built there. But for the moment, I want to keep ApsAlgorithmImpl free of dataRepository,
+                // lets see if we change that in the future.
+                val readingsHistory = dataRepository.loadBgReadings(from = Timestamp.now().minus(ApsAlgorithmImpl.DEVIATION_TIME_BASE))
+
+                currentBg = readingsHistory.lastOrNull()
+                lastBg = if (readingsHistory.size >= 2) readingsHistory[readingsHistory.size - 2] else null
+
                 calculationAlgorithm = ApsAlgorithmImpl.create(
                     metabolicEventsModel,
-                    bgReadingsHistory,
+                    readingsHistory,
                     TICK_INTERVAL
                 )
                 onDataUpdated()
@@ -194,13 +183,11 @@ class Core(
 
         // Collect for core calculation
         persistedValues
-            .sampleByTickStable(TICK_INTERVAL)
             // Threading notice:
             // The .collect call will block our coroutine, so it must be the last action in this method.
             // But since we're in a coroutine, the call won't block our (single) thread while
             // waiting for new values; instead, it will just suspend and free the thread for other work.
-            .collect { (bg, tick) ->
-                bgReadingsHistory.add(tick, bg)
+            .collect { bg ->
                 updateBg(bg)
             }
     }
@@ -231,7 +218,7 @@ class Core(
                 val alg = calculationAlgorithm
                 if (isRecent && alg != null) {
                     setCoreState(CoreState.Calculating)
-                    alg.recalculate()
+                    alg.recalculate(bg)
                     setCoreState(CoreState.Idle)
                 }
             }
@@ -242,7 +229,6 @@ class Core(
     companion object {
         val TAG = Core::class.simpleName
 
-        const val BG_READINGS_HISTORY_HOURS = 10
         const val METABOLIC_EVENTS_HISTORY_HOURS = 10
         const val TICK_INTERVAL_MINUTES: Short = 5
         val TICK_INTERVAL = Minutes(TICK_INTERVAL_MINUTES)
