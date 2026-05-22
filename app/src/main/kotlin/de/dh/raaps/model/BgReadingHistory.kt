@@ -24,7 +24,7 @@ class BgReadingHistory(
         items[reading.timestamp] = reading
     }
 
-    fun addAll(readingsHistory: List<BgReading>) {
+    fun setAll(readingsHistory: List<BgReading>) {
         prune()
         for (reading in readingsHistory) {
             items[reading.timestamp] = reading

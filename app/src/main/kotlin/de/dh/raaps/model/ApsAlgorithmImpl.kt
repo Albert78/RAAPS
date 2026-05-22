@@ -1,7 +1,7 @@
 package de.dh.raaps.model
 
+import de.dh.raaps.common.model.data.BgDelta
 import de.dh.raaps.common.model.data.BgReading
-import de.dh.raaps.common.model.data.BgSampleKind
 import de.dh.raaps.common.model.data.Minutes
 import de.dh.raaps.common.model.data.Timestamp
 
@@ -12,35 +12,54 @@ class ApsAlgorithmImpl(
     val predictionModel: PredictionModel,
     val carbsInsulinCalculation: CarbsInsulinCalculation
 ): ApsAlgorithm {
-    private fun calcAvgDeviation(): Double {
-        // Last value in BgReadingHistory should be at nowTick + 1, so at the end of the iterated
-        // range, we have 2 more ticks with readings
-        for (tick in predictionModel.getFirstTick()..timeline.getNowTick() - 1) {
-            val tick1 = timeline.timestamp(tick)
-            val tick2 = timeline.timestamp(tick + 1)
-            val tick3 = timeline.timestamp(tick + 2)
-            val avgBgValue1 = bgReadingsHistory.avgBgValue(
-                tick1,
-                true,
-                tick2,
-                false
-            )
-            val avgBgValue2 = bgReadingsHistory.avgBgValue(
-                tick2,
-                true,
-                tick3,
-                false
-            )
-            val slope = avgBgValue2 - avgBgValue1
+    /**
+     * Calculate the deviation between previous forecasts and the blood glucose values actually received.
+     * This is done by comparing recent blood glucose slopes to the predicted BGI (Blood Glucose Impact) values.
+     * Deviations typically occur due to unannounced meals or variations in insulin/carb sensitivity
+     * compared to the prediction model.
+     */
+    private fun calcAvgDeviation(): BgDelta {
+        // Since our readings history contains bg readings which are 1) not sampled and 2) we might have
+        // more than 1 reading per tick (e.g. if we get one reading per minute in a 5 minutes sample interval),
+        // we first calculate the average bg value in each tick:
+
+        // Last value in BgReadingHistory should be at nowTick + 1, so after the end of the iterated
+        // tick range, we should have a last reading
+        val ticksToAvgValues = (predictionModel.getFirstTick()..timeline.getNowTick())
+            .map { tick ->
+                val tick1 = timeline.timestamp(tick)
+                val tick2 = timeline.timestamp(tick + 1)
+
+                tick to bgReadingsHistory.avgBgValue(
+                    tick1,
+                    true,
+                    tick2,
+                    false
+                )
+            }
+
+        // Each slope is the difference of two bg values:
+        val slopes = ticksToAvgValues.zipWithNext { a, b ->
+            val slope = if (a.second == null || b.second == null) null else (b.second!! - a.second!!)
+            // The slope must be associated with the tick of the first element - it will be compared later
+            // with the BGI (which contains the prediction of the slope to the next value)
+            a.first to slope
         }
-
-
-        var ts = Timestamp.now().minus(deviationTimeBase)
-        weiter()
+        if (slopes.isEmpty()) return BgDelta(0)
+        var numValues = 0
+        val sumDeviations = slopes
+            .sumOf { (tick, slope) ->
+                val predictionTickState = predictionModel.rollingHistory.tryGetTickState(tick)
+                if (predictionTickState == null || slope == null) return@sumOf 0
+                numValues++
+                // The difference of the real bg slope and the predicted bg slope (= bgi) is the deviation
+                (slope - predictionTickState.bgi).mgdl.toInt()
+            }
+        return BgDelta.fromMgDl(sumDeviations / numValues)
     }
 
-    override suspend fun recalculate(bg: BgReading) {
-        bgReadingsHistory.add(bg)
+    override suspend fun recalculate(currentBG: BgReading) {
+        bgReadingsHistory.add(currentBG)
 
         // Most of our calculations below are based on a static prediction model for insulin and carbs.
         // To react to dynamic changes (e.g. unannounced snacks), we calculate an average deviation of our
@@ -48,6 +67,12 @@ class ApsAlgorithmImpl(
         // The deviation is the actual slope of bg values minus the bgi, which is the predicted slope.
         val avgCurrentDeviation = calcAvgDeviation()
         // Assumption: That deviation will be continued in the future but will fade away
+
+        // Filter BG values to avoid big jumps caused by measurement errors
+        bgReadingsHistory.getReadings()
+        SavitzkyGolayFilterWin5Order2.calculateFilteredValue()
+
+        predictionModel.calculateBgPredictions(currentBG, avgCurrentDeviation)
 
         TODO: Weiter Code aus ApsAlgorithmTest übernehmen
         // IOB, COB, BG kommen aus der Vergangenheit
@@ -77,25 +102,13 @@ class ApsAlgorithmImpl(
                 timeline = timeline
             )
             predictionModel.initializeToTick(Timestamp.now().minus(PRESERVE_PREDICTIONS_PAST_TIME))
-            val meals = metabolicEventsModel.getMeals()
-            val insulinApplications = metabolicEventsModel.getInsulinApplications()
             val carbsInsulinCalculation = CarbsInsulinCalculation(tickInterval)
-            predictionModel.forEach { tick, tickState ->
-                tickState.initializeToTick(tick)
-                // We only need to initialize insulin and carbs, since they only depend on the treatments.
-                // They only need to be touched when we have more meals or insulin applications.
-                // All other data is calculated in each tick cycle.
-                tickState.effectiveInsulin = carbsInsulinCalculation.effectiveInsulin(
-                    insulinApplications,
-                    timeline.timestamp(tick)
-                )
-                tickState.effectiveCarbs = carbsInsulinCalculation.carbAbsorption(
-                    meals,
-                    timeline.timestamp(tick)
-                )
-            }
+            predictionModel.calculateInsulinAndCarbs(
+                metabolicEventsModel,
+                carbsInsulinCalculation
+            )
             val bgReadingsHistory = BgReadingHistory(DEVIATION_TIME_BASE)
-            bgReadingsHistory.addAll(readingsHistory)
+            bgReadingsHistory.setAll(readingsHistory)
             return ApsAlgorithmImpl(
                 timeline = timeline,
                 metabolicEventsModel = metabolicEventsModel,

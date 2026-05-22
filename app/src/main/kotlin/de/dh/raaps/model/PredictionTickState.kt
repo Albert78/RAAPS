@@ -1,5 +1,6 @@
 package de.dh.raaps.model
 
+import de.dh.raaps.common.model.data.BgDelta
 import de.dh.raaps.common.model.data.BgValue
 import de.dh.raaps.common.model.data.Tick
 
@@ -25,7 +26,7 @@ class PredictionTickState {
         effectiveInsulin = 0.0
         isf = 0.0
         ic = 0.0
-        bgi = BgValue(0)
+        bgi = BgDelta(0)
         basal = 0.0
         predictedBg = BgValue(0)
     }

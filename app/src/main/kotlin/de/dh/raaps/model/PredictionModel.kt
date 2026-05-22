@@ -1,5 +1,6 @@
 package de.dh.raaps.model
 
+import de.dh.raaps.common.model.data.BgDelta
 import de.dh.raaps.common.model.data.BgValue
 import de.dh.raaps.common.model.data.Tick
 import de.dh.raaps.common.model.data.Timestamp
@@ -31,6 +32,36 @@ class PredictionModel(
 
     fun initializeToTick(newAnchorTimestamp: Timestamp) {
         rollingHistory.init(timeline.tick(newAnchorTimestamp))
+    }
+
+    /**
+     * Initialize the predictions to the first state where all effective insulin and effective carbs
+     * are calculated.
+     */
+    fun calculateInsulinAndCarbs(
+        metabolicEventsModel: MetabolicEventsModel,
+        carbsInsulinCalculation: CarbsInsulinCalculation
+    ) {
+        val meals = metabolicEventsModel.getMeals()
+        val insulinApplications = metabolicEventsModel.getInsulinApplications()
+        forEach { tick, tickState ->
+            tickState.initializeToTick(tick)
+            // We only need to initialize insulin and carbs, since they only depend on the treatments.
+            // They only need to be touched when we have more meals or insulin applications.
+            // All other data is calculated in each tick cycle.
+            tickState.effectiveInsulin = carbsInsulinCalculation.effectiveInsulin(
+                insulinApplications,
+                timeline.timestamp(tick)
+            )
+            tickState.effectiveCarbs = carbsInsulinCalculation.carbAbsorption(
+                meals,
+                timeline.timestamp(tick)
+            )
+        }
+    }
+
+    fun calculateBgPredictions(currentBG: BgValue, avgCurrentDeviation: BgDelta) {
+        weiter
     }
 
     fun toPredictionPoint(tickState: PredictionTickState): PredictionPoint {
