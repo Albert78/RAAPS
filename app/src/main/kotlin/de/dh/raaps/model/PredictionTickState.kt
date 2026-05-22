@@ -15,7 +15,7 @@ class PredictionTickState {
     var effectiveInsulin: Double = 0.0 // Sum from all insulin applications in the past
     var isf: Double = 0.0 // ISF at the time of this tick, from profile
     var ic: Double = 0.0 // IC at the time of this tick, from profile
-    var bgi: BgValue = BgValue(0) // For all predictions, calculated from effectiveCarbs, effectiveInsulin, isf and ic
+    var bgi: BgDelta = BgDelta(0) // For all predictions, calculated from effectiveCarbs, effectiveInsulin, isf and ic
     var basal: Double = 0.0 // Remember temp low decisions
     var predictedBg: BgValue = BgValue(0) // Calculated from a starting BG, applying BGIs of previous ticks
 

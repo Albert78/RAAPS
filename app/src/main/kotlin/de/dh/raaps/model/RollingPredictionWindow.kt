@@ -1,23 +1,21 @@
 package de.dh.raaps.model
 
-import de.dh.raaps.common.model.data.Minutes
 import de.dh.raaps.common.model.data.Tick
 import de.dh.raaps.common.model.data.Timestamp
 
 class RollingPredictionWindow(
     val predictionWindowHours: Int,
-    val tickDuration: Minutes,
+    val timeline: ApsTimeline,
     timestamp: Timestamp
 ) {
-    private val capacity = (predictionWindowHours * 60) / tickDuration.value.toInt()
+    private val capacity = (predictionWindowHours * 60) / timeline.tickDuration.value.toInt()
     // Ring buffer which holds our prediction window
     private val buffer = Array(capacity) { _ -> PredictionTickState()}
 
     var anchorTick: Tick = Tick.invalid()
-    val tickSizeMs = tickDuration.value * 60 * 1000
 
     init {
-        init(tick(timestamp))
+        init(timeline.tick(timestamp))
     }
 
     fun init(newAnchorTick: Tick = anchorTick) {
@@ -29,18 +27,6 @@ class RollingPredictionWindow(
         for (tick in getFirstTick()..getLastTick()) {
             tryGetTickState(tick)?.let { action(tick, it) }
         }
-    }
-
-    fun tick(timestamp: Timestamp): Tick {
-        return Tick((timestamp.ms  / tickSizeMs).toInt())
-    }
-
-    fun timestamp(tick: Tick): Timestamp {
-        return Timestamp(tick.value.toLong() * tickSizeMs)
-    }
-
-    fun getNowTick(): Tick {
-        return tick(Timestamp.now())
     }
 
     fun getFirstTick() = anchorTick

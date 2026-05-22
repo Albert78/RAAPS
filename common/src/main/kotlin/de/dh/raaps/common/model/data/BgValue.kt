@@ -14,22 +14,13 @@ value class BgValue(val mgdl: Short): Comparable<BgValue> {
         get() = (mgdl / MMOL_TO_MGDL * 10.0).roundToInt() / 10.0
 
     override fun compareTo(other: BgValue): Int = mgdl.compareTo(other.mgdl)
+    operator fun minus(other: BgValue): BgDelta = BgDelta.fromMgDl(this.mgdl - other.mgdl)
 
     fun toString(glucoseUnit: GlucoseUnit) =
         when (glucoseUnit) {
             GlucoseUnit.MG_DL -> mgdl.toString()
             GlucoseUnit.MMOL -> String.format(Locale.getDefault(), "%.1f", mmol)
         }
-
-    fun toDiff(glucoseUnit: GlucoseUnit): String {
-        if (mgdl == 0.toShort()) {
-            return "\u00B10" // Plus/minus 0
-        }
-        return when (glucoseUnit) {
-            GlucoseUnit.MG_DL -> String.format(Locale.getDefault(), "%+d", mgdl)
-            GlucoseUnit.MMOL -> String.format(Locale.getDefault(), "%+.1f", mmol)
-        }
-    }
 
     companion object {
         fun fromMgDl(value: Short): BgValue {

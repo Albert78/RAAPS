@@ -9,6 +9,7 @@ import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.CreationExtras
 import de.dh.raaps.MainApplication
 import de.dh.raaps.common.model.ToDo
+import de.dh.raaps.common.model.data.BgDelta
 import de.dh.raaps.common.model.data.BgValue
 import de.dh.raaps.common.model.data.GlucoseUnit
 import de.dh.raaps.common.model.data.Minutes
@@ -37,7 +38,7 @@ enum class BgTrend {
 data class CurrentBgData (
     val isValueOld: Boolean = false,
     val bgValue: BgValue = BgValue(0),
-    val delta: BgValue? = null,
+    val delta: BgDelta? = null,
     val trend: BgTrend? = BgTrend.Flat,
     val timestamp: Timestamp = Timestamp(0),
     val glucoseUnit: GlucoseUnit = GlucoseUnit.MG_DL
@@ -45,7 +46,7 @@ data class CurrentBgData (
     companion object {
         fun valid(
             bgValue: BgValue = BgValue(0),
-            delta: BgValue? = null,
+            delta: BgDelta? = null,
             trend: BgTrend? = BgTrend.Flat,
             timestamp: Timestamp = Timestamp(0),
             glucoseUnit: GlucoseUnit = GlucoseUnit.MG_DL
@@ -221,7 +222,7 @@ class HistoryViewModel(
                     isError = false,
                     currentBgValue = CurrentBgData.valid(
                         bgValue = bgValue,
-                        delta = regressionDelta5m?.let { BgValue.fromMgDl(it.toInt()) },
+                        delta = regressionDelta5m?.let { BgDelta.fromMgDl(it.toInt()) },
                         trend = trend,
                         timestamp = latest.timestamp,
                         glucoseUnit = glucoseUnit

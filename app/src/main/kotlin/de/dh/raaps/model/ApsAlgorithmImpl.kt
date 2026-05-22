@@ -1,19 +1,39 @@
 package de.dh.raaps.model
 
-import androidx.window.core.SpecificationComputer.Companion.startSpecification
 import de.dh.raaps.common.model.data.BgReading
+import de.dh.raaps.common.model.data.BgSampleKind
 import de.dh.raaps.common.model.data.Minutes
 import de.dh.raaps.common.model.data.Timestamp
 
 class ApsAlgorithmImpl(
+    val timeline: ApsTimeline,
     val metabolicEventsModel: MetabolicEventsModel,
     val bgReadingsHistory: BgReadingHistory,
     val predictionModel: PredictionModel,
-    val carbsInsulinCalculation: CarbsInsulinCalculation,
-    val tickInterval: Minutes
+    val carbsInsulinCalculation: CarbsInsulinCalculation
 ): ApsAlgorithm {
-    private fun calcAvgDeviation(deviationTimeBase: Minutes): Double {
-        var tick = predictionModel.getFirstTick()
+    private fun calcAvgDeviation(): Double {
+        // Last value in BgReadingHistory should be at nowTick + 1, so at the end of the iterated
+        // range, we have 2 more ticks with readings
+        for (tick in predictionModel.getFirstTick()..timeline.getNowTick() - 1) {
+            val tick1 = timeline.timestamp(tick)
+            val tick2 = timeline.timestamp(tick + 1)
+            val tick3 = timeline.timestamp(tick + 2)
+            val avgBgValue1 = bgReadingsHistory.avgBgValue(
+                tick1,
+                true,
+                tick2,
+                false
+            )
+            val avgBgValue2 = bgReadingsHistory.avgBgValue(
+                tick2,
+                true,
+                tick3,
+                false
+            )
+            val slope = avgBgValue2 - avgBgValue1
+        }
+
 
         var ts = Timestamp.now().minus(deviationTimeBase)
         weiter()
@@ -26,7 +46,7 @@ class ApsAlgorithmImpl(
         // To react to dynamic changes (e.g. unannounced snacks), we calculate an average deviation of our
         // model predictions to the real blood glucose.
         // The deviation is the actual slope of bg values minus the bgi, which is the predicted slope.
-        val avgCurrentDeviation = calcDeviation(DEVIATION_TIME_BASE)
+        val avgCurrentDeviation = calcAvgDeviation()
         // Assumption: That deviation will be continued in the future but will fade away
 
         TODO: Weiter Code aus ApsAlgorithmTest übernehmen
@@ -51,9 +71,10 @@ class ApsAlgorithmImpl(
             readingsHistory: List<BgReading>,
             tickInterval: Minutes
         ): ApsAlgorithm {
+            val timeline = ApsTimeline(tickInterval)
             val predictionModel = PredictionModel(
                 predictionWindowHours = PREDICTION_WINDOW_HOURS,
-                tickInterval = tickInterval
+                timeline = timeline
             )
             predictionModel.initializeToTick(Timestamp.now().minus(PRESERVE_PREDICTIONS_PAST_TIME))
             val meals = metabolicEventsModel.getMeals()
@@ -66,21 +87,21 @@ class ApsAlgorithmImpl(
                 // All other data is calculated in each tick cycle.
                 tickState.effectiveInsulin = carbsInsulinCalculation.effectiveInsulin(
                     insulinApplications,
-                    predictionModel.rollingHistory.timestamp(tick)
+                    timeline.timestamp(tick)
                 )
                 tickState.effectiveCarbs = carbsInsulinCalculation.carbAbsorption(
                     meals,
-                    predictionModel.rollingHistory.timestamp(tick)
+                    timeline.timestamp(tick)
                 )
             }
             val bgReadingsHistory = BgReadingHistory(DEVIATION_TIME_BASE)
             bgReadingsHistory.addAll(readingsHistory)
             return ApsAlgorithmImpl(
+                timeline = timeline,
                 metabolicEventsModel = metabolicEventsModel,
                 bgReadingsHistory = bgReadingsHistory,
                 predictionModel = predictionModel,
-                carbsInsulinCalculation,
-                tickInterval = tickInterval
+                carbsInsulinCalculation
             )
         }
     }

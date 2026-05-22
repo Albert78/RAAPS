@@ -1,7 +1,6 @@
 package de.dh.raaps.model
 
 import de.dh.raaps.common.model.data.BgValue
-import de.dh.raaps.common.model.data.Minutes
 import de.dh.raaps.common.model.data.Tick
 import de.dh.raaps.common.model.data.Timestamp
 
@@ -23,23 +22,23 @@ data class PredictionPoint(
  */
 class PredictionModel(
     val predictionWindowHours: Int = 10,
-    val tickInterval: Minutes = Minutes(5)
+    val timeline: ApsTimeline
 ) {
-    var rollingHistory = RollingPredictionWindow(predictionWindowHours = predictionWindowHours, tickDuration = tickInterval, timestamp = Timestamp.now())
+    var rollingHistory = RollingPredictionWindow(predictionWindowHours = predictionWindowHours, timeline = timeline, timestamp = Timestamp.now())
 
     fun getFirstTick() = rollingHistory.getFirstTick()
     fun getLastTick() = rollingHistory.getLastTick()
 
     fun initializeToTick(newAnchorTimestamp: Timestamp) {
-        rollingHistory.init(rollingHistory.tick(newAnchorTimestamp))
+        rollingHistory.init(timeline.tick(newAnchorTimestamp))
     }
 
     fun toPredictionPoint(tickState: PredictionTickState): PredictionPoint {
-        return PredictionPoint(tickState.predictedBg, rollingHistory.timestamp(tickState.tick))
+        return PredictionPoint(tickState.predictedBg, timeline.timestamp(tickState.tick))
     }
 
     fun findNextBgMax(startAt: Timestamp): PredictionPoint? {
-        val startTick = rollingHistory.tick(startAt)
+        val startTick = timeline.tick(startAt)
 
         var lastValue: BgValue = BgValue(0)
 
@@ -58,7 +57,7 @@ class PredictionModel(
     }
 
     fun findNext(startAt: Timestamp, predicate: (PredictionTickState) -> Boolean): PredictionPoint? {
-        val startTick = rollingHistory.tick(startAt)
+        val startTick = timeline.tick(startAt)
 
         return rollingHistory.findForward(startTick) {
             tickState -> predicate(tickState)
