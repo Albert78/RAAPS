@@ -8,6 +8,7 @@ import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
+import de.dh.raaps.common.model.InsulinTypes
 import de.dh.raaps.common.ui.ThemeMode
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.SharingStarted
@@ -21,14 +22,14 @@ val Context.dataStore: DataStore<Preferences> by preferencesDataStore(name = "se
 val Preferences?.themeMode: ThemeMode
     get() = this?.get(THEME_MODE_KEY)?.let { ThemeMode.fromValue(it) } ?: ThemeMode.SYSTEM
 
-val Preferences?.userDeclinedPermissions: Boolean
-    get() = this?.get(USER_DECLINED_PERMISSIONS_KEY) ?: false
-
 suspend fun AppPreferencesRepository.setThemeMode(value: ThemeMode) {
     editPreferences { mutablePreferences ->
         mutablePreferences[THEME_MODE_KEY] = value.value
     }
 }
+
+val Preferences?.userDeclinedPermissions: Boolean
+    get() = this?.get(USER_DECLINED_PERMISSIONS_KEY) ?: false
 
 suspend fun AppPreferencesRepository.setUserDeclinedPermissions(value: Boolean) {
     editPreferences { mutablePreferences ->
@@ -36,8 +37,18 @@ suspend fun AppPreferencesRepository.setUserDeclinedPermissions(value: Boolean) 
     }
 }
 
+val Preferences?.pumpInsulinTypeName: String
+    get() = this?.get(PUMP_INSULIN_TYPE_KEY) ?: InsulinTypes.ASPART.name
+
+suspend fun AppPreferencesRepository.setPumpInsulinTypeName(value: String) {
+    editPreferences { mutablePreferences ->
+        mutablePreferences[PUMP_INSULIN_TYPE_KEY] = value
+    }
+}
+
 val THEME_MODE_KEY = stringPreferencesKey("theme_mode")
 val USER_DECLINED_PERMISSIONS_KEY = booleanPreferencesKey("user_declined_permissions")
+val PUMP_INSULIN_TYPE_KEY = stringPreferencesKey("pump_insulin_type")
 
 class AppPreferencesRepository(private val context: Context, private val scope: CoroutineScope) {
     /**
