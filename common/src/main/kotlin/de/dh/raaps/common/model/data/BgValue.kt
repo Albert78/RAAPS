@@ -15,6 +15,8 @@ value class BgValue(val mgdl: Short): Comparable<BgValue> {
 
     override fun compareTo(other: BgValue): Int = mgdl.compareTo(other.mgdl)
     operator fun minus(other: BgValue): BgDelta = BgDelta.fromMgDl(mgdl - other.mgdl)
+    operator fun plus(other: BgValue): BgValue = fromMgDl(mgdl + other.mgdl)
+    operator fun div(other: Double): BgValue = fromMgDl((mgdl / other).toInt())
 
     fun toString(glucoseUnit: GlucoseUnit) =
         when (glucoseUnit) {

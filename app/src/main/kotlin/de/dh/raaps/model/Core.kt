@@ -74,6 +74,7 @@ class Core(
     private val dataRepository: DataRepository,
     private val appPreferencesRepository: AppPreferencesRepository,
     private val metabolicEventsModel: MetabolicEventsModel,
+    private val therapyModel: TherapyModel,
     private val onDataUpdated: () -> Unit,
     private val onCoreStateChanged: () -> Unit,
     private val onAcquireBusyState: () -> Unit,
@@ -151,6 +152,7 @@ class Core(
                 calculationAlgorithm = ApsAlgorithmImpl.create(
                     metabolicEventsModel,
                     readingsHistory,
+                    therapyModel,
                     TICK_INTERVAL
                 )
                 onDataUpdated()
@@ -242,10 +244,12 @@ class Core(
             onReleaseBusyState: () -> Unit
         ): Core {
             val metabolicEventsModel = MetabolicEventsModel(Minutes.ofHours(METABOLIC_EVENTS_HISTORY_HOURS), dataRepository)
+            val therapyModel = TherapyModel(dataRepository)
             return Core(
                 dataRepository = dataRepository,
                 appPreferencesRepository = appPreferencesRepository,
                 metabolicEventsModel = metabolicEventsModel,
+                therapyModel = therapyModel,
                 onDataUpdated = onDataUpdated,
                 onCoreStateChanged = onCoreStateChanged,
                 onAcquireBusyState = onAcquireBusyState,

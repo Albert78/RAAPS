@@ -4,8 +4,11 @@ import android.util.Range
 import de.dh.raaps.common.model.data.BgDelta
 import de.dh.raaps.common.model.data.BgValue
 import de.dh.raaps.common.model.data.Timestamp
+import de.dh.raaps.data.DataRepository
 
-class TherapyModel {
+class TherapyModel(
+    val dataRepository: DataRepository
+) {
     /**
      * Gets the planned basal rate at the given timestamp.
      * Unit: Insulin units.
