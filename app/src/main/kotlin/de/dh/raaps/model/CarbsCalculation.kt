@@ -79,7 +79,7 @@ data class CarbCurveComponent(
 
 /**
  * Samples the carbs absorbed fraction functions for all discrete time intervals
- * in the carbs absorption time for meals and caches the calculation vectors to avoid repeating the
+ * in the carbs absorption time for different meal types and caches the calculation vectors to avoid repeating the
  * expensive calculations.
  */
 class SampledCarbsCalculationCache(
@@ -87,7 +87,8 @@ class SampledCarbsCalculationCache(
 ) {
     /**
      * Cached sampled cumulative absorbed fraction values at each interval start, per meal type.
-     * The length of the arrays are different and depend on the declared carbs absorption time for the meal.
+     * The length of the arrays are different and depend on the declared carbs absorption time
+     * for each meal type.
      */
     val absorbedFractionSamples: MutableMap<MealType, DoubleArray> = mutableMapOf()
 
@@ -108,7 +109,10 @@ class SampledCarbsCalculationCache(
     }
 
     private fun getOrCreateSampledCarbsAbsorbedFraction(mealType: MealType): DoubleArray {
-        return absorbedFractionSamples.computeIfAbsent(mealType, { mealType-> sampleCarbsAbsorbedFraction(mealType) })
+        return absorbedFractionSamples.computeIfAbsent(
+            mealType,
+            { mealType -> sampleCarbsAbsorbedFraction(mealType) }
+        )
     }
 
     /**
@@ -126,7 +130,7 @@ class SampledCarbsCalculationCache(
     }
 
     /**
-     * Pre-calculates and caches both activity and absorbed fraction samples for a meal type.
+     * Pre-calculates and caches the absorbed fraction samples for a meal type.
      * @param forceRefresh If true, existing cached values will be removed and recalculated.
      */
     fun calculateForMealType(mealType: MealType, forceRefresh: Boolean = false) {
@@ -137,7 +141,7 @@ class SampledCarbsCalculationCache(
     }
 
     /**
-     * Pre-calculates and caches both activity and absorbed fraction samples for the given meal types.
+     * Pre-calculates and caches the absorbed fraction samples for the given meal types.
      * @param forceRefresh If true, existing cached values will be removed and recalculated.
      */
     fun calculateForMealTypes(mealTypes: Set<MealType>, forceRefresh: Boolean = false) {

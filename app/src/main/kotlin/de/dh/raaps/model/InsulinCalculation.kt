@@ -91,28 +91,69 @@ data class InsulinCurve(
 
 /**
  * Samples the insulin activity function for all discrete time intervals
- * in the duration of insulin action (DIA) for an insulin and caches the calculation vector to avoid
- * repeating the expensive calculations.
+ * in the duration of insulin action (DIA) for different insulin types and caches the calculation
+ * vectors to avoid repeating the expensive calculations.
  */
 class SampledInsulinCalculationCache(
-    val sampleIntervalSize: Minutes,
-    val insulinType: InsulinType
+    val sampleIntervalSize: Minutes
 ) {
     /**
-     * Cached sampled cumulative remaining insulin fraction values at each interval start.
+     * Cached sampled cumulative remaining insulin fraction values at each interval start, per insulin type.
+     * The length of the arrays are different and depend on the declared dia time for each insulin type.
      */
-    val remainingFractionSamples = DoubleArray(insulinType.dia.value / sampleIntervalSize.value)
+    val remainingFractionSamples: MutableMap<InsulinType, DoubleArray> = mutableMapOf()
 
-    init {
-        recalculateSamples()
+    /**
+     * Samples the remaining fraction of insulin for the given insulin type to an array of activity values per interval.
+     */
+    private fun sampleInsulinAbsorbedFraction(insulinType: InsulinType): DoubleArray {
+        val numSamples = insulinType.dia.value / sampleIntervalSize.value
+        return DoubleArray(numSamples) { index ->
+            val intervalStartTime = index * sampleIntervalSize.value
+            val curve = InsulinCurve(insulinType.dia.value.toDouble(), insulinType.peak.value.toDouble())
+            curve.remainingFraction(intervalStartTime.toDouble())
+        }
     }
 
-    fun recalculateSamples() {
-        val curve = InsulinCurve(insulinType.dia.value.toDouble(), insulinType.peak.value.toDouble())
-        for (index in remainingFractionSamples.indices) {
-            val intervalStartTime = index * sampleIntervalSize.value
-            val remainingFractionStart = curve.remainingFraction(intervalStartTime.toDouble())
-            remainingFractionSamples[index] = remainingFractionStart
+    private fun getOrCreateSampledInsulinRemainingFraction(insulinType: InsulinType): DoubleArray {
+        return remainingFractionSamples.computeIfAbsent(
+            insulinType,
+            { insulinType -> sampleInsulinAbsorbedFraction(insulinType) }
+        )
+    }
+
+    /**
+     * Clears all cached samples.
+     */
+    fun clearCache() {
+        remainingFractionSamples.clear()
+    }
+
+    /**
+     * Removes the cached data for the given insulin type.
+     */
+    fun dropMealType(insulinType: InsulinType) {
+        remainingFractionSamples.remove(insulinType)
+    }
+
+    /**
+     * Pre-calculates and caches the remaining fraction samples for an insulin type.
+     * @param forceRefresh If true, existing cached values will be removed and recalculated.
+     */
+    fun calculateForInsulinType(insulinType: InsulinType, forceRefresh: Boolean = false) {
+        if (forceRefresh) {
+            dropMealType(insulinType)
+        }
+        getOrCreateSampledInsulinRemainingFraction(insulinType)
+    }
+
+    /**
+     * Pre-calculates and caches the remaining fraction samples for the given insulin types.
+     * @param forceRefresh If true, existing cached values will be removed and recalculated.
+     */
+    fun calculateForMealTypes(insulinTypes: Set<InsulinType>, forceRefresh: Boolean = false) {
+        for (insulinType in insulinTypes) {
+            calculateForInsulinType(insulinType, forceRefresh)
         }
     }
 
@@ -122,12 +163,14 @@ class SampledInsulinCalculationCache(
      */
     fun effectiveInsulin(
         insulinUnits: Double,
+        insulinType: InsulinType,
         intervalsSinceApplication: Int
     ): Double {
         if (intervalsSinceApplication <= 0.0) return 0.0
-        if (intervalsSinceApplication >= remainingFractionSamples.size - 1) return 0.0
-        val remainingFractionAtIntervalStart = remainingFractionSamples[intervalsSinceApplication]
-        val remainingFractionAtIntervalEnd = remainingFractionSamples[intervalsSinceApplication + 1]
+        val samples = getOrCreateSampledInsulinRemainingFraction(insulinType)
+        if (intervalsSinceApplication >= samples.size - 1) return 0.0
+        val remainingFractionAtIntervalStart = samples[intervalsSinceApplication]
+        val remainingFractionAtIntervalEnd = samples[intervalsSinceApplication + 1]
         return insulinUnits * (remainingFractionAtIntervalEnd - remainingFractionAtIntervalStart)
     }
 
@@ -137,12 +180,14 @@ class SampledInsulinCalculationCache(
      */
     fun remainingInsulin(
         insulinUnits: Double,
+        insulinType: InsulinType,
         intervalsSinceApplication: Int
     ): Double {
         if (intervalsSinceApplication <= 0.0) return 0.0
-        if (intervalsSinceApplication >= remainingFractionSamples.size - 1) return 0.0
-        val remainingFractionAtIntervalStart = remainingFractionSamples[intervalsSinceApplication]
-        val remainingFractionAtIntervalEnd = remainingFractionSamples[intervalsSinceApplication + 1]
+        val samples = getOrCreateSampledInsulinRemainingFraction(insulinType)
+        if (intervalsSinceApplication >= samples.size - 1) return 0.0
+        val remainingFractionAtIntervalStart = samples[intervalsSinceApplication]
+        val remainingFractionAtIntervalEnd = samples[intervalsSinceApplication + 1]
         return insulinUnits * (remainingFractionAtIntervalEnd + remainingFractionAtIntervalStart) / 2.0
     }
 }

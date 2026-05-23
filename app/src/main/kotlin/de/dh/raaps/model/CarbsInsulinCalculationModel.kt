@@ -1,7 +1,6 @@
 package de.dh.raaps.model
 
 import de.dh.raaps.common.model.InsulinApplication
-import de.dh.raaps.common.model.InsulinType
 import de.dh.raaps.common.model.MealEntry
 import de.dh.raaps.common.model.data.Minutes
 import de.dh.raaps.common.model.data.Timestamp
@@ -13,11 +12,10 @@ import de.dh.raaps.common.model.data.Timestamp
  * Note that the accuracy of the calculation is +/- 1 interval for each meal and insulin application.
  */
 class CarbsInsulinCalculationModel(
-    val intervalSize: Minutes,
-    val insulinType: InsulinType
+    val intervalSize: Minutes
 ) {
     val carbsCalculationCache: SampledCarbsCalculationCache = SampledCarbsCalculationCache(intervalSize)
-    val insulinCalculationCache: SampledInsulinCalculationCache = SampledInsulinCalculationCache(intervalSize, insulinType)
+    val insulinCalculationCache: SampledInsulinCalculationCache = SampledInsulinCalculationCache(intervalSize)
 
     /**
      * Calculates the total COB which is expected as result of the given meal consumptions
@@ -76,6 +74,7 @@ class CarbsInsulinCalculationModel(
 
             insulinCalculationCache.effectiveInsulin(
                 insulinUnits = entry.insulinUnits,
+                insulinType = entry.insulinType,
                 intervalsSinceApplication = intervalsSinceApplication
             )
         }
@@ -96,6 +95,7 @@ class CarbsInsulinCalculationModel(
 
             insulinCalculationCache.remainingInsulin(
                 insulinUnits = entry.insulinUnits,
+                insulinType = entry.insulinType,
                 intervalsSinceApplication = intervalsSinceApplication
             )
         }
