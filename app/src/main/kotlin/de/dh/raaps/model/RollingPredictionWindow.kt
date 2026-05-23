@@ -23,12 +23,6 @@ class RollingPredictionWindow(
         forEach { tick, tickState -> tickState.initializeToTick(tick) }
     }
 
-    fun forEach(action: (Tick, PredictionTickState) -> Unit) {
-        for (tick in getFirstTick()..getLastTick()) {
-            tryGetTickState(tick)?.let { action(tick, it) }
-        }
-    }
-
     fun getFirstTick() = anchorTick
     fun getLastTick() = Tick(anchorTick.value + capacity - 1)
 
@@ -71,6 +65,18 @@ class RollingPredictionWindow(
         return tick.value % capacity
     }
 
+    fun forEach(action: (Tick, PredictionTickState) -> Unit) {
+        for (tick in getFirstTick()..getLastTick()) {
+            tryGetTickState(tick)?.let { action(tick, it) }
+        }
+    }
+
+    suspend fun forEachS(action: suspend (Tick, PredictionTickState) -> Unit) {
+        for (tick in getFirstTick()..getLastTick()) {
+            tryGetTickState(tick)?.let { action(tick, it) }
+        }
+    }
+
     /**
      * Searches the state buffer forward starting at [startTick] for the first [PredictionTickState],
      * which meets the [predicate] condition.
@@ -92,6 +98,22 @@ class RollingPredictionWindow(
         return null
     }
 
+    suspend fun findForwardS(
+        startTick: Tick = anchorTick,
+        predicate: suspend (PredictionTickState) -> Boolean
+    ): PredictionTickState? {
+        val maxTick = getLastTick().value
+        val start = startTick.value.coerceAtLeast(anchorTick.value)
+
+        for (v in start..maxTick) {
+            val state = buffer[bufferIndex(Tick(v))]
+            if (state != null && predicate(state)) {
+                return state
+            }
+        }
+        return null
+    }
+
     /**
      * Searches the state buffer backward starting at [startTick] for the first [PredictionTickState],
      * which meets the [predicate] condition.
@@ -100,6 +122,22 @@ class RollingPredictionWindow(
     fun findBackward(
         startTick: Tick,
         predicate: (PredictionTickState) -> Boolean
+    ): PredictionTickState? {
+        val minTick = getFirstTick().value
+        val start = startTick.value.coerceAtMost(anchorTick.value + capacity - 1)
+
+        for (v in start downTo minTick) {
+            val state = buffer[bufferIndex(Tick(v))]
+            if (state != null && predicate(state)) {
+                return state
+            }
+        }
+        return null
+    }
+
+    suspend fun findBackwardS(
+        startTick: Tick,
+        predicate: suspend (PredictionTickState) -> Boolean
     ): PredictionTickState? {
         val minTick = getFirstTick().value
         val start = startTick.value.coerceAtMost(anchorTick.value + capacity - 1)

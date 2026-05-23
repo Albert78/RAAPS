@@ -1,19 +1,22 @@
 package de.dh.raaps.model
 
 import android.util.Range
+import de.dh.raaps.AppPreferencesRepository
+import de.dh.raaps.common.model.InsulinType
 import de.dh.raaps.common.model.data.BgDelta
 import de.dh.raaps.common.model.data.BgValue
 import de.dh.raaps.common.model.data.Timestamp
 import de.dh.raaps.data.DataRepository
 
 class TherapyModel(
-    val dataRepository: DataRepository
+    val dataRepository: DataRepository,
+    val appPreferencesRepository: AppPreferencesRepository
 ) {
     /**
      * Gets the planned basal rate at the given timestamp.
      * Unit: Insulin units.
      */
-    fun getBasalPerHour(timestamp: Timestamp): Double {
+    suspend fun getBasalPerHour(timestamp: Timestamp): Double {
         weiter
     }
 
@@ -22,7 +25,7 @@ class TherapyModel(
      * The ICR is a measure of how many grams of carbohydrates are covered by one unit of insulin.
      * Unit: Grams of carbs.
      */
-    fun getIcFactor(timestamp: Timestamp): Double {
+    suspend fun getIcFactor(timestamp: Timestamp): Double {
         weiter
     }
 
@@ -32,11 +35,15 @@ class TherapyModel(
      * unit of insulin lowers blood glucose levels.
      * Unit: Blood glucose delta.
      */
-    fun getIsfFactor(timestamp: Timestamp): BgDelta {
+    suspend fun getIsfFactor(timestamp: Timestamp): BgDelta {
         weiter
     }
 
-    fun getTarget(): Range<BgValue> {
+    suspend fun getTarget(): Range<BgValue> {
+        weiter
+    }
+
+    suspend fun getPumpInsulinType(): InsulinType {
         weiter
     }
 }

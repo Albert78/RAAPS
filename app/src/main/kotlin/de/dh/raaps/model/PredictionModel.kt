@@ -41,7 +41,7 @@ class PredictionModel(
      * Initialize the predictions to the first state where all effective insulin and effective carbs
      * are calculated.
      */
-    fun calculatePredictionStage_1(
+    suspend fun calculatePredictionStage_1(
         metabolicEventsModel: MetabolicEventsModel,
         carbsInsulinCalculationModel: CarbsInsulinCalculationModel
     ) {
@@ -68,11 +68,11 @@ class PredictionModel(
      * @return `true` if values have changed compared to the previous settings; next stages must be
      * calculated. Else `false`.
      */
-    fun calculatePredictionStates_2_3_4(currentBG: BgValue, avgCurrentDeviation: BgDelta, therapyModel: TherapyModel): Boolean {
+    suspend fun calculatePredictionStates_2_3_4(currentBG: BgValue, avgCurrentDeviation: BgDelta, therapyModel: TherapyModel): Boolean {
         var bg = currentBG
         var deviation = avgCurrentDeviation
         var continueCalculations = false
-        forEach(from = timeline.getNowTick() + 1, to = getLastTick()) { tick, state ->
+        forEachS(from = timeline.getNowTick() + 1, to = getLastTick()) { tick, state ->
             val timestamp = timeline.timestamp(tick)
             val isf = therapyModel.getIsfFactor(timestamp)
             val ic = therapyModel.getIcFactor(timestamp)
@@ -209,10 +209,25 @@ class PredictionModel(
         }?.let { tickState -> toPredictionPoint(tickState) }
     }
 
+    suspend fun findNextS(startAt: Timestamp, predicate: suspend (PredictionTickState) -> Boolean): PredictionPoint? {
+        val startTick = timeline.tick(startAt)
+
+        return rollingHistory.findForwardS(startTick) {
+                tickState -> predicate(tickState)
+        }?.let { tickState -> toPredictionPoint(tickState) }
+    }
+
     fun forEach(
         from: Tick = getFirstTick(),
         to: Tick = getLastTick(),
         action: (Tick, PredictionTickState) -> Unit) {
         rollingHistory.forEach(action)
+    }
+
+    suspend fun forEachS(
+        from: Tick = getFirstTick(),
+        to: Tick = getLastTick(),
+        action: suspend (Tick, PredictionTickState) -> Unit) {
+        rollingHistory.forEachS(action)
     }
 }
