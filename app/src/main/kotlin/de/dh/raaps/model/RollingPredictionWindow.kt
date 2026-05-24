@@ -65,8 +65,8 @@ class RollingPredictionWindow(
         return tick.value % capacity
     }
 
-    fun forEach(action: (Tick, PredictionTickState) -> Unit) {
-        for (tick in getFirstTick()..getLastTick()) {
+    fun forEach(from: Tick = getFirstTick(), to: Tick = getLastTick(), action: (Tick, PredictionTickState) -> Unit) {
+        for (tick in from..to) {
             tryGetTickState(tick)?.let { action(tick, it) }
         }
     }

@@ -1,5 +1,6 @@
 package de.dh.raaps.common.model.data
 
+import kotlin.math.max
 import kotlin.time.Instant
 
 /**
@@ -26,8 +27,12 @@ value class Timestamp(val ms: Long): Comparable<Timestamp> {
     fun plusHours(hours: Double) = Timestamp(ms + (hours * 60 * 60 * 1000).toLong())
     fun minusHours(hours: Int) = Timestamp(ms - hours * 60 * 60 * 1000)
     fun minusHours(hours: Double) = Timestamp(ms - (hours * 60 * 60 * 1000).toLong())
+    fun minusMs(ms: Long) = Timestamp(this.ms - ms)
+    fun plusMs(ms: Long) = Timestamp(this.ms + ms)
 
     companion object {
         fun now(): Timestamp  = Timestamp(System.currentTimeMillis())
     }
 }
+
+fun max(ts1: Timestamp, ts2: Timestamp) = Timestamp(max(ts1.ms, ts2.ms))

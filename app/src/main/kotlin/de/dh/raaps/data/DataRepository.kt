@@ -138,11 +138,11 @@ class DataRepository(val database: AppDatabase) {
         }
     }
 
-    suspend fun insertInsulinApplication(insulin: InsulinApplication): Long {
-        val entity = insulin.toEntity()
+    suspend fun insertInsulinApplication(insulinApplication: InsulinApplication): Long {
+        val entity = insulinApplication.toEntity()
         val id = database.metabolicEventsDao().insertInsulinApplication(entity)
         if (id != -1L) {
-            insulin.id = id
+            insulinApplication.id = id
         }
         return id
     }

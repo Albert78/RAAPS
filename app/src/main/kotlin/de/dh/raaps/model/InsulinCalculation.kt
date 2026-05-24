@@ -45,6 +45,10 @@ data class InsulinCurve(
 
     private val alpha = 2.0
     private val beta = peakMinutes / alpha
+    private val betaFactor = 2.0 * beta * beta * beta
+    private val diaCdf = 1.0 - exp(-diaMinutes / beta) * (1.0 + diaMinutes / beta
+            + 0.5 * (diaMinutes / beta) * (diaMinutes / beta))
+
 
     /**
      * Normalized insulin activity.
@@ -55,10 +59,7 @@ data class InsulinCurve(
         if (timeSinceApplicationMinutes >= diaMinutes) return 0.0
 
         val t = timeSinceApplicationMinutes
-
-        return (t * t) /
-                (2.0 * beta * beta * beta) *
-                exp(-t / beta)
+        return (t * t) / betaFactor * exp(-t / beta)
     }
 
     /**
@@ -69,14 +70,7 @@ data class InsulinCurve(
         if (timeSinceApplicationMinutes >= diaMinutes) return 1.0
 
         val x = timeSinceApplicationMinutes / beta
-
         val cdf = 1.0 - exp(-x) * (1.0 + x + 0.5 * x * x)
-
-        val diaCdf = 1.0 - exp(-diaMinutes / beta) * (
-                1.0 + diaMinutes / beta +
-                        0.5 * (diaMinutes / beta) * (diaMinutes / beta)
-                )
-
         return (cdf / diaCdf).coerceIn(0.0, 1.0)
     }
 
@@ -189,5 +183,17 @@ class SampledInsulinCalculationCache(
         val remainingFractionAtIntervalStart = samples[intervalsSinceApplication]
         val remainingFractionAtIntervalEnd = samples[intervalsSinceApplication + 1]
         return insulinUnits * (remainingFractionAtIntervalEnd + remainingFractionAtIntervalStart) / 2.0
+    }
+
+    fun spentInsulin(
+        insulinUnits: Double,
+        insulinType: InsulinType,
+        intervalsSinceApplication: Int
+    ): Double {
+        return insulinUnits - remainingInsulin(
+            insulinUnits = insulinUnits,
+            insulinType = insulinType,
+            intervalsSinceApplication = intervalsSinceApplication
+        )
     }
 }

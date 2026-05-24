@@ -9,6 +9,7 @@ import de.dh.raaps.common.model.data.BgSampleKind
 import de.dh.raaps.common.model.data.Minutes
 import de.dh.raaps.common.model.data.SensorType
 import de.dh.raaps.common.model.data.Timestamp
+import de.dh.raaps.common.model.pump.ApsPumpModel
 import de.dh.raaps.data.DataRepository
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
@@ -75,6 +76,7 @@ class Core(
     private val appPreferencesRepository: AppPreferencesRepository,
     private val metabolicEventsModel: MetabolicEventsModel,
     private val therapyModel: TherapyModel,
+    private val pumpModel: ApsPumpModel,
     private val onDataUpdated: () -> Unit,
     private val onCoreStateChanged: () -> Unit,
     private val onAcquireBusyState: () -> Unit,
@@ -153,6 +155,7 @@ class Core(
                     metabolicEventsModel,
                     readingsHistory,
                     therapyModel,
+                    pumpModel,
                     TICK_INTERVAL
                 )
                 onDataUpdated()
@@ -244,12 +247,14 @@ class Core(
             onReleaseBusyState: () -> Unit
         ): Core {
             val metabolicEventsModel = MetabolicEventsModel(Minutes.ofHours(METABOLIC_EVENTS_HISTORY_HOURS), dataRepository)
-            val therapyModel = TherapyModel(dataRepository)
+            val therapyModel = TherapyModel(dataRepository, appPreferencesRepository)
+            val pumpModel = ApsPumpModel.create(dataRepository, appPreferencesRepository)
             return Core(
                 dataRepository = dataRepository,
                 appPreferencesRepository = appPreferencesRepository,
                 metabolicEventsModel = metabolicEventsModel,
                 therapyModel = therapyModel,
+                pumpModel = pumpModel,
                 onDataUpdated = onDataUpdated,
                 onCoreStateChanged = onCoreStateChanged,
                 onAcquireBusyState = onAcquireBusyState,

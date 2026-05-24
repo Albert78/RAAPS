@@ -4,7 +4,6 @@ import de.dh.raaps.common.model.data.BgDelta
 import de.dh.raaps.common.model.data.BgValue
 import de.dh.raaps.common.model.data.Tick
 import de.dh.raaps.common.model.data.Timestamp
-import de.dh.raaps.common.model.data.plus
 import de.dh.raaps.common.model.data.times
 import de.dh.raaps.model.ApsAlgorithmImpl.Companion.DEVIATION_DECAY_FACTOR_PER_TICK
 
@@ -35,6 +34,10 @@ class PredictionModel(
 
     fun initializeToTick(newAnchorTimestamp: Timestamp) {
         rollingHistory.init(timeline.tick(newAnchorTimestamp))
+    }
+
+    fun tryGetTickState(timestamp: Timestamp): PredictionTickState? {
+        return rollingHistory.tryGetTickState(timeline.tick(timestamp))
     }
 
     /**
@@ -126,7 +129,7 @@ class PredictionModel(
         }
     }
 
-    fun calculatePredictionsWithTempBasal(
+    fun calculatePredictionsWithTempBasalStage_6(
         from: Tick = getFirstTick(),
         to: Tick = getLastTick()
     ) {
@@ -218,10 +221,10 @@ class PredictionModel(
     }
 
     fun forEach(
-        from: Tick = getFirstTick(),
-        to: Tick = getLastTick(),
+        from: Timestamp = timeline.timestamp(getFirstTick()),
+        to: Timestamp = timeline.timestamp(getLastTick()),
         action: (Tick, PredictionTickState) -> Unit) {
-        rollingHistory.forEach(action)
+        rollingHistory.forEach(from = timeline.tick(from), to = timeline.tick(to), action)
     }
 
     suspend fun forEachS(

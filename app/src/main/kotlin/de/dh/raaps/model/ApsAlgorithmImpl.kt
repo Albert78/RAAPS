@@ -1,13 +1,16 @@
 package de.dh.raaps.model
 
+import de.dh.raaps.common.model.InsulinApplication
 import de.dh.raaps.common.model.data.BgDelta
 import de.dh.raaps.common.model.data.BgReading
+import de.dh.raaps.common.model.data.BgValue
 import de.dh.raaps.common.model.data.Minutes
 import de.dh.raaps.common.model.data.Tick
 import de.dh.raaps.common.model.data.Timestamp
+import de.dh.raaps.common.model.data.max
 import de.dh.raaps.common.model.data.times
-import de.dh.raaps.common.model.pump.PumpActions
-import kotlin.math.max
+import de.dh.raaps.common.model.pump.ApsPumpModel
+import de.dh.raaps.common.model.pump.PumpActionsBuilder
 
 // TODO: Document the models needed for calculation, document calculation algorithm
 class ApsAlgorithmImpl(
@@ -16,7 +19,8 @@ class ApsAlgorithmImpl(
     val bgReadingsHistory: RecentBgReadingsHistory,
     val predictionModel: PredictionModel,
     val carbsInsulinCalculationModel: CarbsInsulinCalculationModel,
-    val therapyModel: TherapyModel
+    val therapyModel: TherapyModel,
+    val pumpModel: ApsPumpModel
 ): ApsAlgorithm {
     val sampledBgReadings = SampledBgReadings(timeline, bgReadingsHistory)
 
@@ -93,92 +97,125 @@ class ApsAlgorithmImpl(
             return
         }
 
-        val pumpActionsBuilder = PumpActions.Builder()
-        pumpActionsBuilder.clearTempBasals()
-        predictionModel.clearTempBasalsStage_5()
+        val pumpActionsBuilder = PumpActionsBuilder()
 
-        val targetBgRange = therapyModel.getTarget()
+        try {
+            pumpActionsBuilder.clearTempBasals()
+            predictionModel.clearTempBasalsStage_5()
 
-        // Goal 1: Get out of a current or impending low by lowering your basal rate early
-        // Find the next occurrence where the value falls below the minimum; find the minimum with time
-        predictionModel.findNext(startAt = now) {
-            it.predictedBg < targetBgRange.lower
-        }?.let { minStart ->
-            val basalRate = therapyModel.getBasalPerHour(minStart.timestamp)
-            val isf = therapyModel.getIsfFactor(minStart.timestamp)
-            val zeroTempDeltaBgPerHour = (basalRate * isf).mgdl.toDouble()
-            val nextMin = predictionModel.findNextBgMin(startAt = minStart.timestamp, returnLatestIfFalling = true) ?: return@let
-            val bgError = targetBgRange.lower - nextMin.bg + MIN_BG_SAFETY_MARGIN
-            val startZeroTemp = Timestamp(
-                max(
-                    nextMin.timestamp.minusHours(bgError.mgdl / zeroTempDeltaBgPerHour).ms,
-                    now.ms
+            val targetBgRange = therapyModel.getTarget()
+            val pumpInsulinType = therapyModel.getPumpInsulinType()
+            val insulinPeakMs = pumpInsulinType.peak.inMs()
+
+            // Goal 1: Get out of a current or impending low by lowering your basal rate early
+            // Find the next occurrence where the value falls below the minimum; find the minimum with time
+            predictionModel.findNext(startAt = now) {
+                it.predictedBg < targetBgRange.lower
+            }?.let { firstLowPoint ->
+                val basalRate = therapyModel.getBasalPerHour(firstLowPoint.timestamp)
+                val isf = therapyModel.getIsfFactor(firstLowPoint.timestamp)
+                val zeroTempDeltaBgPerHour = (basalRate * isf).mgdl.toDouble()
+                val nextMin = predictionModel.findNextBgMin(startAt = firstLowPoint.timestamp, returnLatestIfFalling = true) ?: return@let
+                val bgError = targetBgRange.lower - nextMin.bg + MIN_BG_SAFETY_MARGIN
+                val startZeroTemp = max(
+                    nextMin.timestamp.minusHours(bgError.mgdl / zeroTempDeltaBgPerHour).
+                        // We must drop the basal long time before the next minimum 1) to avoid falling to min and 2) because of the long insulin effect.
+                        // How long would be the best? I don't know. Let's take twice the peak time as first approximation.
+                        minusMs(insulinPeakMs * 2),
+                    now
                 )
-            )
-            pumpActionsBuilder.setTempBasal(0.0, startZeroTemp, nextMin.timestamp)
-            predictionModel.setTempBasalDeviationStage_5(-basalRate, startZeroTemp, nextMin.timestamp)
-        }
-
-        predictionModel.calculatePredictionsWithTempBasal()
-
-        // Goal 2: Correct the next upcoming high by administering insulin early, without subsequently dropping into a low
-        // Find the next high along with the time, then find the next low along with the time
-        predictionModel.findNext(startAt = now) {
-            it.predictedBg2 > targetBgRange.upper
-        }?.let { maxStart ->
-            val nextMax = predictionModel.findNextBgMax(startAt = maxStart.timestamp, returnLatestIfRising = true) ?: return@let
-            val targetBg = (targetBgRange.lower + targetBgRange.upper) / 2.0
-            val bgError = nextMax.bg - targetBg
-            if (bgError > BgDelta(0)) {
-                // Try to reduce BG by bgError
-
-                // Attempts to find the best possible insulin doses and timing for correction with limited computational effort
-                // Basic heuristic: We always try to administer insulin as early as possible to keep blood glucose levels low.
-                // In the worst case, this can lead to larger spikes.
-
-                val minAfterMax = predictionModel.findNextBgMin(startAt = nextMax.timestamp, returnLatestIfFalling = true)
-
-                // Insulin correction amount: Try correction based on bgError, but limited by lowBuffer so
-                // that we don't become low due to our IOB
-                val lowBuffer = minAfterMax?.let { minAfterMax.bg - targetBgRange.lower } // We have that much leeway for the correction
-                val maxCorrection = if (lowBuffer == null)
-                    bgError
-                else
-                    BgDelta.fromMgDl(minOf(bgError.mgdl, lowBuffer.mgdl))
-
-                val isf = therapyModel.getIsfFactor(maxStart.timestamp)
-                val maxInsulinAmount = maxCorrection / isf
-
-                // Now try to find the correct time allocation of one or more parts of the calculated
-                // correction insulin, which depends on the slope of the rising BG
-                weiter hier
-
-                var insulinAmount = maxInsulinAmount
-                var insulinTime
-
-                // Insulin-Korrekturzeitpunkt(e) hängen von voraussichtlicher Steigung des BZ ab
-                if (nextMax.timestamp - maxStart.timestamp > insulinPeakTime) {
-                    // Langsamer BZ-Anstieg, teile Insulingabe in mehrere Zeitpunkte auf
-                    // Versuche, einen Teil des Insulins möglichs früh zu geben und zwar so, dass der Peak bei firstHighPoint liegt und die Wirkung uns nicht unter targetBg.low bringt
-                    insulinTime = max(maxStart - insulinPeakTime, now)
-                    Simulation: Starte bei insulinTime, gehe bis nextMaximum:
-                    - Berechne für jeden Tick iob(insulinPart, timestamp=maxStart - insulinPeak). Falls iob < low, setze insulinAmount auf den Anteil, so dass iob = low
-                } else {
-                    // Insulingabe mit Insulin-Peakzeit vor hoch
-                    insulinTime = max(nextMaximum - insulinPeakTime, now)
-                }
-                // TODO: Plane Insulingabe ein: insulinAmount bei insulinTime
-                prediction.updateBGIPredictions(startAt = insulinTime)
+                // We could actually start increasing the basal rate sooner than at the minimum, but when?
+                pumpActionsBuilder.setTempBasal(0.0, startZeroTemp, nextMin.timestamp)
+                predictionModel.setTempBasalDeviationStage_5(-basalRate, startZeroTemp, nextMin.timestamp)
             }
+
+            predictionModel.calculatePredictionsWithTempBasalStage_6()
+
+            // Goal 2: Correct the next upcoming high by administering insulin early, without subsequently dropping into a low
+            // Find the next high along with the time, then find the next low along with the time
+            predictionModel.findNext(startAt = now) {
+                it.predictedBg2 > targetBgRange.upper
+            }?.let { firstHighPoint ->
+                val nextMax = predictionModel.findNextBgMax(startAt = firstHighPoint.timestamp, returnLatestIfRising = true) ?: return@let
+                val targetBg = (targetBgRange.lower + targetBgRange.upper) / 2.0
+                val bgError = nextMax.bg - targetBg
+                if (bgError > BgDelta(0)) {
+                    // Try to reduce BG by bgError
+
+                    // Attempts to find the best possible insulin doses and timing for correction with limited computational effort
+                    // Basic heuristic: We always try to administer insulin as early as possible to keep blood glucose levels low.
+                    // In the worst case, this can lead to larger spikes.
+
+                    val minAfterMax = predictionModel.findNextBgMin(startAt = nextMax.timestamp, returnLatestIfFalling = true)
+
+                    // Insulin correction amount: Try correction based on bgError, but limited by lowBuffer so
+                    // that we don't become low due to our IOB
+                    val lowBuffer = minAfterMax?.let { minAfterMax.bg - targetBgRange.lower } // We have that much leeway for the correction
+                    val maxCorrection = if (lowBuffer == null)
+                        bgError
+                    else
+                        BgDelta.fromMgDl(minOf(bgError.mgdl, lowBuffer.mgdl))
+
+                    val isf = therapyModel.getIsfFactor(firstHighPoint.timestamp)
+                    val maxCorrectionInsulinUnits = maxCorrection / isf
+
+                    // We've found the next maximum before, so we can assume a monotonous rising BG curve.
+
+                    // Now try to find the correct time allocation of one or more parts of the calculated
+                    // correction insulin, which depends on the slope of the BG curve.
+
+                    // The next part checks if we can apply all necessary insulin in a single application
+                    // or if we must divide the insulin in multiple parts because the blood glucose
+                    // raises too slowly.
+
+                    // As a heuristic, we start as early as possible.
+                    // We choose as first insulin application the insulin peak interval before raising high,
+                    // which is a heuristic which seems well to me but could be improved in the future.
+
+                    val insulinTime = max(firstHighPoint.timestamp.minusMs(insulinPeakMs), now)
+                    if (insulinTime > now.plusMinutes(10)) {
+                        // Don't schedule the insulin too early, we never know what will happen...
+                        // (User could change the target temporarily, user could do sports, ...)
+                        return@let
+                    }
+
+                    var insulinUnits = maxCorrectionInsulinUnits
+
+                    // Simulate an insulin application of errorCorrectionInsulinUnits at insulinTime and check
+                    // if we fall under the low threshold. If yes, reduce the insulin amount for this
+                    // first insulin administration.
+                    // To calculate the right amount, we reduce the application until we don't find
+                    // any more ticks where we will drop down the low mark.
+                    predictionModel.forEach(to = nextMax.timestamp) { tick, state ->
+                        val bg = state.predictedBg2
+                        if (bg == BgValue.INVALID) return@forEach
+                        val spentInsulin = carbsInsulinCalculationModel.spentInsulin(
+                            insulinUnits = insulinUnits,
+                            insulinType = pumpInsulinType,
+                            insulinApplicationTimestamp = insulinTime,
+                            timestamp = timeline.timestamp(tick)
+                        )
+                        val bgDeltaFromTestInsulin = spentInsulin * state.isf
+                        val resultBG = state.predictedBg2 - bgDeltaFromTestInsulin
+                        val bgError = targetBgRange.lower - resultBG
+                        if (bgError > BgDelta(0)) {
+                            // We would drop too low, reduce insulin
+                            insulinUnits -= bgError / state.isf
+                        }
+                    }
+                    val insulinApplication = InsulinApplication(
+                        timestamp = insulinTime,
+                        insulinUnits = insulinUnits,
+                        insulinType = pumpInsulinType
+                    )
+                    pumpActionsBuilder.addInsulinApplication(insulinUnits, insulinTime)
+                    metabolicEventsModel.addInsulinApplication(insulinApplication)
+                    predictionModel.calculatePredictionStage_1(metabolicEventsModel, carbsInsulinCalculationModel)
+                }
+            }
+        } finally {
+            pumpActionsBuilder.execute(pumpModel)
         }
-
-        TODO: Kommentare hier bearbeiten
-
-        // Actions: Insulin. Aber wie mitteilen? Wir können eine optimale Kurve berechnen, das kann die Pumpe aber ggf nicht.
-        // Einstellung des Benutzers:
-        // - SMB nutzen? Vorteil: Bessere Steuerung. Nachteil: APS muss immer da sein, höhere Rechenlast.
-        // - Pumpen-EB bzw. Dual-Bolus nutzen: Es passiert mehr in der Pumpe. Hierzu benötigen wir Zugriff auf die Pumpen-Fähigkeiten
-        // Ausgabe dann: Insulinplan. Das Pumpenplugin muss das umsetzen.
     }
 
     companion object {
@@ -194,6 +231,7 @@ class ApsAlgorithmImpl(
             metabolicEventsModel: MetabolicEventsModel,
             readingsHistory: List<BgReading>,
             therapyModel: TherapyModel,
+            pumpModel: ApsPumpModel,
             tickInterval: Minutes
         ): ApsAlgorithm {
             val timeline = ApsTimeline(tickInterval)
@@ -215,7 +253,8 @@ class ApsAlgorithmImpl(
                 bgReadingsHistory = bgReadingsHistory,
                 predictionModel = predictionModel,
                 carbsInsulinCalculationModel,
-                therapyModel
+                therapyModel,
+                pumpModel
             )
         }
     }

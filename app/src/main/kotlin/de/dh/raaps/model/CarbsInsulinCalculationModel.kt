@@ -1,6 +1,7 @@
 package de.dh.raaps.model
 
 import de.dh.raaps.common.model.InsulinApplication
+import de.dh.raaps.common.model.InsulinType
 import de.dh.raaps.common.model.MealEntry
 import de.dh.raaps.common.model.data.Minutes
 import de.dh.raaps.common.model.data.Timestamp
@@ -99,6 +100,34 @@ class CarbsInsulinCalculationModel(
                 intervalsSinceApplication = intervalsSinceApplication
             )
         }
+    }
+
+    fun remainingInsulin(
+        insulinApplication: InsulinApplication,
+        timestamp: Timestamp
+    ): Double {
+        val intervalsSinceApplication =
+            Minutes.timeDifference(insulinApplication.timestamp, timestamp).value / intervalSize.value
+        return insulinCalculationCache.remainingInsulin(
+            insulinApplication.insulinUnits,
+            insulinApplication.insulinType,
+            intervalsSinceApplication = intervalsSinceApplication
+        )
+    }
+
+    fun spentInsulin(
+        insulinUnits: Double,
+        insulinType: InsulinType,
+        insulinApplicationTimestamp: Timestamp,
+        timestamp: Timestamp
+    ): Double {
+        val intervalsSinceApplication =
+            Minutes.timeDifference(insulinApplicationTimestamp, timestamp).value / intervalSize.value
+        return insulinCalculationCache.spentInsulin(
+            insulinUnits = insulinUnits,
+            insulinType = insulinType,
+            intervalsSinceApplication = intervalsSinceApplication
+        )
     }
 
     /**
