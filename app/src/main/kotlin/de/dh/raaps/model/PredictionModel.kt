@@ -7,17 +7,12 @@ import de.dh.raaps.common.model.data.Timestamp
 import de.dh.raaps.common.model.data.times
 import de.dh.raaps.model.ApsAlgorithmImpl.Companion.DEVIATION_DECAY_FACTOR_PER_TICK
 
-data class PredictionPoint(
-    val bg: BgValue,
-    val timestamp: Timestamp
-)
-
 /**
- * Predicts future blood glucose levels based on current treatment history and state.
+ * Predicts future blood glucose levels based on current blood glucose, treatment history
+ * and calculated treatment decisions.
  *
- * All insulin and carb calculations are modeled as future impacts (Blood Glucose Impact, BGI).
- * Instead of recalculating everything from scratch, the predicted impacts of previous treatments
- * are pre-calculated and cached for future time ticks.
+ * All insulin and carb calculations are modeled as future impacts (Blood Glucose Impact, BGI),
+ * this allows us to cache those values until we have new treatment input.
  *
  * When a new blood glucose value is received, these cached BGI values are projected forward from
  * the current reading. Recalculation of the underlying BGI values is only necessary if the
@@ -33,10 +28,10 @@ class PredictionModel(
         timeline.tick(Timestamp.now())
     )
 
-    fun getFirstTick() = rollingHistory.getFirstTick()
-    fun getLastTick() = rollingHistory.getLastTick()
+    inline fun getFirstTick() = rollingHistory.getFirstTick()
+    inline fun getLastTick() = rollingHistory.getLastTick()
 
-    fun initializeToTick(newAnchorTimestamp: Timestamp) {
+    inline fun initializeToTick(newAnchorTimestamp: Timestamp) {
         rollingHistory.init(timeline.tick(newAnchorTimestamp))
     }
 
@@ -48,7 +43,7 @@ class PredictionModel(
      * Initialize the predictions to the first state where all effective insulin and effective carbs
      * are calculated.
      */
-    suspend fun calculatePredictionStage_1(
+    inline suspend fun calculatePredictionStage_1(
         metabolicEventsModel: MetabolicEventsModel,
         carbsInsulinCalculationModel: CarbsInsulinCalculationModel
     ) {
@@ -75,7 +70,11 @@ class PredictionModel(
      * @return `true` if values have changed compared to the previous settings; next stages must be
      * calculated. Else `false`.
      */
-    suspend fun calculatePredictionStates_2_3_4(currentBG: BgValue, avgCurrentDeviation: BgDelta, therapyModel: TherapyModel): Boolean {
+    inline suspend fun calculatePredictionStates_2_3_4(
+        currentBG: BgValue,
+        avgCurrentDeviation: BgDelta,
+        therapyModel: TherapyModel
+    ): Boolean {
         var bg = currentBG
         var deviation = avgCurrentDeviation
         var continueCalculations = false
@@ -113,7 +112,7 @@ class PredictionModel(
     /**
      * Clears all temporary basal derivation decisions.
      */
-    fun clearTempBasalsStage_5() {
+    inline fun clearTempBasalsStage_5() {
         forEach { _, state ->
             state.basalDeviationPerHour = 0.0
         }
@@ -123,7 +122,7 @@ class PredictionModel(
      * Sets the temporary basal derivation per hour for the given timespan.
      * The basal derivation must be higher than the scheduled basal for that timespan.
      */
-    fun setTempBasalDeviationStage_5(
+    inline fun setTempBasalDeviationStage_5(
         basalDeviationPerHour: Double,
         tempBasalStart: Tick,
         tempBasalEnd: Tick
@@ -133,7 +132,7 @@ class PredictionModel(
         }
     }
 
-    fun calculatePredictionsWithTempBasalStage_6(
+    inline fun calculatePredictionsWithTempBasalStage_6(
         from: Tick = getFirstTick(),
         to: Tick = getLastTick()
     ) {
@@ -143,25 +142,18 @@ class PredictionModel(
         }
     }
 
-    fun advanceToTimestamp(newAnchor: Timestamp) {
-        rollingHistory.moveWindowTo(timeline.tick(newAnchor))
+    inline fun advanceToTick(newAnchor: Tick) {
+        rollingHistory.moveWindowTo(newAnchor)
     }
 
-    fun toPredictionPoint(tickState: PredictionTickState): PredictionPoint {
-        return PredictionPoint(tickState.predictedBg, timeline.timestamp(tickState.tick))
+    inline fun latestPredictionTickState(): PredictionTickState? {
+        return rollingHistory.tryGetTickState(rollingHistory.getLastTick())
     }
 
-    fun latestPredictionPoint(): PredictionPoint? {
-        return rollingHistory.tryGetTickState(rollingHistory.getLastTick())?.
-            let { tickState -> toPredictionPoint(tickState) }
-    }
-
-    fun findNextBgMin(startAt: Timestamp, returnLatestIfFalling: Boolean): PredictionPoint? {
-        val startTick = timeline.tick(startAt)
-
+    inline fun findNextBgMin(startAt: Tick, returnLatestIfFalling: Boolean): PredictionTickState? {
         var lastValue: BgValue = BgValue.INVALID
 
-        val tickState = rollingHistory.findForward(startTick) { tickState ->
+        val tickState = rollingHistory.findForward(startAt) { tickState ->
             val currentBg = tickState.predictedBg
 
             // We are looking for the point at which the value starts to grow again (local minimum)
@@ -173,21 +165,19 @@ class PredictionModel(
                 false // Continue searching
             }
         }
-        if (tickState != null) {
-            return toPredictionPoint(tickState)
+        return if (tickState != null) {
+            tickState
         } else if (returnLatestIfFalling) {
-            return latestPredictionPoint()
+            latestPredictionTickState()
         } else {
-            return null
+            null
         }
     }
 
-    fun findNextBgMax(startAt: Timestamp, returnLatestIfRising: Boolean): PredictionPoint? {
-        val startTick = timeline.tick(startAt)
-
+    inline fun findNextBgMax(startAt: Tick, returnLatestIfRising: Boolean): PredictionTickState? {
         var lastValue: BgValue = BgValue.INVALID
 
-        val tickState = rollingHistory.findForward(startTick) { tickState ->
+        val tickState = rollingHistory.findForward(startAt) { tickState ->
             val currentBg = tickState.predictedBg
 
             // We are looking for the point at which the value starts to drop again (local maximum)
@@ -199,29 +189,21 @@ class PredictionModel(
                 false // Continue searching
             }
         }
-        if (tickState != null) {
-            return toPredictionPoint(tickState)
+        return if (tickState != null) {
+            tickState
         } else if (returnLatestIfRising) {
-            return latestPredictionPoint()
+            latestPredictionTickState()
         } else {
-            return null
+            null
         }
     }
 
-    fun findNext(startAt: Timestamp, predicate: (PredictionTickState) -> Boolean): PredictionPoint? {
-        val startTick = timeline.tick(startAt)
-
-        return rollingHistory.findForward(startTick) {
-            tickState -> predicate(tickState)
-        }?.let { tickState -> toPredictionPoint(tickState) }
+    fun findNext(startAt: Tick, predicate: (PredictionTickState) -> Boolean): PredictionTickState? {
+        return rollingHistory.findForward(startAt, predicate)
     }
 
-    suspend fun findNextS(startAt: Timestamp, predicate: suspend (PredictionTickState) -> Boolean): PredictionPoint? {
-        val startTick = timeline.tick(startAt)
-
-        return rollingHistory.findForwardS(startTick) {
-                tickState -> predicate(tickState)
-        }?.let { tickState -> toPredictionPoint(tickState) }
+    suspend fun findNextS(startAt: Tick, predicate: suspend (PredictionTickState) -> Boolean): PredictionTickState? {
+        return rollingHistory.findForwardS(startAt, predicate)
     }
 
     fun forEach(
