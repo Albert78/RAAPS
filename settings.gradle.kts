@@ -25,6 +25,7 @@ dependencyResolutionManagement {
 rootProject.name = "RAAPS"
 include(":app")
 include(":common")
+include(":core")
 include(":plugin-pump-sample")
 include(":plugin-cgm-sample")
 include(":plugin-glucose-receiver")
