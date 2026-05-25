@@ -6,14 +6,14 @@ plugins {
 
 android {
     namespace = "de.dh.raaps.common"
-    compileSdk = 37
+    compileSdk = libs.versions.sdkCompile.get().toInt()
 
     defaultConfig {
-        minSdk = 35
+        minSdk = libs.versions.sdkMin.get().toInt()
     }
     compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_21
-        targetCompatibility = JavaVersion.VERSION_21
+        sourceCompatibility = JavaVersion.toVersion(libs.versions.jvmTarget.get())
+        targetCompatibility = JavaVersion.toVersion(libs.versions.jvmTarget.get())
     }
     buildFeatures {
         compose = true

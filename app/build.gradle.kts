@@ -12,12 +12,12 @@ room {
 
 android {
     namespace = "de.dh.raaps"
-    compileSdk = 37
+    compileSdk = libs.versions.sdkCompile.get().toInt()
 
     defaultConfig {
         applicationId = "de.dh.raaps"
-        minSdk = 35
-        targetSdk = 37
+        minSdk = libs.versions.sdkMin.get().toInt()
+        targetSdk = libs.versions.sdkTarget.get().toInt()
         versionCode = 1
         versionName = "1.0"
 
@@ -34,8 +34,8 @@ android {
         }
     }
     compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_21
-        targetCompatibility = JavaVersion.VERSION_21
+        sourceCompatibility = JavaVersion.toVersion(libs.versions.jvmTarget.get())
+        targetCompatibility = JavaVersion.toVersion(libs.versions.jvmTarget.get())
     }
     buildFeatures {
         compose = true

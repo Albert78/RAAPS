@@ -4,10 +4,14 @@ plugins {
 
 android {
     namespace = "de.dh.raaps.plugin.pump"
-    compileSdk = 37
+    compileSdk = libs.versions.sdkCompile.get().toInt()
 
     defaultConfig {
-        minSdk = 35
+        minSdk = libs.versions.sdkMin.get().toInt()
+    }
+    compileOptions {
+        sourceCompatibility = JavaVersion.toVersion(libs.versions.jvmTarget.get())
+        targetCompatibility = JavaVersion.toVersion(libs.versions.jvmTarget.get())
     }
 }
 
