@@ -1,13 +1,7 @@
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.ksp)
-    alias(libs.plugins.androidx.room)
     alias(libs.plugins.kotlin.compose)
-    alias(libs.plugins.jetbrains.kotlin.serialization)
-}
-
-room {
-    schemaDirectory("$projectDir/schemas")
 }
 
 android {
@@ -44,6 +38,7 @@ android {
 
 dependencies {
     implementation(project(":common"))
+    implementation(project(":core"))
     implementation(project(":plugin-cgm-sample"))
     implementation(project(":plugin-glucose-receiver"))
     implementation(project(":plugin-pump-sample"))

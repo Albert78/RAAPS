@@ -6,7 +6,7 @@ import android.content.Intent
 import android.content.pm.ServiceInfo
 import android.os.IBinder
 import de.dh.raaps.MainApplication
-import de.dh.raaps.model.APS
+import de.dh.raaps.core.aps.APS
 import de.dh.raaps.notifications.ApsNotificationData
 import de.dh.raaps.notifications.ApsNotificationManager
 

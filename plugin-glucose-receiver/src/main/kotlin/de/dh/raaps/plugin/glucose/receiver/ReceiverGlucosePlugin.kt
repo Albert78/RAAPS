@@ -5,6 +5,7 @@ import android.content.Context
 import android.content.IntentFilter
 import android.util.Log
 import de.dh.raaps.common.model.GlucosePlugin
+import de.dh.raaps.common.model.PluginManager
 import de.dh.raaps.common.model.data.BgReading
 import kotlinx.coroutines.channels.BufferOverflow
 import kotlinx.coroutines.flow.Flow
@@ -24,7 +25,13 @@ class ReceiverGlucosePlugin(
     override val readingsTimeDelay = externalSourceType.readingsTimeDelay
     override val dataProviderType: String = "Glucose $readingsInterval"
 
+    override val neededPermissions: Collection<String> = listOf("com.eveningoutpost.dexdrip.permissions.RECEIVE_BG_ESTIMATE")
+
     val dataReceiver: DataReceiver = DataReceiver()
+
+    override fun initialize(pluginManager: PluginManager) {
+        // Nothing to do
+    }
 
     override fun start() {
         if (instance != null) {

@@ -1,5 +1,6 @@
 package de.dh.raaps.core.pump
 
+import de.dh.raaps.common.model.ToDo
 import de.dh.raaps.common.model.data.Timestamp
 
 /**
@@ -7,18 +8,18 @@ import de.dh.raaps.common.model.data.Timestamp
  */
 class PumpActionsBuilder {
     fun clearTempBasals() {
-        weiter
+        ToDo.toBeImplemented("clearTempBasals")
     }
 
     fun setTempBasal(basalUnits: Double, from: Timestamp, to: Timestamp) {
-        weiter
+        ToDo.toBeImplemented("setTempBasal")
     }
 
     fun addInsulinApplication(insulinUnits: Double, at: Timestamp) {
-        weiter
+        ToDo.toBeImplemented("addInsulinApplication")
     }
 
     fun execute(pumpModel: ApsPumpModel) {
-        weiter
+        ToDo.toBeImplemented("execute")
     }
 }

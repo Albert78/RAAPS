@@ -2,7 +2,7 @@ package de.dh.raaps.core.pump
 
 import de.dh.raaps.AppPreferencesRepository
 import de.dh.raaps.common.model.ToDo
-import de.dh.raaps.repository.DataRepository
+import de.dh.raaps.core.repository.DataRepository
 
 /**
  * Represents the pump communication gateway for the APS core.
@@ -15,8 +15,9 @@ class ApsPumpModel {
         fun create(
             dataRepository: DataRepository,
             appPreferencesRepository: AppPreferencesRepository
-        ) {
+        ): ApsPumpModel {
             ToDo.toBeImplemented("ApsPumpModel")
+            return ApsPumpModel()
         }
     }
 

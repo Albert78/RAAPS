@@ -30,6 +30,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import de.dh.raaps.common.model.data.BgDelta
 import de.dh.raaps.common.model.data.BgValue
 import de.dh.raaps.common.model.data.GlucoseUnit
 import de.dh.raaps.common.model.data.Timestamp
@@ -213,7 +214,7 @@ fun createSampleGoodBgUiState(): CurrentBgUiState {
         isError = false,
         CurrentBgData(
             bgValue = BgValue(125),
-            delta = BgValue(+10),
+            delta = BgDelta(+10),
             trend = BgTrend.FortyFiveUp,
             timestamp = Timestamp.now().minusMinutes(90)
         )
@@ -261,7 +262,7 @@ fun BgVeryHighViewPreview() {
                 isError = false,
                 currentBgValue = CurrentBgData.valid(
                     bgValue = BgValue(325),
-                    delta = BgValue(+20),
+                    delta = BgDelta(+20),
                     trend = BgTrend.DoubleUp,
                     timestamp = Timestamp.now().minusMinutes(3)
                 )
@@ -280,7 +281,7 @@ fun BgHighViewPreview() {
                 isError = false,
                 currentBgValue = CurrentBgData.valid(
                     bgValue = BgValue(225),
-                    delta = BgValue(+15),
+                    delta = BgDelta(+15),
                     trend = BgTrend.SingleUp,
                     timestamp = Timestamp.now().minusSeconds(20)
                 )
@@ -309,7 +310,7 @@ fun BgGoodFlatViewPreview() {
                 isError = false,
                 currentBgValue = CurrentBgData.valid(
                     bgValue = BgValue(125),
-                    delta = BgValue(+0),
+                    delta = BgDelta(+0),
                     trend = BgTrend.Flat,
                     timestamp = Timestamp.now(),
                     glucoseUnit = GlucoseUnit.MG_DL
@@ -329,7 +330,7 @@ fun BgLowViewPreview() {
                 isError = false,
                 currentBgValue = CurrentBgData.valid(
                     bgValue = BgValue(60),
-                    delta = BgValue(-5),
+                    delta = BgDelta(-5),
                     trend = BgTrend.FortyFiveDown,
                     timestamp = Timestamp.now(),
                     glucoseUnit = GlucoseUnit.MG_DL
@@ -349,7 +350,7 @@ fun BgVeryLowViewPreview() {
                 isError = false,
                 currentBgValue = CurrentBgData.valid(
                     bgValue = BgValue(45),
-                    delta = BgValue(-10),
+                    delta = BgDelta(-10),
                     trend = BgTrend.SingleDown,
                     timestamp = Timestamp.now(),
                     glucoseUnit = GlucoseUnit.MG_DL

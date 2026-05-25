@@ -9,14 +9,14 @@ import androidx.room.Room
 import androidx.room.RoomDatabase
 import androidx.room.TypeConverters
 import androidx.room.Update
-import de.dh.raaps.repository.db.entities.DataProviderEntity
-import de.dh.raaps.repository.db.entities.GlucoseReadingEntity
-import de.dh.raaps.repository.db.entities.InsulinApplicationEntity
-import de.dh.raaps.repository.db.entities.InsulinTypeEntity
-import de.dh.raaps.repository.db.entities.MealEntity
-import de.dh.raaps.repository.db.entities.MealTypeEntity
-import de.dh.raaps.repository.db.entities.SensorTypeEntity
-import de.dh.raaps.repository.db.entities.TherapyDataEntity
+import de.dh.raaps.core.repository.db.entities.DataProviderEntity
+import de.dh.raaps.core.repository.db.entities.GlucoseReadingEntity
+import de.dh.raaps.core.repository.db.entities.InsulinApplicationEntity
+import de.dh.raaps.core.repository.db.entities.InsulinTypeEntity
+import de.dh.raaps.core.repository.db.entities.MealEntity
+import de.dh.raaps.core.repository.db.entities.MealTypeEntity
+import de.dh.raaps.core.repository.db.entities.SensorTypeEntity
+import de.dh.raaps.core.repository.db.entities.TherapyDataEntity
 import java.util.concurrent.Executors
 
 @Dao

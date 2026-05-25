@@ -11,11 +11,11 @@ import de.dh.raaps.common.model.data.SensorType
 import de.dh.raaps.common.model.data.TherapyData
 import de.dh.raaps.common.model.data.Timestamp
 import de.dh.raaps.common.model.mock.mockSimpleTherapyData
-import de.dh.raaps.repository.db.AppDatabase
-import de.dh.raaps.repository.db.entities.DataProviderEntity
-import de.dh.raaps.repository.db.entities.SensorTypeEntity
-import de.dh.raaps.repository.db.toEntity
-import de.dh.raaps.repository.db.toModel
+import de.dh.raaps.core.repository.db.AppDatabase
+import de.dh.raaps.core.repository.db.entities.DataProviderEntity
+import de.dh.raaps.core.repository.db.entities.SensorTypeEntity
+import de.dh.raaps.core.repository.db.toEntity
+import de.dh.raaps.core.repository.db.toModel
 
 class DataRepository(val database: AppDatabase) {
     suspend fun getOrCreateSensorTypeByName(name: String): SensorType {

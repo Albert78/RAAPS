@@ -102,7 +102,7 @@ class SampledCarbsCalculationCache(
             var result = 0.0
             for (cccd in mealType.components) {
                 val ccc =
-                    _root_ide_package_.de.dh.raaps.core.model.CarbCurveComponent(cccd.peakMinutes.value.toDouble())
+                    CarbCurveComponent(cccd.peakMinutes.value.toDouble())
                 result += ccc.absorbedFraction(intervalStartTime.toDouble()) * cccd.weight
             }
             result

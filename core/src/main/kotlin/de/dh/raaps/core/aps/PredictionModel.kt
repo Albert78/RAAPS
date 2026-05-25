@@ -20,9 +20,9 @@ import de.dh.raaps.core.aps.ApsAlgorithmImpl.Companion.DEVIATION_DECAY_FACTOR_PE
  */
 class PredictionModel(
     val predictionWindowHours: Int = 10,
-    val timeline: de.dh.raaps.core.aps.ApsTimeline
+    val timeline: ApsTimeline
 ) {
-    var rollingHistory = _root_ide_package_.de.dh.raaps.core.model.RollingPredictionWindow(
+    var rollingHistory = RollingPredictionWindow(
         predictionWindowHours = predictionWindowHours,
         timeline = timeline,
         timeline.tick(Timestamp.now())
@@ -35,7 +35,7 @@ class PredictionModel(
         rollingHistory.init(timeline.tick(newAnchorTimestamp))
     }
 
-    inline fun tryGetTickState(tick: Tick): de.dh.raaps.core.aps.PredictionTickState? {
+    inline fun tryGetTickState(tick: Tick): PredictionTickState? {
         return rollingHistory.tryGetTickState(tick)
     }
 
@@ -44,8 +44,8 @@ class PredictionModel(
      * are calculated.
      */
     inline suspend fun calculatePredictionStage_1(
-        metabolicEventsModel: de.dh.raaps.core.aps.MetabolicEventsModel,
-        carbsInsulinCalculationModel: de.dh.raaps.core.aps.CarbsInsulinCalculationModel
+        metabolicEventsModel: MetabolicEventsModel,
+        carbsInsulinCalculationModel: CarbsInsulinCalculationModel
     ) {
         val meals = metabolicEventsModel.getMeals()
         val insulinApplications = metabolicEventsModel.getInsulinApplications()
@@ -73,7 +73,7 @@ class PredictionModel(
     inline suspend fun calculatePredictionStates_2_3_4(
         currentBG: BgValue,
         avgCurrentDeviation: BgDelta,
-        therapyModel: de.dh.raaps.core.aps.TherapyModel
+        therapyModel: TherapyModel
     ): Boolean {
         var bg = currentBG
         var deviation = avgCurrentDeviation
@@ -146,11 +146,11 @@ class PredictionModel(
         rollingHistory.moveWindowTo(newAnchor)
     }
 
-    inline fun latestPredictionTickState(): de.dh.raaps.core.aps.PredictionTickState? {
+    inline fun latestPredictionTickState(): PredictionTickState? {
         return rollingHistory.tryGetTickState(rollingHistory.getLastTick())
     }
 
-    inline fun findNextBgMin(startAt: Tick, returnLatestIfFalling: Boolean): de.dh.raaps.core.aps.PredictionTickState? {
+    inline fun findNextBgMin(startAt: Tick, returnLatestIfFalling: Boolean): PredictionTickState? {
         var lastValue: BgValue = BgValue.INVALID
 
         val tickState = rollingHistory.findForward(startAt) { tickState ->
@@ -174,7 +174,7 @@ class PredictionModel(
         }
     }
 
-    inline fun findNextBgMax(startAt: Tick, returnLatestIfRising: Boolean): de.dh.raaps.core.aps.PredictionTickState? {
+    inline fun findNextBgMax(startAt: Tick, returnLatestIfRising: Boolean): PredictionTickState? {
         var lastValue: BgValue = BgValue.INVALID
 
         val tickState = rollingHistory.findForward(startAt) { tickState ->
@@ -198,25 +198,25 @@ class PredictionModel(
         }
     }
 
-    fun findNext(startAt: Tick, predicate: (de.dh.raaps.core.aps.PredictionTickState) -> Boolean): de.dh.raaps.core.aps.PredictionTickState? {
+    fun findNext(startAt: Tick, predicate: (PredictionTickState) -> Boolean): PredictionTickState? {
         return rollingHistory.findForward(startAt, predicate)
     }
 
-    suspend fun findNextS(startAt: Tick, predicate: suspend (de.dh.raaps.core.aps.PredictionTickState) -> Boolean): de.dh.raaps.core.aps.PredictionTickState? {
+    suspend fun findNextS(startAt: Tick, predicate: suspend (PredictionTickState) -> Boolean): PredictionTickState? {
         return rollingHistory.findForwardS(startAt, predicate)
     }
 
     fun forEach(
         from: Tick = getFirstTick(),
         to: Tick = getLastTick(),
-        action: (Tick, de.dh.raaps.core.aps.PredictionTickState) -> Unit) {
+        action: (Tick, PredictionTickState) -> Unit) {
         rollingHistory.forEach(from = from, to = to, action)
     }
 
     suspend fun forEachS(
         from: Tick = getFirstTick(),
         to: Tick = getLastTick(),
-        action: suspend (Tick, de.dh.raaps.core.aps.PredictionTickState) -> Unit) {
+        action: suspend (Tick, PredictionTickState) -> Unit) {
         rollingHistory.forEachS(action)
     }
 }

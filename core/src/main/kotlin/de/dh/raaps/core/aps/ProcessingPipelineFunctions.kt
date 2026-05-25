@@ -3,7 +3,7 @@ package de.dh.raaps.core.aps
 import de.dh.raaps.common.model.DataProvider
 import de.dh.raaps.common.model.data.BgReading
 import de.dh.raaps.common.model.data.SensorType
-import de.dh.raaps.repository.DataRepository
+import de.dh.raaps.core.repository.DataRepository
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.onEach
 
@@ -11,7 +11,7 @@ import kotlinx.coroutines.flow.onEach
  * Persists each [BgReading] emitted by the flow to the persistent storage.
  *
  * This function acts as a side effect operator within the pipeline. It uses [onEach]
- * to intercept the stream and perform a database insertion via the [de.dh.raaps.core.repository.DataRepository]
+ * to intercept the stream and perform a database insertion via the [DataRepository]
  * without modifying the readings. This allows the data to continue flowing to
  * subsequent processing stages (like sampling or smoothing) unchanged.
  *

@@ -3,10 +3,12 @@ package de.dh.raaps.core.aps
 import android.util.Range
 import de.dh.raaps.AppPreferencesRepository
 import de.dh.raaps.common.model.InsulinType
+import de.dh.raaps.common.model.InsulinTypes
+import de.dh.raaps.common.model.ToDo
 import de.dh.raaps.common.model.data.BgDelta
 import de.dh.raaps.common.model.data.BgValue
 import de.dh.raaps.common.model.data.Timestamp
-import de.dh.raaps.repository.DataRepository
+import de.dh.raaps.core.repository.DataRepository
 
 class TherapyModel(
     val dataRepository: DataRepository,
@@ -17,7 +19,8 @@ class TherapyModel(
      * Unit: Insulin units.
      */
     suspend fun getBasalPerHour(timestamp: Timestamp): Double {
-        weiter
+        ToDo.toBeImplemented("getBasalPerHour")
+        return 0.5
     }
 
     /**
@@ -26,7 +29,8 @@ class TherapyModel(
      * Unit: Grams of carbs.
      */
     suspend fun getIcFactor(timestamp: Timestamp): Double {
-        weiter
+        ToDo.toBeImplemented("getIcFactor")
+        return 10.0
     }
 
     /**
@@ -36,14 +40,17 @@ class TherapyModel(
      * Unit: Blood glucose delta.
      */
     suspend fun getIsfFactor(timestamp: Timestamp): BgDelta {
-        weiter
+        ToDo.toBeImplemented("getIsfFactor")
+        return BgDelta(100)
     }
 
     suspend fun getTarget(): Range<BgValue> {
-        weiter
+        ToDo.toBeImplemented("getTarget")
+        return Range(BgValue(80), BgValue(120))
     }
 
     suspend fun getPumpInsulinType(): InsulinType {
-        weiter
+        ToDo.toBeImplemented("getPumpInsulinType")
+        return InsulinTypes.ASPART
     }
 }

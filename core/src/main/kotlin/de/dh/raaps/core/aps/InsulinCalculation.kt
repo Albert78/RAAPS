@@ -104,7 +104,7 @@ class SampledInsulinCalculationCache(
         val numSamples = insulinType.dia.value / sampleIntervalSize.value
         return DoubleArray(numSamples) { index ->
             val intervalStartTime = index * sampleIntervalSize.value
-            val curve = _root_ide_package_.de.dh.raaps.core.model.InsulinCurve(
+            val curve = InsulinCurve(
                 insulinType.dia.value.toDouble(),
                 insulinType.peak.value.toDouble()
             )

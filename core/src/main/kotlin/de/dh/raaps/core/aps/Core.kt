@@ -9,8 +9,8 @@ import de.dh.raaps.common.model.data.BgSampleKind
 import de.dh.raaps.common.model.data.Minutes
 import de.dh.raaps.common.model.data.SensorType
 import de.dh.raaps.common.model.data.Timestamp
-import de.dh.raaps.common.model.pump.ApsPumpModel
-import de.dh.raaps.repository.DataRepository
+import de.dh.raaps.core.pump.ApsPumpModel
+import de.dh.raaps.core.repository.DataRepository
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlin.math.abs
@@ -74,15 +74,15 @@ enum class CoreState {
 class Core(
     private val dataRepository: DataRepository,
     private val appPreferencesRepository: AppPreferencesRepository,
-    private val metabolicEventsModel: de.dh.raaps.core.aps.MetabolicEventsModel,
-    private val therapyModel: de.dh.raaps.core.aps.TherapyModel,
+    private val metabolicEventsModel: MetabolicEventsModel,
+    private val therapyModel: TherapyModel,
     private val pumpModel: ApsPumpModel,
     private val onDataUpdated: () -> Unit,
     private val onCoreStateChanged: () -> Unit,
     private val onAcquireBusyState: () -> Unit,
     private val onReleaseBusyState: () -> Unit
 ) {
-    private var calculationAlgorithm: de.dh.raaps.core.aps.ApsAlgorithm? = null
+    private var calculationAlgorithm: ApsAlgorithm? = null
 
     // State
     var currentBg: BgReading? = null
@@ -90,7 +90,7 @@ class Core(
     var lastBg: BgReading? = null
         private set
 
-    var coreState: de.dh.raaps.core.aps.CoreState = _root_ide_package_.de.dh.raaps.core.aps.CoreState.Uninitialized
+    var coreState: CoreState = CoreState.Uninitialized
         private set
 
     /**
@@ -130,7 +130,7 @@ class Core(
         }
     }
 
-    private fun setCoreState(state: de.dh.raaps.core.aps.CoreState) {
+    private fun setCoreState(state: CoreState) {
         coreState = state
         onCoreStateChanged()
     }
@@ -139,7 +139,7 @@ class Core(
         busyWork {
             atomic {
                 Log.d(TAG, "Initializing...")
-                setCoreState(_root_ide_package_.de.dh.raaps.core.aps.CoreState.Initializing)
+                setCoreState(CoreState.Initializing)
 
                 metabolicEventsModel.load()
 
@@ -147,12 +147,12 @@ class Core(
                 // be built there. But for the moment, I want to keep ApsAlgorithmImpl free of dataRepository,
                 // lets see if we change that in the future.
                 val readingsHistory = dataRepository.loadBgReadings(from = Timestamp.now().minus(
-                    _root_ide_package_.de.dh.raaps.core.aps.ApsAlgorithmImpl.DEVIATION_TIME_BASE))
+                    ApsAlgorithmImpl.DEVIATION_TIME_BASE))
 
                 currentBg = readingsHistory.lastOrNull()
                 lastBg = if (readingsHistory.size >= 2) readingsHistory[readingsHistory.size - 2] else null
 
-                calculationAlgorithm = _root_ide_package_.de.dh.raaps.core.aps.ApsAlgorithmImpl.create(
+                calculationAlgorithm = ApsAlgorithmImpl.create(
                     metabolicEventsModel,
                     readingsHistory,
                     therapyModel,
@@ -162,7 +162,7 @@ class Core(
                 onDataUpdated()
 
                 Log.d(TAG, "Finished initialization...")
-                setCoreState(_root_ide_package_.de.dh.raaps.core.aps.CoreState.Idle)
+                setCoreState(CoreState.Idle)
             }
         }
     }
@@ -210,7 +210,7 @@ class Core(
             } else {
                 Log.d(TAG, "New BG: $bg")
             }
-            if (bg.timestamp.ms > Timestamp.now().ms + _root_ide_package_.de.dh.raaps.core.model.EARLY_BG_GUARD.inMs()) {
+            if (bg.timestamp.ms > Timestamp.now().ms + EARLY_BG_GUARD.inMs()) {
                 Log.w(TAG, "Rejecting BG reading because it's timestamp is in the future (now() = ${Timestamp.now().ms}, BG timestamp = ${bg.timestamp.ms}")
                 return@busyWork
             }
@@ -220,12 +220,12 @@ class Core(
                     currentBg = bg
                 }
 
-                val isRecent = abs(bg.timestamp.ms - Timestamp.now().ms) < _root_ide_package_.de.dh.raaps.core.model.RECENT_BG_THRESHOLD.inMs()
+                val isRecent = abs(bg.timestamp.ms - Timestamp.now().ms) < RECENT_BG_THRESHOLD.inMs()
                 val alg = calculationAlgorithm
                 if (isRecent && alg != null) {
-                    setCoreState(_root_ide_package_.de.dh.raaps.core.aps.CoreState.Calculating)
+                    setCoreState(CoreState.Calculating)
                     alg.recalculateForNewBgValue(bg)
-                    setCoreState(_root_ide_package_.de.dh.raaps.core.aps.CoreState.Idle)
+                    setCoreState(CoreState.Idle)
                 }
             }
             onDataUpdated()
@@ -248,10 +248,10 @@ class Core(
             onReleaseBusyState: () -> Unit
         ): Core {
             val metabolicEventsModel =
-                _root_ide_package_.de.dh.raaps.core.model.MetabolicEventsModel(
+                MetabolicEventsModel(
                     Minutes.ofHours(METABOLIC_EVENTS_HISTORY_HOURS), dataRepository
                 )
-            val therapyModel = _root_ide_package_.de.dh.raaps.core.model.TherapyModel(
+            val therapyModel = TherapyModel(
                 dataRepository,
                 appPreferencesRepository
             )

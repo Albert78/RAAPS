@@ -1,6 +1,7 @@
 package de.dh.raaps.plugin.glucose
 
 import de.dh.raaps.common.model.GlucosePlugin
+import de.dh.raaps.common.model.PluginManager
 import de.dh.raaps.common.model.data.BgReading
 import de.dh.raaps.common.model.data.BgReadingsInterval
 import de.dh.raaps.common.model.data.BgSampleKind
@@ -24,7 +25,13 @@ class SampleCgmPlugin : GlucosePlugin {
 
     override val readingsTimeDelay = Minutes(5)
 
+    override val neededPermissions: Collection<String> = emptyList()
+
     override fun getSensorTypeName() = "Libre3"
+
+    override fun initialize(pluginManager: PluginManager) {
+        // Nothing to do
+    }
 
     override fun start() {
         // Nothing to do

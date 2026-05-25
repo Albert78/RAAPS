@@ -11,13 +11,13 @@ import de.dh.raaps.common.model.data.BgValue
 import de.dh.raaps.common.model.data.Minutes
 import de.dh.raaps.common.model.data.SensorType
 import de.dh.raaps.common.model.data.Timestamp
-import de.dh.raaps.repository.db.entities.DataProviderEntity
-import de.dh.raaps.repository.db.entities.GlucoseReadingEntity
-import de.dh.raaps.repository.db.entities.InsulinApplicationEntity
-import de.dh.raaps.repository.db.entities.InsulinTypeEntity
-import de.dh.raaps.repository.db.entities.MealEntity
-import de.dh.raaps.repository.db.entities.MealTypeEntity
-import de.dh.raaps.repository.db.entities.SensorTypeEntity
+import de.dh.raaps.core.repository.db.entities.DataProviderEntity
+import de.dh.raaps.core.repository.db.entities.GlucoseReadingEntity
+import de.dh.raaps.core.repository.db.entities.InsulinApplicationEntity
+import de.dh.raaps.core.repository.db.entities.InsulinTypeEntity
+import de.dh.raaps.core.repository.db.entities.MealEntity
+import de.dh.raaps.core.repository.db.entities.MealTypeEntity
+import de.dh.raaps.core.repository.db.entities.SensorTypeEntity
 
 // BgReading Converters
 fun BgReading.toEntity(dataProviderId: Long, sourceSensorId: Long) = GlucoseReadingEntity(

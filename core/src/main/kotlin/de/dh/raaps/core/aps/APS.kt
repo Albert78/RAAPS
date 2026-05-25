@@ -7,7 +7,7 @@ import de.dh.raaps.common.model.GlucosePlugin
 import de.dh.raaps.common.model.PumpPlugin
 import de.dh.raaps.common.model.data.BgReading
 import de.dh.raaps.common.model.data.Timestamp
-import de.dh.raaps.repository.DataRepository
+import de.dh.raaps.core.repository.DataRepository
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -42,7 +42,7 @@ class APS(
     private val wakeLock = powerManager.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, "raaps:ApsCoreLock")
 
     // Computation Core: Pure logic and state, completely thread-agnostic
-    private val core: de.dh.raaps.core.aps.Core = _root_ide_package_.de.dh.raaps.core.aps.Core.createProductiveCore(
+    private val core: Core = Core.createProductiveCore(
         dataRepository = dataRepository,
         appPreferencesRepository = appPreferencesRepository,
         onDataUpdated = { emitDataUpdateEvent() },
@@ -75,7 +75,7 @@ class APS(
     private val _lastDataTime = MutableStateFlow<Timestamp>(Timestamp(0))
     val lastDataTime: StateFlow<Timestamp> = _lastDataTime.asStateFlow()
 
-    private val _coreState = MutableStateFlow(_root_ide_package_.de.dh.raaps.core.aps.CoreState.Initializing)
+    private val _coreState = MutableStateFlow(CoreState.Initializing)
     /**
      * State of the core.
      * Watch the core state to be notified when it changes, e.g.:
@@ -83,7 +83,7 @@ class APS(
      * aps.coreState.first { it == APSCoreState.Idle }
      * ```
      */
-    val coreState: StateFlow<de.dh.raaps.core.aps.CoreState> = _coreState.asStateFlow()
+    val coreState: StateFlow<CoreState> = _coreState.asStateFlow()
 
     /**
      * Executes the given block on the internal APS thread.

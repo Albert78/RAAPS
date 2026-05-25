@@ -49,7 +49,7 @@ import de.dh.raaps.common.ui.composables.BlueA200
 import de.dh.raaps.common.ui.composables.DeepOrangeA700
 import de.dh.raaps.common.ui.composables.RedA700
 import de.dh.raaps.common.ui.theme.AppTheme
-import de.dh.raaps.model.PredictionTickState
+import de.dh.raaps.core.aps.PredictionTickState
 import java.util.Calendar
 import java.util.Locale
 import kotlin.math.sin

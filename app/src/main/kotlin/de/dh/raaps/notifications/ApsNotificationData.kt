@@ -3,7 +3,7 @@ package de.dh.raaps.notifications
 import de.dh.raaps.common.model.data.BgReading
 import de.dh.raaps.common.model.data.BgSampleKind
 import de.dh.raaps.common.model.data.BgValue
-import de.dh.raaps.model.APS
+import de.dh.raaps.core.aps.APS
 
 data class ApsNotificationData(
     val lastBgSample: BgReading?,

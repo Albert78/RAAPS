@@ -4,7 +4,7 @@ import de.dh.raaps.common.model.InsulinApplication
 import de.dh.raaps.common.model.MealEntry
 import de.dh.raaps.common.model.data.Minutes
 import de.dh.raaps.common.model.data.Timestamp
-import de.dh.raaps.repository.DataRepository
+import de.dh.raaps.core.repository.DataRepository
 import java.util.NavigableMap
 import java.util.TreeMap
 

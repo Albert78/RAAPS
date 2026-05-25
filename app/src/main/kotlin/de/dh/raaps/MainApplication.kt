@@ -4,14 +4,14 @@ import android.app.Application
 import android.app.ForegroundServiceStartNotAllowedException
 import android.content.Intent
 import androidx.core.content.ContextCompat
-import de.dh.raaps.model.APS
+import de.dh.raaps.core.aps.APS
+import de.dh.raaps.core.repository.DataRepository
+import de.dh.raaps.core.repository.db.AppDatabase
 import de.dh.raaps.notifications.ApsNotificationData
 import de.dh.raaps.notifications.ApsNotificationManager
 import de.dh.raaps.plugin.glucose.receiver.ExternalSourceType
 import de.dh.raaps.plugin.glucose.receiver.ReceiverGlucosePlugin
 import de.dh.raaps.plugin.pump.SamplePumpPlugin
-import de.dh.raaps.repository.DataRepository
-import de.dh.raaps.repository.db.AppDatabase
 import de.dh.raaps.services.ApsService
 import de.dh.raaps.services.BootReceiver
 import kotlinx.coroutines.CoroutineScope

@@ -8,21 +8,21 @@ import de.dh.raaps.common.model.data.Minutes
 import de.dh.raaps.common.model.data.Tick
 import de.dh.raaps.common.model.data.Timestamp
 import de.dh.raaps.common.model.data.times
-import de.dh.raaps.common.model.pump.ApsPumpModel
-import de.dh.raaps.common.model.pump.PumpActionsBuilder
+import de.dh.raaps.core.pump.ApsPumpModel
+import de.dh.raaps.core.pump.PumpActionsBuilder
 
 // TODO: Document the models needed for calculation, document calculation algorithm
 class ApsAlgorithmImpl(
-    val timeline: de.dh.raaps.core.aps.ApsTimeline,
-    val metabolicEventsModel: de.dh.raaps.core.aps.MetabolicEventsModel,
-    val bgReadingsHistory: de.dh.raaps.core.aps.RecentBgReadingsHistory,
-    val predictionModel: de.dh.raaps.core.aps.PredictionModel,
-    val carbsInsulinCalculationModel: de.dh.raaps.core.aps.CarbsInsulinCalculationModel,
-    val therapyModel: de.dh.raaps.core.aps.TherapyModel,
+    val timeline: ApsTimeline,
+    val metabolicEventsModel: MetabolicEventsModel,
+    val bgReadingsHistory: RecentBgReadingsHistory,
+    val predictionModel: PredictionModel,
+    val carbsInsulinCalculationModel: CarbsInsulinCalculationModel,
+    val therapyModel: TherapyModel,
     val pumpModel: ApsPumpModel
-): de.dh.raaps.core.aps.ApsAlgorithm {
+): ApsAlgorithm {
     val sampledBgReadings =
-        _root_ide_package_.de.dh.raaps.core.model.SampledBgReadings(timeline, bgReadingsHistory)
+        SampledBgReadings(timeline, bgReadingsHistory)
 
     // --- Time-based extensions for Tick to provide a Timestamp-like API ---
     private fun Tick.plusMinutes(minutes: Int): Tick = this + (minutes / timeline.tickDuration.value.toInt())
@@ -237,26 +237,26 @@ class ApsAlgorithmImpl(
         val MIN_BG_SAFETY_MARGIN = BgDelta(10)
 
         suspend fun create(
-            metabolicEventsModel: de.dh.raaps.core.aps.MetabolicEventsModel,
+            metabolicEventsModel: MetabolicEventsModel,
             readingsHistory: List<BgReading>,
-            therapyModel: de.dh.raaps.core.aps.TherapyModel,
+            therapyModel: TherapyModel,
             pumpModel: ApsPumpModel,
             tickInterval: Minutes
-        ): de.dh.raaps.core.aps.ApsAlgorithm {
-            val timeline = _root_ide_package_.de.dh.raaps.core.model.ApsTimeline(tickInterval)
-            val predictionModel = _root_ide_package_.de.dh.raaps.core.model.PredictionModel(
+        ): ApsAlgorithm {
+            val timeline = ApsTimeline(tickInterval)
+            val predictionModel = PredictionModel(
                 predictionWindowHours = PREDICTION_WINDOW_HOURS,
                 timeline = timeline
             )
             predictionModel.initializeToTick(Timestamp.now().minus(PRESERVE_PREDICTIONS_PAST_TIME))
             val carbsInsulinCalculationModel =
-                _root_ide_package_.de.dh.raaps.core.model.CarbsInsulinCalculationModel(tickInterval)
+                CarbsInsulinCalculationModel(tickInterval)
             predictionModel.calculatePredictionStage_1(
                 metabolicEventsModel,
                 carbsInsulinCalculationModel
             )
             val bgReadingsHistory =
-                _root_ide_package_.de.dh.raaps.core.model.RecentBgReadingsHistory(
+                RecentBgReadingsHistory(
                     DEVIATION_TIME_BASE
                 )
             bgReadingsHistory.setAll(readingsHistory)

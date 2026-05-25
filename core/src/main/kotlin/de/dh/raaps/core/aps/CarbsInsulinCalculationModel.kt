@@ -15,10 +15,10 @@ import de.dh.raaps.common.model.data.Timestamp
 class CarbsInsulinCalculationModel(
     val intervalSize: Minutes
 ) {
-    val carbsCalculationCache: de.dh.raaps.core.aps.SampledCarbsCalculationCache =
-        _root_ide_package_.de.dh.raaps.core.model.SampledCarbsCalculationCache(intervalSize)
-    val insulinCalculationCache: de.dh.raaps.core.aps.SampledInsulinCalculationCache =
-        _root_ide_package_.de.dh.raaps.core.model.SampledInsulinCalculationCache(intervalSize)
+    val carbsCalculationCache: SampledCarbsCalculationCache =
+        SampledCarbsCalculationCache(intervalSize)
+    val insulinCalculationCache: SampledInsulinCalculationCache =
+        SampledInsulinCalculationCache(intervalSize)
 
     /**
      * Calculates the total COB which is expected as result of the given meal consumptions

@@ -4,12 +4,12 @@ import de.dh.raaps.common.model.data.Tick
 
 class RollingPredictionWindow(
     val predictionWindowHours: Int,
-    val timeline: de.dh.raaps.core.aps.ApsTimeline,
+    val timeline: ApsTimeline,
     anchorTick: Tick
 ) {
     private val capacity = (predictionWindowHours * 60) / timeline.tickDuration.value.toInt()
     // Ring buffer which holds our prediction window
-    private val buffer = Array(capacity) { _ -> _root_ide_package_.de.dh.raaps.core.model.PredictionTickState() }
+    private val buffer = Array(capacity) { _ -> PredictionTickState() }
 
     var anchorTick: Tick = Tick.invalid()
 
@@ -51,7 +51,7 @@ class RollingPredictionWindow(
      * Tries to get an entry of our state buffer.
      * Only succeeds if the given tick falls within the current prediction window.
      */
-    fun tryGetTickState(tick: Tick): de.dh.raaps.core.aps.PredictionTickState? {
+    fun tryGetTickState(tick: Tick): PredictionTickState? {
         val maxValidTick = getLastTick().value
 
         if (tick.value in anchorTick.value..maxValidTick) {
@@ -64,13 +64,13 @@ class RollingPredictionWindow(
         return tick.value % capacity
     }
 
-    fun forEach(from: Tick = getFirstTick(), to: Tick = getLastTick(), action: (Tick, de.dh.raaps.core.aps.PredictionTickState) -> Unit) {
+    fun forEach(from: Tick = getFirstTick(), to: Tick = getLastTick(), action: (Tick, PredictionTickState) -> Unit) {
         for (tick in from..to) {
             tryGetTickState(tick)?.let { action(tick, it) }
         }
     }
 
-    suspend fun forEachS(action: suspend (Tick, de.dh.raaps.core.aps.PredictionTickState) -> Unit) {
+    suspend fun forEachS(action: suspend (Tick, PredictionTickState) -> Unit) {
         for (tick in getFirstTick()..getLastTick()) {
             tryGetTickState(tick)?.let { action(tick, it) }
         }

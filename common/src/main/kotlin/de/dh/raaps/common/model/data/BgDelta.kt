@@ -51,4 +51,3 @@ value class BgDelta(val mgdl: Short): Comparable<BgDelta> {
 }
 
 operator fun Double.times(delta: BgDelta) = delta * this
-operator fun BgValue.plus(other: BgDelta) = BgValue.fromMgDl(this.mgdl + other.mgdl)

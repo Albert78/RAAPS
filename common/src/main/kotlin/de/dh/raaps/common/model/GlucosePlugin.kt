@@ -1,19 +1,22 @@
 package de.dh.raaps.common.model
 
+import de.dh.raaps.common.model.data.BgReading
+import de.dh.raaps.common.model.data.BgReadingsInterval
+import de.dh.raaps.common.model.data.Minutes
 import kotlinx.coroutines.flow.Flow
 
 interface GlucosePlugin: Plugin {
     val name: String
     val dataProviderType: String
-    val readingsInterval: de.dh.raaps.common.model.data.BgReadingsInterval
+    val readingsInterval: BgReadingsInterval
 
     /**
      * Gets the expected time delay the readings (and readings timestamp)
      * are behind blood glucose.
      */
-    val readingsTimeDelay: de.dh.raaps.common.model.data.Minutes
+    val readingsTimeDelay: Minutes
     fun getSensorTypeName(): String
-    fun getValues(): Flow<de.dh.raaps.common.model.data.BgReading>
+    fun getValues(): Flow<BgReading>
 
     fun start()
     fun stop()
