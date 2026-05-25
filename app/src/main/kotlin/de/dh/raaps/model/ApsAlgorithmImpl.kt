@@ -118,13 +118,13 @@ class ApsAlgorithmImpl(
             // Goal 1: Get out of a current or impending low by lowering your basal rate early
             // Find the next occurrence where the value falls below the minimum; find the minimum with time
             predictionModel.findNext(startAt = now) {
-                it.predictedBg < targetBgRange.lower
+                it.predictedBg1 < targetBgRange.lower
             }?.let { firstLowPoint ->
                 val basalRate = therapyModel.getBasalPerHour(firstLowPoint.tick.timestamp)
                 val isf = therapyModel.getIsfFactor(firstLowPoint.tick.timestamp)
                 val zeroTempDeltaBgPerHour = (basalRate * isf).mgdl.toDouble()
                 val nextMin = predictionModel.findNextBgMin(startAt = firstLowPoint.tick, returnLatestIfFalling = true) ?: return@let
-                val bgError = targetBgRange.lower - nextMin.predictedBg + MIN_BG_SAFETY_MARGIN
+                val bgError = targetBgRange.lower - nextMin.predictedBg1 + MIN_BG_SAFETY_MARGIN
                 val startZeroTemp = maxOf(
                     nextMin.tick.minusHours((bgError.mgdl / zeroTempDeltaBgPerHour).toInt()).
                         // We must drop the basal long time before the next minimum 1) to avoid falling to min and 2) because of the long insulin effect.
@@ -146,7 +146,7 @@ class ApsAlgorithmImpl(
             }?.let { firstHighPoint ->
                 val nextMax = predictionModel.findNextBgMax(startAt = firstHighPoint.tick, returnLatestIfRising = true) ?: return@let
                 val targetBg = (targetBgRange.lower + targetBgRange.upper) / 2.0
-                val bgError = nextMax.predictedBg - targetBg
+                val bgError = nextMax.predictedBg1 - targetBg
                 if (bgError > BgDelta(0)) {
                     // Try to reduce BG by bgError
 
@@ -158,7 +158,7 @@ class ApsAlgorithmImpl(
 
                     // Insulin correction amount: Try correction based on bgError, but limited by lowBuffer so
                     // that we don't become low due to our IOB
-                    val lowBuffer = minAfterMax?.let { minAfterMax.predictedBg - targetBgRange.lower } // We have that much leeway for the correction
+                    val lowBuffer = minAfterMax?.let { minAfterMax.predictedBg1 - targetBgRange.lower } // We have that much leeway for the correction
                     val maxCorrection = if (lowBuffer == null)
                         bgError
                     else

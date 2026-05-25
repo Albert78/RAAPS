@@ -101,8 +101,8 @@ class PredictionModel(
             deviation *= DEVIATION_DECAY_FACTOR_PER_TICK
 
             bg = bg + state.bgi + deviation
-            if (bg != state.predictedBg) {
-                state.predictedBg = bg
+            if (bg != state.predictedBg1) {
+                state.predictedBg1 = bg
                 continueCalculations = true
             }
         }
@@ -138,7 +138,7 @@ class PredictionModel(
     ) {
         forEach(from = from, to = to) { _, state ->
             val tempBgi = state.basalDeviationPerHour * state.isf
-            state.predictedBg2 = state.predictedBg + tempBgi
+            state.predictedBg2 = state.predictedBg1 + tempBgi
         }
     }
 
@@ -154,7 +154,7 @@ class PredictionModel(
         var lastValue: BgValue = BgValue.INVALID
 
         val tickState = rollingHistory.findForward(startAt) { tickState ->
-            val currentBg = tickState.predictedBg
+            val currentBg = tickState.predictedBg1
 
             // We are looking for the point at which the value starts to grow again (local minimum)
             if (currentBg > lastValue) {
@@ -178,7 +178,7 @@ class PredictionModel(
         var lastValue: BgValue = BgValue.INVALID
 
         val tickState = rollingHistory.findForward(startAt) { tickState ->
-            val currentBg = tickState.predictedBg
+            val currentBg = tickState.predictedBg1
 
             // We are looking for the point at which the value starts to drop again (local maximum)
             if (currentBg < lastValue) {

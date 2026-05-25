@@ -27,7 +27,7 @@ class PredictionTickState {
 
     // Stage 4: Predicted BG depends on stages 1, 2 and 3. Basal rate effect (even low/zero temp)
     // is not included in predicted BG.
-    var predictedBg: BgValue = BgValue.INVALID // Calculated from a starting BG, applying BGIs of previous ticks
+    var predictedBg1: BgValue = BgValue.INVALID // Calculated from a starting BG, applying BGIs of previous ticks
 
     // Stage 5: Final calculated decision for basal low temp depends on stages 1-4.
     var basalDeviationPerHour: Double = 0.0 // Remember temp basal deviation decisions
@@ -43,6 +43,6 @@ class PredictionTickState {
         ic = 0.0
         bgi = BgDelta(0)
         basalDeviationPerHour = 0.0
-        predictedBg = BgValue.INVALID
+        predictedBg1 = BgValue.INVALID
     }
 }
