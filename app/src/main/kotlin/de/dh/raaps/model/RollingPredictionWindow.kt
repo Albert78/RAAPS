@@ -1,12 +1,11 @@
 package de.dh.raaps.model
 
 import de.dh.raaps.common.model.data.Tick
-import de.dh.raaps.common.model.data.Timestamp
 
 class RollingPredictionWindow(
     val predictionWindowHours: Int,
     val timeline: ApsTimeline,
-    timestamp: Timestamp
+    anchorTick: Tick
 ) {
     private val capacity = (predictionWindowHours * 60) / timeline.tickDuration.value.toInt()
     // Ring buffer which holds our prediction window
@@ -15,7 +14,7 @@ class RollingPredictionWindow(
     var anchorTick: Tick = Tick.invalid()
 
     init {
-        init(timeline.tick(timestamp))
+        init(anchorTick)
     }
 
     fun init(newAnchorTick: Tick = anchorTick) {

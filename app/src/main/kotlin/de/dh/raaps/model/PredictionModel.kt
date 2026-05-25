@@ -27,7 +27,11 @@ class PredictionModel(
     val predictionWindowHours: Int = 10,
     val timeline: ApsTimeline
 ) {
-    var rollingHistory = RollingPredictionWindow(predictionWindowHours = predictionWindowHours, timeline = timeline, timestamp = Timestamp.now())
+    var rollingHistory = RollingPredictionWindow(
+        predictionWindowHours = predictionWindowHours,
+        timeline = timeline,
+        timeline.tick(Timestamp.now())
+    )
 
     fun getFirstTick() = rollingHistory.getFirstTick()
     fun getLastTick() = rollingHistory.getLastTick()
@@ -36,8 +40,8 @@ class PredictionModel(
         rollingHistory.init(timeline.tick(newAnchorTimestamp))
     }
 
-    fun tryGetTickState(timestamp: Timestamp): PredictionTickState? {
-        return rollingHistory.tryGetTickState(timeline.tick(timestamp))
+    inline fun tryGetTickState(tick: Tick): PredictionTickState? {
+        return rollingHistory.tryGetTickState(tick)
     }
 
     /**
@@ -121,10 +125,10 @@ class PredictionModel(
      */
     fun setTempBasalDeviationStage_5(
         basalDeviationPerHour: Double,
-        tempBasalStart: Timestamp,
-        tempBasalEnd: Timestamp
+        tempBasalStart: Tick,
+        tempBasalEnd: Tick
     ) {
-        forEach(from = timeline.tick(tempBasalStart), to = timeline.tick(tempBasalEnd)) { _, state ->
+        forEach(from = tempBasalStart, to = tempBasalEnd) { _, state ->
             state.basalDeviationPerHour = basalDeviationPerHour
         }
     }
@@ -221,10 +225,10 @@ class PredictionModel(
     }
 
     fun forEach(
-        from: Timestamp = timeline.timestamp(getFirstTick()),
-        to: Timestamp = timeline.timestamp(getLastTick()),
+        from: Tick = getFirstTick(),
+        to: Tick = getLastTick(),
         action: (Tick, PredictionTickState) -> Unit) {
-        rollingHistory.forEach(from = timeline.tick(from), to = timeline.tick(to), action)
+        rollingHistory.forEach(from = from, to = to, action)
     }
 
     suspend fun forEachS(

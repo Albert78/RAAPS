@@ -44,7 +44,7 @@ class ApsAlgorithmImpl(
             val bgB = sampledBgReadings.getAt(Tick(t + 1))
             if (!bgB.isValid()) continue
 
-            val predictionTickState = predictionModel.rollingHistory.tryGetTickState(tick) ?: continue
+            val predictionTickState = predictionModel.tryGetTickState(tick) ?: continue
 
             // The difference of the real bg slope and the predicted bg slope (= bgi) is the deviation
             val actualSlope = bgB - bgA
@@ -126,7 +126,7 @@ class ApsAlgorithmImpl(
                 )
                 // We could actually start increasing the basal rate sooner than at the minimum, but when?
                 pumpActionsBuilder.setTempBasal(0.0, startZeroTemp, nextMin.timestamp)
-                predictionModel.setTempBasalDeviationStage_5(-basalRate, startZeroTemp, nextMin.timestamp)
+                predictionModel.setTempBasalDeviationStage_5(-basalRate, timeline.tick(startZeroTemp), timeline.tick(nextMin.timestamp))
             }
 
             predictionModel.calculatePredictionsWithTempBasalStage_6()
@@ -186,7 +186,7 @@ class ApsAlgorithmImpl(
                     // first insulin administration.
                     // To calculate the right amount, we reduce the application until we don't find
                     // any more ticks where we will drop down the low mark.
-                    predictionModel.forEach(to = nextMax.timestamp) { tick, state ->
+                    predictionModel.forEach(to = timeline.tick(nextMax.timestamp)) { tick, state ->
                         val bg = state.predictedBg2
                         if (bg == BgValue.INVALID) return@forEach
                         val spentInsulin = carbsInsulinCalculationModel.spentInsulin(
