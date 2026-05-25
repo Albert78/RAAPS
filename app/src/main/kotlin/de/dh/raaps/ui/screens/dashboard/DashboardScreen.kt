@@ -171,14 +171,8 @@ fun DashboardContent(
                             modifier = Modifier.align(Alignment.Center)
                         )
                     } else {
-                        val diagramData = remember(historyUiState.historyTicks, historyUiState.tickInterval) {
-                            return@remember DiagramData.fromTickStates(
-                                historyUiState.historyTicks,
-                                historyUiState.tickInterval
-                            )
-                        }
                         BgHistoryChartOrDefault(
-                            diagramData = diagramData,
+                            diagramData = DiagramData.fromReadings(historyUiState.readings),
                             onChartClick = onHistoryChartClick
                         )
                     }

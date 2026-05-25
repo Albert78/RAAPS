@@ -10,14 +10,13 @@ import androidx.lifecycle.viewmodel.CreationExtras
 import de.dh.raaps.MainApplication
 import de.dh.raaps.common.model.ToDo
 import de.dh.raaps.common.model.data.BgDelta
+import de.dh.raaps.common.model.data.BgReading
+import de.dh.raaps.common.model.data.BgSampleKind
 import de.dh.raaps.common.model.data.BgValue
 import de.dh.raaps.common.model.data.GlucoseUnit
-import de.dh.raaps.common.model.data.Minutes
 import de.dh.raaps.common.model.data.Timestamp
-import de.dh.raaps.model.APS
-import de.dh.raaps.model.ApsHistorySnapshot
-import de.dh.raaps.model.CoreState
-import de.dh.raaps.model.PredictionTickState
+import de.dh.raaps.core.aps.APS
+import de.dh.raaps.core.aps.CoreState
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.first
@@ -85,8 +84,7 @@ data class CurrentBgUiState(
 data class HistoryUiState(
     val isLoading: Boolean,
     val isError: Boolean,
-    val historyTicks: List<PredictionTickState?> = listOf(),
-    val tickInterval: Minutes = Minutes(5)
+    val readings: List<BgReading> = listOf()
 )
 
 class HistoryViewModel(
@@ -122,10 +120,13 @@ class HistoryViewModel(
     }
 
     private suspend fun reload_suspend() {
-        updateUiModel(aps.rollingHistory.getSnapshot())
+        // Load history for the last 24 hours
+        val historyLimit = Timestamp.now().minusHours(24)
+        val readings = dataRepository.loadBgReadings(from = historyLimit)
+        updateUiModel(readings)
     }
 
-    private fun updateUiModel(apsHistory: ApsHistorySnapshot) {
+    private fun updateUiModel(readings: List<BgReading>) {
         // TODO: Read from preferences
         ToDo.toBeImplemented("Read glucose unit from preferences")
         val glucoseUnit = GlucoseUnit.MG_DL
@@ -133,45 +134,36 @@ class HistoryViewModel(
         val timestampNowMs = Timestamp.now().ms
         val limitMs = timestampNowMs - 20 * 60 * 1000L
 
-        val recentTicksWithBg = apsHistory.ticks.filterNotNull().filter {
-            it.bg != null && it.bg!!.timestamp.ms >= limitMs
+        val recentReadings = readings.filter {
+            it.sampleKind == BgSampleKind.Value && it.timestamp.ms >= limitMs
         }
+
         // Prefer the absolute current value from the core, if it's fresh enough
         val currentBg = aps.getCurrentBg()
         val latest = if (currentBg != null && currentBg.timestamp.ms >= limitMs) {
             currentBg
         } else {
             // Fallback to history if current core value is missing or too old
-            recentTicksWithBg.lastOrNull()?.bg
+            recentReadings.lastOrNull()
         }
 
         _currentBgUiState.update {
             if (latest == null) {
                 val limit2HoursMs = timestampNowMs - 2 * 60 * 60 * 1000L
-                val olderTickData = apsHistory.ticks
-                    .map({ tickState -> Pair(tickState?.bg, tickState?.bg?.timestamp) })
-                    .lastOrNull(
-                        { pair ->
-                            val bg = pair.first
-                            val timestamp = pair.second
-                            return@lastOrNull bg != null && timestamp != null && timestamp.ms > limit2HoursMs
-                        }
-                    )
-                if (olderTickData == null) {
+                val olderReading = readings
+                    .lastOrNull { it.sampleKind == BgSampleKind.Value && it.timestamp.ms > limit2HoursMs }
+
+                if (olderReading == null) {
                     // Invalid value
                     CurrentBgUiState(isLoading = false, isError = false, currentBgValue = CurrentBgData.invalid())
                 } else {
-                    // Older tick state present
-                    val bg = olderTickData.first!!
-                    val timestamp = olderTickData.second!!
-
                     // Old value
                     CurrentBgUiState(
                         isLoading = false,
                         isError = false,
                         currentBgValue = CurrentBgData.oldValue(
-                            bgValue = bg.value,
-                            timestamp = timestamp
+                            bgValue = olderReading.value,
+                            timestamp = olderReading.timestamp
                         )
                     )
                 }
@@ -179,16 +171,16 @@ class HistoryViewModel(
                 val bgValue = latest.value
 
                 // Calculate trend using linear regression over the points in the window
-                val n = recentTicksWithBg.size
+                val n = recentReadings.size
                 val regressionDelta5m: Double? = if (n >= 2) {
-                    val firstTs = recentTicksWithBg.first().bg!!.timestamp.ms
+                    val firstTs = recentReadings.first().timestamp.ms
                     var sumX = 0.0
                     var sumY = 0.0
                     var sumXY = 0.0
                     var sumXX = 0.0
-                    recentTicksWithBg.forEach { tick ->
-                        val x = (tick.bg!!.timestamp.ms - firstTs) / 60000.0
-                        val y = tick.bg!!.value.mgdl.toDouble()
+                    recentReadings.forEach { reading ->
+                        val x = (reading.timestamp.ms - firstTs) / 60000.0
+                        val y = reading.value.mgdl.toDouble()
                         sumX += x
                         sumY += y
                         sumXY += x * y
@@ -231,13 +223,12 @@ class HistoryViewModel(
             }
         }
 
-        Log.d(TAG, "Updating history data")
+        Log.d(TAG, "Updating history data with ${readings.size} readings")
         _historyUiState.update {
             HistoryUiState(
                 isLoading = false,
                 isError = false,
-                historyTicks = apsHistory.ticks,
-                tickInterval = apsHistory.tickInterval
+                readings = readings
             )
         }
     }

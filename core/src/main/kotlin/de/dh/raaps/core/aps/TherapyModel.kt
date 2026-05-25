@@ -51,6 +51,11 @@ class TherapyModel(
 
     suspend fun getPumpInsulinType(): InsulinType {
         ToDo.toBeImplemented("getPumpInsulinType")
-        return InsulinTypes.ASPART
+        var insulinType = dataRepository.getInsulinTypeByName(InsulinTypes.ASPART.name)
+        if (insulinType == null) {
+            insulinType = InsulinTypes.ASPART
+            dataRepository.insertInsulinType(insulinType)
+        }
+        return insulinType
     }
 }

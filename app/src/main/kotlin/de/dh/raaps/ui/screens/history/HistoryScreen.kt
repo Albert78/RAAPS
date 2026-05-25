@@ -11,23 +11,19 @@ import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import de.dh.raaps.R
-import de.dh.raaps.common.model.data.Minutes
 import de.dh.raaps.common.ui.composables.screenTitle
 import de.dh.raaps.common.ui.theme.AppTheme
 import de.dh.raaps.ui.controls.history.BgHistoryChartOrDefault
 import de.dh.raaps.ui.controls.history.DiagramData
 import de.dh.raaps.ui.controls.history.HistoryUiState
 import de.dh.raaps.ui.controls.history.HistoryViewModel
-import de.dh.raaps.ui.controls.history.createSampleHistoryTicks
+import de.dh.raaps.ui.controls.history.createSampleReadings
 
 @Composable
 fun HistoryScreen(
@@ -46,7 +42,6 @@ fun HistoryContent(
     historyUiState: HistoryUiState
 ) {
     val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
-    var menuExpanded by remember { mutableStateOf(false) }
 
     Scaffold(
         modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
@@ -68,7 +63,7 @@ fun HistoryContent(
                 )
             } else {
                 BgHistoryChartOrDefault(
-                    diagramData = DiagramData.fromTickStates(historyUiState.historyTicks, historyUiState.tickInterval),
+                    diagramData = DiagramData.fromReadings(historyUiState.readings),
                     showMarkers = true,
                     modifier = Modifier.fillMaxSize()
                 )
@@ -81,8 +76,7 @@ fun createSampleHistoryUiState(): HistoryUiState {
     return HistoryUiState(
         isLoading = false,
         isError = false,
-        historyTicks = createSampleHistoryTicks(120, 5),
-        tickInterval = Minutes(5)
+        readings = createSampleReadings(120, 5)
     )
 }
 
