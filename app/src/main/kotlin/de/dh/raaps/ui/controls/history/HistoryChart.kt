@@ -48,6 +48,7 @@ import com.patrykandpatrick.vico.compose.cartesian.decoration.HorizontalBox
 import com.patrykandpatrick.vico.compose.cartesian.layer.LineCartesianLayer
 import com.patrykandpatrick.vico.compose.cartesian.layer.rememberLine
 import com.patrykandpatrick.vico.compose.cartesian.layer.rememberLineCartesianLayer
+import com.patrykandpatrick.vico.compose.cartesian.layer.CartesianLayerDimensions
 import com.patrykandpatrick.vico.compose.cartesian.marker.DefaultCartesianMarker
 import com.patrykandpatrick.vico.compose.cartesian.marker.LineCartesianLayerMarkerTarget
 import com.patrykandpatrick.vico.compose.cartesian.marker.rememberDefaultCartesianMarker
@@ -256,14 +257,54 @@ fun BgHistoryChart(
     }
 
     val xItemPlacer = remember(diagramData) {
-        val spacing = 60 // 1 hour in minutes
-        val calendar = Calendar.getInstance().apply { timeInMillis = diagramData.baseTimestamp }
-        val minutesIntoDay = calendar.get(Calendar.HOUR_OF_DAY) * 60 + calendar.get(Calendar.MINUTE)
-        val offset = (spacing - (minutesIntoDay % spacing)) % spacing
-        HorizontalAxis.ItemPlacer.aligned(
-            spacing = { spacing },
-            offset = { offset.toInt() }
-        )
+        object : HorizontalAxis.ItemPlacer {
+            override fun getLabelValues(
+                context: CartesianDrawingContext,
+                visibleXRange: ClosedFloatingPointRange<Double>,
+                fullXRange: ClosedFloatingPointRange<Double>,
+                maxLabelWidth: Float
+            ): List<Double> {
+                val spacing = 60.0 // 1 hour
+                val calendar = Calendar.getInstance().apply { timeInMillis = diagramData.baseTimestamp }
+                val minsIntoDay = calendar.get(Calendar.HOUR_OF_DAY) * 60 + calendar.get(Calendar.MINUTE)
+                val firstLabelOffset = (spacing - (minsIntoDay % spacing)) % spacing
+                
+                val values = mutableListOf<Double>()
+                var current = firstLabelOffset
+                while (current <= fullXRange.endInclusive) {
+                    if (current >= fullXRange.start) values.add(current)
+                    current += spacing
+                }
+                return values
+            }
+
+            override fun getWidthMeasurementLabelValues(
+                context: CartesianMeasuringContext,
+                layerDimensions: CartesianLayerDimensions,
+                fullXRange: ClosedFloatingPointRange<Double>
+            ) = listOf(fullXRange.start, fullXRange.endInclusive)
+
+            override fun getHeightMeasurementLabelValues(
+                context: CartesianMeasuringContext,
+                layerDimensions: CartesianLayerDimensions,
+                fullXRange: ClosedFloatingPointRange<Double>,
+                maxLabelWidth: Float
+            ) = listOf(fullXRange.start, fullXRange.endInclusive)
+
+            override fun getStartLayerMargin(
+                context: CartesianMeasuringContext,
+                layerDimensions: CartesianLayerDimensions,
+                tickThickness: Float,
+                maxLabelWidth: Float
+            ): Float = 0f
+
+            override fun getEndLayerMargin(
+                context: CartesianMeasuringContext,
+                layerDimensions: CartesianLayerDimensions,
+                tickThickness: Float,
+                maxLabelWidth: Float
+            ): Float = 0f
+        }
     }
 
     val yItemPlacer = remember {
@@ -541,11 +582,54 @@ fun BgOverviewChart(
                 bottomAxis = HorizontalAxis.rememberBottom(
                     valueFormatter = xAxisValueFormatter,
                     itemPlacer = remember(diagramData) {
-                        val spacing = 360 // 6 hours in minutes
-                        val calendar = Calendar.getInstance().apply { timeInMillis = diagramData.baseTimestamp }
-                        val minutesIntoDay = calendar.get(Calendar.HOUR_OF_DAY) * 60 + calendar.get(Calendar.MINUTE)
-                        val offset = (spacing - (minutesIntoDay % spacing)) % spacing
-                        HorizontalAxis.ItemPlacer.aligned(spacing = { spacing }, offset = { offset.toInt() })
+                        object : HorizontalAxis.ItemPlacer {
+                            override fun getLabelValues(
+                                context: CartesianDrawingContext,
+                                visibleXRange: ClosedFloatingPointRange<Double>,
+                                fullXRange: ClosedFloatingPointRange<Double>,
+                                maxLabelWidth: Float
+                            ): List<Double> {
+                                val spacing = 360.0 // 6 hours
+                                val calendar = Calendar.getInstance().apply { timeInMillis = diagramData.baseTimestamp }
+                                val minsIntoDay = calendar.get(Calendar.HOUR_OF_DAY) * 60 + calendar.get(Calendar.MINUTE)
+                                val firstLabelOffset = (spacing - (minsIntoDay % spacing)) % spacing
+
+                                val values = mutableListOf<Double>()
+                                var current = firstLabelOffset
+                                while (current <= fullXRange.endInclusive) {
+                                    if (current >= fullXRange.start) values.add(current)
+                                    current += spacing
+                                }
+                                return values
+                            }
+
+                            override fun getWidthMeasurementLabelValues(
+                                context: CartesianMeasuringContext,
+                                layerDimensions: CartesianLayerDimensions,
+                                fullXRange: ClosedFloatingPointRange<Double>
+                            ) = listOf(fullXRange.start, fullXRange.endInclusive)
+
+                            override fun getHeightMeasurementLabelValues(
+                                context: CartesianMeasuringContext,
+                                layerDimensions: CartesianLayerDimensions,
+                                fullXRange: ClosedFloatingPointRange<Double>,
+                                maxLabelWidth: Float
+                            ) = listOf(fullXRange.start, fullXRange.endInclusive)
+
+                            override fun getStartLayerMargin(
+                                context: CartesianMeasuringContext,
+                                layerDimensions: CartesianLayerDimensions,
+                                tickThickness: Float,
+                                maxLabelWidth: Float
+                            ): Float = 0f
+
+                            override fun getEndLayerMargin(
+                                context: CartesianMeasuringContext,
+                                layerDimensions: CartesianLayerDimensions,
+                                tickThickness: Float,
+                                maxLabelWidth: Float
+                            ): Float = 0f
+                        }
                     }
                 ),
             ),
