@@ -142,7 +142,11 @@ data class DiagramData(
     val readings: List<BgReading>,
     val baseTimestamp: Long,
     val minX: Double,
-    val maxX: Double
+    val maxX: Double,
+    // Pre-calculated for performance
+    val xValues: List<Double>,
+    val yValues: List<Double>,
+    val dataSignature: Any
 ) {
     companion object {
         fun fromReadings(readings: List<BgReading>): DiagramData? {
@@ -158,13 +162,30 @@ data class DiagramData(
             val endTs = ((lastTs / MS_PER_HOUR) + 1) * MS_PER_HOUR
             val maxX = (endTs - baseTimestamp).toDouble() / MS_PER_MINUTE
 
-            return DiagramData(validReadings, baseTimestamp, minX, maxX)
+            return DiagramData(
+                readings = validReadings,
+                baseTimestamp = baseTimestamp,
+                minX = minX,
+                maxX = maxX,
+                xValues = validReadings.map { ((it.timestamp.ms - baseTimestamp).toDouble() / MS_PER_MINUTE * 10000).toLong() / 10000.0 },
+                yValues = validReadings.map { it.value.mgdl.toDouble() },
+                dataSignature = "${validReadings.size}_${validReadings.first().timestamp.ms}_${validReadings.last().timestamp.ms}"
+            )
         }
 
         fun empty(): DiagramData {
             val now = Timestamp.now().ms
             val baseTimestamp = (now / MS_PER_HOUR) * MS_PER_HOUR
-            return DiagramData(emptyList(), baseTimestamp, 0.0, INITIAL_SHOW_HOURS * 60.0)
+            val maxX = INITIAL_SHOW_HOURS * 60.0
+            return DiagramData(
+                readings = emptyList(),
+                baseTimestamp = baseTimestamp,
+                minX = 0.0,
+                maxX = maxX,
+                xValues = listOf(0.0, maxX),
+                yValues = listOf(0.0, 0.0),
+                dataSignature = "empty_$baseTimestamp"
+            )
         }
     }
 }
@@ -187,30 +208,18 @@ fun BgHistoryChart(
 
     var isInitialized by remember(diagramData.baseTimestamp) { mutableStateOf(false) }
 
-    LaunchedEffect(diagramData) {
+    LaunchedEffect(diagramData.dataSignature) {
         modelProducer.runTransaction {
-            if (diagramData.readings.isEmpty()) {
-                lineSeries { series(x = listOf(0.0, diagramData.maxX), y = listOf(0.0, 0.0)) }
-            } else {
-                lineSeries {
-                    series(
-                        x = diagramData.readings.map {
-                            ((it.timestamp.ms - diagramData.baseTimestamp).toDouble() / MS_PER_MINUTE * 10000).toLong() / 10000.0
-                        },
-                        y = diagramData.readings.map { it.value.mgdl.toDouble() }
-                    )
-                }
-            }
+            lineSeries { series(x = diagramData.xValues, y = diagramData.yValues) }
         }
 
-        // Scroll to the end (latest data) when data is first loaded
         if (!isInitialized && diagramData.readings.isNotEmpty()) {
             state.scrollState.scroll(Scroll.Absolute.End)
             isInitialized = true
         }
     }
 
-    val rangeProvider = remember(diagramData) {
+    val rangeProvider = remember(diagramData.minX, diagramData.maxX) {
         object : CartesianLayerRangeProvider {
             override fun getMinY(minY: Double, maxY: Double, extraStore: ExtraStore) = 40.0
             override fun getMaxY(minY: Double, maxY: Double, extraStore: ExtraStore) =
@@ -220,21 +229,26 @@ fun BgHistoryChart(
         }
     }
 
-    val xAxisValueFormatter = remember(diagramData) {
+    // Reuse a single Calendar instance for all formatter and placer calls
+    val sharedCalendar = remember { Calendar.getInstance() }
+
+    val xAxisValueFormatter = remember(diagramData.baseTimestamp) {
         CartesianValueFormatter { _, x, _ ->
-            val calendar = Calendar.getInstance().apply {
-                timeInMillis = diagramData.baseTimestamp + x.toLong() * MS_PER_MINUTE
+            synchronized(sharedCalendar) {
+                sharedCalendar.timeInMillis = diagramData.baseTimestamp + x.toLong() * MS_PER_MINUTE
+                String.format(Locale.getDefault(), "%02d", sharedCalendar.get(Calendar.HOUR_OF_DAY))
             }
-            String.format(Locale.getDefault(), "%02d", calendar.get(Calendar.HOUR_OF_DAY))
         }
     }
 
-    val xItemPlacer = remember(diagramData) {
+    val xItemPlacer = remember(diagramData.baseTimestamp) {
         object : HorizontalAxis.ItemPlacer {
             override fun getLabelValues(ctx: CartesianDrawingContext, v: ClosedFloatingPointRange<Double>, f: ClosedFloatingPointRange<Double>, m: Float): List<Double> {
                 val spacing = 60.0
-                val cal = Calendar.getInstance().apply { timeInMillis = diagramData.baseTimestamp }
-                val startOffset = (spacing - ((cal.get(Calendar.HOUR_OF_DAY) * 60 + cal.get(Calendar.MINUTE)) % spacing)) % spacing
+                val startOffset = synchronized(sharedCalendar) {
+                    sharedCalendar.timeInMillis = diagramData.baseTimestamp
+                    (spacing - ((sharedCalendar.get(Calendar.HOUR_OF_DAY) * 60 + sharedCalendar.get(Calendar.MINUTE)) % spacing)) % spacing
+                }
                 val values = mutableListOf<Double>()
                 var curr = startOffset
                 while (curr <= f.endInclusive) {
@@ -270,8 +284,10 @@ fun BgHistoryChart(
         label = rememberAxisLabelComponent(),
         valueFormatter = DefaultCartesianMarker.ValueFormatter { _, targets ->
             val target = targets.firstOrNull() ?: return@ValueFormatter ""
-            val cal = Calendar.getInstance().apply { timeInMillis = diagramData.baseTimestamp + target.x.toLong() * MS_PER_MINUTE }
-            val time = String.format(Locale.getDefault(), "%02d:%02d", cal.get(Calendar.HOUR_OF_DAY), cal.get(Calendar.MINUTE))
+            val time = synchronized(sharedCalendar) {
+                sharedCalendar.timeInMillis = diagramData.baseTimestamp + target.x.toLong() * MS_PER_MINUTE
+                String.format(Locale.getDefault(), "%02d:%02d", sharedCalendar.get(Calendar.HOUR_OF_DAY), sharedCalendar.get(Calendar.MINUTE))
+            }
             val bgValue = (target as? LineCartesianLayerMarkerTarget)?.points?.firstOrNull()?.entry?.y?.toInt() ?: 0
             if (bgValue == 0) time else "$time | $bgValue mg/dL"
         }
@@ -351,14 +367,9 @@ fun BgOverviewChart(
     val scope = rememberCoroutineScope()
     var layerBounds by remember { mutableStateOf(Rect.Zero) }
 
-    LaunchedEffect(diagramData) {
+    LaunchedEffect(diagramData.dataSignature) {
         modelProducer.runTransaction {
-            lineSeries {
-                series(
-                    x = diagramData.readings.map { ((it.timestamp.ms - diagramData.baseTimestamp).toDouble() / MS_PER_MINUTE * 10000).toLong() / 10000.0 },
-                    y = diagramData.readings.map { it.value.mgdl.toDouble() }
-                )
-            }
+            lineSeries { series(x = diagramData.xValues, y = diagramData.yValues) }
         }
     }
 
@@ -385,7 +396,7 @@ fun BgOverviewChart(
                             )
                         )
                     ),
-                    rangeProvider = remember(diagramData) {
+                    rangeProvider = remember(diagramData.minX, diagramData.maxX) {
                         object : CartesianLayerRangeProvider {
                             override fun getMinY(minY: Double, maxY: Double, extraStore: ExtraStore) = 40.0
                             override fun getMaxY(minY: Double, maxY: Double, extraStore: ExtraStore) = (maxY.coerceAtLeast(200.0) + 10.0).coerceAtMost(410.0)
@@ -414,7 +425,7 @@ fun BgOverviewChart(
                         val cal = Calendar.getInstance().apply { timeInMillis = diagramData.baseTimestamp + x.toLong() * MS_PER_MINUTE }
                         String.format(Locale.getDefault(), "%02d", cal.get(Calendar.HOUR_OF_DAY))
                     },
-                    itemPlacer = remember(diagramData) {
+                    itemPlacer = remember(diagramData.baseTimestamp) {
                         object : HorizontalAxis.ItemPlacer {
                             override fun getLabelValues(ctx: CartesianDrawingContext, v: ClosedFloatingPointRange<Double>, f: ClosedFloatingPointRange<Double>, m: Float): List<Double> {
                                 val spacing = 360.0
