@@ -243,7 +243,12 @@ fun BgHistoryChart(
 
     val xItemPlacer = remember(diagramData.baseTimestamp) {
         object : HorizontalAxis.ItemPlacer {
-            override fun getLabelValues(ctx: CartesianDrawingContext, v: ClosedFloatingPointRange<Double>, f: ClosedFloatingPointRange<Double>, m: Float): List<Double> {
+            override fun getLabelValues(
+                context: CartesianDrawingContext,
+                visibleXRange: ClosedFloatingPointRange<Double>,
+                fullXRange: ClosedFloatingPointRange<Double>,
+                maxLabelWidth: Float
+            ): List<Double> {
                 val spacing = 60.0
                 val startOffset = synchronized(sharedCalendar) {
                     sharedCalendar.timeInMillis = diagramData.baseTimestamp
@@ -251,32 +256,83 @@ fun BgHistoryChart(
                 }
                 val values = mutableListOf<Double>()
                 var curr = startOffset
-                while (curr <= f.endInclusive) {
-                    if (curr >= f.start) values.add(curr)
+                while (curr <= fullXRange.endInclusive) {
+                    if (curr >= fullXRange.start) values.add(curr)
                     curr += spacing
                 }
                 return values
             }
-            override fun getWidthMeasurementLabelValues(ctx: CartesianMeasuringContext, l: CartesianLayerDimensions, f: ClosedFloatingPointRange<Double>) = listOf(f.start, f.endInclusive)
-            override fun getHeightMeasurementLabelValues(ctx: CartesianMeasuringContext, l: CartesianLayerDimensions, f: ClosedFloatingPointRange<Double>, m: Float) = listOf(f.start, f.endInclusive)
-            override fun getStartLayerMargin(ctx: CartesianMeasuringContext, l: CartesianLayerDimensions, t: Float, m: Float) = 0f
-            override fun getEndLayerMargin(ctx: CartesianMeasuringContext, l: CartesianLayerDimensions, t: Float, m: Float) = 0f
+
+            override fun getWidthMeasurementLabelValues(
+                context: CartesianMeasuringContext,
+                layerDimensions: CartesianLayerDimensions,
+                fullXRange: ClosedFloatingPointRange<Double>
+            ) = listOf(fullXRange.start, fullXRange.endInclusive)
+
+            override fun getHeightMeasurementLabelValues(
+                context: CartesianMeasuringContext,
+                layerDimensions: CartesianLayerDimensions,
+                fullXRange: ClosedFloatingPointRange<Double>,
+                maxLabelWidth: Float
+            ) = listOf(fullXRange.start, fullXRange.endInclusive)
+
+            override fun getStartLayerMargin(
+                context: CartesianMeasuringContext,
+                layerDimensions: CartesianLayerDimensions,
+                tickThickness: Float,
+                maxLabelWidth: Float
+            ) = 0f
+
+            override fun getEndLayerMargin(
+                context: CartesianMeasuringContext,
+                layerDimensions: CartesianLayerDimensions,
+                tickThickness: Float,
+                maxLabelWidth: Float
+            ) = 0f
         }
     }
 
     val yItemPlacer = remember {
         object : VerticalAxis.ItemPlacer {
-            override fun getLabelValues(ctx: CartesianDrawingContext, h: Float, m: Float, p: Axis.Position.Vertical) = getValues(ctx.ranges.getYRange(p).maxY)
-            override fun getWidthMeasurementLabelValues(ctx: CartesianMeasuringContext, h: Float, m: Float, p: Axis.Position.Vertical) = getValues(ctx.ranges.getYRange(p).maxY)
-            override fun getHeightMeasurementLabelValues(ctx: CartesianMeasuringContext, p: Axis.Position.Vertical) = getValues(ctx.ranges.getYRange(p).maxY)
+            override fun getLabelValues(
+                context: CartesianDrawingContext,
+                axisHeight: Float,
+                maxLabelHeight: Float,
+                position: Axis.Position.Vertical
+            ) = getValues(context.ranges.getYRange(position).maxY)
+
+            override fun getWidthMeasurementLabelValues(
+                context: CartesianMeasuringContext,
+                axisHeight: Float,
+                maxLabelHeight: Float,
+                position: Axis.Position.Vertical
+            ) = getValues(context.ranges.getYRange(position).maxY)
+
+            override fun getHeightMeasurementLabelValues(
+                context: CartesianMeasuringContext,
+                position: Axis.Position.Vertical
+            ) = getValues(context.ranges.getYRange(position).maxY)
+
             private fun getValues(maxY: Double): List<Double> {
                 val v = mutableListOf<Double>()
                 var c = 50.0
                 while (c <= maxY) { v.add(c); c += 50.0 }
                 return v
             }
-            override fun getTopLayerMargin(ctx: CartesianMeasuringContext, v: Position.Vertical, m: Float, l: Float) = 0f
-            override fun getBottomLayerMargin(ctx: CartesianMeasuringContext, v: Position.Vertical, m: Float, l: Float) = 0f
+
+            override fun getTopLayerMargin(
+                context: CartesianMeasuringContext,
+                verticalLabelPosition: Position.Vertical,
+                maxLabelHeight: Float,
+                maxLineThickness: Float
+            ) = 0f
+
+            override fun getBottomLayerMargin(
+                context: CartesianMeasuringContext,
+                verticalLabelPosition: Position.Vertical,
+                maxLabelHeight: Float,
+                maxLineThickness: Float
+            ) = 0f
         }
     }
 
@@ -407,17 +463,45 @@ fun BgOverviewChart(
                 ),
                 startAxis = VerticalAxis.rememberStart(itemPlacer = remember {
                     object : VerticalAxis.ItemPlacer {
-                        override fun getLabelValues(ctx: CartesianDrawingContext, h: Float, m: Float, p: Axis.Position.Vertical) = getValues(ctx.ranges.getYRange(p).maxY)
-                        override fun getWidthMeasurementLabelValues(ctx: CartesianMeasuringContext, h: Float, m: Float, p: Axis.Position.Vertical) = getValues(ctx.ranges.getYRange(p).maxY)
-                        override fun getHeightMeasurementLabelValues(ctx: CartesianMeasuringContext, p: Axis.Position.Vertical) = getValues(ctx.ranges.getYRange(p).maxY)
+                        override fun getLabelValues(
+                            context: CartesianDrawingContext,
+                            axisHeight: Float,
+                            maxLabelHeight: Float,
+                            position: Axis.Position.Vertical
+                        ) = getValues(context.ranges.getYRange(position).maxY)
+
+                        override fun getWidthMeasurementLabelValues(
+                            context: CartesianMeasuringContext,
+                            axisHeight: Float,
+                            maxLabelHeight: Float,
+                            position: Axis.Position.Vertical
+                        ) = getValues(context.ranges.getYRange(position).maxY)
+
+                        override fun getHeightMeasurementLabelValues(
+                            context: CartesianMeasuringContext,
+                            position: Axis.Position.Vertical
+                        ) = getValues(context.ranges.getYRange(position).maxY)
+
                         private fun getValues(maxY: Double): List<Double> {
                             val v = mutableListOf<Double>()
                             var c = 150.0
                             while (c <= maxY) { v.add(c); c += 100.0 }
                             return v
                         }
-                        override fun getTopLayerMargin(ctx: CartesianMeasuringContext, v: Position.Vertical, m: Float, l: Float) = 0f
-                        override fun getBottomLayerMargin(ctx: CartesianMeasuringContext, v: Position.Vertical, m: Float, l: Float) = 0f
+
+                        override fun getTopLayerMargin(
+                            context: CartesianMeasuringContext,
+                            verticalLabelPosition: Position.Vertical,
+                            maxLabelHeight: Float,
+                            maxLineThickness: Float
+                        ) = 0f
+
+                        override fun getBottomLayerMargin(
+                            context: CartesianMeasuringContext,
+                            verticalLabelPosition: Position.Vertical,
+                            maxLabelHeight: Float,
+                            maxLineThickness: Float
+                        ) = 0f
                     }
                 }),
                 bottomAxis = HorizontalAxis.rememberBottom(
@@ -427,18 +511,46 @@ fun BgOverviewChart(
                     },
                     itemPlacer = remember(diagramData.baseTimestamp) {
                         object : HorizontalAxis.ItemPlacer {
-                            override fun getLabelValues(ctx: CartesianDrawingContext, v: ClosedFloatingPointRange<Double>, f: ClosedFloatingPointRange<Double>, m: Float): List<Double> {
+                            override fun getLabelValues(
+                                context: CartesianDrawingContext,
+                                visibleXRange: ClosedFloatingPointRange<Double>,
+                                fullXRange: ClosedFloatingPointRange<Double>,
+                                maxLabelWidth: Float
+                            ): List<Double> {
                                 val spacing = 360.0
                                 val cal = Calendar.getInstance().apply { timeInMillis = diagramData.baseTimestamp }
                                 val offset = (spacing - ((cal.get(Calendar.HOUR_OF_DAY) * 60 + cal.get(Calendar.MINUTE)) % spacing)) % spacing
                                 val values = mutableListOf<Double>()
-                                var curr = offset; while (curr <= f.endInclusive) { if (curr >= f.start) values.add(curr); curr += spacing }
+                                var curr = offset; while (curr <= fullXRange.endInclusive) { if (curr >= fullXRange.start) values.add(curr); curr += spacing }
                                 return values
                             }
-                            override fun getWidthMeasurementLabelValues(ctx: CartesianMeasuringContext, l: CartesianLayerDimensions, f: ClosedFloatingPointRange<Double>) = listOf(f.start, f.endInclusive)
-                            override fun getHeightMeasurementLabelValues(ctx: CartesianMeasuringContext, l: CartesianLayerDimensions, f: ClosedFloatingPointRange<Double>, m: Float) = listOf(f.start, f.endInclusive)
-                            override fun getStartLayerMargin(ctx: CartesianMeasuringContext, l: CartesianLayerDimensions, t: Float, m: Float) = 0f
-                            override fun getEndLayerMargin(ctx: CartesianMeasuringContext, l: CartesianLayerDimensions, t: Float, m: Float) = 0f
+
+                            override fun getWidthMeasurementLabelValues(
+                                context: CartesianMeasuringContext,
+                                layerDimensions: CartesianLayerDimensions,
+                                fullXRange: ClosedFloatingPointRange<Double>
+                            ) = listOf(fullXRange.start, fullXRange.endInclusive)
+
+                            override fun getHeightMeasurementLabelValues(
+                                context: CartesianMeasuringContext,
+                                layerDimensions: CartesianLayerDimensions,
+                                fullXRange: ClosedFloatingPointRange<Double>,
+                                maxLabelWidth: Float
+                            ) = listOf(fullXRange.start, fullXRange.endInclusive)
+
+                            override fun getStartLayerMargin(
+                                context: CartesianMeasuringContext,
+                                layerDimensions: CartesianLayerDimensions,
+                                tickThickness: Float,
+                                maxLabelWidth: Float
+                            ) = 0f
+
+                            override fun getEndLayerMargin(
+                                context: CartesianMeasuringContext,
+                                layerDimensions: CartesianLayerDimensions,
+                                tickThickness: Float,
+                                maxLabelWidth: Float
+                            ) = 0f
                         }
                     }
                 ),
