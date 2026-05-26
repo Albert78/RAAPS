@@ -185,6 +185,8 @@ fun BgHistoryChart(
     state.minX = diagramData.minX
     state.maxX = diagramData.maxX
 
+    var isInitialized by remember(diagramData.baseTimestamp) { mutableStateOf(false) }
+
     LaunchedEffect(diagramData) {
         modelProducer.runTransaction {
             if (diagramData.readings.isEmpty()) {
@@ -199,6 +201,12 @@ fun BgHistoryChart(
                     )
                 }
             }
+        }
+
+        // Scroll to the end (latest data) when data is first loaded
+        if (!isInitialized && diagramData.readings.isNotEmpty()) {
+            state.scrollState.scroll(Scroll.Absolute.End)
+            isInitialized = true
         }
     }
 
