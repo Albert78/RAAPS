@@ -118,8 +118,14 @@ class BgHistoryChartState(
         if (desiredWidth <= 0 || chartWidth <= 0 || totalXRange <= 0.0) return
 
         zoomState.zoom(Zoom.x(desiredWidth))
-        
-        // Use Vico's built-in scroll-to-x functionality
+        scrollState.scroll(Scroll.Absolute.x(x = start))
+    }
+
+    /**
+     * Scrolls the chart to a specific time offset without changing the zoom level.
+     */
+    suspend fun scrollTo(start: Double) {
+        if (chartWidth <= 0) return
         scrollState.scroll(Scroll.Absolute.x(x = start))
     }
 }
@@ -128,7 +134,7 @@ class BgHistoryChartState(
 fun rememberBgHistoryChartState(
     initialShowHours: Double = INITIAL_SHOW_HOURS
 ): BgHistoryChartState {
-    val scrollState = rememberVicoScrollState(initialScroll = Scroll.Absolute.End)
+    val scrollState = rememberVicoScrollState()
     val zoomState = rememberVicoZoomState(initialZoom = Zoom.x(initialShowHours * 60.0))
     return remember(scrollState, zoomState) {
         BgHistoryChartState(scrollState, zoomState)
@@ -559,16 +565,27 @@ fun BgOverviewChart(
                     modifier = Modifier
                         .fillMaxSize()
                         .pointerInput(diagramData, totalRange) {
-                            detectDragGestures { change, dragAmount ->
-                                change.consume()
-                                val deltaXMs = (dragAmount.x / size.width) * totalRange
-                                scope.launch {
-                                    state.setVisibleRange(
-                                        start = visibleRange.start + deltaXMs,
-                                        end = visibleRange.endInclusive + deltaXMs
-                                    )
+                            var dragStartRange: ClosedFloatingPointRange<Double>? = null
+                            var accumulatedDelta = 0.0
+
+                            detectDragGestures(
+                                onDragStart = { 
+                                    dragStartRange = state.visibleRange
+                                    accumulatedDelta = 0.0
+                                },
+                                onDrag = { change, dragAmount ->
+                                    change.consume()
+                                    val startRange = dragStartRange ?: return@detectDragGestures
+                                    
+                                    // Calculate total shifted minutes since drag start
+                                    accumulatedDelta += (dragAmount.x / size.width) * totalRange
+                                    
+                                    scope.launch {
+                                        // Use scrollTo to move without changing zoom
+                                        state.scrollTo(start = startRange.start + accumulatedDelta)
+                                    }
                                 }
-                            }
+                            )
                         }
                 ) {
                     val left = leftFrac.toFloat() * size.width
