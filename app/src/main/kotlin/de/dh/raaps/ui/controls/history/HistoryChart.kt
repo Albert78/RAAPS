@@ -244,10 +244,12 @@ fun BgHistoryChart(
     }
 
     val xItemPlacer = remember(diagramData) {
-        // Place a label at every full hour
+        val spacing = MS_PER_HOUR * 2
+        val offset = (spacing - (diagramData.baseTimestamp % spacing)) % spacing
+        // Place a label at every 2nd full hour to avoid clutter on smaller screens
         HorizontalAxis.ItemPlacer.aligned(
-            spacing = { MS_PER_HOUR.toInt() },
-            offset = { 0 }
+            spacing = { spacing.toInt() },
+            offset = { offset.toInt() }
         )
     }
 
@@ -489,6 +491,15 @@ fun BgOverviewChart(
         }
     }
 
+    val xAxisValueFormatter = remember(diagramData) {
+        CartesianValueFormatter { _, x, _ ->
+            val calendar = Calendar.getInstance().apply {
+                timeInMillis = diagramData.baseTimestamp + x.toLong()
+            }
+            String.format(Locale.getDefault(), "%02d", calendar.get(Calendar.HOUR_OF_DAY))
+        }
+    }
+
     Box(
         modifier = modifier
             .height(100.dp)
@@ -512,8 +523,12 @@ fun BgOverviewChart(
                 ),
                 startAxis = VerticalAxis.rememberStart(itemPlacer = yItemPlacer),
                 bottomAxis = HorizontalAxis.rememberBottom(
-                    valueFormatter = { _, _, _ -> "" },
-                    itemPlacer = HorizontalAxis.ItemPlacer.aligned(spacing = { MS_PER_HOUR.toInt() * 4 })
+                    valueFormatter = xAxisValueFormatter,
+                    itemPlacer = remember(diagramData) {
+                        val spacing = MS_PER_HOUR * 6
+                        val offset = (spacing - (diagramData.baseTimestamp % spacing)) % spacing
+                        HorizontalAxis.ItemPlacer.aligned(spacing = { spacing.toInt() }, offset = { offset.toInt() })
+                    }
                 ),
             ),
             modelProducer = modelProducer,

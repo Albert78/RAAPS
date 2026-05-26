@@ -1,7 +1,10 @@
 package de.dh.raaps.ui.screens.history
 
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -16,14 +19,17 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.dp
 import de.dh.raaps.R
 import de.dh.raaps.common.ui.composables.screenTitle
 import de.dh.raaps.common.ui.theme.AppTheme
 import de.dh.raaps.ui.controls.history.BgHistoryChartOrDefault
+import de.dh.raaps.ui.controls.history.BgOverviewChart
 import de.dh.raaps.ui.controls.history.DiagramData
 import de.dh.raaps.ui.controls.history.HistoryUiState
 import de.dh.raaps.ui.controls.history.HistoryViewModel
 import de.dh.raaps.ui.controls.history.createSampleReadings
+import de.dh.raaps.ui.controls.history.rememberBgHistoryChartState
 
 @Composable
 fun HistoryScreen(
@@ -42,6 +48,7 @@ fun HistoryContent(
     historyUiState: HistoryUiState
 ) {
     val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
+    val chartState = rememberBgHistoryChartState()
 
     Scaffold(
         modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
@@ -62,11 +69,25 @@ fun HistoryContent(
                     modifier = Modifier.align(Alignment.Center)
                 )
             } else {
-                BgHistoryChartOrDefault(
-                    diagramData = DiagramData.fromReadings(historyUiState.readings),
-                    showMarkers = true,
-                    modifier = Modifier.fillMaxSize()
-                )
+                val diagramData = DiagramData.fromReadings(historyUiState.readings)
+                Column(modifier = Modifier.fillMaxSize()) {
+                    BgHistoryChartOrDefault(
+                        diagramData = diagramData,
+                        showMarkers = true,
+                        state = chartState,
+                        modifier = Modifier.weight(1f)
+                    )
+                    
+                    if (diagramData != null) {
+                        Spacer(modifier = Modifier.height(16.dp))
+                        BgOverviewChart(
+                            diagramData = diagramData,
+                            state = chartState,
+                            modifier = Modifier.padding(horizontal = 8.dp)
+                        )
+                        Spacer(modifier = Modifier.height(16.dp))
+                    }
+                }
             }
         }
     }
