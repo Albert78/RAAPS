@@ -1,7 +1,13 @@
 package de.dh.raaps.ui.controls.history
 
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -11,10 +17,14 @@ import androidx.compose.runtime.mutableDoubleStateOf
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.withSave
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -56,6 +66,7 @@ import de.dh.raaps.common.ui.composables.BlueA200
 import de.dh.raaps.common.ui.composables.DeepOrangeA700
 import de.dh.raaps.common.ui.composables.RedA700
 import de.dh.raaps.common.ui.theme.AppTheme
+import kotlinx.coroutines.launch
 import java.util.Calendar
 import java.util.Locale
 import kotlin.math.sin
@@ -406,6 +417,149 @@ fun BgHistoryChartOrDefault(
         onChartClick = onChartClick,
         state = state
     )
+}
+
+@Composable
+fun BgOverviewChart(
+    diagramData: DiagramData,
+    state: BgHistoryChartState,
+    modifier: Modifier = Modifier,
+) {
+    val modelProducer = remember { CartesianChartModelProducer() }
+    val scope = rememberCoroutineScope()
+
+    LaunchedEffect(diagramData) {
+        modelProducer.runTransaction {
+            if (diagramData.readings.isEmpty()) {
+                lineSeries { series(x = listOf(0.0, 1.0), y = listOf(0.0, 0.0)) }
+            } else {
+                lineSeries {
+                    series(
+                        x = diagramData.readings.map { (it.timestamp.ms - diagramData.baseTimestamp).toDouble() },
+                        y = diagramData.readings.map { it.value.mgdl.toDouble() }
+                    )
+                }
+            }
+        }
+    }
+
+    val yItemPlacer = remember {
+        object : VerticalAxis.ItemPlacer {
+            override fun getLabelValues(
+                context: CartesianDrawingContext,
+                axisHeight: Float,
+                maxLabelHeight: Float,
+                position: Axis.Position.Vertical,
+            ): List<Double> = getValues(context.ranges.getYRange(position).maxY)
+
+            override fun getWidthMeasurementLabelValues(
+                context: CartesianMeasuringContext,
+                axisHeight: Float,
+                maxLabelHeight: Float,
+                position: Axis.Position.Vertical,
+            ): List<Double> = getValues(context.ranges.getYRange(position).maxY)
+
+            override fun getHeightMeasurementLabelValues(
+                context: CartesianMeasuringContext,
+                position: Axis.Position.Vertical,
+            ): List<Double> = getValues(context.ranges.getYRange(position).maxY)
+
+            private fun getValues(maxY: Double): List<Double> {
+                val values = mutableListOf(150.0)
+                var current = 250.0
+                while (current <= maxY) {
+                    values.add(current)
+                    current += 100.0
+                }
+                return values
+            }
+
+            override fun getTopLayerMargin(c: CartesianMeasuringContext, v: Position.Vertical, h: Float, t: Float) = 0f
+            override fun getBottomLayerMargin(c: CartesianMeasuringContext, v: Position.Vertical, h: Float, t: Float) = 0f
+        }
+    }
+
+    val rangeProvider = remember(diagramData) {
+        object : CartesianLayerRangeProvider {
+            override fun getMinY(minY: Double, maxY: Double, extraStore: ExtraStore) = 40.0
+            override fun getMaxY(minY: Double, maxY: Double, extraStore: ExtraStore) =
+                (maxY.coerceAtLeast(200.0) + 10.0).coerceAtMost(410.0)
+            override fun getMinX(minX: Double, maxX: Double, extraStore: ExtraStore) = diagramData.minX
+            override fun getMaxX(minX: Double, maxX: Double, extraStore: ExtraStore) = diagramData.maxX
+        }
+    }
+
+    Box(
+        modifier = modifier
+            .height(100.dp)
+            .fillMaxWidth()
+    ) {
+        CartesianChartHost(
+            chart = rememberCartesianChart(
+                rememberLineCartesianLayer(
+                    lineProvider = LineCartesianLayer.LineProvider.series(
+                        LineCartesianLayer.rememberLine(
+                            fill = LineCartesianLayer.LineFill.single(Fill(Color.Transparent)),
+                            pointProvider = LineCartesianLayer.PointProvider.single(
+                                LineCartesianLayer.Point(
+                                    rememberShapeComponent(shape = CircleShape, fill = Fill(BlueA200.copy(alpha = 0.5f))),
+                                    size = 4.dp
+                                )
+                            )
+                        )
+                    ),
+                    rangeProvider = rangeProvider
+                ),
+                startAxis = VerticalAxis.rememberStart(itemPlacer = yItemPlacer),
+                bottomAxis = HorizontalAxis.rememberBottom(
+                    valueFormatter = { _, _, _ -> "" },
+                    itemPlacer = HorizontalAxis.ItemPlacer.aligned(spacing = { MS_PER_HOUR.toInt() * 4 })
+                ),
+            ),
+            modelProducer = modelProducer,
+            scrollState = rememberVicoScrollState(scrollEnabled = false),
+            zoomState = rememberVicoZoomState(zoomEnabled = false, initialZoom = Zoom.Content),
+            modifier = Modifier.fillMaxSize()
+        )
+
+        // Overlay Rectangle for Selection
+        val visibleRange = state.visibleRange
+        if (visibleRange != null) {
+            val totalRange = diagramData.maxX - diagramData.minX
+            if (totalRange > 0) {
+                val leftFrac = ((visibleRange.start - diagramData.minX) / totalRange).coerceIn(0.0, 1.0)
+                val rightFrac = ((visibleRange.endInclusive - diagramData.minX) / totalRange).coerceIn(0.0, 1.0)
+
+                Canvas(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .pointerInput(diagramData, totalRange) {
+                            detectDragGestures { change, dragAmount ->
+                                change.consume()
+                                val deltaXMs = (dragAmount.x / size.width) * totalRange
+                                scope.launch {
+                                    state.setVisibleRange(
+                                        start = visibleRange.start + deltaXMs,
+                                        end = visibleRange.endInclusive + deltaXMs
+                                    )
+                                }
+                            }
+                        }
+                ) {
+                    val left = leftFrac.toFloat() * size.width
+                    val right = rightFrac.toFloat() * size.width
+                    drawRect(
+                        color = Color.White.copy(alpha = 0.3f),
+                        topLeft = Offset(left, 0f),
+                        size = Size(right - left, size.height)
+                    )
+                    // Draw borders
+                    drawLine(Color.White, Offset(left, 0f), Offset(left, size.height), strokeWidth = 2.dp.toPx())
+                    drawLine(Color.White, Offset(right, 0f), Offset(right, size.height), strokeWidth = 2.dp.toPx())
+                }
+            }
+        }
+    }
 }
 
 fun generatedBg(minsInterval: Short, index: Int, startTs: Timestamp): BgReading {
