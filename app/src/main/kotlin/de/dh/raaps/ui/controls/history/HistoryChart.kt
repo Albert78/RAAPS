@@ -388,9 +388,15 @@ fun BgOverviewChart(
                 ),
                 startAxis = VerticalAxis.rememberStart(itemPlacer = remember {
                     object : VerticalAxis.ItemPlacer {
-                        override fun getLabelValues(ctx: CartesianDrawingContext, h: Float, m: Float, p: Axis.Position.Vertical) = listOf(150.0, 250.0, 350.0)
-                        override fun getWidthMeasurementLabelValues(ctx: CartesianMeasuringContext, h: Float, m: Float, p: Axis.Position.Vertical) = listOf(150.0, 250.0, 350.0)
-                        override fun getHeightMeasurementLabelValues(ctx: CartesianMeasuringContext, p: Axis.Position.Vertical) = listOf(150.0, 250.0, 350.0)
+                        override fun getLabelValues(ctx: CartesianDrawingContext, h: Float, m: Float, p: Axis.Position.Vertical) = getValues(ctx.ranges.getYRange(p).maxY)
+                        override fun getWidthMeasurementLabelValues(ctx: CartesianMeasuringContext, h: Float, m: Float, p: Axis.Position.Vertical) = getValues(ctx.ranges.getYRange(p).maxY)
+                        override fun getHeightMeasurementLabelValues(ctx: CartesianMeasuringContext, p: Axis.Position.Vertical) = getValues(ctx.ranges.getYRange(p).maxY)
+                        private fun getValues(maxY: Double): List<Double> {
+                            val v = mutableListOf<Double>()
+                            var c = 150.0
+                            while (c <= maxY) { v.add(c); c += 100.0 }
+                            return v
+                        }
                         override fun getTopLayerMargin(ctx: CartesianMeasuringContext, v: Position.Vertical, m: Float, l: Float) = 0f
                         override fun getBottomLayerMargin(ctx: CartesianMeasuringContext, v: Position.Vertical, m: Float, l: Float) = 0f
                     }
