@@ -5,16 +5,25 @@ import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.Stable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableDoubleStateOf
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.withSave
+import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.patrykandpatrick.vico.compose.cartesian.CartesianChartHost
 import com.patrykandpatrick.vico.compose.cartesian.CartesianDrawingContext
 import com.patrykandpatrick.vico.compose.cartesian.CartesianMeasuringContext
 import com.patrykandpatrick.vico.compose.cartesian.Scroll
+import com.patrykandpatrick.vico.compose.cartesian.VicoScrollState
+import com.patrykandpatrick.vico.compose.cartesian.VicoZoomState
 import com.patrykandpatrick.vico.compose.cartesian.Zoom
 import com.patrykandpatrick.vico.compose.cartesian.axis.Axis
 import com.patrykandpatrick.vico.compose.cartesian.axis.HorizontalAxis
@@ -54,6 +63,63 @@ import kotlin.random.Random
 
 private const val INITIAL_SHOW_HOURS = 4.0
 private const val MS_PER_HOUR = 60 * 60 * 1000L
+
+/**
+ * State of the BgHistoryChart to observe and control the visible range.
+ */
+@Stable
+class BgHistoryChartState(
+    val scrollState: VicoScrollState,
+    val zoomState: VicoZoomState
+) {
+    /**
+     * The currently visible X-range in the chart (ms offset from baseTimestamp).
+     */
+    var visibleRange by mutableStateOf<ClosedFloatingPointRange<Double>?>(null)
+        internal set
+
+    internal var chartWidth by mutableIntStateOf(0)
+    internal var minX by mutableDoubleStateOf(0.0)
+    internal var maxX by mutableDoubleStateOf(0.0)
+
+    /**
+     * Updates the visible range based on current scroll, zoom and chart width.
+     */
+    internal fun updateVisibleRange() {
+        val totalXRange = maxX - minX
+        if (chartWidth <= 0 || totalXRange <= 0.0 || scrollState.maxValue < 0f) return
+
+        val totalWidthPx = scrollState.maxValue + chartWidth
+        val startX = minX + (scrollState.value / totalWidthPx) * totalXRange
+        val endX = startX + (chartWidth / totalWidthPx) * totalXRange
+        visibleRange = startX..endX
+    }
+
+    /**
+     * Programmatically sets the visible range of the chart.
+     */
+    suspend fun setVisibleRange(start: Double, end: Double) {
+        val totalXRange = maxX - minX
+        val desiredWidth = end - start
+        if (desiredWidth <= 0 || chartWidth <= 0 || totalXRange <= 0.0) return
+
+        zoomState.zoom(Zoom.x(desiredWidth))
+        
+        // Use Vico's built-in scroll-to-x functionality
+        scrollState.scroll(Scroll.Absolute.x(x = start))
+    }
+}
+
+@Composable
+fun rememberBgHistoryChartState(
+    initialShowHours: Double = INITIAL_SHOW_HOURS
+): BgHistoryChartState {
+    val scrollState = rememberVicoScrollState(initialScroll = Scroll.Absolute.End)
+    val zoomState = rememberVicoZoomState(initialZoom = Zoom.x(initialShowHours * MS_PER_HOUR))
+    return remember(scrollState, zoomState) {
+        BgHistoryChartState(scrollState, zoomState)
+    }
+}
 
 data class DiagramData(
     val readings: List<BgReading>,
@@ -108,9 +174,14 @@ fun BgHistoryChart(
     lowBgColor: Color = RedA700.copy(alpha = 0.2f),
     highBgColor: Color = DeepOrangeA700.copy(alpha = 0.3f),
     showMarkers: Boolean = false,
-    onChartClick: (() -> Unit)? = null
+    onChartClick: (() -> Unit)? = null,
+    state: BgHistoryChartState = rememberBgHistoryChartState()
 ) {
     val modelProducer = remember { CartesianChartModelProducer() }
+
+    // Update state with current diagram bounds
+    state.minX = diagramData.minX
+    state.maxX = diagramData.maxX
 
     LaunchedEffect(diagramData) {
         modelProducer.runTransaction {
@@ -127,6 +198,11 @@ fun BgHistoryChart(
                 }
             }
         }
+    }
+
+    // Sync Vico state changes back to our visibleRange
+    LaunchedEffect(state.scrollState.value, state.scrollState.maxValue, state.chartWidth, diagramData) {
+        state.updateVisibleRange()
     }
 
     val rangeProvider = remember(diagramData) {
@@ -210,11 +286,6 @@ fun BgHistoryChart(
             ): Float = 0f
         }
     }
-
-    val scrollState = rememberVicoScrollState(initialScroll = Scroll.Absolute.End)
-    val zoomState = rememberVicoZoomState (
-        initialZoom = Zoom.x(INITIAL_SHOW_HOURS * MS_PER_HOUR)
-    )
 
     val markerValueFormatter = remember(diagramData) {
         DefaultCartesianMarker.ValueFormatter { _, targets ->
@@ -303,14 +374,16 @@ fun BgHistoryChart(
             decorations = decorations,
         ),
         modelProducer = modelProducer,
-        scrollState = scrollState,
-        zoomState = zoomState,
-        modifier = modifier.clickable(
-            interactionSource = remember { MutableInteractionSource() },
-            indication = null, // No ripple to not interfere with chart visuals
-            enabled = onChartClick != null,
-            onClick = { onChartClick?.invoke() }
-        ),
+        scrollState = state.scrollState,
+        zoomState = state.zoomState,
+        modifier = modifier
+            .onSizeChanged { state.chartWidth = it.width }
+            .clickable(
+                interactionSource = remember { MutableInteractionSource() },
+                indication = null, // No ripple to not interfere with chart visuals
+                enabled = onChartClick != null,
+                onClick = { onChartClick?.invoke() }
+            ),
     )
 }
 
@@ -321,7 +394,8 @@ fun BgHistoryChartOrDefault(
     lowBgThreshold: Double = 70.0,
     highBgThreshold: Double = 170.0,
     showMarkers: Boolean = false,
-    onChartClick: (() -> Unit)? = null
+    onChartClick: (() -> Unit)? = null,
+    state: BgHistoryChartState = rememberBgHistoryChartState()
 ) {
     BgHistoryChart(
         diagramData = diagramData ?: DiagramData.empty(),
@@ -329,7 +403,8 @@ fun BgHistoryChartOrDefault(
         lowBgThreshold = lowBgThreshold,
         highBgThreshold = highBgThreshold,
         showMarkers = showMarkers,
-        onChartClick = onChartClick
+        onChartClick = onChartClick,
+        state = state
     )
 }
 
@@ -384,7 +459,6 @@ fun HistoryChart1Preview() {
 @Preview(showBackground = true)
 @Composable
 fun HistoryChartDefaultPreview() {
-    val diagramData = null
     AppTheme {
         BgHistoryChartOrDefault(
             diagramData = null
