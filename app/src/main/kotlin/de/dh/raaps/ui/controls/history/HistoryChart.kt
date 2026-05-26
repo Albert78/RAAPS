@@ -74,6 +74,7 @@ import kotlin.random.Random
 
 private const val INITIAL_SHOW_HOURS = 4.0
 private const val MS_PER_HOUR = 60 * 60 * 1000L
+private const val MS_PER_MINUTE = 60 * 1000L
 
 /**
  * State of the BgHistoryChart to observe and control the visible range.
@@ -84,7 +85,7 @@ class BgHistoryChartState(
     val zoomState: VicoZoomState
 ) {
     /**
-     * The currently visible X-range in the chart (ms offset from baseTimestamp).
+     * The currently visible X-range in the chart (minutes offset from baseTimestamp).
      */
     var visibleRange by mutableStateOf<ClosedFloatingPointRange<Double>?>(null)
         internal set
@@ -108,6 +109,8 @@ class BgHistoryChartState(
 
     /**
      * Programmatically sets the visible range of the chart.
+     * @param start offset in minutes from baseTimestamp
+     * @param end offset in minutes from baseTimestamp
      */
     suspend fun setVisibleRange(start: Double, end: Double) {
         val totalXRange = maxX - minX
@@ -126,7 +129,7 @@ fun rememberBgHistoryChartState(
     initialShowHours: Double = INITIAL_SHOW_HOURS
 ): BgHistoryChartState {
     val scrollState = rememberVicoScrollState(initialScroll = Scroll.Absolute.End)
-    val zoomState = rememberVicoZoomState(initialZoom = Zoom.x(initialShowHours * MS_PER_HOUR))
+    val zoomState = rememberVicoZoomState(initialZoom = Zoom.x(initialShowHours * 60.0))
     return remember(scrollState, zoomState) {
         BgHistoryChartState(scrollState, zoomState)
     }
@@ -134,7 +137,7 @@ fun rememberBgHistoryChartState(
 
 data class DiagramData(
     val readings: List<BgReading>,
-    // All X values in the diagram are offsets to baseTimestamp
+    // All X values in the diagram are minute offsets to baseTimestamp
     val baseTimestamp: Long,
     val minX: Double,
     val maxX: Double
@@ -153,7 +156,7 @@ data class DiagramData(
 
             // Show up to the next full hour after the last reading
             val endTs = ((lastTs / MS_PER_HOUR) + 1) * MS_PER_HOUR
-            val maxX = (endTs - baseTimestamp).toDouble()
+            val maxX = (endTs - baseTimestamp).toDouble() / MS_PER_MINUTE
 
             return DiagramData(
                 validReadings,
@@ -170,7 +173,7 @@ data class DiagramData(
                 readings = emptyList(),
                 baseTimestamp = baseTimestamp,
                 minX = 0.0,
-                maxX = INITIAL_SHOW_HOURS * MS_PER_HOUR
+                maxX = INITIAL_SHOW_HOURS * 60.0
             )
         }
     }
@@ -198,12 +201,15 @@ fun BgHistoryChart(
         modelProducer.runTransaction {
             if (diagramData.readings.isEmpty()) {
                 lineSeries {
-                    series(x = listOf(0.0, 1.0), y = listOf(0.0, 0.0))
+                    series(x = listOf(0.0, diagramData.maxX), y = listOf(0.0, 0.0))
                 }
             } else {
                 lineSeries {
                     series(
-                        x = diagramData.readings.map { (it.timestamp.ms - diagramData.baseTimestamp).toDouble() },
+                        x = diagramData.readings.map { 
+                            // Round to 4 decimal places to satisfy Vico's precision limits
+                            ((it.timestamp.ms - diagramData.baseTimestamp).toDouble() / MS_PER_MINUTE * 10000).toLong() / 10000.0
+                        },
                         y = diagramData.readings.map { it.value.mgdl.toDouble() }
                     )
                 }
@@ -237,18 +243,18 @@ fun BgHistoryChart(
     val xAxisValueFormatter = remember(diagramData) {
         CartesianValueFormatter { _, x, _ ->
             val calendar = Calendar.getInstance().apply {
-                timeInMillis = diagramData.baseTimestamp + x.toLong()
+                timeInMillis = diagramData.baseTimestamp + x.toLong() * MS_PER_MINUTE
             }
             String.format(Locale.getDefault(), "%02d", calendar.get(Calendar.HOUR_OF_DAY))
         }
     }
 
     val xItemPlacer = remember(diagramData) {
-        val spacing = MS_PER_HOUR * 2
-        val offset = (spacing - (diagramData.baseTimestamp % spacing)) % spacing
-        // Place a label at every 2nd full hour to avoid clutter on smaller screens
+        val spacing = 120 // 2 hours in minutes
+        val baseTimestampMinutes = diagramData.baseTimestamp / MS_PER_MINUTE
+        val offset = (spacing - (baseTimestampMinutes % spacing)) % spacing
         HorizontalAxis.ItemPlacer.aligned(
-            spacing = { spacing.toInt() },
+            spacing = { spacing },
             offset = { offset.toInt() }
         )
     }
@@ -304,7 +310,7 @@ fun BgHistoryChart(
         DefaultCartesianMarker.ValueFormatter { _, targets ->
             val target = targets.firstOrNull() ?: return@ValueFormatter ""
             val x = target.x
-            val timestamp = diagramData.baseTimestamp + x.toLong()
+            val timestamp = diagramData.baseTimestamp + x.toLong() * MS_PER_MINUTE
             val calendar = Calendar.getInstance().apply {
                 timeInMillis = timestamp
             }
@@ -433,11 +439,14 @@ fun BgOverviewChart(
     LaunchedEffect(diagramData) {
         modelProducer.runTransaction {
             if (diagramData.readings.isEmpty()) {
-                lineSeries { series(x = listOf(0.0, 1.0), y = listOf(0.0, 0.0)) }
+                lineSeries { series(x = listOf(0.0, diagramData.maxX), y = listOf(0.0, 0.0)) }
             } else {
                 lineSeries {
                     series(
-                        x = diagramData.readings.map { (it.timestamp.ms - diagramData.baseTimestamp).toDouble() },
+                        x = diagramData.readings.map { 
+                            // Round to 4 decimal places to satisfy Vico's precision limits
+                            ((it.timestamp.ms - diagramData.baseTimestamp).toDouble() / MS_PER_MINUTE * 10000).toLong() / 10000.0
+                        },
                         y = diagramData.readings.map { it.value.mgdl.toDouble() }
                     )
                 }
@@ -494,7 +503,7 @@ fun BgOverviewChart(
     val xAxisValueFormatter = remember(diagramData) {
         CartesianValueFormatter { _, x, _ ->
             val calendar = Calendar.getInstance().apply {
-                timeInMillis = diagramData.baseTimestamp + x.toLong()
+                timeInMillis = diagramData.baseTimestamp + x.toLong() * MS_PER_MINUTE
             }
             String.format(Locale.getDefault(), "%02d", calendar.get(Calendar.HOUR_OF_DAY))
         }
@@ -525,9 +534,10 @@ fun BgOverviewChart(
                 bottomAxis = HorizontalAxis.rememberBottom(
                     valueFormatter = xAxisValueFormatter,
                     itemPlacer = remember(diagramData) {
-                        val spacing = MS_PER_HOUR * 6
-                        val offset = (spacing - (diagramData.baseTimestamp % spacing)) % spacing
-                        HorizontalAxis.ItemPlacer.aligned(spacing = { spacing.toInt() }, offset = { offset.toInt() })
+                        val spacing = 360 // 6 hours in minutes
+                        val baseTimestampMinutes = diagramData.baseTimestamp / MS_PER_MINUTE
+                        val offset = (spacing - (baseTimestampMinutes % spacing)) % spacing
+                        HorizontalAxis.ItemPlacer.aligned(spacing = { spacing }, offset = { offset.toInt() })
                     }
                 ),
             ),
