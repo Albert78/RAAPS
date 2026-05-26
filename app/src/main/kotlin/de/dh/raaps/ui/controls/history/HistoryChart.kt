@@ -57,6 +57,7 @@ private const val MS_PER_HOUR = 60 * 60 * 1000L
 
 data class DiagramData(
     val readings: List<BgReading>,
+    // All X values in the diagram are offsets to baseTimestamp
     val baseTimestamp: Long,
     val minX: Double,
     val maxX: Double
@@ -104,6 +105,8 @@ fun BgHistoryChart(
     modifier: Modifier = Modifier,
     lowBgThreshold: Double = 70.0,
     highBgThreshold: Double = 170.0,
+    lowBgColor: Color = RedA700.copy(alpha = 0.2f),
+    highBgColor: Color = DeepOrangeA700.copy(alpha = 0.3f),
     showMarkers: Boolean = false,
     onChartClick: (() -> Unit)? = null
 ) {
@@ -240,8 +243,8 @@ fun BgHistoryChart(
         valueFormatter = markerValueFormatter
     ) else null
 
-    val lowBgBox = rememberShapeComponent(fill = Fill(RedA700.copy(alpha = 0.2f)))
-    val highBgBox = rememberShapeComponent(fill = Fill(DeepOrangeA700.copy(alpha = 0.3f)))
+    val lowBgBox = rememberShapeComponent(fill = Fill(lowBgColor))
+    val highBgBox = rememberShapeComponent(fill = Fill(highBgColor))
 
     val decorations = remember(lowBgThreshold, highBgThreshold, lowBgBox, highBgBox) {
         listOf(
@@ -321,12 +324,12 @@ fun BgHistoryChartOrDefault(
     onChartClick: (() -> Unit)? = null
 ) {
     BgHistoryChart(
-        diagramData ?: DiagramData.empty(),
-        modifier,
-        lowBgThreshold,
-        highBgThreshold,
-        showMarkers,
-        onChartClick
+        diagramData = diagramData ?: DiagramData.empty(),
+        modifier = modifier,
+        lowBgThreshold = lowBgThreshold,
+        highBgThreshold = highBgThreshold,
+        showMarkers = showMarkers,
+        onChartClick = onChartClick
     )
 }
 
@@ -340,7 +343,7 @@ fun generatedBg(minsInterval: Short, index: Int, startTs: Timestamp): BgReading 
     return BgReading(
         value = BgValue.fromMgDl(bgValue),
         sampleKind = BgSampleKind.Value,
-        timestamp = Timestamp(startTs.ms + index * minsInterval * 60_000L)
+        timestamp = startTs.plusMinutes(index * minsInterval)
     )
 }
 
@@ -374,6 +377,17 @@ fun HistoryChart1Preview() {
     AppTheme {
         BgHistoryChart(
             diagramData
+        )
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+fun HistoryChartDefaultPreview() {
+    val diagramData = null
+    AppTheme {
+        BgHistoryChartOrDefault(
+            diagramData = null
         )
     }
 }
