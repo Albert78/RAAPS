@@ -212,7 +212,7 @@ fun BgHistoryChart(
             } else {
                 lineSeries {
                     series(
-                        x = diagramData.readings.map { 
+                        x = diagramData.readings.map {
                             // Round to 4 decimal places to satisfy Vico's precision limits
                             ((it.timestamp.ms - diagramData.baseTimestamp).toDouble() / MS_PER_MINUTE * 10000).toLong() / 10000.0
                         },
@@ -256,9 +256,10 @@ fun BgHistoryChart(
     }
 
     val xItemPlacer = remember(diagramData) {
-        val spacing = 120 // 2 hours in minutes
-        val baseTimestampMinutes = diagramData.baseTimestamp / MS_PER_MINUTE
-        val offset = (spacing - (baseTimestampMinutes % spacing)) % spacing
+        val spacing = 60 // 1 hour in minutes
+        val calendar = Calendar.getInstance().apply { timeInMillis = diagramData.baseTimestamp }
+        val minutesIntoDay = calendar.get(Calendar.HOUR_OF_DAY) * 60 + calendar.get(Calendar.MINUTE)
+        val offset = (spacing - (minutesIntoDay % spacing)) % spacing
         HorizontalAxis.ItemPlacer.aligned(
             spacing = { spacing },
             offset = { offset.toInt() }
@@ -449,7 +450,7 @@ fun BgOverviewChart(
             } else {
                 lineSeries {
                     series(
-                        x = diagramData.readings.map { 
+                        x = diagramData.readings.map {
                             // Round to 4 decimal places to satisfy Vico's precision limits
                             ((it.timestamp.ms - diagramData.baseTimestamp).toDouble() / MS_PER_MINUTE * 10000).toLong() / 10000.0
                         },
@@ -541,8 +542,9 @@ fun BgOverviewChart(
                     valueFormatter = xAxisValueFormatter,
                     itemPlacer = remember(diagramData) {
                         val spacing = 360 // 6 hours in minutes
-                        val baseTimestampMinutes = diagramData.baseTimestamp / MS_PER_MINUTE
-                        val offset = (spacing - (baseTimestampMinutes % spacing)) % spacing
+                        val calendar = Calendar.getInstance().apply { timeInMillis = diagramData.baseTimestamp }
+                        val minutesIntoDay = calendar.get(Calendar.HOUR_OF_DAY) * 60 + calendar.get(Calendar.MINUTE)
+                        val offset = (spacing - (minutesIntoDay % spacing)) % spacing
                         HorizontalAxis.ItemPlacer.aligned(spacing = { spacing }, offset = { offset.toInt() })
                     }
                 ),
@@ -569,17 +571,17 @@ fun BgOverviewChart(
                             var accumulatedDelta = 0.0
 
                             detectDragGestures(
-                                onDragStart = { 
+                                onDragStart = {
                                     dragStartRange = state.visibleRange
                                     accumulatedDelta = 0.0
                                 },
                                 onDrag = { change, dragAmount ->
                                     change.consume()
                                     val startRange = dragStartRange ?: return@detectDragGestures
-                                    
+
                                     // Calculate total shifted minutes since drag start
                                     accumulatedDelta += (dragAmount.x / size.width) * totalRange
-                                    
+
                                     scope.launch {
                                         // Use scrollTo to move without changing zoom
                                         state.scrollTo(start = startRange.start + accumulatedDelta)
