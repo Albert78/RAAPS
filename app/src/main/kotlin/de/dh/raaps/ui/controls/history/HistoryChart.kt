@@ -352,22 +352,34 @@ fun BgHistoryChart(
     val lowBgBox = rememberShapeComponent(fill = Fill(lowBgColor))
     val highBgBox = rememberShapeComponent(fill = Fill(highBgColor))
 
-    val decorations = remember(lowBgThreshold, highBgThreshold, lowBgBox, highBgBox, state) {
+    val decorations = remember(lowBgThreshold, highBgThreshold, lowBgBox, highBgBox) {
         listOf(
+            // Low BG range
+            HorizontalBox(y = { 0.0..lowBgThreshold }, box = lowBgBox),
+            // High BG range
+            HorizontalBox(y = { highBgThreshold..500.0 }, box = highBgBox)
+        ).map { decoration ->
             object : Decoration {
                 override fun drawUnderLayers(context: CartesianDrawingContext) {
-                    // Update layerWidth ONLY if it changes to avoid state-write loops
+                    // Side effect: Report drawing width to the state
                     if (state.layerWidth != context.layerBounds.width) {
                         state.layerWidth = context.layerBounds.width
                     }
+
                     context.canvas.withSave {
                         context.canvas.clipRect(context.layerBounds)
-                        HorizontalBox(y = { 0.0..lowBgThreshold }, box = lowBgBox).drawUnderLayers(context)
-                        HorizontalBox(y = { highBgThreshold..500.0 }, box = highBgBox).drawUnderLayers(context)
+                        decoration.drawUnderLayers(context)
+                    }
+                }
+
+                override fun drawOverLayers(context: CartesianDrawingContext) {
+                    context.canvas.withSave {
+                        context.canvas.clipRect(context.layerBounds)
+                        decoration.drawOverLayers(context)
                     }
                 }
             }
-        )
+        }
     }
 
     CartesianChartHost(
