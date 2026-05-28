@@ -83,9 +83,8 @@ fun HistoryContent(
                         BgOverviewChart(
                             diagramData = diagramData,
                             state = chartState,
-                            modifier = Modifier.padding(horizontal = 8.dp)
+                            modifier = Modifier.padding(bottom = 16.dp)
                         )
-                        Spacer(modifier = Modifier.height(16.dp))
                     }
                 }
             }

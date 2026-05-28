@@ -39,6 +39,7 @@ import com.patrykandpatrick.vico.compose.cartesian.VicoScrollState
 import com.patrykandpatrick.vico.compose.cartesian.VicoZoomState
 import com.patrykandpatrick.vico.compose.cartesian.Zoom
 import com.patrykandpatrick.vico.compose.cartesian.axis.Axis
+import com.patrykandpatrick.vico.compose.cartesian.axis.BaseAxis
 import com.patrykandpatrick.vico.compose.cartesian.axis.HorizontalAxis
 import com.patrykandpatrick.vico.compose.cartesian.axis.VerticalAxis
 import com.patrykandpatrick.vico.compose.cartesian.axis.rememberAxisLabelComponent
@@ -408,7 +409,10 @@ fun BgHistoryChart(
                 ),
                 rangeProvider = rangeProvider
             ),
-            startAxis = VerticalAxis.rememberStart(itemPlacer = yItemPlacer),
+            startAxis = VerticalAxis.rememberStart(
+                itemPlacer = yItemPlacer,
+                size = BaseAxis.Size.Fixed(45.dp)
+            ),
             bottomAxis = HorizontalAxis.rememberBottom(valueFormatter = xAxisValueFormatter, itemPlacer = xItemPlacer),
             marker = marker,
             decorations = decorations,
@@ -486,7 +490,9 @@ fun BgOverviewChart(
                         }
                     }
                 ),
-                startAxis = VerticalAxis.rememberStart(itemPlacer = remember {
+                startAxis = VerticalAxis.rememberStart(
+                    size = BaseAxis.Size.Fixed(45.dp),
+                    itemPlacer = remember {
                     object : VerticalAxis.ItemPlacer {
                         override fun getLabelValues(
                             context: CartesianDrawingContext,
