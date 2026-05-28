@@ -135,7 +135,10 @@ fun rememberBgHistoryChartState(
     initialShowHours: Double = INITIAL_SHOW_HOURS
 ): BgHistoryChartState {
     val scrollState = rememberVicoScrollState(initialScroll = Scroll.Absolute.End)
-    val zoomState = rememberVicoZoomState(initialZoom = Zoom.x(initialShowHours * 60.0))
+    val zoomState = rememberVicoZoomState(
+        initialZoom = Zoom.x(initialShowHours * 60.0),
+        maxZoom = Zoom.x(initialShowHours * 30)
+    )
     return remember(scrollState, zoomState) {
         BgHistoryChartState(scrollState, zoomState)
     }
@@ -157,12 +160,12 @@ data class DiagramData(
             if (validReadings.isEmpty()) return null
 
             val firstTs = validReadings.first().timestamp.ms
-            val baseTimestamp = (firstTs / MS_PER_HOUR) * MS_PER_HOUR
+            val baseTimestamp = firstTs
 
             val lastTs = validReadings.last().timestamp.ms
             val minX = 0.0
 
-            val endTs = ((lastTs / MS_PER_HOUR) + 1) * MS_PER_HOUR
+            val endTs = (((lastTs + MS_PER_HOUR / 2) / MS_PER_HOUR) + 1) * MS_PER_HOUR
             val maxX = (endTs - baseTimestamp).toDouble() / MS_PER_MINUTE
 
             return DiagramData(
