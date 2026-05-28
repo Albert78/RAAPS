@@ -39,9 +39,9 @@ android {
 dependencies {
     implementation(project(":common"))
     implementation(project(":core"))
-    implementation(project(":plugin-cgm-sample"))
-    implementation(project(":plugin-glucose-receiver"))
-    implementation(project(":plugin-pump-sample"))
+    implementation(project(":source-cgm-sample"))
+    implementation(project(":source-glucose-receiver"))
+    implementation(project(":pump-sample"))
 
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
