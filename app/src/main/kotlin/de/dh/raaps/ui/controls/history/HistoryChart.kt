@@ -211,9 +211,11 @@ fun BgHistoryChart(
     highBgColor: Color = DeepOrangeA700.copy(alpha = 0.3f),
     showMarkers: Boolean = false,
     onChartClick: (() -> Unit)? = null,
-    state: BgHistoryChartState = rememberBgHistoryChartState()
+    controlledState: BgHistoryChartState? = null
 ) {
+    val state = controlledState ?: rememberBgHistoryChartState()
     val modelProducer = remember { CartesianChartModelProducer() }
+
     state.minX = diagramData.minX
     state.maxX = diagramData.maxX
 
@@ -363,7 +365,7 @@ fun BgHistoryChart(
     val lowBgBox = rememberShapeComponent(fill = Fill(lowBgColor))
     val highBgBox = rememberShapeComponent(fill = Fill(highBgColor))
 
-    val decorations = remember(lowBgThreshold, highBgThreshold, lowBgBox, highBgBox, state) {
+    val decorations = remember(lowBgThreshold, highBgThreshold, lowBgBox, highBgBox, controlledState) {
         listOf(
             // Low BG range
             HorizontalBox(y = { 0.0..lowBgThreshold }, box = lowBgBox),
@@ -437,9 +439,9 @@ fun BgHistoryChartOrDefault(
     highBgThreshold: Double = 170.0,
     showMarkers: Boolean = false,
     onChartClick: (() -> Unit)? = null,
-    state: BgHistoryChartState = rememberBgHistoryChartState()
+    state: BgHistoryChartState? = null
 ) {
-    BgHistoryChart(diagramData ?: DiagramData.empty(), modifier, lowBgThreshold, highBgThreshold, showMarkers = showMarkers, onChartClick = onChartClick, state = state)
+    BgHistoryChart(diagramData ?: DiagramData.empty(), modifier, lowBgThreshold, highBgThreshold, showMarkers = showMarkers, onChartClick = onChartClick, controlledState = state)
 }
 
 @Composable
