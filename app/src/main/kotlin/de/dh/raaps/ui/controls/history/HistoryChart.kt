@@ -225,13 +225,13 @@ fun BgHistoryChart(
         }
     }
 
-    val rangeProvider = remember(diagramData.minX, diagramData.maxX) {
+    val rangeProvider = remember(state) {
         object : CartesianLayerRangeProvider {
             override fun getMinY(minY: Double, maxY: Double, extraStore: ExtraStore) = 40.0
             override fun getMaxY(minY: Double, maxY: Double, extraStore: ExtraStore) =
                 (maxY.coerceAtLeast(200.0) + 10.0).coerceAtMost(410.0)
-            override fun getMinX(minX: Double, maxX: Double, extraStore: ExtraStore) = diagramData.minX
-            override fun getMaxX(minX: Double, maxX: Double, extraStore: ExtraStore) = diagramData.maxX
+            override fun getMinX(minX: Double, maxX: Double, extraStore: ExtraStore) = state.minX
+            override fun getMaxX(minX: Double, maxX: Double, extraStore: ExtraStore) = state.maxX
         }
     }
 
