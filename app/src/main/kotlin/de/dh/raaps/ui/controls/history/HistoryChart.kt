@@ -12,8 +12,10 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.Stable
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableDoubleStateOf
+import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -85,32 +87,30 @@ class BgHistoryChartState(
     val scrollState: VicoScrollState,
     val zoomState: VicoZoomState
 ) {
-    /**
-     * The currently visible X-range in the chart (minutes offset from baseTimestamp).
-     */
-    var visibleRange by mutableStateOf<ClosedFloatingPointRange<Double>?>(null)
-        internal set
-
     internal var minX by mutableDoubleStateOf(0.0)
     internal var maxX by mutableDoubleStateOf(0.0)
+    internal var layerWidth by mutableFloatStateOf(0f)
 
     /**
-     * Updates the visible range based on current scroll and actual drawing bounds.
+     * The currently visible X-range in the chart (minutes offset from baseTimestamp).
+     * Uses derivedStateOf to avoid state-write loops and unnecessary recompositions.
      */
-    internal fun updateVisibleRange(layerWidth: Float) {
+    val visibleRange by derivedStateOf {
         val totalXRange = maxX - minX
-        if (layerWidth <= 0 || totalXRange <= 0.0 || scrollState.maxValue < 0f) return
-
-        val totalWidthPx = scrollState.maxValue + layerWidth
-        val startX = minX + (scrollState.value / totalWidthPx) * totalXRange
-        val endX = startX + (layerWidth / totalWidthPx) * totalXRange
-        visibleRange = startX..endX
+        if (layerWidth <= 0 || totalXRange <= 0.0 || scrollState.maxValue < 0f) {
+            null
+        } else {
+            val totalWidthPx = scrollState.maxValue + layerWidth
+            val startX = minX + (scrollState.value / totalWidthPx) * totalXRange
+            val endX = startX + (layerWidth / totalWidthPx) * totalXRange
+            startX..endX
+        }
     }
 
     /**
      * Programmatically sets the visible range of the chart.
      */
-    suspend fun setVisibleRange(start: Double, end: Double, layerWidth: Float) {
+    suspend fun setVisibleRange(start: Double, end: Double) {
         val totalXRange = maxX - minX
         val desiredWidth = end - start
         if (desiredWidth <= 0 || layerWidth <= 0 || totalXRange <= 0.0) return
@@ -356,7 +356,10 @@ fun BgHistoryChart(
         listOf(
             object : Decoration {
                 override fun drawUnderLayers(context: CartesianDrawingContext) {
-                    state.updateVisibleRange(context.layerBounds.width)
+                    // Update layerWidth ONLY if it changes to avoid state-write loops
+                    if (state.layerWidth != context.layerBounds.width) {
+                        state.layerWidth = context.layerBounds.width
+                    }
                     context.canvas.withSave {
                         context.canvas.clipRect(context.layerBounds)
                         HorizontalBox(y = { 0.0..lowBgThreshold }, box = lowBgBox).drawUnderLayers(context)
