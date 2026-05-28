@@ -135,9 +135,13 @@ fun rememberBgHistoryChartState(
     initialShowHours: Double = INITIAL_SHOW_HOURS
 ): BgHistoryChartState {
     val scrollState = rememberVicoScrollState(initialScroll = Scroll.Absolute.End)
+
+    val initialZoom = remember(initialShowHours) { Zoom.x(initialShowHours * 60.0) }
+    val maxZoom = remember(initialShowHours) { Zoom.x(initialShowHours * 30) }
+
     val zoomState = rememberVicoZoomState(
-        initialZoom = Zoom.x(initialShowHours * 60.0),
-        maxZoom = Zoom.x(initialShowHours * 30)
+        initialZoom = initialZoom,
+        maxZoom = maxZoom
     )
     return remember(scrollState, zoomState) {
         BgHistoryChartState(scrollState, zoomState)
