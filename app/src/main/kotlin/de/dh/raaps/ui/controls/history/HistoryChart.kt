@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.Stable
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
@@ -216,8 +217,10 @@ fun BgHistoryChart(
     val state = controlledState ?: rememberBgHistoryChartState()
     val modelProducer = remember { CartesianChartModelProducer() }
 
-    state.minX = diagramData.minX
-    state.maxX = diagramData.maxX
+    SideEffect {
+        state.minX = diagramData.minX
+        state.maxX = diagramData.maxX
+    }
 
     var initialScrollToEndDone by remember(diagramData.dataSignature) { mutableStateOf(false) }
 
