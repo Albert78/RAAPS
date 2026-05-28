@@ -212,16 +212,16 @@ fun BgHistoryChart(
     state.minX = diagramData.minX
     state.maxX = diagramData.maxX
 
-    var isInitialized by remember(diagramData.dataSignature) { mutableStateOf(false) }
+    var initialScrollToEndDone by remember(diagramData.dataSignature) { mutableStateOf(false) }
 
     LaunchedEffect(diagramData.dataSignature) {
         modelProducer.runTransaction {
             lineSeries { series(x = diagramData.xValues, y = diagramData.yValues) }
         }
 
-        if (!isInitialized && diagramData.readings.isNotEmpty()) {
+        if (!initialScrollToEndDone && diagramData.readings.isNotEmpty()) {
             state.scrollState.scroll(Scroll.Absolute.End)
-            isInitialized = true
+            initialScrollToEndDone = true
         }
     }
 
@@ -358,7 +358,7 @@ fun BgHistoryChart(
     val lowBgBox = rememberShapeComponent(fill = Fill(lowBgColor))
     val highBgBox = rememberShapeComponent(fill = Fill(highBgColor))
 
-    val decorations = remember(lowBgThreshold, highBgThreshold, lowBgBox, highBgBox, state, diagramData.dataSignature) {
+    val decorations = remember(lowBgThreshold, highBgThreshold, lowBgBox, highBgBox, state) {
         listOf(
             // Low BG range
             HorizontalBox(y = { 0.0..lowBgThreshold }, box = lowBgBox),
