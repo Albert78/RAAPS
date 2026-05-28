@@ -25,6 +25,7 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.drawscope.translate
 import androidx.compose.ui.graphics.withSave
 import androidx.compose.ui.input.pointer.pointerInput
@@ -133,7 +134,7 @@ class BgHistoryChartState(
 fun rememberBgHistoryChartState(
     initialShowHours: Double = INITIAL_SHOW_HOURS
 ): BgHistoryChartState {
-    val scrollState = rememberVicoScrollState()
+    val scrollState = rememberVicoScrollState(initialScroll = Scroll.Absolute.End)
     val zoomState = rememberVicoZoomState(initialZoom = Zoom.x(initialShowHours * 60.0))
     return remember(scrollState, zoomState) {
         BgHistoryChartState(scrollState, zoomState)
@@ -208,7 +209,7 @@ fun BgHistoryChart(
     state.minX = diagramData.minX
     state.maxX = diagramData.maxX
 
-    var isInitialized by remember(diagramData.baseTimestamp) { mutableStateOf(false) }
+    var isInitialized by remember(diagramData.dataSignature) { mutableStateOf(false) }
 
     LaunchedEffect(diagramData.dataSignature) {
         modelProducer.runTransaction {
@@ -354,7 +355,7 @@ fun BgHistoryChart(
     val lowBgBox = rememberShapeComponent(fill = Fill(lowBgColor))
     val highBgBox = rememberShapeComponent(fill = Fill(highBgColor))
 
-    val decorations = remember(lowBgThreshold, highBgThreshold, lowBgBox, highBgBox) {
+    val decorations = remember(lowBgThreshold, highBgThreshold, lowBgBox, highBgBox, state, diagramData.dataSignature) {
         listOf(
             // Low BG range
             HorizontalBox(y = { 0.0..lowBgThreshold }, box = lowBgBox),
@@ -586,7 +587,7 @@ fun BgOverviewChart(
             val rightFrac = ((visibleRange.endInclusive - diagramData.minX) / totalRange).coerceIn(0.0, 1.0)
 
             Canvas(
-                modifier = Modifier.fillMaxSize().pointerInput(diagramData, totalRange) {
+                modifier = Modifier.fillMaxSize().pointerInput(diagramData.dataSignature, totalRange) {
                     var dragStartRange: ClosedFloatingPointRange<Double>? = null
                     var accumulatedDelta = 0.0
                     detectDragGestures(
@@ -607,8 +608,7 @@ fun BgOverviewChart(
                     val left = leftFrac.toFloat() * layerBounds.width
                     val right = rightFrac.toFloat() * layerBounds.width
                     drawRect(Color.White.copy(alpha = 0.3f), Offset(left, 0f), Size(right - left, layerBounds.height))
-                    drawLine(Color.White, Offset(left, 0f), Offset(left, layerBounds.height), 2.dp.toPx())
-                    drawLine(Color.White, Offset(right, 0f), Offset(right, layerBounds.height), 2.dp.toPx())
+                    drawRect(Color.White, Offset(left, 0f), Size(right - left, layerBounds.height), style = Stroke(width = 2.dp.toPx()))
                 }
             }
         }
