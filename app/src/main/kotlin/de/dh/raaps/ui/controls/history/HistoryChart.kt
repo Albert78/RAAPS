@@ -100,7 +100,9 @@ class BgHistoryChartState(
         if (layerWidth <= 0 || totalXRange <= 0.0 || scrollState.maxValue < 0f) {
             null
         } else {
+            // totalWidthPx is the virtual width of the entire chart
             val totalWidthPx = scrollState.maxValue + layerWidth
+            // scrollState.value is the current horizontal scroll offset
             val startX = minX + (scrollState.value / totalWidthPx) * totalXRange
             val endX = startX + (layerWidth / totalWidthPx) * totalXRange
             startX..endX
@@ -584,7 +586,7 @@ fun BgOverviewChart(
             val rightFrac = ((visibleRange.endInclusive - diagramData.minX) / totalRange).coerceIn(0.0, 1.0)
 
             Canvas(
-                modifier = Modifier.fillMaxSize().pointerInput(diagramData, totalRange, layerBounds) {
+                modifier = Modifier.fillMaxSize().pointerInput(diagramData, totalRange) {
                     var dragStartRange: ClosedFloatingPointRange<Double>? = null
                     var accumulatedDelta = 0.0
                     detectDragGestures(
@@ -592,8 +594,11 @@ fun BgOverviewChart(
                         onDrag = { change, dragAmount ->
                             change.consume()
                             val startRange = dragStartRange ?: return@detectDragGestures
-                            accumulatedDelta += (dragAmount.x / layerBounds.width) * totalRange
-                            scope.launch { state.scrollTo(startRange.start + accumulatedDelta) }
+                            val currentLayerWidth = layerBounds.width
+                            if (currentLayerWidth > 0) {
+                                accumulatedDelta += (dragAmount.x / currentLayerWidth) * totalRange
+                                scope.launch { state.scrollTo(startRange.start + accumulatedDelta) }
+                            }
                         }
                     )
                 }
