@@ -1,4 +1,4 @@
-package de.dh.raaps.core.aps
+package de.dh.raaps.common.model.calculation
 
 import de.dh.raaps.common.model.MealType
 import de.dh.raaps.common.model.data.Minutes

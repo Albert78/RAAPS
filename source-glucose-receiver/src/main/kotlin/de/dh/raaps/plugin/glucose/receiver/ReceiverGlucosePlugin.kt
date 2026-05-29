@@ -4,7 +4,8 @@ import android.app.Application
 import android.content.Context
 import android.content.IntentFilter
 import android.util.Log
-import de.dh.raaps.common.model.GlucosePlugin
+import de.dh.raaps.common.model.GlucoseSource
+import de.dh.raaps.common.model.Plugin
 import de.dh.raaps.common.model.PluginManager
 import de.dh.raaps.common.model.data.BgReading
 import kotlinx.coroutines.channels.BufferOverflow
@@ -19,7 +20,7 @@ import kotlinx.coroutines.flow.asSharedFlow
 class ReceiverGlucosePlugin(
     val application: Application,
     val externalSourceType: ExternalSourceType
-) : GlucosePlugin {
+) : GlucoseSource, Plugin {
     override val name: String = "Receiver Glucose Plugin"
     override val readingsInterval = externalSourceType.readingsInterval
     override val readingsTimeDelay = externalSourceType.readingsTimeDelay

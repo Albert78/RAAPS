@@ -89,8 +89,7 @@ class RestrictedAppFunctions {
             // The following code to find active functions could be more formalized in future versions
             // or in apps with more fine-grained settings. Especially it would be nice if some custom
             // code around the functions would listen to the app settings and whatever data it needs
-            // to decide if that function is active. But as this architecture would make the system too complex,
-            // we just ask for the relevant system settings status as parameters and hard code the decision code here.
+            // to decide if that function is active.
             val activeFunctions = allFunctions.filter { function ->
                 when (function) {
                     WriteCalendar -> para1 > 5
@@ -102,4 +101,3 @@ class RestrictedAppFunctions {
         }
     }
 }
-

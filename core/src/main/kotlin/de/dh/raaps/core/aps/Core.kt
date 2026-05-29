@@ -3,7 +3,7 @@ package de.dh.raaps.core.aps
 import android.util.Log
 import de.dh.raaps.AppPreferencesRepository
 import de.dh.raaps.common.model.DataProvider
-import de.dh.raaps.common.model.GlucosePlugin
+import de.dh.raaps.common.model.GlucoseSource
 import de.dh.raaps.common.model.data.BgReading
 import de.dh.raaps.common.model.data.BgSampleKind
 import de.dh.raaps.common.model.data.Minutes
@@ -171,7 +171,7 @@ class Core(
      * Installs the input Flow of BG values from the given source plugin.
      */
     suspend fun installGlucosePipeline(
-        plugin: GlucosePlugin,
+        plugin: GlucoseSource,
         dataProvider: DataProvider,
         sensorType: SensorType
     ) {

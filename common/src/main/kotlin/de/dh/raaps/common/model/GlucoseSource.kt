@@ -5,7 +5,7 @@ import de.dh.raaps.common.model.data.BgReadingsInterval
 import de.dh.raaps.common.model.data.Minutes
 import kotlinx.coroutines.flow.Flow
 
-interface GlucosePlugin: Plugin {
+interface GlucoseSource {
     val name: String
     val dataProviderType: String
     val readingsInterval: BgReadingsInterval

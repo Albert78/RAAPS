@@ -4,14 +4,13 @@ import android.app.Application
 import android.app.ForegroundServiceStartNotAllowedException
 import android.content.Intent
 import androidx.core.content.ContextCompat
+import de.dh.raaps.common.model.PluginManager
 import de.dh.raaps.core.aps.APS
 import de.dh.raaps.core.repository.DataRepository
 import de.dh.raaps.core.repository.db.AppDatabase
 import de.dh.raaps.notifications.ApsNotificationData
 import de.dh.raaps.notifications.ApsNotificationManager
-import de.dh.raaps.plugin.glucose.receiver.ExternalSourceType
-import de.dh.raaps.plugin.glucose.receiver.ReceiverGlucosePlugin
-import de.dh.raaps.plugin.pump.SamplePumpPlugin
+import de.dh.raaps.pluginmanager.PluginManagerImpl
 import de.dh.raaps.services.ApsService
 import de.dh.raaps.services.BootReceiver
 import kotlinx.coroutines.CoroutineScope
@@ -26,6 +25,8 @@ class MainApplication : Application() {
     lateinit var notificationManager: ApsNotificationManager
         private set
     lateinit var mAppPreferencesRepository: AppPreferencesRepository
+        private set
+    lateinit var pluginManager: PluginManager
         private set
     lateinit var dataRepository: DataRepository
         private set
@@ -51,9 +52,9 @@ class MainApplication : Application() {
         aps = APS(dataRepository, mAppPreferencesRepository, this)
         aps.startInitialization()
 
-        // TODO: Read plugins from preferences
-        aps.pumpPlugin = SamplePumpPlugin()
-        aps.glucosePlugin = ReceiverGlucosePlugin(this, ExternalSourceType.xDrip5Min)
+        pluginManager = PluginManagerImpl(this)
+
+        setupSystem(aps, pluginManager, this)
 
         installNotificationUpdater()
 
@@ -67,6 +68,7 @@ class MainApplication : Application() {
     }
 
     fun triggerUpdatesAfterPermissionsChange() {
+        pluginManager.triggerUpdatesAfterPermissionsChange()
         startApsService()
     }
 

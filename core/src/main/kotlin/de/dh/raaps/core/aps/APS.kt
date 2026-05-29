@@ -3,8 +3,8 @@ package de.dh.raaps.core.aps
 import android.content.Context
 import android.os.PowerManager
 import de.dh.raaps.AppPreferencesRepository
-import de.dh.raaps.common.model.GlucosePlugin
-import de.dh.raaps.common.model.PumpPlugin
+import de.dh.raaps.common.model.GlucoseSource
+import de.dh.raaps.common.model.Pump
 import de.dh.raaps.common.model.data.BgReading
 import de.dh.raaps.common.model.data.Timestamp
 import de.dh.raaps.core.repository.DataRepository
@@ -53,7 +53,7 @@ class APS(
 
     // Plugins & Active Jobs
     private var glucoseJob: Job? = null
-    var glucosePlugin: GlucosePlugin? = null
+    var glucoseSource: GlucoseSource? = null
         set(value) {
             field?.stop()
             field = value
@@ -62,7 +62,7 @@ class APS(
         }
 
     private var pumpJob: Job? = null
-    var pumpPlugin: PumpPlugin? = null
+    var pump: Pump? = null
         set(value) {
             field?.stop()
             field = value
@@ -137,14 +137,14 @@ class APS(
 
     private fun restartGlucosePipeline() {
         glucoseJob?.cancel() // Cancel old pipeline if one exists
-        val plugin = glucosePlugin ?: return
+        val plugin = glucoseSource ?: return
 
         glucoseJob = inAPSThread {
             installGlucosePipeline_ApsThread(plugin)
         }
     }
 
-    private suspend fun installGlucosePipeline_ApsThread(plugin: GlucosePlugin) {
+    private suspend fun installGlucosePipeline_ApsThread(plugin: GlucoseSource) {
         val sensorType = dataRepository.getOrCreateSensorTypeByName(plugin.getSensorTypeName())
         val dataProvider =
             dataRepository.getOrCreateDataProviderByName(plugin.name, plugin.dataProviderType)
@@ -171,13 +171,13 @@ class APS(
      * Gracefully stops the APS system and releases all background resources.
      */
     fun stop() {
-        glucosePlugin?.let {
+        glucoseSource?.let {
             it.stop()
-            glucosePlugin = null
+            glucoseSource = null
         }
-        pumpPlugin?.let {
+        pump?.let {
             it.stop()
-            pumpPlugin = null
+            pump = null
         }
         apsScope.cancel()
         apsDispatcher.close()

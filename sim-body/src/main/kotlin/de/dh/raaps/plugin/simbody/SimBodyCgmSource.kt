@@ -1,8 +1,7 @@
-package de.dh.raaps.plugin.glucose
+package de.dh.raaps.plugin.simbody
 
+import android.app.Application
 import de.dh.raaps.common.model.GlucoseSource
-import de.dh.raaps.common.model.Plugin
-import de.dh.raaps.common.model.PluginManager
 import de.dh.raaps.common.model.data.BgReading
 import de.dh.raaps.common.model.data.BgReadingsInterval
 import de.dh.raaps.common.model.data.BgSampleKind
@@ -16,23 +15,19 @@ import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.map
 import kotlin.random.Random
 
-class SampleCgmPlugin : GlucoseSource, Plugin {
-    override val neededPermissions: Collection<String> = emptyList()
-
-    override val name: String = "Sample CGM Plugin"
+class SimBodyCgmSource(
+    val application: Application
+): GlucoseSource {
+    override val name: String = "Sim Body CGM Plugin"
 
     override val dataProviderType: String = "CGM"
 
     override val readingsInterval: BgReadingsInterval
-        get() = BgReadingsInterval.OneMinute
+        get() = BgReadingsInterval.FiveMinutes
 
     override val readingsTimeDelay = Minutes(5)
 
-    override fun getSensorTypeName() = "Dexcom G6"
-
-    override fun initialize(pluginManager: PluginManager) {
-        // Nothing to do
-    }
+    override fun getSensorTypeName() = "Sim Body Dexcom G6 Plugin"
 
     override fun start() {
         // Nothing to do
@@ -49,7 +44,7 @@ class SampleCgmPlugin : GlucoseSource, Plugin {
                 timestamp = Timestamp(System.currentTimeMillis()),
             )
             emit(reading)
-            delay(1000*60) // Emit minute for demo purposes
+            delay(1000*60*5) // Every 5 minutes
         }
     }
 
@@ -60,7 +55,6 @@ class SampleCgmPlugin : GlucoseSource, Plugin {
     }
 
     private fun sampleMapRawValues(raw: RawBg): BgReading {
-        // Sample decoding for raw values
         val kind = when (raw.value.mgdl.toInt()) {
             39 -> BgSampleKind.Low
             401 -> BgSampleKind.High

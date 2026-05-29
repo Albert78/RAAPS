@@ -1,6 +1,7 @@
 package de.dh.raaps.core.aps
 
 import de.dh.raaps.common.model.InsulinApplication
+import de.dh.raaps.common.model.calculation.CarbsInsulinCalculationModel
 import de.dh.raaps.common.model.data.BgDelta
 import de.dh.raaps.common.model.data.BgReading
 import de.dh.raaps.common.model.data.BgValue

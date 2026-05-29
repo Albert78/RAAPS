@@ -27,6 +27,16 @@ android {
             )
         }
     }
+    flavorDimensions += "version"
+    productFlavors {
+        create("sim") {
+            dimension = "version"
+            applicationIdSuffix = ".sim"
+        }
+        create("prod") {
+            dimension = "version"
+        }
+    }
     compileOptions {
         sourceCompatibility = JavaVersion.toVersion(libs.versions.jvmTarget.get())
         targetCompatibility = JavaVersion.toVersion(libs.versions.jvmTarget.get())
@@ -37,11 +47,22 @@ android {
 }
 
 dependencies {
+    // Configuration for "sim" flavor; the sim flavor is a test for the core calculation algorithm
+    // and adds the sim-body module, which simulates a real body with glucose fluctuations, meals,
+    // virtual insulin pump
+    "simImplementation"(project(":sim-body"))
+
+    // Configuration for "prod" flavor; set the modules for your CGM and pump
+    "prodImplementation"(project(":source-glucose-receiver"))
+    "prodImplementation"(project(":pump-sample"))
+
+    // The sample modules are meant as copy template for real source and pump modules
+//    implementation(project(":source-cgm-sample"))
+//    implementation(project(":pump-sample"))
+
+    // General dependencies
     implementation(project(":common"))
     implementation(project(":core"))
-    implementation(project(":source-cgm-sample"))
-    implementation(project(":source-glucose-receiver"))
-    implementation(project(":pump-sample"))
 
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
