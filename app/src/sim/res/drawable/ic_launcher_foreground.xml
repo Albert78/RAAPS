@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+
+    <!-- Stylized Drop -->
+    <path
+        android:fillColor="#BBDEFB"
+        android:pathData="M54,20 C54,20 82,50 82,72 C82,88 69.5,100 54,100 C38.5,100 26,88 26,72 C26,50 54,20 54,20 Z" />
+
+    <!-- Shine effect on the drop -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:fillAlpha="0.3"
+        android:pathData="M42,40 C38,50 38,65 42,75 C40,65 40,50 42,40 Z" />
+
+    <!-- Trend Line / Wave -->
+    <path
+        android:strokeColor="#1976D2"
+        android:strokeWidth="4"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round"
+        android:pathData="M35,75 L45,75 L50,60 L60,85 L65,75 L75,75" />
+
+    <!-- SIM Label -->
+    <path
+        android:strokeColor="#000000"
+        android:strokeWidth="4"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round"
+        android:pathData="M45,36 H35 Q31,36 31,40.5 Q31,45 38,45 Q45,45 45,49.5 Q45,54 41,54 H31 M53,36 V54 M61,54 V36 L69,47 L77,36 V54" />
+
+</vector>

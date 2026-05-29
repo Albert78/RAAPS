@@ -16,6 +16,7 @@ import kotlinx.coroutines.flow.map
 import kotlin.random.Random
 
 class SimBodyCgmSource(
+    val bodyModel: BodyModel,
     val application: Application
 ): GlucoseSource {
     override val name: String = "Sim Body CGM Plugin"

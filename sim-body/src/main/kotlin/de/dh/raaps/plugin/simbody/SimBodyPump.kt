@@ -5,6 +5,7 @@ import de.dh.raaps.common.model.Pump
 import de.dh.raaps.common.model.ToDo
 
 class SimBodyPump(
+    val bodyModel: BodyModel,
     val application: Application
 ): Pump {
     override val name: String = "Sim Body Pump Plugin"
