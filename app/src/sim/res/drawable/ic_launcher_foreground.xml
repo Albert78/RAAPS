@@ -22,7 +22,7 @@
         android:strokeWidth="4"
         android:strokeLineCap="round"
         android:strokeLineJoin="round"
-        android:pathData="M35,75 L45,75 L50,60 L60,85 L65,75 L75,75" />
+        android:pathData="M30,75 C38,75 38,65 46,65 C54,65 54,85 62,85 C70,85 70,75 78,75" />
 
     <!-- SIM Label -->
     <path

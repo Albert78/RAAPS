@@ -10,18 +10,18 @@
         android:fillColor="#BBDEFB"
         android:pathData="M54,20 C54,20 82,50 82,72 C82,88 69.5,100 54,100 C38.5,100 26,88 26,72 C26,50 54,20 54,20 Z" />
 
+    <!-- Shine effect on the drop -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:fillAlpha="0.3"
+        android:pathData="M42,40 C38,50 38,65 42,75 C40,65 40,50 42,40 Z" />
+
     <!-- Trend Line / Wave -->
     <path
         android:strokeColor="#1976D2"
         android:strokeWidth="4"
         android:strokeLineCap="round"
         android:strokeLineJoin="round"
-        android:pathData="M35,75 L45,75 L50,60 L60,85 L65,75 L75,75" />
-
-    <!-- Shine effect on the drop -->
-    <path
-        android:fillColor="#FFFFFF"
-        android:fillAlpha="0.3"
-        android:pathData="M42,40 C38,50 38,65 42,75 C40,65 40,50 42,40 Z" />
+        android:pathData="M30,68 C38,68 38,58 46,58 C54,58 54,78 62,78 C70,78 70,68 78,68" />
 
 </vector>
