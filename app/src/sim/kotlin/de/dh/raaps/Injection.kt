@@ -10,6 +10,6 @@ fun setupSystem(aps: APS, pluginManager: PluginManager, application: Application
     pluginManager.addPlugin(plugin)
     val glucoseSource = plugin.getGlucoseSource()
     aps.glucoseSource = glucoseSource
-    val pump = plugin.getPump()
-    aps.pump = pump
+    val insulinPump = plugin.getInsulinPump()
+    aps.insulinPump = insulinPump
 }

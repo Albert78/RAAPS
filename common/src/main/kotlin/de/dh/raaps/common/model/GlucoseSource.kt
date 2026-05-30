@@ -5,6 +5,10 @@ import de.dh.raaps.common.model.data.BgReadingsInterval
 import de.dh.raaps.common.model.data.Minutes
 import kotlinx.coroutines.flow.Flow
 
+/**
+ * Represents a source for blood glucose data.
+ * Provides a stream of [BgReading]s and metadata about the sensor and its update frequency.
+ */
 interface GlucoseSource {
     val name: String
     val dataProviderType: String

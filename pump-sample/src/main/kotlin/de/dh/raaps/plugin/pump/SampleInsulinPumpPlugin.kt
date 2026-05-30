@@ -1,11 +1,11 @@
 package de.dh.raaps.plugin.pump
 
+import de.dh.raaps.common.model.InsulinPump
 import de.dh.raaps.common.model.Plugin
 import de.dh.raaps.common.model.PluginManager
-import de.dh.raaps.common.model.Pump
 import de.dh.raaps.common.model.ToDo
 
-class SamplePumpPlugin : Pump, Plugin {
+class SampleInsulinPumpPlugin : InsulinPump, Plugin {
     override val neededPermissions: Collection<String> = emptyList()
 
     override val name: String = "Sample Pump Plugin"

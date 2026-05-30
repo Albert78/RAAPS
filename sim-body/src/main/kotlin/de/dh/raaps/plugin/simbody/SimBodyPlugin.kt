@@ -2,9 +2,9 @@ package de.dh.raaps.plugin.simbody
 
 import android.app.Application
 import de.dh.raaps.common.model.GlucoseSource
+import de.dh.raaps.common.model.InsulinPump
 import de.dh.raaps.common.model.Plugin
 import de.dh.raaps.common.model.PluginManager
-import de.dh.raaps.common.model.Pump
 
 /**
  * A plugin which provides a glucose source and a pump instance which are connected to a
@@ -22,5 +22,5 @@ class SimBodyPlugin(
     }
 
     fun getGlucoseSource(): GlucoseSource = SimBodyCgmSource(bodyModel, application)
-    fun getPump(): Pump = SimBodyPump(bodyModel, application)
+    fun getInsulinPump(): InsulinPump = SimBodyInsulinPump(bodyModel, application)
 }

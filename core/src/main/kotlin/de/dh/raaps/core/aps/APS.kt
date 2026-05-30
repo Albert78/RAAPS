@@ -4,7 +4,7 @@ import android.content.Context
 import android.os.PowerManager
 import de.dh.raaps.AppPreferencesRepository
 import de.dh.raaps.common.model.GlucoseSource
-import de.dh.raaps.common.model.Pump
+import de.dh.raaps.common.model.InsulinPump
 import de.dh.raaps.common.model.data.BgReading
 import de.dh.raaps.common.model.data.Timestamp
 import de.dh.raaps.core.repository.DataRepository
@@ -62,7 +62,7 @@ class APS(
         }
 
     private var pumpJob: Job? = null
-    var pump: Pump? = null
+    var insulinPump: InsulinPump? = null
         set(value) {
             field?.stop()
             field = value
@@ -175,9 +175,9 @@ class APS(
             it.stop()
             glucoseSource = null
         }
-        pump?.let {
+        insulinPump?.let {
             it.stop()
-            pump = null
+            insulinPump = null
         }
         apsScope.cancel()
         apsDispatcher.close()
