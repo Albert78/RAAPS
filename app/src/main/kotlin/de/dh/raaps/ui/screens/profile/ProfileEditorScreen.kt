@@ -59,6 +59,7 @@ import de.dh.raaps.common.model.BASAL_MAX
 import de.dh.raaps.common.model.BASAL_MIN
 import de.dh.raaps.common.model.IC_MAX
 import de.dh.raaps.common.model.IC_MIN
+import de.dh.raaps.common.model.ID_UNDEFINED
 import de.dh.raaps.common.model.ISF_MAX
 import de.dh.raaps.common.model.ISF_MIN
 import de.dh.raaps.common.model.TARGET_MAX
@@ -207,14 +208,19 @@ fun ProfileDetailEditor(
     var therapyData by remember { mutableStateOf(profile.therapyData) }
     var selectedTab by remember { mutableIntStateOf(0) }
 
-    val tabs = listOf("Basal", "ISF", "I:C", "Target")
+    val tabs = listOf(
+        stringResource(id = R.string.profile_editor_tab_basal),
+        stringResource(id = R.string.profile_editor_tab_isf),
+        stringResource(id = R.string.profile_editor_tab_ic),
+        stringResource(id = R.string.profile_editor_tab_target)
+    )
 
     BackHandler(onBack = onCancel)
 
     Scaffold(
         topBar = {
             TopAppBar(
-                title = screenTitle(if (profile.id == -1L) "Neues Profil" else "Profil bearbeiten"),
+                title = screenTitle(if (profile.id == ID_UNDEFINED) stringResource(id = R.string.profile_editor_new_profile) else stringResource(id = R.string.profile_editor_edit_profile)),
                 navigationIcon = {
                     IconButton(onClick = onCancel) {
                         Icon(
@@ -245,7 +251,7 @@ fun ProfileDetailEditor(
             OutlinedTextField(
                 value = name,
                 onValueChange = { name = it },
-                label = { Text("Profilname") },
+                label = { Text(stringResource(id = R.string.profile_editor_name_label)) },
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(16.dp),
@@ -265,8 +271,8 @@ fun ProfileDetailEditor(
             Box(modifier = Modifier.weight(1f)) {
                 when (selectedTab) {
                     0 -> TherapyBlockListEditor(
-                        title = "Basalrate",
-                        description = "Die Menge an Insulin, die kontinuierlich abgegeben wird (Einheit: U/h).",
+                        title = stringResource(id = R.string.profile_editor_basal_title),
+                        description = stringResource(id = R.string.profile_editor_basal_desc),
                         blocks = therapyData.basalBlocks,
                         onBlocksChanged = { therapyData = therapyData.copy(basalBlocks = it) },
                         step = 0.05,
@@ -275,8 +281,8 @@ fun ProfileDetailEditor(
                         maxValue = BASAL_MAX
                     )
                     1 -> TherapyBlockListEditor(
-                        title = "ISF (Insulin-Sensitivitäts-Faktor)",
-                        description = "Gibt an, wie stark eine Einheit Insulin den Blutzucker senkt (Einheit: mg/dL/U).",
+                        title = stringResource(id = R.string.profile_editor_isf_title),
+                        description = stringResource(id = R.string.profile_editor_isf_desc),
                         blocks = therapyData.isfBlocks,
                         onBlocksChanged = { therapyData = therapyData.copy(isfBlocks = it) },
                         step = 1.0,
@@ -285,8 +291,8 @@ fun ProfileDetailEditor(
                         maxValue = ISF_MAX
                     )
                     2 -> TherapyBlockListEditor(
-                        title = "I:C (Insulin-Kohlenhydrat-Verhältnis)",
-                        description = "Gibt an, wie viele Gramm Kohlenhydrate durch eine Einheit Insulin abgedeckt werden (Einheit: g/U).",
+                        title = stringResource(id = R.string.profile_editor_ic_title),
+                        description = stringResource(id = R.string.profile_editor_ic_desc),
                         blocks = therapyData.icBlocks,
                         onBlocksChanged = { therapyData = therapyData.copy(icBlocks = it) },
                         step = 0.1,
@@ -295,8 +301,8 @@ fun ProfileDetailEditor(
                         maxValue = IC_MAX
                     )
                     3 -> TargetBlockListEditor(
-                        title = "Zielbereich",
-                        description = "Der angestrebte Blutzuckerbereich über den Tag (Einheit: mg/dL).",
+                        title = stringResource(id = R.string.profile_editor_target_title),
+                        description = stringResource(id = R.string.profile_editor_target_desc),
                         blocks = therapyData.targetBlocks,
                         onBlocksChanged = { therapyData = therapyData.copy(targetBlocks = it) }
                     )
@@ -525,7 +531,7 @@ fun TargetBlockListEditor(
 
                         if (index > 0) {
                             IconButton(onClick = { removeBlock(index) }) {
-                                Icon(Icons.Default.Delete, contentDescription = "Löschen")
+                                Icon(Icons.Default.Delete, contentDescription = stringResource(id = de.dh.raaps.common.R.string.action_delete))
                             }
                         } else {
                             Box(modifier = Modifier.size(48.dp))
@@ -589,7 +595,7 @@ fun BlockRow(
 
             if (onDelete != null) {
                 IconButton(onClick = onDelete) {
-                    Icon(Icons.Default.Delete, contentDescription = "Löschen")
+                    Icon(Icons.Default.Delete, contentDescription = stringResource(id = de.dh.raaps.common.R.string.action_delete))
                 }
             } else {
                 Box(modifier = Modifier.size(48.dp))
@@ -628,7 +634,7 @@ fun InsertButton(canInsert: Boolean, onClick: () -> Unit) {
         ) {
             Icon(
                 imageVector = Icons.Default.Add,
-                contentDescription = if (canInsert) "Einfügen" else null,
+                contentDescription = if (canInsert) stringResource(id = R.string.cd_insert_block) else null,
                 modifier = Modifier.size(16.dp),
                 tint = iconTint
             )
@@ -654,7 +660,7 @@ fun ValueAdjuster(
             onClick = { onValueChanged((value - step).coerceIn(minValue, maxValue)) },
             enabled = value > minValue
         ) {
-            Icon(Icons.Default.Remove, contentDescription = "Weniger")
+            Icon(Icons.Default.Remove, contentDescription = stringResource(id = R.string.cd_decrease_value))
         }
 
         Text(
@@ -668,7 +674,7 @@ fun ValueAdjuster(
             onClick = { onValueChanged((value + step).coerceIn(minValue, maxValue)) },
             enabled = value < maxValue
         ) {
-            Icon(Icons.Default.Add, contentDescription = "Mehr")
+            Icon(Icons.Default.Add, contentDescription = stringResource(id = R.string.cd_increase_value))
         }
     }
 }

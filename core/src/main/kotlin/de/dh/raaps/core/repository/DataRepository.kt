@@ -1,6 +1,7 @@
 package de.dh.raaps.core.repository
 
 import de.dh.raaps.common.model.DataProvider
+import de.dh.raaps.common.model.ID_UNDEFINED
 import de.dh.raaps.common.model.InsulinApplication
 import de.dh.raaps.common.model.InsulinType
 import de.dh.raaps.common.model.MealEntry
@@ -155,6 +156,9 @@ class DataRepository(val database: AppDatabase) {
 
     suspend fun insertTherapyData(therapyData: TherapyData): Long {
         val id = database.therapyDao().insertTherapyData(therapyData.toEntity())
+        if (id != -1L) {
+            therapyData.id = id
+        }
         return id
     }
 
@@ -189,12 +193,15 @@ class DataRepository(val database: AppDatabase) {
 
     suspend fun insertProfile(profile: Profile): Long {
         // Ensure TherapyData is saved first if it's new
-        if (profile.therapyData.id == -1L) {
+        if (profile.therapyData.id == ID_UNDEFINED) {
             val therapyDataId = insertTherapyData(profile.therapyData)
-            // Note: In a real scenario, we should update the profile object's therapyData.id here
-            // but for simplicity we assume it was passed correctly or handled by the caller.
+            profile.therapyData.id = therapyDataId
         }
-        return database.therapyDao().insertProfile(profile.toEntity())
+        val id = database.therapyDao().insertProfile(profile.toEntity())
+        if (id != -1L) {
+            profile.id = id
+        }
+        return id
     }
 
     suspend fun updateProfile(profile: Profile) {
@@ -224,9 +231,13 @@ class DataRepository(val database: AppDatabase) {
         val entity = currentTherapyData.toEntity()
         val existing = dao.getCurrentTherapyData()
         if (existing == null) {
-            dao.insertCurrentTherapyData(entity)
+            val id = dao.insertCurrentTherapyData(entity)
+            if (id != -1L) {
+                currentTherapyData.id = id
+            }
         } else {
             dao.updateCurrentTherapyData(entity.copy(id = existing.id))
+            currentTherapyData.id = existing.id
         }
     }
 }

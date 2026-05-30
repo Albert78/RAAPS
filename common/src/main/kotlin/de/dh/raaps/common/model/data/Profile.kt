@@ -7,7 +7,7 @@ import de.dh.raaps.common.model.ID_UNDEFINED
  * Profiles are used to switch between different metabolic states (e.g. Normal, Sport, Illness).
  */
 data class Profile(
-    val id: Long = ID_UNDEFINED,
+    var id: Long = ID_UNDEFINED,
     val name: String,
     val therapyData: TherapyData
 )

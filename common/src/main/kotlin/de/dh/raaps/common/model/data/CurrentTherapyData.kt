@@ -9,7 +9,7 @@ import de.dh.raaps.common.model.InsulinType
  * deviate from the profile's data.
  */
 data class CurrentTherapyData(
-    val id: Long = ID_UNDEFINED,
+    var id: Long = ID_UNDEFINED,
     val profileId: Long?,
     val therapyData: TherapyData,
     val insulinType: InsulinType

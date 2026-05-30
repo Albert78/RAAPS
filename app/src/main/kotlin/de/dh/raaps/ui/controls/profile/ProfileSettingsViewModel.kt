@@ -7,8 +7,8 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.CreationExtras
 import de.dh.raaps.MainApplication
+import de.dh.raaps.common.model.ID_UNDEFINED
 import de.dh.raaps.common.model.data.Profile
-import de.dh.raaps.common.model.data.TherapyData
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
@@ -52,7 +52,7 @@ class ProfileSettingsViewModel(
 
     fun saveProfile(profile: Profile) {
         viewModelScope.launch {
-            if (profile.id == -1L) {
+            if (profile.id == ID_UNDEFINED) {
                 dataRepository.insertProfile(profile)
             } else {
                 dataRepository.updateProfile(profile)

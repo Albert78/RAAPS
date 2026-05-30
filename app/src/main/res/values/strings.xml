@@ -6,6 +6,21 @@
     <string name="menu_item_preferences_label">Einstellungen</string>
     <string name="menu_item_profile_editor_label">Profile</string>
     <string name="profile_editor_screen_title">Profile verwalten</string>
+    <string name="profile_editor_new_profile">Neues Profil</string>
+    <string name="profile_editor_edit_profile">Profil bearbeiten</string>
+    <string name="profile_editor_name_label">Profilname</string>
+    <string name="profile_editor_tab_basal">Basal</string>
+    <string name="profile_editor_tab_isf">ISF</string>
+    <string name="profile_editor_tab_ic">I:C</string>
+    <string name="profile_editor_tab_target">Target</string>
+    <string name="profile_editor_basal_title">Basalrate</string>
+    <string name="profile_editor_basal_desc">Die Menge an Insulin, die kontinuierlich abgegeben wird (Einheit: U/h).</string>
+    <string name="profile_editor_isf_title">ISF (Insulin-Sensitivitäts-Faktor)</string>
+    <string name="profile_editor_isf_desc">Gibt an, wie stark eine Einheit Insulin den Blutzucker senkt (Einheit: mg/dL/U).</string>
+    <string name="profile_editor_ic_title">I:C (Insulin-Kohlenhydrat-Verhältnis)</string>
+    <string name="profile_editor_ic_desc">Gibt an, wie viele Gramm Kohlenhydrate durch eine Einheit Insulin abgedeckt werden (Einheit: g/U).</string>
+    <string name="profile_editor_target_title">Zielbereich</string>
+    <string name="profile_editor_target_desc">Der angestrebte Blutzuckerbereich über den Tag (Einheit: mg/dL).</string>
 
     <string name="cd_edit_profile">Profil bearbeiten</string>
     <string name="therapy_target_label">Zielwert</string>
@@ -14,6 +29,9 @@
     <string name="cd_add_profile">Profil hinzufügen</string>
     <string name="cd_save_profile">Profil speichern</string>
     <string name="cd_delete_profile">Profil löschen</string>
+    <string name="cd_insert_block">Einfügen</string>
+    <string name="cd_decrease_value">Weniger</string>
+    <string name="cd_increase_value">Mehr</string>
     <string name="delete_profile_title">Profil löschen</string>
     <string name="delete_profile_message">Möchten Sie das Profil \"%1$s\" wirklich löschen?</string>
 
