@@ -21,3 +21,9 @@ const val IC_MAX = 100.0
 
 const val TARGET_MIN = 70
 const val TARGET_MAX = 180
+
+const val DEFAULT_BASAL_BLOCK_UNITS_PER_HOUR = 0.5
+const val DEFAULT_ISF_MGDL_PER_UNIT = 100.0
+const val DEFAULT_IC_GRAM_PER_UNIT = 10.0
+const val DEFAULT_TARGET_LOW_MGDL: Short = 70
+const val DEFAULT_TARGET_HIGH_MGDL: Short = 120
