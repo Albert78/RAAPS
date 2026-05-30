@@ -26,7 +26,7 @@ data class PreferencesUiState(
 
 class PreferencesViewModel(
     private val application: MainApplication,
-    private val appPreferencesRepository: AppPreferencesRepository = application.mAppPreferencesRepository
+    private val appPreferencesRepository: AppPreferencesRepository = application.appPreferencesRepository
 ) : ViewModel() {
     private val _uiState = MutableStateFlow(PreferencesUiState(isLoading = true, isError = false))
     val uiState: StateFlow<PreferencesUiState> = _uiState.asStateFlow()
@@ -77,7 +77,7 @@ class PreferencesViewModel(
         ) : ViewModelProvider.Factory {
             @Suppress("UNCHECKED_CAST")
             override fun <T : ViewModel> create(modelClass: Class<T>): T {
-                val appStateRepository = MainApplication.instance.mAppPreferencesRepository
+                val appStateRepository = MainApplication.instance.appPreferencesRepository
                 return PreferencesViewModel(application, appPreferencesRepository = appStateRepository) as T
             }
         }

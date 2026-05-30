@@ -9,6 +9,7 @@ import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import de.dh.raaps.common.model.InsulinTypes
+import de.dh.raaps.common.model.data.GlucoseUnit
 import de.dh.raaps.common.ui.ThemeMode
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.SharingStarted
@@ -46,9 +47,19 @@ suspend fun AppPreferencesRepository.setPumpInsulinTypeName(value: String) {
     }
 }
 
+val Preferences?.glucoseUnit: GlucoseUnit
+    get() = this?.get(GLUCOSE_UNIT_KEY)?.let { GlucoseUnit.valueOf(it) } ?: GlucoseUnit.MG_DL
+
+suspend fun AppPreferencesRepository.setGlucoseUnit(value: GlucoseUnit) {
+    editPreferences { mutablePreferences ->
+        mutablePreferences[GLUCOSE_UNIT_KEY] = value.name
+    }
+}
+
 val THEME_MODE_KEY = stringPreferencesKey("theme_mode")
 val USER_DECLINED_PERMISSIONS_KEY = booleanPreferencesKey("user_declined_permissions")
 val PUMP_INSULIN_TYPE_KEY = stringPreferencesKey("pump_insulin_type")
+val GLUCOSE_UNIT_KEY = stringPreferencesKey("glucose_unit")
 
 class AppPreferencesRepository(private val context: Context, private val scope: CoroutineScope) {
     /**

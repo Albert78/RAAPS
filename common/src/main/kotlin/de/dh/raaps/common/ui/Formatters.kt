@@ -1,11 +1,15 @@
 package de.dh.raaps.common.ui
 
+import android.util.Range
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.platform.LocalLocale
 import androidx.compose.ui.res.stringResource
 import de.dh.raaps.common.R
+import de.dh.raaps.common.model.data.BgDelta
+import de.dh.raaps.common.model.data.BgValue
+import de.dh.raaps.common.model.data.GlucoseUnit
 import de.dh.raaps.common.model.data.Timestamp
 import java.time.LocalDate
 import java.time.LocalDateTime
@@ -132,4 +136,26 @@ fun shortRelativeTimeAgo(diffMs: Long): String {
 fun shortRelativeTimeAgo(timestamp: Timestamp): String {
     val diffMs = System.currentTimeMillis() - timestamp.ms
     return shortRelativeTimeAgo(diffMs)
+}
+
+/////////////////////////////////////////////// Glucose & Therapy //////////////////////////////////////
+
+@Composable
+fun glucoseValue(value: BgValue?, unit: GlucoseUnit, default: String = "-"): String {
+    return value?.toString(unit) ?: default
+}
+
+@Composable
+fun isfValue(value: BgDelta?, unit: GlucoseUnit, default: String = "-"): String {
+    return value?.toString(unit) ?: default
+}
+
+@Composable
+fun icValue(value: Double?, default: String = "-"): String {
+    return value?.let { String.format(Locale.getDefault(), "%.1f g/U", it) } ?: default
+}
+
+@Composable
+fun targetRange(range: Range<BgValue>?, unit: GlucoseUnit, default: String = "-"): String {
+    return range?.let { "${it.lower.toString(unit)} - ${it.upper.toString(unit)}" } ?: default
 }

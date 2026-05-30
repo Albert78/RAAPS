@@ -24,7 +24,7 @@ import kotlinx.coroutines.launch
 class MainApplication : Application() {
     lateinit var notificationManager: ApsNotificationManager
         private set
-    lateinit var mAppPreferencesRepository: AppPreferencesRepository
+    lateinit var appPreferencesRepository: AppPreferencesRepository
         private set
     lateinit var pluginManager: PluginManager
         private set
@@ -43,13 +43,13 @@ class MainApplication : Application() {
         instance = this
 
         notificationManager = ApsNotificationManager(this)
-        mAppPreferencesRepository = AppPreferencesRepository(context = this, scope = applicationScope)
+        appPreferencesRepository = AppPreferencesRepository(context = this, scope = applicationScope)
         val appDatabase = AppDatabase.getInstance(this)
         dataRepository = DataRepository(appDatabase)
 
         startApsService()
 
-        aps = APS(dataRepository, mAppPreferencesRepository, this)
+        aps = APS(dataRepository, appPreferencesRepository, this)
         aps.startInitialization()
 
         pluginManager = PluginManagerImpl(this)
