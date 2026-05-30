@@ -1,10 +1,14 @@
 package de.dh.raaps.common.ui.composables
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -22,38 +26,50 @@ fun WarningBanner(
     actionText: String? = null,
     onActionClick: () -> Unit
 ) {
-    Row(
+    Card(
         modifier = Modifier
-            .padding(10.dp)
+            .fillMaxWidth()
+            .padding(8.dp)
             .clickable { onActionClick() },
-        verticalAlignment = Alignment.CenterVertically
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.8f)
+        ),
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.error.copy(alpha = 0.5f)),
+        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
     ) {
-        Icon(
-            imageVector = Icon_Warning,
-            contentDescription = null,
-            tint = ExtendedTheme.semanticColors.warning,
+        Row(
             modifier = Modifier
-                .size(50.dp)
-                .padding(end = 10.dp)
-        )
-
-        Column {
-            Text(
-                text = warningText,
-                style = MaterialTheme.typography.bodyMedium
+                .padding(16.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Icon(
+                imageVector = Icon_Warning,
+                contentDescription = null,
+                tint = ExtendedTheme.semanticColors.warning,
+                modifier = Modifier
+                    .size(40.dp)
+                    .padding(end = 12.dp)
             )
 
-            if (actionText != null) {
+            Column(modifier = Modifier.weight(1f)) {
                 Text(
-                    text = actionText,
-                    style = MaterialTheme.typography.bodyMedium.copy(
-                        fontWeight = FontWeight.Bold
-                    ),
-                    color = MaterialTheme.colorScheme.primary,
-                    modifier = Modifier
-                        .padding(top = 4.dp, end = 20.dp)
-                        .align(Alignment.End)
+                    text = warningText,
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurface
                 )
+
+                if (actionText != null) {
+                    Text(
+                        text = actionText,
+                        style = MaterialTheme.typography.bodyMedium.copy(
+                            fontWeight = FontWeight.Bold
+                        ),
+                        color = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier
+                            .padding(top = 4.dp)
+                            .align(Alignment.End)
+                    )
+                }
             }
         }
     }
