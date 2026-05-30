@@ -9,3 +9,15 @@ const val MINUTES_PER_DAY = MINUTES_PER_HOUR * HOURS_PER_DAY
 const val DEFAULT_TARGET_LOW = 80
 const val DEFAULT_TARGET_HIGH = 120
 val DEFAULT_INSULIN_TYPE = InsulinTypes.ASPART.name
+
+const val BASAL_MIN = 0.1
+const val BASAL_MAX = 10.0
+
+const val ISF_MIN = 10.0
+const val ISF_MAX = 300.0
+
+const val IC_MIN = 1.0
+const val IC_MAX = 100.0
+
+const val TARGET_MIN = 70
+const val TARGET_MAX = 180

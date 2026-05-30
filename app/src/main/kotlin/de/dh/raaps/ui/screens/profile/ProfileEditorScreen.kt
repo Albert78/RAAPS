@@ -55,6 +55,14 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import de.dh.raaps.R
+import de.dh.raaps.common.model.BASAL_MAX
+import de.dh.raaps.common.model.BASAL_MIN
+import de.dh.raaps.common.model.IC_MAX
+import de.dh.raaps.common.model.IC_MIN
+import de.dh.raaps.common.model.ISF_MAX
+import de.dh.raaps.common.model.ISF_MIN
+import de.dh.raaps.common.model.TARGET_MAX
+import de.dh.raaps.common.model.TARGET_MIN
 import de.dh.raaps.common.model.data.BgValue
 import de.dh.raaps.common.model.data.Block
 import de.dh.raaps.common.model.data.Minutes
@@ -262,7 +270,9 @@ fun ProfileDetailEditor(
                         blocks = therapyData.basalBlocks,
                         onBlocksChanged = { therapyData = therapyData.copy(basalBlocks = it) },
                         step = 0.05,
-                        format = "%.2f"
+                        format = "%.2f",
+                        minValue = BASAL_MIN,
+                        maxValue = BASAL_MAX
                     )
                     1 -> TherapyBlockListEditor(
                         title = "ISF (Insulin-Sensitivitäts-Faktor)",
@@ -270,7 +280,9 @@ fun ProfileDetailEditor(
                         blocks = therapyData.isfBlocks,
                         onBlocksChanged = { therapyData = therapyData.copy(isfBlocks = it) },
                         step = 1.0,
-                        format = "%.0f"
+                        format = "%.0f",
+                        minValue = ISF_MIN,
+                        maxValue = ISF_MAX
                     )
                     2 -> TherapyBlockListEditor(
                         title = "I:C (Insulin-Kohlenhydrat-Verhältnis)",
@@ -278,7 +290,9 @@ fun ProfileDetailEditor(
                         blocks = therapyData.icBlocks,
                         onBlocksChanged = { therapyData = therapyData.copy(icBlocks = it) },
                         step = 0.1,
-                        format = "%.1f"
+                        format = "%.1f",
+                        minValue = IC_MIN,
+                        maxValue = IC_MAX
                     )
                     3 -> TargetBlockListEditor(
                         title = "Zielbereich",
@@ -299,7 +313,9 @@ fun TherapyBlockListEditor(
     blocks: List<Block>,
     onBlocksChanged: (List<Block>) -> Unit,
     step: Double,
-    format: String
+    format: String,
+    minValue: Double,
+    maxValue: Double
 ) {
     val startHours = remember(blocks) {
         var currentHour = 0
@@ -376,7 +392,9 @@ fun TherapyBlockListEditor(
                     onDelete = if (index > 0) { { removeBlock(index) } } else null,
                     step = step,
                     format = format,
-                    isFixed = index == 0
+                    isFixed = index == 0,
+                    minValue = minValue,
+                    maxValue = maxValue
                 )
             }
 
@@ -486,7 +504,9 @@ fun TargetBlockListEditor(
                                 },
                                 step = 5.0,
                                 format = "%.0f",
-                                modifier = Modifier.fillMaxWidth()
+                                modifier = Modifier.fillMaxWidth(),
+                                minValue = TARGET_MIN.toDouble(),
+                                maxValue = TARGET_MAX.toDouble()
                             )
                             ValueAdjuster(
                                 value = block.highTarget.mgdl.toDouble(),
@@ -497,7 +517,9 @@ fun TargetBlockListEditor(
                                 },
                                 step = 5.0,
                                 format = "%.0f",
-                                modifier = Modifier.fillMaxWidth()
+                                modifier = Modifier.fillMaxWidth(),
+                                minValue = TARGET_MIN.toDouble(),
+                                maxValue = TARGET_MAX.toDouble()
                             )
                         }
 
@@ -530,7 +552,9 @@ fun BlockRow(
     onDelete: (() -> Unit)?,
     step: Double,
     format: String,
-    isFixed: Boolean
+    isFixed: Boolean,
+    minValue: Double,
+    maxValue: Double
 ) {
     Surface(
         modifier = Modifier.fillMaxWidth(),
@@ -558,7 +582,9 @@ fun BlockRow(
                 onValueChanged = onValueChanged,
                 step = step,
                 format = format,
-                modifier = Modifier.weight(1f)
+                modifier = Modifier.weight(1f),
+                minValue = minValue,
+                maxValue = maxValue
             )
 
             if (onDelete != null) {
@@ -616,13 +642,18 @@ fun ValueAdjuster(
     onValueChanged: (Double) -> Unit,
     step: Double,
     format: String,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    minValue: Double,
+    maxValue: Double
 ) {
     Row(
         verticalAlignment = Alignment.CenterVertically,
         modifier = modifier
     ) {
-        IconButton(onClick = { onValueChanged((value - step).coerceAtLeast(0.0)) }) {
+        IconButton(
+            onClick = { onValueChanged((value - step).coerceIn(minValue, maxValue)) },
+            enabled = value > minValue
+        ) {
             Icon(Icons.Default.Remove, contentDescription = "Weniger")
         }
 
@@ -633,7 +664,10 @@ fun ValueAdjuster(
             textAlign = TextAlign.Center
         )
 
-        IconButton(onClick = { onValueChanged(value + step) }) {
+        IconButton(
+            onClick = { onValueChanged((value + step).coerceIn(minValue, maxValue)) },
+            enabled = value < maxValue
+        ) {
             Icon(Icons.Default.Add, contentDescription = "Mehr")
         }
     }
