@@ -8,7 +8,6 @@ import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
-import de.dh.raaps.common.model.InsulinTypes
 import de.dh.raaps.common.model.data.GlucoseUnit
 import de.dh.raaps.common.ui.ThemeMode
 import kotlinx.coroutines.CoroutineScope
@@ -38,15 +37,6 @@ suspend fun AppPreferencesRepository.setUserDeclinedPermissions(value: Boolean) 
     }
 }
 
-val Preferences?.pumpInsulinTypeName: String
-    get() = this?.get(PUMP_INSULIN_TYPE_KEY) ?: InsulinTypes.ASPART.name
-
-suspend fun AppPreferencesRepository.setPumpInsulinTypeName(value: String) {
-    editPreferences { mutablePreferences ->
-        mutablePreferences[PUMP_INSULIN_TYPE_KEY] = value
-    }
-}
-
 val Preferences?.glucoseUnit: GlucoseUnit
     get() = this?.get(GLUCOSE_UNIT_KEY)?.let { GlucoseUnit.valueOf(it) } ?: GlucoseUnit.MG_DL
 
@@ -58,7 +48,6 @@ suspend fun AppPreferencesRepository.setGlucoseUnit(value: GlucoseUnit) {
 
 val THEME_MODE_KEY = stringPreferencesKey("theme_mode")
 val USER_DECLINED_PERMISSIONS_KEY = booleanPreferencesKey("user_declined_permissions")
-val PUMP_INSULIN_TYPE_KEY = stringPreferencesKey("pump_insulin_type")
 val GLUCOSE_UNIT_KEY = stringPreferencesKey("glucose_unit")
 
 class AppPreferencesRepository(private val context: Context, private val scope: CoroutineScope) {

@@ -23,6 +23,8 @@
     <string name="profile_editor_target_desc">Der angestrebte Blutzuckerbereich über den Tag (Einheit: mg/dL).</string>
 
     <string name="cd_edit_profile">Profil bearbeiten</string>
+    <string name="invalid_profile">Ungültiges Profil</string>
+    <string name="therapy_profile_selection_title">Profil auswählen</string>
     <string name="therapy_target_label">Zielwert</string>
     <string name="therapy_isf_label">ISF</string>
     <string name="therapy_ic_label">I:C</string>

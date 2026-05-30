@@ -21,4 +21,12 @@
     <string name="theme_system">Systemstandard</string>
     <string name="theme_light">Hell</string>
     <string name="theme_dark">Dunkel</string>
+
+    <string name="insulin_type_aspart_name">Aspart</string>
+    <string name="insulin_type_fiasp_name">Fiasp</string>
+    <string name="meal_type_fast_carbs_name">Schnelle Kohlenhydrate</string>
+    <string name="meal_type_standard_meal_name">Standard Mahlzeit</string>
+    <string name="meal_type_high_fat_meal_name">Fettreiche Mahlzeit</string>
+    <string name="meal_type_slow_meal_name">Langsame Mahlzeit</string>
+    <string name="profile_default_normal_name">Normal</string>
 </resources>

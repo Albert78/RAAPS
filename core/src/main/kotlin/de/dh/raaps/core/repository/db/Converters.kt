@@ -79,8 +79,9 @@ fun carbCurveComponentListToString(components: List<CarbCurveComponentData>): St
 
 fun stringToCarbCurveComponentList(value: String): List<CarbCurveComponentData> {
     val componentsStr = value.removeSurrounding("[", "]")
+    if (componentsStr.isBlank()) return emptyList()
     return componentsStr.split(");(").map { componentStr ->
-        val cleanStr = componentStr.removeSurrounding("(", ")")
+        val cleanStr = componentStr.removePrefix("(").removeSuffix(")")
         val props = cleanStr.split(";")
         val weight = props[0].substringAfter("weight=").toInt()
         val peak = props[1].substringAfter("peak=").toShort()

@@ -5,9 +5,11 @@ import android.util.Range
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
+import androidx.lifecycle.application
 import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.CreationExtras
 import de.dh.raaps.MainApplication
+import de.dh.raaps.R
 import de.dh.raaps.common.model.data.BgDelta
 import de.dh.raaps.common.model.data.BgValue
 import de.dh.raaps.common.model.data.CurrentTherapyData
@@ -73,7 +75,8 @@ class CurrentTherapyViewModel(
         val ic = therapyModel.getIcFactor(now)
         val target = therapyModel.getTarget()
 
-        val profileName = profiles.find { it.id == currentData.profileId }?.name ?: "Custom"
+        val profileName = profiles.find { it.id == currentData.profileId }?.name
+            ?: application.getString(R.string.invalid_profile)
         val unit = appPreferencesRepository.cachedPreferences.value.glucoseUnit
 
         _uiState.update {

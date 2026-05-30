@@ -1,13 +1,14 @@
 package de.dh.raaps.plugin.simbody
 
+import de.dh.raaps.common.model.CarbCurveComponentData
 import de.dh.raaps.common.model.InsulinApplication
-import de.dh.raaps.common.model.InsulinTypes
+import de.dh.raaps.common.model.InsulinType
 import de.dh.raaps.common.model.MealEntry
 import de.dh.raaps.common.model.MealType
-import de.dh.raaps.common.model.MealTypes
 import de.dh.raaps.common.model.calculation.CarbCurveComponent
 import de.dh.raaps.common.model.calculation.InsulinCurve
 import de.dh.raaps.common.model.data.BgValue
+import de.dh.raaps.common.model.data.Minutes
 import de.dh.raaps.common.model.data.Timestamp
 import java.util.concurrent.CopyOnWriteArrayList
 
@@ -16,6 +17,22 @@ import java.util.concurrent.CopyOnWriteArrayList
  * It tracks blood glucose levels influenced by meals, insulin, exercise, and health states.
  */
 class BodyModel {
+    // Simulation Defaults (independent of database)
+    private val defaultInsulinType = InsulinType(
+        name = "Sim Aspart",
+        dia = Minutes.ofHours(5),
+        peak = Minutes(75)
+    )
+
+    private val defaultMealType = MealType(
+        name = "Sim Standard Meal",
+        components = listOf(
+            CarbCurveComponentData(weight = 70, peakMinutes = Minutes(75)),
+            CarbCurveComponentData(weight = 30, peakMinutes = Minutes(150))
+        ),
+        cat = Minutes.ofHours(4)
+    )
+
     // Inputs (historical data)
     val meals = CopyOnWriteArrayList<MealEntry>()
     val insulinApplications = CopyOnWriteArrayList<InsulinApplication>()
@@ -81,22 +98,22 @@ class BodyModel {
     /**
      * Simulates eating a meal.
      */
-    fun eat(carbs: Double, type: MealType = MealTypes.STANDARD_MEAL) {
+    fun eat(carbs: Double, type: MealType? = null) {
         meals.add(MealEntry(
             timestamp = Timestamp.now(),
             carbGrams = carbs,
-            mealType = type
+            mealType = type ?: defaultMealType
         ))
     }
 
     /**
      * Simulates an insulin bolus.
      */
-    fun bolus(units: Double) {
+    fun bolus(units: Double, type: InsulinType? = null) {
         insulinApplications.add(InsulinApplication(
             timestamp = Timestamp.now(),
             insulinUnits = units,
-            insulinType = InsulinTypes.ASPART
+            insulinType = type ?: defaultInsulinType
         ))
     }
 

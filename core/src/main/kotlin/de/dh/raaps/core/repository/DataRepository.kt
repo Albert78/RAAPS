@@ -225,8 +225,12 @@ class DataRepository(val database: AppDatabase) {
 
     suspend fun updateCurrentTherapyData(currentTherapyData: CurrentTherapyData) {
         val dao = database.therapyDao()
-        // Update the actual therapy data first
-        updateTherapyData(currentTherapyData.therapyData)
+        // Ensure therapy data is either inserted or updated correctly
+        if (currentTherapyData.therapyData.id == ID_UNDEFINED) {
+            insertTherapyData(currentTherapyData.therapyData)
+        } else {
+            updateTherapyData(currentTherapyData.therapyData)
+        }
 
         val entity = currentTherapyData.toEntity()
         val existing = dao.getCurrentTherapyData()

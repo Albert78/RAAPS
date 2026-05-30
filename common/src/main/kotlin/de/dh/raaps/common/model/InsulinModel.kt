@@ -12,27 +12,6 @@ data class InsulinType(
     val dia: Minutes
 )
 
-object InsulinTypes {
-    /**
-     * Rapid acting insulin.
-     * Example: NovoRapid.
-     */
-    val ASPART = InsulinType(
-        name = "Aspart",
-        dia = Minutes.ofHours(5),
-        peak = Minutes(75)
-    )
-
-    /**
-     * Ultra rapid insulin.
-     */
-    val FIASP = InsulinType(
-        name = "Fiasp",
-        dia = Minutes.ofHours(4),
-        peak = Minutes(55)
-    )
-}
-
 /**
  * Historical insulin application.
  */

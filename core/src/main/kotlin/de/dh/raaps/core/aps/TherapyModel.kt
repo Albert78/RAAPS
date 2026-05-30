@@ -2,11 +2,12 @@ package de.dh.raaps.core.aps
 
 import android.util.Range
 import de.dh.raaps.AppPreferencesRepository
-import de.dh.raaps.common.model.DEFAULT_INSULIN_TYPE
-import de.dh.raaps.common.model.DEFAULT_TARGET_HIGH
-import de.dh.raaps.common.model.DEFAULT_TARGET_LOW
+import de.dh.raaps.common.model.DEFAULT_BASAL_UNITS_PER_HOUR
+import de.dh.raaps.common.model.DEFAULT_IC_GRAM_PER_UNIT
+import de.dh.raaps.common.model.DEFAULT_ISF_MGDL_PER_UNIT
+import de.dh.raaps.common.model.DEFAULT_TARGET_HIGH_MGDL
+import de.dh.raaps.common.model.DEFAULT_TARGET_LOW_MGDL
 import de.dh.raaps.common.model.InsulinType
-import de.dh.raaps.common.model.InsulinTypes
 import de.dh.raaps.common.model.data.BgDelta
 import de.dh.raaps.common.model.data.BgValue
 import de.dh.raaps.common.model.data.Timestamp
@@ -23,7 +24,7 @@ class TherapyModel(
      * Unit: Insulin units.
      */
     suspend fun getBasalPerHour(timestamp: Timestamp): Double {
-        val data = dataRepository.getCurrentTherapyData()?.therapyData ?: return 0.5
+        val data = dataRepository.getCurrentTherapyData()?.therapyData ?: return DEFAULT_BASAL_UNITS_PER_HOUR
         return data.basalBlocks.getAmountForMinute(timestamp.minutesSinceMidnight())
     }
 
@@ -33,7 +34,7 @@ class TherapyModel(
      * Unit: Grams of carbs.
      */
     suspend fun getIcFactor(timestamp: Timestamp): Double {
-        val data = dataRepository.getCurrentTherapyData()?.therapyData ?: return 10.0
+        val data = dataRepository.getCurrentTherapyData()?.therapyData ?: return DEFAULT_IC_GRAM_PER_UNIT
         return data.icBlocks.getAmountForMinute(timestamp.minutesSinceMidnight())
     }
 
@@ -44,14 +45,19 @@ class TherapyModel(
      * Unit: Blood glucose delta.
      */
     suspend fun getIsfFactor(timestamp: Timestamp): BgDelta {
-        val data = dataRepository.getCurrentTherapyData()?.therapyData ?: return BgDelta(100)
+        val data = dataRepository.getCurrentTherapyData()?.therapyData ?: return BgDelta(
+            DEFAULT_ISF_MGDL_PER_UNIT.toInt().toShort()
+        )
         val amount = data.isfBlocks.getAmountForMinute(timestamp.minutesSinceMidnight())
         return BgDelta.fromMgDl(amount.toInt())
     }
 
     suspend fun getTarget(): Range<BgValue> {
         val data = dataRepository.getCurrentTherapyData()?.therapyData
-            ?: return Range(BgValue.fromMgDl(DEFAULT_TARGET_LOW), BgValue.fromMgDl(DEFAULT_TARGET_HIGH))
+            ?: return Range(
+                BgValue.fromMgDl(DEFAULT_TARGET_LOW_MGDL),
+                BgValue.fromMgDl(DEFAULT_TARGET_HIGH_MGDL)
+            )
 
         val target = data.targetBlocks.getTargetForMinute(Timestamp.now().minutesSinceMidnight())
         return Range(target.first, target.second)
@@ -63,11 +69,7 @@ class TherapyModel(
             return currentData.insulinType
         }
 
-        var insulinType = dataRepository.getInsulinTypeByName(DEFAULT_INSULIN_TYPE)
-        if (insulinType == null) {
-            insulinType = InsulinTypes.ASPART
-            dataRepository.insertInsulinType(insulinType)
-        }
-        return insulinType
+        return dataRepository.getAllInsulinTypes().firstOrNull()
+            ?: throw IllegalStateException("No insulin type configured for insulin pump")
     }
 }

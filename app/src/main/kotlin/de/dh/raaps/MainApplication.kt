@@ -7,6 +7,7 @@ import androidx.core.content.ContextCompat
 import de.dh.raaps.common.model.PluginManager
 import de.dh.raaps.core.aps.APS
 import de.dh.raaps.core.repository.DataRepository
+import de.dh.raaps.core.repository.DatabaseInitializer
 import de.dh.raaps.core.repository.db.AppDatabase
 import de.dh.raaps.notifications.ApsNotificationData
 import de.dh.raaps.notifications.ApsNotificationManager
@@ -20,6 +21,7 @@ import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
 
 class MainApplication : Application() {
     lateinit var notificationManager: ApsNotificationManager
@@ -46,6 +48,10 @@ class MainApplication : Application() {
         appPreferencesRepository = AppPreferencesRepository(context = this, scope = applicationScope)
         val appDatabase = AppDatabase.getInstance(this)
         dataRepository = DataRepository(appDatabase)
+
+        runBlocking {
+            DatabaseInitializer.initialize(this@MainApplication, dataRepository)
+        }
 
         startApsService()
 

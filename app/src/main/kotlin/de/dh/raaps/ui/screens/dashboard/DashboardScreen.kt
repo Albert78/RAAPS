@@ -36,6 +36,7 @@ import androidx.compose.ui.unit.dp
 import de.dh.raaps.R
 import de.dh.raaps.common.model.data.BgDelta
 import de.dh.raaps.common.model.data.BgValue
+import de.dh.raaps.common.model.data.Profile
 import de.dh.raaps.common.ui.composables.WarningBanner
 import de.dh.raaps.common.ui.composables.screenTitle
 import de.dh.raaps.common.ui.theme.AppTheme
@@ -83,7 +84,8 @@ fun DashboardScreen(
         onNavigateToPermissions = onNavigateToPermissions,
         onNavigateToPreferences = onNavigateToPreferences,
         onNavigateToProfileEditor = onNavigateToProfileEditor,
-        onHistoryChartClick = onHistoryChartClick
+        onHistoryChartClick = onHistoryChartClick,
+        onProfileSelect = { currentTherapyViewModel.selectProfile(it) }
     )
 }
 
@@ -99,7 +101,8 @@ fun DashboardContent(
     onNavigateToPermissions: () -> Unit,
     onNavigateToPreferences: () -> Unit,
     onNavigateToProfileEditor: () -> Unit,
-    onHistoryChartClick: (() -> Unit)?
+    onHistoryChartClick: (() -> Unit)?,
+    onProfileSelect: (Profile) -> Unit
 ) {
     val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
     var menuExpanded by remember { mutableStateOf(false) }
@@ -180,7 +183,7 @@ fun DashboardContent(
 
                 CurrentTherapyView(
                     uiState = currentTherapyUiState,
-                    onEditClick = onNavigateToProfileEditor
+                    onProfileSelect = onProfileSelect
                 )
 
                 Text(
@@ -240,6 +243,7 @@ fun DashboardPreview() {
             onNavigateToPreferences = {},
             onNavigateToProfileEditor = {},
             onHistoryChartClick = {},
+            onProfileSelect = {}
         )
     }
 }
@@ -271,7 +275,8 @@ fun DashboardPermissionsWarningPreview() {
             onNavigateToPermissions = {},
             onNavigateToPreferences = {},
             onNavigateToProfileEditor = {},
-            onHistoryChartClick = {}
+            onHistoryChartClick = {},
+            onProfileSelect = {}
         )
     }
 }

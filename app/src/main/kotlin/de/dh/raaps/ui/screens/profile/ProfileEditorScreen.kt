@@ -49,6 +49,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.platform.LocalLocale
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -57,6 +58,11 @@ import androidx.compose.ui.unit.dp
 import de.dh.raaps.R
 import de.dh.raaps.common.model.BASAL_MAX
 import de.dh.raaps.common.model.BASAL_MIN
+import de.dh.raaps.common.model.DEFAULT_BASAL_UNITS_PER_HOUR
+import de.dh.raaps.common.model.DEFAULT_IC_GRAM_PER_UNIT
+import de.dh.raaps.common.model.DEFAULT_ISF_MGDL_PER_UNIT
+import de.dh.raaps.common.model.DEFAULT_TARGET_HIGH_MGDL
+import de.dh.raaps.common.model.DEFAULT_TARGET_LOW_MGDL
 import de.dh.raaps.common.model.IC_MAX
 import de.dh.raaps.common.model.IC_MIN
 import de.dh.raaps.common.model.ID_UNDEFINED
@@ -75,14 +81,7 @@ import de.dh.raaps.common.ui.composables.screenTitle
 import de.dh.raaps.common.ui.theme.AppTheme
 import de.dh.raaps.ui.controls.profile.ProfileSettingsUiState
 import de.dh.raaps.ui.controls.profile.ProfileSettingsViewModel
-import java.util.Locale
 import kotlin.math.roundToInt
-import androidx.compose.ui.platform.LocalLocale
-import de.dh.raaps.common.model.DEFAULT_BASAL_BLOCK_UNITS_PER_HOUR
-import de.dh.raaps.common.model.DEFAULT_IC_GRAM_PER_UNIT
-import de.dh.raaps.common.model.DEFAULT_ISF_MGDL_PER_UNIT
-import de.dh.raaps.common.model.DEFAULT_TARGET_HIGH_MGDL
-import de.dh.raaps.common.model.DEFAULT_TARGET_LOW_MGDL
 
 @Composable
 fun ProfileEditorScreen(
@@ -109,7 +108,7 @@ fun ProfileEditorScreen(
                         therapyData = TherapyData(
                             basalBlocks = listOf(Block(
                                 Minutes.ofHours(24),
-                                DEFAULT_BASAL_BLOCK_UNITS_PER_HOUR
+                                DEFAULT_BASAL_UNITS_PER_HOUR
                             )),
                             isfBlocks = listOf(Block(Minutes.ofHours(24), DEFAULT_ISF_MGDL_PER_UNIT)),
                             icBlocks = listOf(Block(Minutes.ofHours(24), DEFAULT_IC_GRAM_PER_UNIT)),
