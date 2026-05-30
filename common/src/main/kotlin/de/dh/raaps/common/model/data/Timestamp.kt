@@ -1,5 +1,6 @@
 package de.dh.raaps.common.model.data
 
+import java.util.Calendar
 import kotlin.math.max
 import kotlin.time.Instant
 
@@ -29,6 +30,15 @@ value class Timestamp(val ms: Long): Comparable<Timestamp> {
     fun minusHours(hours: Double) = Timestamp(ms - (hours * 60 * 60 * 1000).toLong())
     fun minusMs(ms: Long) = Timestamp(this.ms - ms)
     fun plusMs(ms: Long) = Timestamp(this.ms + ms)
+
+    /**
+     * Returns the minutes since midnight for this timestamp in the local timezone.
+     */
+    fun minutesSinceMidnight(): Minutes {
+        val calendar = Calendar.getInstance()
+        calendar.timeInMillis = ms
+        return Minutes((calendar.get(Calendar.HOUR_OF_DAY) * 60 + calendar.get(Calendar.MINUTE)).toShort())
+    }
 
     companion object {
         fun now(): Timestamp  = Timestamp(System.currentTimeMillis())

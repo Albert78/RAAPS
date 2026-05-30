@@ -1,6 +1,7 @@
 package de.dh.raaps.common.model.data
 
 import de.dh.raaps.common.model.ID_UNDEFINED
+import de.dh.raaps.common.model.InsulinType
 
 /**
  * Represents the current active therapy data of the app.
@@ -10,5 +11,6 @@ import de.dh.raaps.common.model.ID_UNDEFINED
 data class CurrentTherapyData(
     val id: Long = ID_UNDEFINED,
     val profileId: Long?,
-    val therapyData: TherapyData
+    val therapyData: TherapyData,
+    val insulinType: InsulinType
 )

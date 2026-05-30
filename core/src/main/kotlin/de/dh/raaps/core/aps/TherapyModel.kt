@@ -2,12 +2,16 @@ package de.dh.raaps.core.aps
 
 import android.util.Range
 import de.dh.raaps.AppPreferencesRepository
+import de.dh.raaps.common.model.DEFAULT_INSULIN_TYPE
+import de.dh.raaps.common.model.DEFAULT_TARGET_HIGH
+import de.dh.raaps.common.model.DEFAULT_TARGET_LOW
 import de.dh.raaps.common.model.InsulinType
 import de.dh.raaps.common.model.InsulinTypes
-import de.dh.raaps.common.model.ToDo
 import de.dh.raaps.common.model.data.BgDelta
 import de.dh.raaps.common.model.data.BgValue
 import de.dh.raaps.common.model.data.Timestamp
+import de.dh.raaps.common.model.data.getAmountForMinute
+import de.dh.raaps.common.model.data.getTargetForMinute
 import de.dh.raaps.core.repository.DataRepository
 
 class TherapyModel(
@@ -19,8 +23,8 @@ class TherapyModel(
      * Unit: Insulin units.
      */
     suspend fun getBasalPerHour(timestamp: Timestamp): Double {
-        ToDo.toBeImplemented("getBasalPerHour")
-        return 0.5
+        val data = dataRepository.getCurrentTherapyData()?.therapyData ?: return 0.5
+        return data.basalBlocks.getAmountForMinute(timestamp.minutesSinceMidnight())
     }
 
     /**
@@ -29,8 +33,8 @@ class TherapyModel(
      * Unit: Grams of carbs.
      */
     suspend fun getIcFactor(timestamp: Timestamp): Double {
-        ToDo.toBeImplemented("getIcFactor")
-        return 10.0
+        val data = dataRepository.getCurrentTherapyData()?.therapyData ?: return 10.0
+        return data.icBlocks.getAmountForMinute(timestamp.minutesSinceMidnight())
     }
 
     /**
@@ -40,18 +44,26 @@ class TherapyModel(
      * Unit: Blood glucose delta.
      */
     suspend fun getIsfFactor(timestamp: Timestamp): BgDelta {
-        ToDo.toBeImplemented("getIsfFactor")
-        return BgDelta(100)
+        val data = dataRepository.getCurrentTherapyData()?.therapyData ?: return BgDelta(100)
+        val amount = data.isfBlocks.getAmountForMinute(timestamp.minutesSinceMidnight())
+        return BgDelta.fromMgDl(amount.toInt())
     }
 
     suspend fun getTarget(): Range<BgValue> {
-        ToDo.toBeImplemented("getTarget")
-        return Range(BgValue(80), BgValue(120))
+        val data = dataRepository.getCurrentTherapyData()?.therapyData
+            ?: return Range(BgValue.fromMgDl(DEFAULT_TARGET_LOW), BgValue.fromMgDl(DEFAULT_TARGET_HIGH))
+
+        val target = data.targetBlocks.getTargetForMinute(Timestamp.now().minutesSinceMidnight())
+        return Range(target.first, target.second)
     }
 
     suspend fun getPumpInsulinType(): InsulinType {
-        ToDo.toBeImplemented("getPumpInsulinType")
-        var insulinType = dataRepository.getInsulinTypeByName(InsulinTypes.ASPART.name)
+        val currentData = dataRepository.getCurrentTherapyData()
+        if (currentData != null) {
+            return currentData.insulinType
+        }
+
+        var insulinType = dataRepository.getInsulinTypeByName(DEFAULT_INSULIN_TYPE)
         if (insulinType == null) {
             insulinType = InsulinTypes.ASPART
             dataRepository.insertInsulinType(insulinType)

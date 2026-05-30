@@ -212,7 +212,8 @@ class DataRepository(val database: AppDatabase) {
         val dao = database.therapyDao()
         val entity = dao.getCurrentTherapyData() ?: return null
         val therapyData = dao.getTherapyDataById(entity.therapy_data_id)?.toModel() ?: return null
-        return entity.toModel(therapyData)
+        val insulinType = getInsulinTypeById(entity.insulin_type_id) ?: return null
+        return entity.toModel(therapyData, insulinType)
     }
 
     suspend fun updateCurrentTherapyData(currentTherapyData: CurrentTherapyData) {

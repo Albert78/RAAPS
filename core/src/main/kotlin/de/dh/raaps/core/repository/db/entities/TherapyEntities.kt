@@ -62,13 +62,20 @@ data class ProfileEntity(
             parentColumns = ["id"],
             childColumns = ["therapy_data_id"],
             onDelete = ForeignKey.CASCADE
+        ),
+        ForeignKey(
+            entity = InsulinTypeEntity::class,
+            parentColumns = ["id"],
+            childColumns = ["insulin_type_id"],
+            onDelete = ForeignKey.RESTRICT
         )
     ],
-    indices = [Index("profile_id"), Index("therapy_data_id")]
+    indices = [Index("profile_id"), Index("therapy_data_id"), Index("insulin_type_id")]
 )
 data class CurrentTherapyDataEntity(
     @PrimaryKey(autoGenerate = true)
     val id: Long = ID_UNDEFINED,
     val profile_id: Long?,
-    val therapy_data_id: Long
+    val therapy_data_id: Long,
+    val insulin_type_id: String
 )

@@ -199,11 +199,13 @@ fun ProfileEntity.toModel(therapyData: TherapyData) = Profile(
 fun CurrentTherapyData.toEntity() = CurrentTherapyDataEntity(
     id = this.id,
     profile_id = this.profileId,
-    therapy_data_id = this.therapyData.id
+    therapy_data_id = this.therapyData.id,
+    insulin_type_id = this.insulinType.id
 )
 
-fun CurrentTherapyDataEntity.toModel(therapyData: TherapyData) = CurrentTherapyData(
+fun CurrentTherapyDataEntity.toModel(therapyData: TherapyData, insulinType: InsulinType) = CurrentTherapyData(
     id = this.id,
     profileId = this.profile_id,
-    therapyData = therapyData
+    therapyData = therapyData,
+    insulinType = insulinType
 )
