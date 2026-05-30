@@ -2,40 +2,52 @@ package de.dh.raaps.ui.screens.profile
 
 import android.content.res.Configuration
 import androidx.activity.compose.BackHandler
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Remove
 import androidx.compose.material.icons.filled.Save
-import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ExposedDropdownMenuBox
+import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.ListItem
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.MenuAnchorType
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Tab
+import androidx.compose.material3.TabRow
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -44,10 +56,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import de.dh.raaps.R
-import de.dh.raaps.common.model.MINUTES_PER_DAY
 import de.dh.raaps.common.model.data.BgValue
 import de.dh.raaps.common.model.data.Block
 import de.dh.raaps.common.model.data.Minutes
@@ -58,6 +70,8 @@ import de.dh.raaps.common.ui.composables.screenTitle
 import de.dh.raaps.common.ui.theme.AppTheme
 import de.dh.raaps.ui.controls.profile.ProfileSettingsUiState
 import de.dh.raaps.ui.controls.profile.ProfileSettingsViewModel
+import java.util.Locale
+import kotlin.math.roundToInt
 
 @Composable
 fun ProfileEditorScreen(
@@ -154,7 +168,8 @@ fun ProfileList(
                 CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
             } else {
                 LazyColumn(modifier = Modifier.fillMaxSize()) {
-                    items(uiState.profiles) { profile ->
+                    items(uiState.profiles.size) { index ->
+                        val profile = uiState.profiles[index]
                         ListItem(
                             headlineContent = { Text(profile.name) },
                             modifier = Modifier
@@ -186,17 +201,9 @@ fun ProfileDetailEditor(
 ) {
     var name by remember { mutableStateOf(profile.name) }
     var therapyData by remember { mutableStateOf(profile.therapyData) }
+    var selectedTab by remember { mutableIntStateOf(0) }
 
-    val basalTotal = therapyData.basalBlocks.sumOf { it.duration.value.toInt() }
-    val isfTotal = therapyData.isfBlocks.sumOf { it.duration.value.toInt() }
-    val icTotal = therapyData.icBlocks.sumOf { it.duration.value.toInt() }
-    val targetTotal = therapyData.targetBlocks.sumOf { it.duration.value.toInt() }
-
-    val isValid = name.isNotBlank() && 
-            basalTotal == MINUTES_PER_DAY && 
-            isfTotal == MINUTES_PER_DAY && 
-            icTotal == MINUTES_PER_DAY && 
-            targetTotal == MINUTES_PER_DAY
+    val tabs = listOf("Basal", "ISF", "I:C", "Target")
 
     BackHandler(onBack = onCancel)
 
@@ -215,7 +222,7 @@ fun ProfileDetailEditor(
                 actions = {
                     IconButton(
                         onClick = { onSave(profile.copy(name = name, therapyData = therapyData)) },
-                        enabled = isValid
+                        enabled = name.isNotBlank()
                     ) {
                         Icon(
                             imageVector = Icons.Default.Save,
@@ -230,125 +237,51 @@ fun ProfileDetailEditor(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(innerPadding)
-                .padding(horizontal = 16.dp)
         ) {
             OutlinedTextField(
                 value = name,
                 onValueChange = { name = it },
                 label = { Text("Profilname") },
-                modifier = Modifier.fillMaxWidth().padding(top = 16.dp),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(16.dp),
                 singleLine = true
             )
 
-            HorizontalDivider(modifier = Modifier.padding(vertical = 16.dp))
-
-            LazyColumn(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(16.dp)) {
-                item {
-                    BlockSectionHeader("Basalraten (U/h)", basalTotal)
-                    therapyData.basalBlocks.forEachIndexed { index, block ->
-                        BlockItem(
-                            block = block,
-                            onChanged = { newBlock ->
-                                val newList = therapyData.basalBlocks.toMutableList()
-                                newList[index] = newBlock
-                                therapyData = therapyData.copy(basalBlocks = newList)
-                            },
-                            onDelete = if (therapyData.basalBlocks.size > 1) {
-                                {
-                                    val newList = therapyData.basalBlocks.toMutableList()
-                                    newList.removeAt(index)
-                                    therapyData = therapyData.copy(basalBlocks = newList)
-                                }
-                            } else null
-                        )
-                    }
-                    AddBlockButton {
-                        val newList = therapyData.basalBlocks.toMutableList()
-                        newList.add(Block(Minutes(60), 1.0))
-                        therapyData = therapyData.copy(basalBlocks = newList)
-                    }
+            TabRow(selectedTabIndex = selectedTab) {
+                tabs.forEachIndexed { index, title ->
+                    Tab(
+                        selected = selectedTab == index,
+                        onClick = { selectedTab = index },
+                        text = { Text(title) }
+                    )
                 }
+            }
 
-                item {
-                    BlockSectionHeader("ISF (mg/dL/U)", isfTotal)
-                    therapyData.isfBlocks.forEachIndexed { index, block ->
-                        BlockItem(
-                            block = block,
-                            onChanged = { newBlock ->
-                                val newList = therapyData.isfBlocks.toMutableList()
-                                newList[index] = newBlock
-                                therapyData = therapyData.copy(isfBlocks = newList)
-                            },
-                            onDelete = if (therapyData.isfBlocks.size > 1) {
-                                {
-                                    val newList = therapyData.isfBlocks.toMutableList()
-                                    newList.removeAt(index)
-                                    therapyData = therapyData.copy(isfBlocks = newList)
-                                }
-                            } else null
-                        )
-                    }
-                    AddBlockButton {
-                        val newList = therapyData.isfBlocks.toMutableList()
-                        newList.add(Block(Minutes(60), 50.0))
-                        therapyData = therapyData.copy(isfBlocks = newList)
-                    }
-                }
-
-                item {
-                    BlockSectionHeader("I:C (g/U)", icTotal)
-                    therapyData.icBlocks.forEachIndexed { index, block ->
-                        BlockItem(
-                            block = block,
-                            onChanged = { newBlock ->
-                                val newList = therapyData.icBlocks.toMutableList()
-                                newList[index] = newBlock
-                                therapyData = therapyData.copy(icBlocks = newList)
-                            },
-                            onDelete = if (therapyData.icBlocks.size > 1) {
-                                {
-                                    val newList = therapyData.icBlocks.toMutableList()
-                                    newList.removeAt(index)
-                                    therapyData = therapyData.copy(icBlocks = newList)
-                                }
-                            } else null
-                        )
-                    }
-                    AddBlockButton {
-                        val newList = therapyData.icBlocks.toMutableList()
-                        newList.add(Block(Minutes(60), 10.0))
-                        therapyData = therapyData.copy(icBlocks = newList)
-                    }
-                }
-
-                item {
-                    BlockSectionHeader("Zielbereich (mg/dL)", targetTotal)
-                    therapyData.targetBlocks.forEachIndexed { index, block ->
-                        TargetBlockItem(
-                            block = block,
-                            onChanged = { newBlock ->
-                                val newList = therapyData.targetBlocks.toMutableList()
-                                newList[index] = newBlock
-                                therapyData = therapyData.copy(targetBlocks = newList)
-                            },
-                            onDelete = if (therapyData.targetBlocks.size > 1) {
-                                {
-                                    val newList = therapyData.targetBlocks.toMutableList()
-                                    newList.removeAt(index)
-                                    therapyData = therapyData.copy(targetBlocks = newList)
-                                }
-                            } else null
-                        )
-                    }
-                    AddBlockButton {
-                        val newList = therapyData.targetBlocks.toMutableList()
-                        newList.add(TargetBlock(Minutes(60), BgValue(100), BgValue(120)))
-                        therapyData = therapyData.copy(targetBlocks = newList)
-                    }
-                }
-                
-                item {
-                    Box(modifier = Modifier.padding(bottom = 32.dp))
+            Box(modifier = Modifier.weight(1f)) {
+                when (selectedTab) {
+                    0 -> TherapyBlockListEditor(
+                        blocks = therapyData.basalBlocks,
+                        onBlocksChanged = { therapyData = therapyData.copy(basalBlocks = it) },
+                        step = 0.05,
+                        format = "%.2f"
+                    )
+                    1 -> TherapyBlockListEditor(
+                        blocks = therapyData.isfBlocks,
+                        onBlocksChanged = { therapyData = therapyData.copy(isfBlocks = it) },
+                        step = 1.0,
+                        format = "%.0f"
+                    )
+                    2 -> TherapyBlockListEditor(
+                        blocks = therapyData.icBlocks,
+                        onBlocksChanged = { therapyData = therapyData.copy(icBlocks = it) },
+                        step = 0.1,
+                        format = "%.1f"
+                    )
+                    3 -> TargetBlockListEditor(
+                        blocks = therapyData.targetBlocks,
+                        onBlocksChanged = { therapyData = therapyData.copy(targetBlocks = it) }
+                    )
                 }
             }
         }
@@ -356,135 +289,364 @@ fun ProfileDetailEditor(
 }
 
 @Composable
-fun BlockSectionHeader(title: String, currentTotal: Int) {
-    Row(
-        modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
-        horizontalArrangement = Arrangement.SpaceBetween,
-        verticalAlignment = Alignment.CenterVertically
+fun TherapyBlockListEditor(
+    blocks: List<Block>,
+    onBlocksChanged: (List<Block>) -> Unit,
+    step: Double,
+    format: String
+) {
+    val startHours = remember(blocks) {
+        var currentHour = 0
+        blocks.map { block ->
+            val hour = currentHour
+            currentHour += block.duration.value / 60
+            hour
+        }
+    }
+
+    fun updateHour(index: Int, newHour: Int) {
+        val newHours = startHours.toMutableList()
+        newHours[index] = newHour
+        
+        val newBlocks = mutableListOf<Block>()
+        for (i in 0 until newHours.size) {
+            val durationHours = if (i < newHours.size - 1) newHours[i+1] - newHours[i] else 24 - newHours[i]
+            newBlocks.add(blocks[i].copy(duration = Minutes.ofHours(durationHours)))
+        }
+        onBlocksChanged(newBlocks)
+    }
+
+    fun addBlock(atIndex: Int) {
+        if (atIndex == 0) return
+        val splitIndex = atIndex - 1
+        val splitBlock = blocks[splitIndex]
+        val splitDuration = splitBlock.duration.value / 60
+        
+        val newBlocks = blocks.toMutableList()
+        newBlocks[splitIndex] = splitBlock.copy(duration = Minutes.ofHours(1))
+        newBlocks.add(atIndex, splitBlock.copy(duration = Minutes.ofHours(splitDuration - 1)))
+        onBlocksChanged(newBlocks)
+    }
+
+    fun removeBlock(index: Int) {
+        if (blocks.size <= 1) return
+        val newBlocks = blocks.toMutableList()
+        val removed = newBlocks.removeAt(index)
+        val targetIndex = if (index > 0) index - 1 else 0
+        val target = newBlocks[targetIndex]
+        newBlocks[targetIndex] = target.copy(duration = Minutes((target.duration.value + removed.duration.value).toShort()))
+        onBlocksChanged(newBlocks)
+    }
+
+    LazyColumn(
+        modifier = Modifier.fillMaxSize(),
+        contentPadding = PaddingValues(16.dp),
+        verticalArrangement = Arrangement.spacedBy(4.dp)
     ) {
-        Text(
-            text = title,
-            style = MaterialTheme.typography.titleMedium,
-            fontWeight = FontWeight.Bold
-        )
-        if (currentTotal != MINUTES_PER_DAY) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Icon(
-                    Icons.Default.Warning,
-                    contentDescription = null,
-                    tint = MaterialTheme.colorScheme.error,
-                    modifier = Modifier.padding(end = 4.dp)
-                )
-                Text(
-                    text = "$currentTotal / $MINUTES_PER_DAY min",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.error
+        item {
+            InsertButton(canInsert = false) {} // Placeholder for spacing
+        }
+        
+        blocks.forEachIndexed { index, block ->
+            val currentHour = startHours[index]
+            val prevHour = if (index > 0) startHours[index - 1] else -1
+            val nextHour = if (index < blocks.size - 1) startHours[index + 1] else 24
+
+            item(key = "block_$index") {
+                BlockRow(
+                    hour = currentHour,
+                    minHour = prevHour + 1,
+                    maxHour = nextHour - 1,
+                    value = block.amount,
+                    onHourChanged = { updateHour(index, it) },
+                    onValueChanged = { newVal -> 
+                        val updated = blocks.toMutableList()
+                        updated[index] = block.copy(amount = newVal)
+                        onBlocksChanged(updated)
+                    },
+                    onDelete = if (index > 0) { { removeBlock(index) } } else null,
+                    step = step,
+                    format = format,
+                    isFixed = index == 0
                 )
             }
-        } else {
-            Text(
-                text = "24h vollständig",
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.primary
-            )
+
+            if (nextHour - currentHour > 1) {
+                item(key = "insert_$index") {
+                    InsertButton(canInsert = true) { addBlock(index + 1) }
+                }
+            }
         }
     }
 }
 
 @Composable
-fun AddBlockButton(onClick: () -> Unit) {
-    TextButton(onClick = onClick) {
-        Icon(Icons.Default.Add, contentDescription = null)
-        Text("Block hinzufügen")
+fun TargetBlockListEditor(
+    blocks: List<TargetBlock>,
+    onBlocksChanged: (List<TargetBlock>) -> Unit
+) {
+    val startHours = remember(blocks) {
+        var currentHour = 0
+        blocks.map { block ->
+            val hour = currentHour
+            currentHour += block.duration.value / 60
+            hour
+        }
+    }
+
+    fun updateHour(index: Int, newHour: Int) {
+        val newHours = startHours.toMutableList()
+        newHours[index] = newHour
+        
+        val newBlocks = mutableListOf<TargetBlock>()
+        for (i in 0 until newHours.size) {
+            val durationHours = if (i < newHours.size - 1) newHours[i+1] - newHours[i] else 24 - newHours[i]
+            newBlocks.add(blocks[i].copy(duration = Minutes.ofHours(durationHours)))
+        }
+        onBlocksChanged(newBlocks)
+    }
+
+    fun addBlock(atIndex: Int) {
+        if (atIndex == 0) return
+        val splitIndex = atIndex - 1
+        val splitBlock = blocks[splitIndex]
+        val splitDuration = splitBlock.duration.value / 60
+        
+        val newBlocks = blocks.toMutableList()
+        newBlocks[splitIndex] = splitBlock.copy(duration = Minutes.ofHours(1))
+        newBlocks.add(atIndex, splitBlock.copy(duration = Minutes.ofHours(splitDuration - 1)))
+        onBlocksChanged(newBlocks)
+    }
+
+    fun removeBlock(index: Int) {
+        if (blocks.size <= 1) return
+        val newBlocks = blocks.toMutableList()
+        val removed = newBlocks.removeAt(index)
+        val targetIndex = if (index > 0) index - 1 else 0
+        val target = newBlocks[targetIndex]
+        newBlocks[targetIndex] = target.copy(duration = Minutes((target.duration.value + removed.duration.value).toShort()))
+        onBlocksChanged(newBlocks)
+    }
+
+    LazyColumn(
+        modifier = Modifier.fillMaxSize(),
+        contentPadding = PaddingValues(16.dp),
+        verticalArrangement = Arrangement.spacedBy(4.dp)
+    ) {
+        item {
+            InsertButton(canInsert = false) {}
+        }
+
+        blocks.forEachIndexed { index, block ->
+            val currentHour = startHours[index]
+            val prevHour = if (index > 0) startHours[index - 1] else -1
+            val nextHour = if (index < blocks.size - 1) startHours[index + 1] else 24
+
+            item(key = "target_$index") {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    HourSelector(
+                        hour = currentHour,
+                        enabled = index > 0,
+                        minHour = prevHour + 1,
+                        maxHour = nextHour - 1,
+                        onHourChanged = { updateHour(index, it) },
+                        modifier = Modifier.width(100.dp)
+                    )
+
+                    Text("-")
+
+                    Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                        ValueAdjuster(
+                            value = block.lowTarget.mgdl.toDouble(),
+                            onValueChanged = { newVal ->
+                                val updated = blocks.toMutableList()
+                                updated[index] = block.copy(lowTarget = BgValue(newVal.roundToInt().toShort()))
+                                onBlocksChanged(updated)
+                            },
+                            step = 5.0,
+                            format = "%.0f",
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                        ValueAdjuster(
+                            value = block.highTarget.mgdl.toDouble(),
+                            onValueChanged = { newVal ->
+                                val updated = blocks.toMutableList()
+                                updated[index] = block.copy(highTarget = BgValue(newVal.roundToInt().toShort()))
+                                onBlocksChanged(updated)
+                            },
+                            step = 5.0,
+                            format = "%.0f",
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                    }
+
+                    if (index > 0) {
+                        IconButton(onClick = { removeBlock(index) }) {
+                            Icon(Icons.Default.Close, contentDescription = "Löschen")
+                        }
+                    } else {
+                        Box(modifier = Modifier.size(48.dp))
+                    }
+                }
+            }
+
+            if (nextHour - currentHour > 1) {
+                item(key = "insert_$index") {
+                    InsertButton(canInsert = true) { addBlock(index + 1) }
+                }
+            }
+        }
     }
 }
 
 @Composable
-fun BlockItem(
-    block: Block,
-    onChanged: (Block) -> Unit,
-    onDelete: (() -> Unit)?
+fun BlockRow(
+    hour: Int,
+    minHour: Int,
+    maxHour: Int,
+    value: Double,
+    onHourChanged: (Int) -> Unit,
+    onValueChanged: (Double) -> Unit,
+    onDelete: (() -> Unit)?,
+    step: Double,
+    format: String,
+    isFixed: Boolean
 ) {
     Row(
+        modifier = Modifier.fillMaxWidth(),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        HourSelector(
+            hour = hour,
+            enabled = !isFixed,
+            minHour = minHour,
+            maxHour = maxHour,
+            onHourChanged = onHourChanged,
+            modifier = Modifier.width(100.dp)
+        )
+
+        Text("-")
+
+        ValueAdjuster(
+            value = value,
+            onValueChanged = onValueChanged,
+            step = step,
+            format = format,
+            modifier = Modifier.weight(1f)
+        )
+
+        if (onDelete != null) {
+            IconButton(onClick = onDelete) {
+                Icon(Icons.Default.Close, contentDescription = "Löschen")
+            }
+        } else {
+            Box(modifier = Modifier.size(48.dp))
+        }
+    }
+}
+
+@Composable
+fun InsertButton(canInsert: Boolean, onClick: () -> Unit) {
+    Box(
         modifier = Modifier
             .fillMaxWidth()
             .padding(vertical = 4.dp),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(8.dp)
+        contentAlignment = Alignment.Center
+    ) {
+        if (canInsert) {
+            IconButton(
+                onClick = onClick,
+                modifier = Modifier
+                    .size(24.dp)
+                    .background(MaterialTheme.colorScheme.primaryContainer, CircleShape)
+            ) {
+                Icon(Icons.Default.Add, contentDescription = "Einfügen", modifier = Modifier.size(16.dp))
+            }
+        } else {
+            Box(modifier = Modifier.size(24.dp))
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun HourSelector(
+    hour: Int,
+    enabled: Boolean,
+    minHour: Int,
+    maxHour: Int,
+    onHourChanged: (Int) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    var expanded by remember { mutableStateOf(false) }
+
+    ExposedDropdownMenuBox(
+        expanded = expanded && enabled,
+        onExpandedChange = { expanded = it },
+        modifier = modifier
     ) {
         OutlinedTextField(
-            value = block.duration.value.toString(),
-            onValueChange = {
-                val min = it.toShortOrNull() ?: 0
-                onChanged(block.copy(duration = Minutes(min)))
-            },
-            label = { Text("Dauer (min)") },
-            modifier = Modifier.weight(1f),
-            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
+            value = String.format(Locale.getDefault(), "%02d:00", hour),
+            onValueChange = {},
+            readOnly = true,
+            enabled = enabled,
+            trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
+            colors = ExposedDropdownMenuDefaults.outlinedTextFieldColors(),
+            modifier = Modifier.menuAnchor(MenuAnchorType.PrimaryNotEditable, true)
         )
-        OutlinedTextField(
-            value = block.amount.toString(),
-            onValueChange = {
-                val amount = it.toDoubleOrNull() ?: 0.0
-                onChanged(block.copy(amount = amount))
-            },
-            label = { Text("Wert") },
-            modifier = Modifier.weight(1f),
-            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
-        )
-        if (onDelete != null) {
-            IconButton(onClick = onDelete) {
-                Icon(Icons.Default.Delete, contentDescription = "Löschen")
+
+        ExposedDropdownMenu(
+            expanded = expanded && enabled,
+            onDismissRequest = { expanded = false }
+        ) {
+            for (h in minHour..maxHour) {
+                DropdownMenuItem(
+                    text = { Text(String.format(Locale.getDefault(), "%02d:00", h)) },
+                    onClick = {
+                        onHourChanged(h)
+                        expanded = false
+                    }
+                )
             }
         }
     }
 }
 
 @Composable
-fun TargetBlockItem(
-    block: TargetBlock,
-    onChanged: (TargetBlock) -> Unit,
-    onDelete: (() -> Unit)?
+fun ValueAdjuster(
+    value: Double,
+    onValueChanged: (Double) -> Unit,
+    step: Double,
+    format: String,
+    modifier: Modifier = Modifier
 ) {
     Row(
-        modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(8.dp)
+        modifier = modifier
     ) {
+        IconButton(onClick = { onValueChanged((value - step).coerceAtLeast(0.0)) }) {
+            Icon(Icons.Default.Remove, contentDescription = "Weniger")
+        }
+
         OutlinedTextField(
-            value = block.duration.value.toString(),
+            value = String.format(Locale.getDefault(), format, value),
             onValueChange = {
-                val min = it.toShortOrNull() ?: 0
-                onChanged(block.copy(duration = Minutes(min)))
+                val newVal = it.replace(",", ".").toDoubleOrNull()
+                if (newVal != null) onValueChanged(newVal)
             },
-            label = { Text("Dauer") },
             modifier = Modifier.weight(1f),
-            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
+            textStyle = MaterialTheme.typography.bodyMedium.copy(textAlign = TextAlign.Center),
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+            singleLine = true
         )
-        OutlinedTextField(
-            value = block.lowTarget.mgdl.toString(),
-            onValueChange = {
-                val valMgdl = it.toShortOrNull() ?: 0
-                onChanged(block.copy(lowTarget = BgValue(valMgdl)))
-            },
-            label = { Text("Min") },
-            modifier = Modifier.weight(1f),
-            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
-        )
-        OutlinedTextField(
-            value = block.highTarget.mgdl.toString(),
-            onValueChange = {
-                val valMgdl = it.toShortOrNull() ?: 0
-                onChanged(block.copy(highTarget = BgValue(valMgdl)))
-            },
-            label = { Text("Max") },
-            modifier = Modifier.weight(1f),
-            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
-        )
-        if (onDelete != null) {
-            IconButton(onClick = onDelete) {
-                Icon(Icons.Default.Delete, contentDescription = "Löschen")
-            }
+
+        IconButton(onClick = { onValueChanged(value + step) }) {
+            Icon(Icons.Default.Add, contentDescription = "Mehr")
         }
     }
 }
@@ -516,7 +678,12 @@ fun ProfileEditorPreview() {
 fun ProfileDetailEditorPreview() {
     AppTheme {
         ProfileDetailEditor(
-            profile = Profile(name = "Normal", therapyData = TherapyData(basalBlocks = emptyList(), isfBlocks = emptyList(), icBlocks = emptyList(), targetBlocks = emptyList())),
+            profile = Profile(name = "Normal", therapyData = TherapyData(
+                basalBlocks = listOf(Block(Minutes.ofHours(24), 1.0)),
+                isfBlocks = listOf(Block(Minutes.ofHours(24), 50.0)),
+                icBlocks = listOf(Block(Minutes.ofHours(24), 10.0)),
+                targetBlocks = listOf(TargetBlock(Minutes.ofHours(24), BgValue(100), BgValue(120)))
+            )),
             onSave = {},
             onCancel = {}
         )
