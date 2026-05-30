@@ -35,6 +35,7 @@ import de.dh.raaps.common.ui.theme.rememberUseDarkTheme
 import de.dh.raaps.services.ApsService
 import de.dh.raaps.setUserDeclinedPermissions
 import de.dh.raaps.ui.controls.history.HistoryViewModel
+import de.dh.raaps.ui.controls.profile.CurrentTherapyViewModel
 import de.dh.raaps.ui.screens.dashboard.DashboardScreen
 import de.dh.raaps.ui.screens.dashboard.DashboardViewModel
 import de.dh.raaps.ui.screens.history.HistoryScreen
@@ -47,6 +48,8 @@ import de.dh.raaps.ui.screens.permissions.openNotificationSettings
 import de.dh.raaps.ui.screens.permissions.requestIgnoreBatteryOptimizations
 import de.dh.raaps.ui.screens.preferences.PreferencesScreen
 import de.dh.raaps.ui.screens.preferences.PreferencesViewModel
+import de.dh.raaps.ui.screens.profile.ProfileEditorScreen
+import de.dh.raaps.ui.controls.profile.ProfileSettingsViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.serialization.Serializable
@@ -60,6 +63,8 @@ import kotlinx.serialization.Serializable
 @Serializable object PermissionsRoute : NavKey
 
 @Serializable object PreferencesMainRoute : NavKey
+
+@Serializable object ProfileEditorRoute : NavKey
 
 class MainActivity : ComponentActivity() {
     private lateinit var navViewModel: NavigationViewModel
@@ -134,22 +139,40 @@ class MainActivity : ComponentActivity() {
                         viewModel(factory = DashboardViewModel.Companion.Factory(application))
                     val historyVM: HistoryViewModel =
                         viewModel(factory = HistoryViewModel.Companion.Factory(application))
+                    val currentTherapyVM: CurrentTherapyViewModel =
+                        viewModel(factory = CurrentTherapyViewModel.Companion.Factory(application))
                     val permissionsViewModel: PermissionsViewModel =
                         viewModel(factory = PermissionsViewModel.Companion.Factory(application))
 
                     LifecycleEventEffect(Lifecycle.Event.ON_RESUME) {
                         vm.reload()
+                        currentTherapyVM.loadData()
                         permissionsViewModel.updateAppPermissions()
                     }
 
                     DashboardScreen(
                         viewModel = vm,
                         historyViewModel = historyVM,
+                        currentTherapyViewModel = currentTherapyVM,
                         permissionsViewModel = permissionsViewModel,
                         onFixPermissions = { navViewModel.push(PermissionsRoute) },
                         onNavigateToPermissions = { navViewModel.push(PermissionsRoute) },
                         onNavigateToPreferences = { navViewModel.push(PreferencesMainRoute) },
+                        onNavigateToProfileEditor = { navViewModel.push(ProfileEditorRoute) },
                         onHistoryChartClick = {navViewModel.push(HistoryRoute)}
+                    )
+                }
+
+                entry<ProfileEditorRoute> { _ ->
+                    val vm: ProfileSettingsViewModel = viewModel(
+                        factory = ProfileSettingsViewModel.Companion.Factory(
+                            application
+                        )
+                    )
+
+                    ProfileEditorScreen(
+                        viewModel = vm,
+                        onNavigateUp = { navViewModel.pop() }
                     )
                 }
 

@@ -1,6 +1,7 @@
 package de.dh.raaps.ui.screens.dashboard
 
 import android.content.res.Configuration
+import android.util.Range
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
@@ -33,6 +34,8 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import de.dh.raaps.R
+import de.dh.raaps.common.model.data.BgDelta
+import de.dh.raaps.common.model.data.BgValue
 import de.dh.raaps.common.ui.composables.WarningBanner
 import de.dh.raaps.common.ui.composables.screenTitle
 import de.dh.raaps.common.ui.theme.AppTheme
@@ -44,6 +47,9 @@ import de.dh.raaps.ui.controls.history.HistoryUiState
 import de.dh.raaps.ui.controls.history.HistoryViewModel
 import de.dh.raaps.ui.controls.history.createSampleGoodBgUiState
 import de.dh.raaps.ui.controls.history.rememberBgHistoryChartState
+import de.dh.raaps.ui.controls.profile.CurrentTherapyUiState
+import de.dh.raaps.ui.controls.profile.CurrentTherapyView
+import de.dh.raaps.ui.controls.profile.CurrentTherapyViewModel
 import de.dh.raaps.ui.screens.history.createSampleHistoryUiState
 import de.dh.raaps.ui.screens.permissions.PermissionStatus
 import de.dh.raaps.ui.screens.permissions.PermissionsUiModel
@@ -53,25 +59,30 @@ import de.dh.raaps.ui.screens.permissions.PermissionsViewModel
 fun DashboardScreen(
     viewModel: DashboardViewModel,
     historyViewModel: HistoryViewModel,
+    currentTherapyViewModel: CurrentTherapyViewModel,
     permissionsViewModel: PermissionsViewModel,
     onFixPermissions: () -> Unit,
     onNavigateToPermissions: () -> Unit,
     onNavigateToPreferences: () -> Unit,
+    onNavigateToProfileEditor: () -> Unit,
     onHistoryChartClick: () -> Unit
 ) {
     val uiState by viewModel.uiState.collectAsState()
     val currentBgUiState by historyViewModel.currentBgUiState.collectAsState()
     val historyUiState by historyViewModel.historyUiState.collectAsState()
+    val currentTherapyUiState by currentTherapyViewModel.uiState.collectAsState()
     val permissionsUiState by permissionsViewModel.uiState.collectAsState()
 
     DashboardContent(
         dashboardUiState = uiState,
         currentBgUiState = currentBgUiState,
         historyUiState = historyUiState,
+        currentTherapyUiState = currentTherapyUiState,
         permissionsUiState = permissionsUiState,
         onFixPermissionsClick = onFixPermissions,
         onNavigateToPermissions = onNavigateToPermissions,
         onNavigateToPreferences = onNavigateToPreferences,
+        onNavigateToProfileEditor = onNavigateToProfileEditor,
         onHistoryChartClick = onHistoryChartClick
     )
 }
@@ -82,10 +93,12 @@ fun DashboardContent(
     dashboardUiState: DashboardUiState,
     currentBgUiState: CurrentBgUiState,
     historyUiState: HistoryUiState,
+    currentTherapyUiState: CurrentTherapyUiState,
     permissionsUiState: PermissionsUiModel,
     onFixPermissionsClick: () -> Unit,
     onNavigateToPermissions: () -> Unit,
     onNavigateToPreferences: () -> Unit,
+    onNavigateToProfileEditor: () -> Unit,
     onHistoryChartClick: (() -> Unit)?
 ) {
     val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
@@ -117,6 +130,13 @@ fun DashboardContent(
                                 onClick = {
                                     menuExpanded = false
                                     onNavigateToPreferences()
+                                }
+                            )
+                            DropdownMenuItem(
+                                text = { Text(stringResource(id = R.string.menu_item_profile_editor_label)) },
+                                onClick = {
+                                    menuExpanded = false
+                                    onNavigateToProfileEditor()
                                 }
                             )
                         }
@@ -158,6 +178,11 @@ fun DashboardContent(
                     modifier = Modifier.align(Alignment.CenterHorizontally)
                 )
 
+                CurrentTherapyView(
+                    uiState = currentTherapyUiState,
+                    onEditClick = onNavigateToProfileEditor
+                )
+
                 Text(
                     text = stringResource(R.string.dashboard_glucose_title),
                     style = MaterialTheme.typography.bodyLarge
@@ -196,6 +221,12 @@ fun DashboardPreview() {
             dashboardUiState = DashboardUiState(isLoading = false, isError = false),
             currentBgUiState = createSampleGoodBgUiState(),
             historyUiState = createSampleHistoryUiState(),
+            currentTherapyUiState = CurrentTherapyUiState(
+                profileName = "Normal",
+                currentIsf = BgDelta.fromMgDl(50),
+                currentIc = 10.0,
+                currentTarget = Range(BgValue.fromMgDl(80), BgValue.fromMgDl(120))
+            ),
             permissionsUiState = PermissionsUiModel(
                 isLoading = false,
                 notificationPermissionStatus = PermissionStatus.Granted,
@@ -207,6 +238,7 @@ fun DashboardPreview() {
             onFixPermissionsClick = {},
             onNavigateToPermissions = {},
             onNavigateToPreferences = {},
+            onNavigateToProfileEditor = {},
             onHistoryChartClick = {},
         )
     }
@@ -221,6 +253,12 @@ fun DashboardPermissionsWarningPreview() {
             dashboardUiState = DashboardUiState(isLoading = false, isError = false),
             currentBgUiState = createSampleGoodBgUiState(),
             historyUiState = createSampleHistoryUiState(),
+            currentTherapyUiState = CurrentTherapyUiState(
+                profileName = "Normal",
+                currentIsf = BgDelta.fromMgDl(50),
+                currentIc = 10.0,
+                currentTarget = Range(BgValue.fromMgDl(80), BgValue.fromMgDl(120))
+            ),
             permissionsUiState = PermissionsUiModel(
                 isLoading = false,
                 notificationPermissionStatus = PermissionStatus.Denied,
@@ -232,6 +270,7 @@ fun DashboardPermissionsWarningPreview() {
             onFixPermissionsClick = {},
             onNavigateToPermissions = {},
             onNavigateToPreferences = {},
+            onNavigateToProfileEditor = {},
             onHistoryChartClick = {}
         )
     }

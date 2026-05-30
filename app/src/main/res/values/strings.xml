@@ -4,6 +4,14 @@
     <string name="dashboard_screen_title">RAAPS</string>
     <string name="menu_item_permissions_label">App-Berechtigungen</string>
     <string name="menu_item_preferences_label">Einstellungen</string>
+    <string name="menu_item_profile_editor_label">Profile</string>
+    <string name="profile_editor_screen_title">Profile verwalten</string>
+
+    <string name="cd_edit_profile">Profil bearbeiten</string>
+    <string name="therapy_target_label">Zielwert</string>
+    <string name="therapy_isf_label">ISF</string>
+    <string name="therapy_ic_label">I:C</string>
+    <string name="cd_add_profile">Profil hinzufügen</string>
 
     <string name="dashboard_permissions_missing">Für eine ordnungsgemäße Funktion benötigt die App weitere Berechtigungen</string>
     <string name="dashboard_fix_permissions_link">Reparieren</string>
