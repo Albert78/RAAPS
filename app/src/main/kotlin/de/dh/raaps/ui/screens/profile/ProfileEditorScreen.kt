@@ -28,17 +28,13 @@ import androidx.compose.material.icons.filled.Remove
 import androidx.compose.material.icons.filled.Save
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.ExposedDropdownMenuBox
-import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.ListItem
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.MenuAnchorType
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Tab
@@ -69,6 +65,7 @@ import de.dh.raaps.common.model.data.Minutes
 import de.dh.raaps.common.model.data.Profile
 import de.dh.raaps.common.model.data.TargetBlock
 import de.dh.raaps.common.model.data.TherapyData
+import de.dh.raaps.common.ui.composables.TimeHourSelector
 import de.dh.raaps.common.ui.composables.screenTitle
 import de.dh.raaps.common.ui.theme.AppTheme
 import de.dh.raaps.ui.controls.profile.ProfileSettingsUiState
@@ -477,7 +474,7 @@ fun TargetBlockListEditor(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    HourSelector(
+                    TimeHourSelector(
                         hour = currentHour,
                         enabled = index > 0,
                         minHour = prevHour + 1,
@@ -550,7 +547,7 @@ fun BlockRow(
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(8.dp)
     ) {
-        HourSelector(
+        TimeHourSelector(
             hour = hour,
             enabled = !isFixed,
             minHour = minHour,
@@ -602,50 +599,6 @@ fun InsertButton(canInsert: Boolean, onClick: () -> Unit) {
                     contentDescription = "Einfügen",
                     modifier = Modifier.size(16.dp),
                     tint = MaterialTheme.colorScheme.onPrimaryContainer
-                )
-            }
-        }
-    }
-}
-
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-fun HourSelector(
-    hour: Int,
-    enabled: Boolean,
-    minHour: Int,
-    maxHour: Int,
-    onHourChanged: (Int) -> Unit,
-    modifier: Modifier = Modifier
-) {
-    var expanded by remember { mutableStateOf(false) }
-
-    ExposedDropdownMenuBox(
-        expanded = expanded && enabled,
-        onExpandedChange = { expanded = it },
-        modifier = modifier
-    ) {
-        OutlinedTextField(
-            value = String.format(Locale.getDefault(), "%02d:00", hour),
-            onValueChange = {},
-            readOnly = true,
-            enabled = enabled,
-            trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
-            colors = ExposedDropdownMenuDefaults.outlinedTextFieldColors(),
-            modifier = Modifier.menuAnchor(MenuAnchorType.PrimaryNotEditable, true)
-        )
-
-        ExposedDropdownMenu(
-            expanded = expanded && enabled,
-            onDismissRequest = { expanded = false }
-        ) {
-            for (h in minHour..maxHour) {
-                DropdownMenuItem(
-                    text = { Text(String.format(Locale.getDefault(), "%02d:00", h)) },
-                    onClick = {
-                        onHourChanged(h)
-                        expanded = false
-                    }
                 )
             }
         }
