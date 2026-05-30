@@ -1,6 +1,8 @@
 package de.dh.raaps.core.repository.db.entities
 
 import androidx.room.Entity
+import androidx.room.ForeignKey
+import androidx.room.Index
 import androidx.room.PrimaryKey
 import de.dh.raaps.common.model.ID_UNDEFINED
 
@@ -19,4 +21,54 @@ data class TherapyDataEntity(
     val isf_blocks: List<DBBlock>,
     val ic_blocks: List<DBBlock>,
     val target_blocks: List<DBTargetBlock>
+)
+
+/**
+ * Entity for a therapy profile.
+ */
+@Entity(
+    tableName = "profiles",
+    foreignKeys = [
+        ForeignKey(
+            entity = TherapyDataEntity::class,
+            parentColumns = ["id"],
+            childColumns = ["therapy_data_id"],
+            onDelete = ForeignKey.CASCADE
+        )
+    ],
+    indices = [Index("therapy_data_id")]
+)
+data class ProfileEntity(
+    @PrimaryKey(autoGenerate = true)
+    val id: Long = ID_UNDEFINED,
+    val name: String,
+    val therapy_data_id: Long
+)
+
+/**
+ * Entity for the current active therapy data.
+ */
+@Entity(
+    tableName = "current_therapy_data",
+    foreignKeys = [
+        ForeignKey(
+            entity = ProfileEntity::class,
+            parentColumns = ["id"],
+            childColumns = ["profile_id"],
+            onDelete = ForeignKey.SET_NULL
+        ),
+        ForeignKey(
+            entity = TherapyDataEntity::class,
+            parentColumns = ["id"],
+            childColumns = ["therapy_data_id"],
+            onDelete = ForeignKey.CASCADE
+        )
+    ],
+    indices = [Index("profile_id"), Index("therapy_data_id")]
+)
+data class CurrentTherapyDataEntity(
+    @PrimaryKey(autoGenerate = true)
+    val id: Long = ID_UNDEFINED,
+    val profile_id: Long?,
+    val therapy_data_id: Long
 )
