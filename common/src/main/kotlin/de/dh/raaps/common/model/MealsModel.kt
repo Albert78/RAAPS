@@ -45,8 +45,8 @@ data class MealType(
         }
 
         val sum = components.sumOf { it.weight }
-        require(abs(sum - 1.0) < 1e-6) {
-            "Component weights must sum to 1.0"
+        require(abs(sum - 100.0) < 1e-6) {
+            "Component weights must sum to 100%"
         }
     }
 }

@@ -85,10 +85,10 @@ class PredictionModel(
             val ic = therapyModel.getIcFactor(timestamp)
             val basalPerHour = therapyModel.getBasalPerHour(timestamp)
 
-            if (isf != state.isf || ic != state.ic || basalPerHour != state.basalPerHour) {
+            if (isf != state.isf || ic != state.ic || basalPerHour != state.basalRateUph) {
                 state.isf = isf
                 state.ic = ic
-                state.basalPerHour = basalPerHour
+                state.basalRateUph = basalPerHour
 
                 val insulinEquivalentOfCarbs = state.effectiveCarbs / ic
                 val bgi = (insulinEquivalentOfCarbs - state.effectiveInsulin) * isf
@@ -115,7 +115,7 @@ class PredictionModel(
      */
     inline fun clearTempBasalsStage_5() {
         forEach { _, state ->
-            state.basalDeviationPerHour = 0.0
+            state.basalRateDeviationPh = 0.0
         }
     }
 
@@ -129,7 +129,7 @@ class PredictionModel(
         tempBasalEnd: Tick
     ) {
         forEach(from = tempBasalStart, to = tempBasalEnd) { _, state ->
-            state.basalDeviationPerHour = basalDeviationPerHour
+            state.basalRateDeviationPh = basalDeviationPerHour
         }
     }
 
@@ -138,7 +138,7 @@ class PredictionModel(
         to: Tick = getLastTick()
     ) {
         forEach(from = from, to = to) { _, state ->
-            val tempBgi = state.basalDeviationPerHour * state.isf
+            val tempBgi = state.basalRateDeviationPh * state.isf
             state.predictedBg2 = state.predictedBg1 + tempBgi
         }
     }

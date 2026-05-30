@@ -19,7 +19,7 @@ class PredictionTickState {
     // Stage 2: ISF and IC. Might be adapted by user, so need to be checked each tick.
     var isf: BgDelta = BgDelta(0) // ISF at the time of this tick, from profile
     var ic: Double = 0.0 // IC at the time of this tick, from profile
-    var basalPerHour: Double = 0.0 // Normal basal rate for this tick, from profile; will be offset by basalDerivationPerHour
+    var basalRateUph: Double = 0.0 // Normal basal rate in units per hour for this tick, from profile; will be offset by basalDerivationPerHour
 
     // Stage 3: BGI values depend on stages 1 and 2. Basal rate effect (even low/zero temp)
     // is not included in BGI.
@@ -30,7 +30,7 @@ class PredictionTickState {
     var predictedBg1: BgValue = BgValue.INVALID // Calculated from a starting BG, applying BGIs of previous ticks
 
     // Stage 5: Final calculated decision for basal low temp depends on stages 1-4.
-    var basalDeviationPerHour: Double = 0.0 // Remember temp basal deviation decisions
+    var basalRateDeviationPh: Double = 0.0 // Remember temp basal deviation decisions (in units per hour)
 
     // Stage 6: Predicted BG from stage 4, including basal derivation from stage 5.
     var predictedBg2: BgValue = BgValue.INVALID
@@ -42,7 +42,7 @@ class PredictionTickState {
         isf = BgDelta(0)
         ic = 0.0
         bgi = BgDelta(0)
-        basalDeviationPerHour = 0.0
+        basalRateDeviationPh = 0.0
         predictedBg1 = BgValue.INVALID
     }
 }
