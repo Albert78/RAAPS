@@ -11,11 +11,13 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
@@ -53,6 +55,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
@@ -261,24 +264,32 @@ fun ProfileDetailEditor(
             Box(modifier = Modifier.weight(1f)) {
                 when (selectedTab) {
                     0 -> TherapyBlockListEditor(
+                        title = "Basalrate",
+                        description = "Die Menge an Insulin, die kontinuierlich abgegeben wird (Einheit: U/h).",
                         blocks = therapyData.basalBlocks,
                         onBlocksChanged = { therapyData = therapyData.copy(basalBlocks = it) },
                         step = 0.05,
                         format = "%.2f"
                     )
                     1 -> TherapyBlockListEditor(
+                        title = "ISF (Insulin-Sensitivitäts-Faktor)",
+                        description = "Gibt an, wie stark eine Einheit Insulin den Blutzucker senkt (Einheit: mg/dL/U).",
                         blocks = therapyData.isfBlocks,
                         onBlocksChanged = { therapyData = therapyData.copy(isfBlocks = it) },
                         step = 1.0,
                         format = "%.0f"
                     )
                     2 -> TherapyBlockListEditor(
+                        title = "I:C (Insulin-Kohlenhydrat-Verhältnis)",
+                        description = "Gibt an, wie viele Gramm Kohlenhydrate durch eine Einheit Insulin abgedeckt werden (Einheit: g/U).",
                         blocks = therapyData.icBlocks,
                         onBlocksChanged = { therapyData = therapyData.copy(icBlocks = it) },
                         step = 0.1,
                         format = "%.1f"
                     )
                     3 -> TargetBlockListEditor(
+                        title = "Zielbereich",
+                        description = "Der angestrebte Blutzuckerbereich über den Tag (Einheit: mg/dL).",
                         blocks = therapyData.targetBlocks,
                         onBlocksChanged = { therapyData = therapyData.copy(targetBlocks = it) }
                     )
@@ -290,6 +301,8 @@ fun ProfileDetailEditor(
 
 @Composable
 fun TherapyBlockListEditor(
+    title: String,
+    description: String,
     blocks: List<Block>,
     onBlocksChanged: (List<Block>) -> Unit,
     step: Double,
@@ -344,6 +357,13 @@ fun TherapyBlockListEditor(
         verticalArrangement = Arrangement.spacedBy(4.dp)
     ) {
         item {
+            Column(modifier = Modifier.padding(bottom = 8.dp)) {
+                Text(text = title, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                Text(text = description, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            }
+        }
+
+        item {
             InsertButton(canInsert = false) {} // Placeholder for spacing
         }
         
@@ -382,6 +402,8 @@ fun TherapyBlockListEditor(
 
 @Composable
 fun TargetBlockListEditor(
+    title: String,
+    description: String,
     blocks: List<TargetBlock>,
     onBlocksChanged: (List<TargetBlock>) -> Unit
 ) {
@@ -433,6 +455,13 @@ fun TargetBlockListEditor(
         contentPadding = PaddingValues(16.dp),
         verticalArrangement = Arrangement.spacedBy(4.dp)
     ) {
+        item {
+            Column(modifier = Modifier.padding(bottom = 8.dp)) {
+                Text(text = title, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                Text(text = description, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            }
+        }
+
         item {
             InsertButton(canInsert = false) {}
         }
@@ -486,7 +515,7 @@ fun TargetBlockListEditor(
 
                     if (index > 0) {
                         IconButton(onClick = { removeBlock(index) }) {
-                            Icon(Icons.Default.Close, contentDescription = "Löschen")
+                            Icon(Icons.Default.Delete, contentDescription = "Löschen")
                         }
                     } else {
                         Box(modifier = Modifier.size(48.dp))
@@ -542,7 +571,7 @@ fun BlockRow(
 
         if (onDelete != null) {
             IconButton(onClick = onDelete) {
-                Icon(Icons.Default.Close, contentDescription = "Löschen")
+                Icon(Icons.Default.Delete, contentDescription = "Löschen")
             }
         } else {
             Box(modifier = Modifier.size(48.dp))
@@ -555,20 +584,26 @@ fun InsertButton(canInsert: Boolean, onClick: () -> Unit) {
     Box(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(vertical = 4.dp),
+            .height(32.dp),
         contentAlignment = Alignment.Center
     ) {
         if (canInsert) {
-            IconButton(
-                onClick = onClick,
+            Box(
                 modifier = Modifier
-                    .size(24.dp)
-                    .background(MaterialTheme.colorScheme.primaryContainer, CircleShape)
+                    .width(80.dp)
+                    .height(24.dp)
+                    .clip(RoundedCornerShape(4.dp))
+                    .background(MaterialTheme.colorScheme.primaryContainer)
+                    .clickable { onClick() },
+                contentAlignment = Alignment.Center
             ) {
-                Icon(Icons.Default.Add, contentDescription = "Einfügen", modifier = Modifier.size(16.dp))
+                Icon(
+                    imageVector = Icons.Default.Add,
+                    contentDescription = "Einfügen",
+                    modifier = Modifier.size(16.dp),
+                    tint = MaterialTheme.colorScheme.onPrimaryContainer
+                )
             }
-        } else {
-            Box(modifier = Modifier.size(24.dp))
         }
     }
 }
@@ -633,16 +668,11 @@ fun ValueAdjuster(
             Icon(Icons.Default.Remove, contentDescription = "Weniger")
         }
 
-        OutlinedTextField(
-            value = String.format(Locale.getDefault(), format, value),
-            onValueChange = {
-                val newVal = it.replace(",", ".").toDoubleOrNull()
-                if (newVal != null) onValueChanged(newVal)
-            },
+        Text(
+            text = String.format(Locale.getDefault(), format, value),
             modifier = Modifier.weight(1f),
-            textStyle = MaterialTheme.typography.bodyMedium.copy(textAlign = TextAlign.Center),
-            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-            singleLine = true
+            style = MaterialTheme.typography.bodyLarge,
+            textAlign = TextAlign.Center
         )
 
         IconButton(onClick = { onValueChanged(value + step) }) {
