@@ -12,6 +12,10 @@
     <string name="therapy_isf_label">ISF</string>
     <string name="therapy_ic_label">I:C</string>
     <string name="cd_add_profile">Profil hinzufügen</string>
+    <string name="cd_save_profile">Profil speichern</string>
+    <string name="cd_delete_profile">Profil löschen</string>
+    <string name="delete_profile_title">Profil löschen</string>
+    <string name="delete_profile_message">Möchten Sie das Profil \"%1$s\" wirklich löschen?</string>
 
     <string name="dashboard_permissions_missing">Für eine ordnungsgemäße Funktion benötigt die App weitere Berechtigungen</string>
     <string name="dashboard_fix_permissions_link">Reparieren</string>
