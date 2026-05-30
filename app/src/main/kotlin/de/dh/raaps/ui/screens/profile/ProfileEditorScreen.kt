@@ -16,13 +16,10 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Remove
 import androidx.compose.material.icons.filled.Save
@@ -30,13 +27,13 @@ import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FloatingActionButton
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.ListItem
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Tab
 import androidx.compose.material3.TabRow
 import androidx.compose.material3.Text
@@ -54,7 +51,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -317,7 +313,7 @@ fun TherapyBlockListEditor(
     fun updateHour(index: Int, newHour: Int) {
         val newHours = startHours.toMutableList()
         newHours[index] = newHour
-        
+
         val newBlocks = mutableListOf<Block>()
         for (i in 0 until newHours.size) {
             val durationHours = if (i < newHours.size - 1) newHours[i+1] - newHours[i] else 24 - newHours[i]
@@ -331,7 +327,7 @@ fun TherapyBlockListEditor(
         val splitIndex = atIndex - 1
         val splitBlock = blocks[splitIndex]
         val splitDuration = splitBlock.duration.value / 60
-        
+
         val newBlocks = blocks.toMutableList()
         newBlocks[splitIndex] = splitBlock.copy(duration = Minutes.ofHours(1))
         newBlocks.add(atIndex, splitBlock.copy(duration = Minutes.ofHours(splitDuration - 1)))
@@ -351,7 +347,7 @@ fun TherapyBlockListEditor(
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
         contentPadding = PaddingValues(16.dp),
-        verticalArrangement = Arrangement.spacedBy(4.dp)
+        verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
         item {
             Column(modifier = Modifier.padding(bottom = 8.dp)) {
@@ -360,10 +356,6 @@ fun TherapyBlockListEditor(
             }
         }
 
-        item {
-            InsertButton(canInsert = false) {} // Placeholder for spacing
-        }
-        
         blocks.forEachIndexed { index, block ->
             val currentHour = startHours[index]
             val prevHour = if (index > 0) startHours[index - 1] else -1
@@ -376,7 +368,7 @@ fun TherapyBlockListEditor(
                     maxHour = nextHour - 1,
                     value = block.amount,
                     onHourChanged = { updateHour(index, it) },
-                    onValueChanged = { newVal -> 
+                    onValueChanged = { newVal ->
                         val updated = blocks.toMutableList()
                         updated[index] = block.copy(amount = newVal)
                         onBlocksChanged(updated)
@@ -388,10 +380,8 @@ fun TherapyBlockListEditor(
                 )
             }
 
-            if (nextHour - currentHour > 1) {
-                item(key = "insert_$index") {
-                    InsertButton(canInsert = true) { addBlock(index + 1) }
-                }
+            item(key = "insert_$index") {
+                InsertButton(canInsert = nextHour - currentHour > 1) { addBlock(index + 1) }
             }
         }
     }
@@ -416,7 +406,7 @@ fun TargetBlockListEditor(
     fun updateHour(index: Int, newHour: Int) {
         val newHours = startHours.toMutableList()
         newHours[index] = newHour
-        
+
         val newBlocks = mutableListOf<TargetBlock>()
         for (i in 0 until newHours.size) {
             val durationHours = if (i < newHours.size - 1) newHours[i+1] - newHours[i] else 24 - newHours[i]
@@ -430,7 +420,7 @@ fun TargetBlockListEditor(
         val splitIndex = atIndex - 1
         val splitBlock = blocks[splitIndex]
         val splitDuration = splitBlock.duration.value / 60
-        
+
         val newBlocks = blocks.toMutableList()
         newBlocks[splitIndex] = splitBlock.copy(duration = Minutes.ofHours(1))
         newBlocks.add(atIndex, splitBlock.copy(duration = Minutes.ofHours(splitDuration - 1)))
@@ -450,7 +440,7 @@ fun TargetBlockListEditor(
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
         contentPadding = PaddingValues(16.dp),
-        verticalArrangement = Arrangement.spacedBy(4.dp)
+        verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
         item {
             Column(modifier = Modifier.padding(bottom = 8.dp)) {
@@ -459,71 +449,71 @@ fun TargetBlockListEditor(
             }
         }
 
-        item {
-            InsertButton(canInsert = false) {}
-        }
-
         blocks.forEachIndexed { index, block ->
             val currentHour = startHours[index]
             val prevHour = if (index > 0) startHours[index - 1] else -1
             val nextHour = if (index < blocks.size - 1) startHours[index + 1] else 24
 
             item(key = "target_$index") {
-                Row(
+                Surface(
                     modifier = Modifier.fillMaxWidth(),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    shape = RoundedCornerShape(12.dp),
+                    color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f)
                 ) {
-                    TimeHourSelector(
-                        hour = currentHour,
-                        enabled = index > 0,
-                        minHour = prevHour + 1,
-                        maxHour = nextHour - 1,
-                        onHourChanged = { updateHour(index, it) },
-                        modifier = Modifier.width(100.dp)
-                    )
-
-                    Text("-")
-
-                    Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                        ValueAdjuster(
-                            value = block.lowTarget.mgdl.toDouble(),
-                            onValueChanged = { newVal ->
-                                val updated = blocks.toMutableList()
-                                updated[index] = block.copy(lowTarget = BgValue(newVal.roundToInt().toShort()))
-                                onBlocksChanged(updated)
-                            },
-                            step = 5.0,
-                            format = "%.0f",
-                            modifier = Modifier.fillMaxWidth()
+                    Row(
+                        modifier = Modifier
+                            .padding(8.dp)
+                            .fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        TimeHourSelector(
+                            hour = currentHour,
+                            enabled = index > 0,
+                            minHour = prevHour + 1,
+                            maxHour = nextHour - 1,
+                            onHourChanged = { updateHour(index, it) },
+                            modifier = Modifier.width(100.dp)
                         )
-                        ValueAdjuster(
-                            value = block.highTarget.mgdl.toDouble(),
-                            onValueChanged = { newVal ->
-                                val updated = blocks.toMutableList()
-                                updated[index] = block.copy(highTarget = BgValue(newVal.roundToInt().toShort()))
-                                onBlocksChanged(updated)
-                            },
-                            step = 5.0,
-                            format = "%.0f",
-                            modifier = Modifier.fillMaxWidth()
-                        )
-                    }
 
-                    if (index > 0) {
-                        IconButton(onClick = { removeBlock(index) }) {
-                            Icon(Icons.Default.Delete, contentDescription = "Löschen")
+                        Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                            ValueAdjuster(
+                                value = block.lowTarget.mgdl.toDouble(),
+                                onValueChanged = { newVal ->
+                                    val updated = blocks.toMutableList()
+                                    updated[index] = block.copy(lowTarget = BgValue(newVal.roundToInt().toShort()))
+                                    onBlocksChanged(updated)
+                                },
+                                step = 5.0,
+                                format = "%.0f",
+                                modifier = Modifier.fillMaxWidth()
+                            )
+                            ValueAdjuster(
+                                value = block.highTarget.mgdl.toDouble(),
+                                onValueChanged = { newVal ->
+                                    val updated = blocks.toMutableList()
+                                    updated[index] = block.copy(highTarget = BgValue(newVal.roundToInt().toShort()))
+                                    onBlocksChanged(updated)
+                                },
+                                step = 5.0,
+                                format = "%.0f",
+                                modifier = Modifier.fillMaxWidth()
+                            )
                         }
-                    } else {
-                        Box(modifier = Modifier.size(48.dp))
+
+                        if (index > 0) {
+                            IconButton(onClick = { removeBlock(index) }) {
+                                Icon(Icons.Default.Delete, contentDescription = "Löschen")
+                            }
+                        } else {
+                            Box(modifier = Modifier.size(48.dp))
+                        }
                     }
                 }
             }
 
-            if (nextHour - currentHour > 1) {
-                item(key = "insert_$index") {
-                    InsertButton(canInsert = true) { addBlock(index + 1) }
-                }
+            item(key = "insert_$index") {
+                InsertButton(canInsert = nextHour - currentHour > 1) { addBlock(index + 1) }
             }
         }
     }
@@ -542,36 +532,42 @@ fun BlockRow(
     format: String,
     isFixed: Boolean
 ) {
-    Row(
+    Surface(
         modifier = Modifier.fillMaxWidth(),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(8.dp)
+        shape = RoundedCornerShape(12.dp),
+        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f)
     ) {
-        TimeHourSelector(
-            hour = hour,
-            enabled = !isFixed,
-            minHour = minHour,
-            maxHour = maxHour,
-            onHourChanged = onHourChanged,
-            modifier = Modifier.width(100.dp)
-        )
+        Row(
+            modifier = Modifier
+                .padding(8.dp)
+                .fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            TimeHourSelector(
+                hour = hour,
+                enabled = !isFixed,
+                minHour = minHour,
+                maxHour = maxHour,
+                onHourChanged = onHourChanged,
+                modifier = Modifier.width(100.dp)
+            )
 
-        Text("-")
+            ValueAdjuster(
+                value = value,
+                onValueChanged = onValueChanged,
+                step = step,
+                format = format,
+                modifier = Modifier.weight(1f)
+            )
 
-        ValueAdjuster(
-            value = value,
-            onValueChanged = onValueChanged,
-            step = step,
-            format = format,
-            modifier = Modifier.weight(1f)
-        )
-
-        if (onDelete != null) {
-            IconButton(onClick = onDelete) {
-                Icon(Icons.Default.Delete, contentDescription = "Löschen")
+            if (onDelete != null) {
+                IconButton(onClick = onDelete) {
+                    Icon(Icons.Default.Delete, contentDescription = "Löschen")
+                }
+            } else {
+                Box(modifier = Modifier.size(48.dp))
             }
-        } else {
-            Box(modifier = Modifier.size(48.dp))
         }
     }
 }
@@ -584,23 +580,32 @@ fun InsertButton(canInsert: Boolean, onClick: () -> Unit) {
             .height(32.dp),
         contentAlignment = Alignment.Center
     ) {
-        if (canInsert) {
-            Box(
-                modifier = Modifier
-                    .width(80.dp)
-                    .height(24.dp)
-                    .clip(RoundedCornerShape(4.dp))
-                    .background(MaterialTheme.colorScheme.primaryContainer)
-                    .clickable { onClick() },
-                contentAlignment = Alignment.Center
-            ) {
-                Icon(
-                    imageVector = Icons.Default.Add,
-                    contentDescription = "Einfügen",
-                    modifier = Modifier.size(16.dp),
-                    tint = MaterialTheme.colorScheme.onPrimaryContainer
-                )
-            }
+        val backgroundColor = if (canInsert) {
+            MaterialTheme.colorScheme.primaryContainer
+        } else {
+            MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
+        }
+        val iconTint = if (canInsert) {
+            MaterialTheme.colorScheme.onPrimaryContainer
+        } else {
+            MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)
+        }
+
+        Box(
+            modifier = Modifier
+                .width(80.dp)
+                .height(24.dp)
+                .clip(RoundedCornerShape(4.dp))
+                .background(backgroundColor)
+                .then(if (canInsert) Modifier.clickable { onClick() } else Modifier),
+            contentAlignment = Alignment.Center
+        ) {
+            Icon(
+                imageVector = Icons.Default.Add,
+                contentDescription = if (canInsert) "Einfügen" else null,
+                modifier = Modifier.size(16.dp),
+                tint = iconTint
+            )
         }
     }
 }
@@ -657,6 +662,7 @@ fun ProfileEditorPreview() {
 }
 
 @Preview(showBackground = true, name = "Detail Editor Preview")
+@Preview(showBackground = true, uiMode = Configuration.UI_MODE_NIGHT_YES, name = "Dark Mode")
 @Composable
 fun ProfileDetailEditorPreview() {
     AppTheme {
