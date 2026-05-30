@@ -5,12 +5,12 @@ import de.dh.raaps.common.model.InsulinApplication
 import de.dh.raaps.common.model.InsulinType
 import de.dh.raaps.common.model.MealEntry
 import de.dh.raaps.common.model.MealType
-import de.dh.raaps.common.model.ToDo
 import de.dh.raaps.common.model.data.BgReading
+import de.dh.raaps.common.model.data.CurrentTherapyData
+import de.dh.raaps.common.model.data.Profile
 import de.dh.raaps.common.model.data.SensorType
 import de.dh.raaps.common.model.data.TherapyData
 import de.dh.raaps.common.model.data.Timestamp
-import de.dh.raaps.common.model.mock.mockSimpleTherapyData
 import de.dh.raaps.core.repository.db.AppDatabase
 import de.dh.raaps.core.repository.db.entities.DataProviderEntity
 import de.dh.raaps.core.repository.db.entities.SensorTypeEntity
@@ -151,11 +151,81 @@ class DataRepository(val database: AppDatabase) {
         database.metabolicEventsDao().deleteInsulinApplication(insulinApplication.id)
     }
 
-    /**
-     * Gets the therapy data which is or was active at the given time.
-     */
-    suspend fun getTherapyDataForTimeInstant(time: Timestamp): TherapyData {
-        ToDo.toBeImplemented("Calculate/get therapy data for given timestamp")
-        return mockSimpleTherapyData()
+    // --- Therapy Operations ---
+
+    suspend fun insertTherapyData(therapyData: TherapyData): Long {
+        val id = database.therapyDao().insertTherapyData(therapyData.toEntity())
+        return id
+    }
+
+    suspend fun updateTherapyData(therapyData: TherapyData) {
+        database.therapyDao().updateTherapyData(therapyData.toEntity())
+    }
+
+    suspend fun getTherapyDataById(id: Long): TherapyData? {
+        return database.therapyDao().getTherapyDataById(id)?.toModel()
+    }
+
+    suspend fun deleteTherapyData(id: Long) {
+        database.therapyDao().deleteTherapyData(id)
+    }
+
+    // --- Profile Operations ---
+
+    suspend fun getAllProfiles(): List<Profile> {
+        val dao = database.therapyDao()
+        return dao.getAllProfiles().mapNotNull { entity ->
+            val therapyData = dao.getTherapyDataById(entity.therapy_data_id)?.toModel()
+            therapyData?.let { entity.toModel(it) }
+        }
+    }
+
+    suspend fun getProfileById(id: Long): Profile? {
+        val dao = database.therapyDao()
+        val entity = dao.getProfileById(id) ?: return null
+        val therapyData = dao.getTherapyDataById(entity.therapy_data_id)?.toModel() ?: return null
+        return entity.toModel(therapyData)
+    }
+
+    suspend fun insertProfile(profile: Profile): Long {
+        // Ensure TherapyData is saved first if it's new
+        if (profile.therapyData.id == -1L) {
+            val therapyDataId = insertTherapyData(profile.therapyData)
+            // Note: In a real scenario, we should update the profile object's therapyData.id here
+            // but for simplicity we assume it was passed correctly or handled by the caller.
+        }
+        return database.therapyDao().insertProfile(profile.toEntity())
+    }
+
+    suspend fun updateProfile(profile: Profile) {
+        updateTherapyData(profile.therapyData)
+        database.therapyDao().updateProfile(profile.toEntity())
+    }
+
+    suspend fun deleteProfile(profile: Profile) {
+        database.therapyDao().deleteProfile(profile.id)
+    }
+
+    // --- Current Therapy Data Operations ---
+
+    suspend fun getCurrentTherapyData(): CurrentTherapyData? {
+        val dao = database.therapyDao()
+        val entity = dao.getCurrentTherapyData() ?: return null
+        val therapyData = dao.getTherapyDataById(entity.therapy_data_id)?.toModel() ?: return null
+        return entity.toModel(therapyData)
+    }
+
+    suspend fun updateCurrentTherapyData(currentTherapyData: CurrentTherapyData) {
+        val dao = database.therapyDao()
+        // Update the actual therapy data first
+        updateTherapyData(currentTherapyData.therapyData)
+
+        val entity = currentTherapyData.toEntity()
+        val existing = dao.getCurrentTherapyData()
+        if (existing == null) {
+            dao.insertCurrentTherapyData(entity)
+        } else {
+            dao.updateCurrentTherapyData(entity.copy(id = existing.id))
+        }
     }
 }

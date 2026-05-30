@@ -8,16 +8,26 @@ import de.dh.raaps.common.model.MealEntry
 import de.dh.raaps.common.model.MealType
 import de.dh.raaps.common.model.data.BgReading
 import de.dh.raaps.common.model.data.BgValue
+import de.dh.raaps.common.model.data.Block
+import de.dh.raaps.common.model.data.CurrentTherapyData
 import de.dh.raaps.common.model.data.Minutes
+import de.dh.raaps.common.model.data.Profile
 import de.dh.raaps.common.model.data.SensorType
+import de.dh.raaps.common.model.data.TargetBlock
+import de.dh.raaps.common.model.data.TherapyData
 import de.dh.raaps.common.model.data.Timestamp
+import de.dh.raaps.core.repository.db.entities.CurrentTherapyDataEntity
+import de.dh.raaps.core.repository.db.entities.DBBlock
+import de.dh.raaps.core.repository.db.entities.DBTargetBlock
 import de.dh.raaps.core.repository.db.entities.DataProviderEntity
 import de.dh.raaps.core.repository.db.entities.GlucoseReadingEntity
 import de.dh.raaps.core.repository.db.entities.InsulinApplicationEntity
 import de.dh.raaps.core.repository.db.entities.InsulinTypeEntity
 import de.dh.raaps.core.repository.db.entities.MealEntity
 import de.dh.raaps.core.repository.db.entities.MealTypeEntity
+import de.dh.raaps.core.repository.db.entities.ProfileEntity
 import de.dh.raaps.core.repository.db.entities.SensorTypeEntity
+import de.dh.raaps.core.repository.db.entities.TherapyDataEntity
 
 // BgReading Converters
 fun BgReading.toEntity(dataProviderId: Long, sourceSensorId: Long) = GlucoseReadingEntity(
@@ -133,4 +143,67 @@ fun InsulinApplicationEntity.toModel(type: InsulinType) = InsulinApplication(
     timestamp = this.timestamp,
     insulinUnits = this.insulinUnits,
     insulinType = type
+)
+
+// Therapy Converters
+fun Block.toDb() = DBBlock(
+    duration = this.duration.value,
+    amount = this.amount
+)
+
+fun DBBlock.toModel() = Block(
+    duration = Minutes(this.duration),
+    amount = this.amount
+)
+
+fun TargetBlock.toDb() = DBTargetBlock(
+    duration = this.duration.value,
+    lowTarget = this.lowTarget.mgdl,
+    highTarget = this.highTarget.mgdl
+)
+
+fun DBTargetBlock.toModel() = TargetBlock(
+    duration = Minutes(this.duration),
+    lowTarget = BgValue.fromMgDl(this.lowTarget),
+    highTarget = BgValue.fromMgDl(this.highTarget)
+)
+
+fun TherapyData.toEntity() = TherapyDataEntity(
+    id = this.id,
+    basal_blocks = this.basalBlocks.map { it.toDb() },
+    isf_blocks = this.isfBlocks.map { it.toDb() },
+    ic_blocks = this.icBlocks.map { it.toDb() },
+    target_blocks = this.targetBlocks.map { it.toDb() }
+)
+
+fun TherapyDataEntity.toModel() = TherapyData(
+    id = this.id,
+    basalBlocks = this.basal_blocks.map { it.toModel() },
+    isfBlocks = this.isf_blocks.map { it.toModel() },
+    icBlocks = this.ic_blocks.map { it.toModel() },
+    targetBlocks = this.target_blocks.map { it.toModel() }
+)
+
+fun Profile.toEntity() = ProfileEntity(
+    id = this.id,
+    name = this.name,
+    therapy_data_id = this.therapyData.id
+)
+
+fun ProfileEntity.toModel(therapyData: TherapyData) = Profile(
+    id = this.id,
+    name = this.name,
+    therapyData = therapyData
+)
+
+fun CurrentTherapyData.toEntity() = CurrentTherapyDataEntity(
+    id = this.id,
+    profile_id = this.profileId,
+    therapy_data_id = this.therapyData.id
+)
+
+fun CurrentTherapyDataEntity.toModel(therapyData: TherapyData) = CurrentTherapyData(
+    id = this.id,
+    profileId = this.profile_id,
+    therapyData = therapyData
 )

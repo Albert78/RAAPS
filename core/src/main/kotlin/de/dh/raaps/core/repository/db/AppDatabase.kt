@@ -9,12 +9,14 @@ import androidx.room.Room
 import androidx.room.RoomDatabase
 import androidx.room.TypeConverters
 import androidx.room.Update
+import de.dh.raaps.core.repository.db.entities.CurrentTherapyDataEntity
 import de.dh.raaps.core.repository.db.entities.DataProviderEntity
 import de.dh.raaps.core.repository.db.entities.GlucoseReadingEntity
 import de.dh.raaps.core.repository.db.entities.InsulinApplicationEntity
 import de.dh.raaps.core.repository.db.entities.InsulinTypeEntity
 import de.dh.raaps.core.repository.db.entities.MealEntity
 import de.dh.raaps.core.repository.db.entities.MealTypeEntity
+import de.dh.raaps.core.repository.db.entities.ProfileEntity
 import de.dh.raaps.core.repository.db.entities.SensorTypeEntity
 import de.dh.raaps.core.repository.db.entities.TherapyDataEntity
 import java.util.concurrent.Executors
@@ -48,7 +50,44 @@ interface ProviderDao {
 
 @Dao
 interface TherapyDao {
+    // Therapy Data
+    @Query("SELECT * FROM therapy_data WHERE id = :id")
+    suspend fun getTherapyDataById(id: Long): TherapyDataEntity?
 
+    @Insert
+    suspend fun insertTherapyData(data: TherapyDataEntity): Long
+
+    @Update
+    suspend fun updateTherapyData(data: TherapyDataEntity)
+
+    @Query("DELETE FROM therapy_data WHERE id = :id")
+    suspend fun deleteTherapyData(id: Long)
+
+    // Profiles
+    @Query("SELECT * FROM profiles ORDER BY name ASC")
+    suspend fun getAllProfiles(): List<ProfileEntity>
+
+    @Query("SELECT * FROM profiles WHERE id = :id")
+    suspend fun getProfileById(id: Long): ProfileEntity?
+
+    @Insert
+    suspend fun insertProfile(profile: ProfileEntity): Long
+
+    @Update
+    suspend fun updateProfile(profile: ProfileEntity)
+
+    @Query("DELETE FROM profiles WHERE id = :id")
+    suspend fun deleteProfile(id: Long)
+
+    // Current Therapy Data
+    @Query("SELECT * FROM current_therapy_data LIMIT 1")
+    suspend fun getCurrentTherapyData(): CurrentTherapyDataEntity?
+
+    @Insert
+    suspend fun insertCurrentTherapyData(data: CurrentTherapyDataEntity): Long
+
+    @Update
+    suspend fun updateCurrentTherapyData(data: CurrentTherapyDataEntity)
 }
 
 @Dao
@@ -129,6 +168,8 @@ interface MetabolicEventsDao {
 
     // Therapy
     TherapyDataEntity::class,
+    ProfileEntity::class,
+    CurrentTherapyDataEntity::class,
 
     // Metabolic events
     MealTypeEntity::class,
