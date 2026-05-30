@@ -7,6 +7,7 @@ import de.dh.raaps.common.model.GlucoseSource
 import de.dh.raaps.common.model.InsulinPump
 import de.dh.raaps.common.model.data.BgReading
 import de.dh.raaps.common.model.data.Timestamp
+import de.dh.raaps.core.pump.ApsPumpModel
 import de.dh.raaps.core.repository.DataRepository
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -50,6 +51,10 @@ class APS(
         onAcquireBusyState = { acquireBusyState() },
         onReleaseBusyState = { releaseBusyState() }
     )
+
+    val therapyModel: TherapyModel get() = core.therapyModel
+    val metabolicEventsModel: MetabolicEventsModel get() = core.metabolicEventsModel
+    val pumpModel: ApsPumpModel get() = core.pumpModel
 
     // Plugins & Active Jobs
     private var glucoseJob: Job? = null

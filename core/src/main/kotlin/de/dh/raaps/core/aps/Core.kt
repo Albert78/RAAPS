@@ -74,9 +74,9 @@ enum class CoreState {
 class Core(
     private val dataRepository: DataRepository,
     private val appPreferencesRepository: AppPreferencesRepository,
-    private val metabolicEventsModel: MetabolicEventsModel,
-    private val therapyModel: TherapyModel,
-    private val pumpModel: ApsPumpModel,
+    val metabolicEventsModel: MetabolicEventsModel,
+    val therapyModel: TherapyModel,
+    val pumpModel: ApsPumpModel,
     private val onDataUpdated: () -> Unit,
     private val onCoreStateChanged: () -> Unit,
     private val onAcquireBusyState: () -> Unit,
