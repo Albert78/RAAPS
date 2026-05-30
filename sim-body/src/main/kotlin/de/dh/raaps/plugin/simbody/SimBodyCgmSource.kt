@@ -40,9 +40,10 @@ class SimBodyCgmSource(
 
     fun getRawGlucoseReadings(): Flow<RawBg> = flow {
         while (true) {
+            bodyModel.tick() // Update the simulation
             val reading = RawBg(
-                value = BgValue.fromMgDl(100 + Random.nextInt(-10, 10)),
-                timestamp = Timestamp(System.currentTimeMillis()),
+                value = bodyModel.bloodGlucose,
+                timestamp = Timestamp.now(),
             )
             emit(reading)
             delay(1000*60*5) // Every 5 minutes
@@ -56,10 +57,11 @@ class SimBodyCgmSource(
     }
 
     private fun sampleMapRawValues(raw: RawBg): BgReading {
-        val kind = when (raw.value.mgdl.toInt()) {
-            39 -> BgSampleKind.Low
-            401 -> BgSampleKind.High
-            0 -> BgSampleKind.Invalid
+        val mgdl = raw.value.mgdl.toInt()
+        val kind = when {
+            mgdl == 0 -> BgSampleKind.Invalid
+            mgdl < 40 -> BgSampleKind.Low
+            mgdl > 400 -> BgSampleKind.High
             else -> BgSampleKind.Value
         }
         return BgReading(
