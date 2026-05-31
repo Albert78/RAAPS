@@ -235,7 +235,11 @@ fun DashboardContent(
                                 onProfileSelect(it)
                                 showProfileDialog = false
                             },
-                            onDismiss = { showProfileDialog = false }
+                            onDismiss = { showProfileDialog = false },
+                            onEditProfilesClick = {
+                                showProfileDialog = false
+                                onNavigateToProfileEditor()
+                            }
                         )
                     }
                 }
