@@ -10,7 +10,6 @@ import de.dh.raaps.common.model.data.Tick
 import de.dh.raaps.common.model.data.Timestamp
 import de.dh.raaps.common.model.data.times
 import de.dh.raaps.core.pump.ApsPumpModel
-import de.dh.raaps.core.pump.PumpActionsBuilder
 
 // TODO: Document the models needed for calculation, document calculation algorithm
 class ApsAlgorithmImpl(
@@ -107,10 +106,13 @@ class ApsAlgorithmImpl(
             return
         }
 
-        val pumpActionsBuilder = PumpActionsBuilder()
+        if (!pumpModel.isReady()) {
+            // TODO: Mark predictions as outdated?
+            return
+        }
 
         try {
-            pumpActionsBuilder.clearTempBasals()
+            pumpModel.clearTempBasalRates()
             predictionModel.clearTempBasalsStage_5()
 
             val targetBgRange = therapyModel.getTarget()
@@ -134,8 +136,7 @@ class ApsAlgorithmImpl(
                         minus(insulinPeakTicks * 2),
                     now
                 )
-                // We could actually start increasing the basal rate sooner than at the minimum, but when?
-                pumpActionsBuilder.setTempBasal(0.0, startZeroTemp.timestamp, nextMin.tick.timestamp)
+                pumpModel.setTempBasal(0.0, startZeroTemp.timestamp, nextMin.tick.timestamp)
                 predictionModel.setTempBasalDeviationStage_5(-basalRate, startZeroTemp, nextMin.tick)
             }
 
@@ -218,13 +219,13 @@ class ApsAlgorithmImpl(
                         insulinUnits = insulinUnits,
                         insulinType = pumpInsulinType
                     )
-                    pumpActionsBuilder.addInsulinApplication(insulinUnits, insulinTick.timestamp)
+                    pumpModel.addInsulinApplication(insulinUnits, insulinTick.timestamp)
                     metabolicEventsModel.addInsulinApplication(insulinApplication)
                     predictionModel.calculatePredictionStage_1(metabolicEventsModel, carbsInsulinCalculationModel)
                 }
             }
         } finally {
-            pumpActionsBuilder.execute(pumpModel)
+            pumpModel.execute(this@ApsAlgorithmImpl.pumpModel)
         }
     }
 
