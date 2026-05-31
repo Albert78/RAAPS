@@ -21,6 +21,9 @@
     <string name="profile_editor_ic_desc">Gibt an, wie viele Gramm Kohlenhydrate durch eine Einheit Insulin abgedeckt werden (Einheit: g/U).</string>
     <string name="profile_editor_target_title">Zielbereich</string>
     <string name="profile_editor_target_desc">Der angestrebte Blutzuckerbereich über den Tag (Einheit: mg/dL).</string>
+    <string name="profile_editor_help_title">Anleitung: 24h-Profil</string>
+    <string name="profile_editor_help_message">Jeder Block definiert den Wert ab der gewählten Uhrzeit bis zum Start des nächsten Blocks.\n\n• Der erste Block beginnt immer um 00:00 Uhr.\n• Nutze das [+], um neue Zeitabschnitte einzufügen.\n• Die Uhrzeit eines Blocks kann nur zwischen seinen Nachbarn verschoben werden.\n• Am Ende des Tages schließt der letzte Block automatisch um 24:00 Uhr ab.</string>
+
 
     <string name="cd_edit_profile">Profil bearbeiten</string>
     <string name="invalid_profile">Ungültiges Profil</string>
@@ -30,6 +33,8 @@
     <string name="cd_insert_block">Einfügen</string>
     <string name="cd_decrease_value">Weniger</string>
     <string name="cd_increase_value">Mehr</string>
+    <string name="cd_help">Hilfe anzeigen</string>
+
     <string name="delete_profile_title">Profil löschen</string>
     <string name="delete_profile_message">Möchten Sie das Profil \"%1$s\" wirklich löschen?</string>
 

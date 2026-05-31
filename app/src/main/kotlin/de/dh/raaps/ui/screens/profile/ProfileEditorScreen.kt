@@ -19,6 +19,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.HelpOutline
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Remove
@@ -339,6 +340,8 @@ fun TherapyBlockListEditor(
     minValue: Double,
     maxValue: Double
 ) {
+    var showHelpDialog by remember { mutableStateOf(false) }
+
     val startHours = remember(blocks) {
         var currentHour = 0
         blocks.map { block ->
@@ -389,7 +392,20 @@ fun TherapyBlockListEditor(
     ) {
         item {
             Column(modifier = Modifier.padding(bottom = 8.dp)) {
-                Text(text = title, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text(text = title, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                    IconButton(onClick = { showHelpDialog = true }) {
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Filled.HelpOutline,
+                            contentDescription = stringResource(id = R.string.cd_help),
+                            tint = MaterialTheme.colorScheme.primary
+                        )
+                    }
+                }
                 Text(text = description, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
         }
@@ -425,6 +441,10 @@ fun TherapyBlockListEditor(
             }
         }
     }
+
+    if (showHelpDialog) {
+        ProfileHelpDialog(onDismiss = { showHelpDialog = false })
+    }
 }
 
 @Composable
@@ -434,6 +454,8 @@ fun TargetBlockListEditor(
     blocks: List<TargetBlock>,
     onBlocksChanged: (List<TargetBlock>) -> Unit
 ) {
+    var showHelpDialog by remember { mutableStateOf(false) }
+
     val startHours = remember(blocks) {
         var currentHour = 0
         blocks.map { block ->
@@ -484,7 +506,20 @@ fun TargetBlockListEditor(
     ) {
         item {
             Column(modifier = Modifier.padding(bottom = 8.dp)) {
-                Text(text = title, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text(text = title, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                    IconButton(onClick = { showHelpDialog = true }) {
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Filled.HelpOutline,
+                            contentDescription = stringResource(id = R.string.cd_help),
+                            tint = MaterialTheme.colorScheme.primary
+                        )
+                    }
+                }
                 Text(text = description, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
         }
@@ -561,6 +596,24 @@ fun TargetBlockListEditor(
             }
         }
     }
+
+    if (showHelpDialog) {
+        ProfileHelpDialog(onDismiss = { showHelpDialog = false })
+    }
+}
+
+@Composable
+fun ProfileHelpDialog(onDismiss: () -> Unit) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(stringResource(id = R.string.profile_editor_help_title)) },
+        text = { Text(stringResource(id = R.string.profile_editor_help_message)) },
+        confirmButton = {
+            TextButton(onClick = onDismiss) {
+                Text(stringResource(id = android.R.string.ok))
+            }
+        }
+    )
 }
 
 @Composable
