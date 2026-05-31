@@ -24,10 +24,6 @@
 
     <string name="cd_edit_profile">Profil bearbeiten</string>
     <string name="invalid_profile">Ungültiges Profil</string>
-    <string name="therapy_profile_selection_title">Profil auswählen</string>
-    <string name="therapy_target_label">Zielwert</string>
-    <string name="therapy_isf_label">ISF</string>
-    <string name="therapy_ic_label">I:C</string>
     <string name="cd_add_profile">Profil hinzufügen</string>
     <string name="cd_save_profile">Profil speichern</string>
     <string name="cd_delete_profile">Profil löschen</string>

@@ -2,14 +2,19 @@ package de.dh.raaps.ui.screens.dashboard
 
 import android.content.res.Configuration
 import android.util.Range
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
@@ -17,6 +22,7 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedCard
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
@@ -31,14 +37,17 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import de.dh.raaps.R
 import de.dh.raaps.common.model.data.BgDelta
 import de.dh.raaps.common.model.data.BgValue
+import de.dh.raaps.common.model.data.GlucoseUnit
 import de.dh.raaps.common.model.data.Profile
 import de.dh.raaps.common.ui.composables.WarningBanner
 import de.dh.raaps.common.ui.composables.screenTitle
+import de.dh.raaps.common.ui.targetRange
 import de.dh.raaps.common.ui.theme.AppTheme
 import de.dh.raaps.ui.controls.history.BgHistoryChartOrDefault
 import de.dh.raaps.ui.controls.history.CurrentBgUiState
@@ -49,8 +58,8 @@ import de.dh.raaps.ui.controls.history.HistoryViewModel
 import de.dh.raaps.ui.controls.history.createSampleGoodBgUiState
 import de.dh.raaps.ui.controls.history.rememberBgHistoryChartState
 import de.dh.raaps.ui.controls.profile.CurrentTherapyUiState
-import de.dh.raaps.ui.controls.profile.CurrentTherapyView
 import de.dh.raaps.ui.controls.profile.CurrentTherapyViewModel
+import de.dh.raaps.common.ui.composables.ProfileSelectionDialog
 import de.dh.raaps.ui.screens.history.createSampleHistoryUiState
 import de.dh.raaps.ui.screens.permissions.PermissionStatus
 import de.dh.raaps.ui.screens.permissions.PermissionsUiModel
@@ -176,15 +185,60 @@ fun DashboardContent(
                     )
                 }
 
-                CurrentBgView(
-                    currentBgUiState,
-                    modifier = Modifier.align(Alignment.CenterHorizontally)
-                )
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    CurrentBgView(
+                        currentBgUiState
+                    )
 
-                CurrentTherapyView(
-                    uiState = currentTherapyUiState,
-                    onProfileSelect = onProfileSelect
-                )
+                    var showProfileDialog by remember { mutableStateOf(false) }
+
+                    OutlinedCard(
+                        modifier = Modifier
+                            .weight(1f)
+                            .padding(vertical = 8.dp)
+                            .clickable { showProfileDialog = true }
+                            .padding(8.dp),
+                        colors = CardDefaults.outlinedCardColors(
+                            containerColor = MaterialTheme.colorScheme.surface
+                        ),
+                        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
+                    ) {
+                        Column(modifier = Modifier.padding(12.dp)) {
+                            Text(
+                                text = currentTherapyUiState.profileName,
+                                style = MaterialTheme.typography.titleMedium,
+                                modifier = Modifier.padding(bottom = 4.dp)
+                            )
+
+                            val targetStr = currentTherapyUiState.currentTarget?.let { targetRange(it, currentTherapyUiState.glucoseUnit) } ?: "-"
+                            val unitStr = when(currentTherapyUiState.glucoseUnit) {
+                                GlucoseUnit.MG_DL -> "mg/dL"
+                                GlucoseUnit.MMOL -> "mmol/l"
+                            }
+
+                            Text(
+                                text = "$targetStr $unitStr",
+                                style = MaterialTheme.typography.bodyMedium,
+                                fontWeight = FontWeight.Bold
+                            )
+                        }
+                    }
+
+                    if (showProfileDialog) {
+                        ProfileSelectionDialog(
+                            profiles = currentTherapyUiState.availableProfiles,
+                            activeProfileId = currentTherapyUiState.activeProfileId,
+                            onProfileSelected = {
+                                onProfileSelect(it)
+                                showProfileDialog = false
+                            },
+                            onDismiss = { showProfileDialog = false }
+                        )
+                    }
+                }
 
                 Text(
                     text = stringResource(R.string.dashboard_glucose_title),
