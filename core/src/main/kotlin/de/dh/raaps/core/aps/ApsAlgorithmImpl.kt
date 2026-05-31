@@ -103,7 +103,7 @@ class ApsAlgorithmImpl(
         val continueCalculations = predictionModel.calculatePredictionStates_2_3_4(currentBgFiltered, avgCurrentDeviation, therapyModel)
 
         if (!continueCalculations) {
-            // Predictions have not changed from the previous ones, just keep all decisions already made.
+            // Base values didn't change and predictions came true, just keep all decisions already made.
             return
         }
 

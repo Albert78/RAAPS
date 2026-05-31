@@ -78,7 +78,8 @@ class PredictionModel(
     ): Boolean {
         var bg = currentBG
         var deviation = avgCurrentDeviation
-        var continueCalculations = false
+        var calculateFutherStepsNecessary = false
+        val timestampIn30Minutes = Timestamp.now().plusMinutes(30)
         forEachS(from = timeline.getNowTick() + 1, to = getLastTick()) { tick, state ->
             val timestamp = timeline.timestamp(tick)
             val isf = therapyModel.getIsfFactor(timestamp)
@@ -95,19 +96,22 @@ class PredictionModel(
 
                 state.bgi = bgi
 
-                continueCalculations = true
+                calculateFutherStepsNecessary = true
             }
 
             // Ease out the deviation
             deviation *= DEVIATION_DECAY_FACTOR_PER_TICK
 
+            val isInNext30Minutes = timestamp <= timestampIn30Minutes
             bg = bg + state.bgi + deviation
-            if (bg != state.predictedBg1) {
-                state.predictedBg1 = bg
-                continueCalculations = true
+            if (isInNext30Minutes && (bg - state.predictedBg1).abs > MAX_BG_DEVIATION_FOR_KEEP_PREDICTION) {
+                // If the new situation shows a significant BG deviation from the predicted BG in the
+                // near future, recalculation is necessary
+                calculateFutherStepsNecessary = true
             }
+            state.predictedBg1 = bg
         }
-        return continueCalculations
+        return calculateFutherStepsNecessary
     }
 
     /**

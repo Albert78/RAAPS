@@ -1,5 +1,6 @@
 package de.dh.raaps.core.aps
 
+import de.dh.raaps.common.model.data.BgDelta
 import de.dh.raaps.common.model.data.Minutes
 
 /**
@@ -13,3 +14,5 @@ val RECENT_BG_THRESHOLD = Minutes(1)
  * Maximum timespan a BG reading is allowed to be in the future from "now", else we'll reject the reading.
  */
 val EARLY_BG_GUARD = Minutes(1)
+
+val MAX_BG_DEVIATION_FOR_KEEP_PREDICTION = BgDelta(10)
