@@ -9,7 +9,7 @@ import de.dh.raaps.common.model.data.BgSampleKind
 import de.dh.raaps.common.model.data.Minutes
 import de.dh.raaps.common.model.data.SensorType
 import de.dh.raaps.common.model.data.Timestamp
-import de.dh.raaps.core.pump.ApsPumpModel
+import de.dh.raaps.core.pump.PumpCoordinator
 import de.dh.raaps.core.repository.DataRepository
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
@@ -76,7 +76,7 @@ class Core(
     private val appPreferencesRepository: AppPreferencesRepository,
     val metabolicEventsModel: MetabolicEventsModel,
     val therapyModel: TherapyModel,
-    val pumpModel: ApsPumpModel,
+    val pumpModel: PumpCoordinator,
     private val onDataUpdated: () -> Unit,
     private val onCoreStateChanged: () -> Unit,
     private val onAcquireBusyState: () -> Unit,
@@ -255,7 +255,7 @@ class Core(
                 dataRepository,
                 appPreferencesRepository
             )
-            val pumpModel = ApsPumpModel.create(dataRepository, appPreferencesRepository)
+            val pumpModel = PumpCoordinator.create(dataRepository, appPreferencesRepository, metabolicEventsModel)
             return Core(
                 dataRepository = dataRepository,
                 appPreferencesRepository = appPreferencesRepository,
