@@ -11,7 +11,6 @@ import de.dh.raaps.common.model.data.SensorType
 import de.dh.raaps.common.model.data.Timestamp
 import de.dh.raaps.core.pump.PumpCoordinator
 import de.dh.raaps.core.repository.GlucoseRepository
-import de.dh.raaps.core.repository.TherapyRepository
 import de.dh.raaps.core.repository.TreatmentRepository
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
@@ -74,12 +73,11 @@ enum class CoreState {
  * The surrounding app is responsible for acquiring a wake lock.
  */
 class Core(
-    private val glucoseRepository: GlucoseRepository,
-    private val therapyRepository: TherapyRepository,
-    val treatmentRepository: TreatmentRepository,
-    private val appPreferencesRepository: AppPreferencesRepository,
     val therapyManager: TherapyManager,
     val pumpCoordinator: PumpCoordinator,
+    private val glucoseRepository: GlucoseRepository,
+    val treatmentRepository: TreatmentRepository,
+    private val appPreferencesRepository: AppPreferencesRepository,
     private val onDataUpdated: () -> Unit,
     private val onCoreStateChanged: () -> Unit,
     private val onAcquireBusyState: () -> Unit,
@@ -244,23 +242,18 @@ class Core(
         val TICK_INTERVAL = Minutes(TICK_INTERVAL_MINUTES)
 
         fun createProductiveCore(
+            pumpCoordinator: PumpCoordinator,
+            therapyManager: TherapyManager,
             glucoseRepository: GlucoseRepository,
-            therapyRepository: TherapyRepository,
             treatmentRepository: TreatmentRepository,
             appPreferencesRepository: AppPreferencesRepository,
             onDataUpdated: () -> Unit,
             onCoreStateChanged: () -> Unit,
             onAcquireBusyState: () -> Unit,
-            onReleaseBusyState: () -> Unit
+            onReleaseBusyState: () -> Unit,
         ): Core {
-            val therapyManager = TherapyManager(
-                therapyRepository,
-                appPreferencesRepository
-            )
-            val pumpCoordinator = PumpCoordinator.create(treatmentRepository)
             return Core(
                 glucoseRepository = glucoseRepository,
-                therapyRepository = therapyRepository,
                 treatmentRepository = treatmentRepository,
                 appPreferencesRepository = appPreferencesRepository,
                 therapyManager = therapyManager,

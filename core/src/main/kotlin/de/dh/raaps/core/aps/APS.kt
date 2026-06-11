@@ -1,5 +1,6 @@
 package de.dh.raaps.core.aps
 
+import android.app.AlarmManager
 import android.content.Context
 import android.os.PowerManager
 import de.dh.raaps.AppPreferencesRepository
@@ -46,10 +47,24 @@ class APS(
     private val powerManager = context.getSystemService(Context.POWER_SERVICE) as PowerManager
     private val wakeLock = powerManager.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, "raaps:ApsCoreLock")
 
+    private val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
+
+    val pumpCoordinator = PumpCoordinator.create(
+        treatmentRepository = treatmentRepository,
+        onAcquireBusyState = { acquireBusyState() },
+        onReleaseBusyState = { releaseBusyState() },
+        onRequestWakeup = { timestamp -> requestPumpCoordinatorWakeup(timestamp) }
+    )
+    val therapyManager = TherapyManager(
+        therapyRepository,
+        appPreferencesRepository
+    )
+
     // Computation Core: Pure logic and state, completely thread-agnostic
     private val core: Core = Core.createProductiveCore(
+        pumpCoordinator = pumpCoordinator,
+        therapyManager = therapyManager,
         glucoseRepository = glucoseRepository,
-        therapyRepository = therapyRepository,
         treatmentRepository = treatmentRepository,
         appPreferencesRepository = appPreferencesRepository,
         onDataUpdated = { emitDataUpdateEvent() },
@@ -57,9 +72,6 @@ class APS(
         onAcquireBusyState = { acquireBusyState() },
         onReleaseBusyState = { releaseBusyState() }
     )
-
-    val therapyManager: TherapyManager get() = core.therapyManager
-    val pumpModel: PumpCoordinator get() = core.pumpCoordinator
 
     // Plugins & Active Jobs
     private var glucoseJob: Job? = null
@@ -71,14 +83,12 @@ class APS(
             restartGlucosePipeline()
         }
 
-    private var pumpJob: Job? = null
     var insulinPump: InsulinPump? = null
         set(value) {
             field?.stop()
             field = value
             field?.start()
-            pumpModel.pumpDriver = value
-            // TODO: restart calculation or subscription for pump
+            pumpCoordinator.pumpDriver = value
         }
 
     // Observers: Exposed from the internal core
@@ -176,6 +186,11 @@ class APS(
      */
     fun updateBg(bg: BgReading) = inAPSThread {
         core.updateBg(bg)
+    }
+
+    fun requestPumpCoordinatorWakeup(timestamp: Timestamp) {
+        _TODO()
+        // TODO: Trigger alarm manager, route callback to pumpCoordinator.wakeup()
     }
 
     /**

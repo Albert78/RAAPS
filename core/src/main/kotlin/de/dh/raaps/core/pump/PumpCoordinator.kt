@@ -15,7 +15,6 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
-import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import java.util.UUID
 
@@ -61,11 +60,12 @@ data class PumpCapabilities(
     val minBasalIncrement: Double,
     val minBolusIncrement: Double,
     val maxBolusSize: Double,
-    val supportsTempBasal: Boolean,
-    val supportsExtendedBolus: Boolean,
-    val audibleTempBasalReminder: Boolean,
-    val deliversBasalWhileBolusing: Boolean,
-    val internalTimeManagement: Boolean
+    // TODO: Continue list for sensible capability values
+//    val supportsTempBasal: Boolean,
+//    val supportsExtendedBolus: Boolean,
+//    val audibleTempBasalReminder: Boolean,
+//    val deliversBasalWhileBolusing: Boolean,
+//    val internalTimeManagement: Boolean
 )
 
 /**
@@ -73,7 +73,7 @@ data class PumpCapabilities(
  */
 data class PumpState(
     val lastConnectionTime: Long = 0,
-    val reservoirLevel: InsulinAmount = InsulinAmount.ZERO,
+    val reservoirLevel: InsulinAmount? = null,
     val batteryLevel: Int? = null,
     val isConnected: Boolean = false
 )
@@ -85,7 +85,10 @@ data class PumpState(
  */
 class PumpCoordinator(
     private val treatmentRepository: TreatmentRepository,
-    private val scope: CoroutineScope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
+    private val onAcquireBusyState: () -> Unit,
+    private val onReleaseBusyState: () -> Unit,
+    private val onRequestWakeup: (Timestamp) -> Unit,
+    private val scope: CoroutineScope = CoroutineScope(SupervisorJob() + Dispatchers.Default),
 ) {
     var pumpDriver: InsulinPump? = null
 
@@ -98,10 +101,6 @@ class PumpCoordinator(
     // Provided by the driver during initialization
     var pumpInformation: PumpInformation? = null
     var pumpCapabilities: PumpCapabilities? = null
-
-    init {
-        startSyncLoop()
-    }
 
     /**
      * Issues a new command to the pump.
@@ -121,7 +120,6 @@ class PumpCoordinator(
         )
 
         _pendingJobs.update { it + job }
-        // TODO: Persist job via repository if needed across app restarts
     }
 
     /**
@@ -131,59 +129,80 @@ class PumpCoordinator(
         _pendingJobs.update { it.filterNot(predicate) }
     }
 
-    private fun startSyncLoop() {
+    internal fun wakeup() {
+        handleJobs()
+    }
+
+    enum class JobResult {
+        Success,
+        NoJob,
+        ConfigurationError,
+        JobException
+    }
+
+    fun handleJobs() {
         scope.launch {
-            while (isActive) {
-                if (_pendingJobs.value.isNotEmpty()) {
-                    processNextJob()
+            onAcquireBusyState()
+            try {
+                while (_pendingJobs.value.isNotEmpty()) {
+                    val jobResult = processNextJob()
+                    if (jobResult == JobResult.ConfigurationError) {
+                        _TODO()
+                        // TODO: Notify user
+                        break
+                    }
+                    if (jobResult == JobResult.JobException) {
+                        _TODO()
+                        // TODO: Try 2 more times, then try again 2 more times, 5 minutes apart (3 tries each), and then report the error
+                        break
+                    }
                 }
                 delay(10000) // Re-check every 10 seconds
+            } finally {
+                onReleaseBusyState()
             }
         }
     }
 
-    private suspend fun processNextJob() {
-        val job = _pendingJobs.value.firstOrNull { it.isReady() } ?: return
+    private suspend fun processNextJob(): JobResult {
+        val job = _pendingJobs.value.firstOrNull { it.isReady() } ?: return JobResult.NoJob
 
         if (job.isExpired()) {
             _pendingJobs.update { it - job }
-            return
+            return JobResult.Success
         }
 
-        val driver = pumpDriver ?: return // No driver, no progress
+        val driver = pumpDriver ?: return JobResult.ConfigurationError // No driver, no progress
 
         try {
             executeOnDriver(driver, job.command)
             handleSuccess(job)
             _pendingJobs.update { it - job }
+            return JobResult.Success
         } catch (e: Exception) {
             _pumpState.update { it.copy(isConnected = false) }
             // Job stays in queue for next attempt
+            return JobResult.JobException
         }
     }
 
     private suspend fun executeOnDriver(driver: InsulinPump, command: PumpCommand) {
-        // Translation layer to the specific driver interface
+        // Translation layer to the driver interface
         when (command) {
             is PumpCommand.DeliverBolus -> {
-                // driver.deliverBolus(command.amount)
-                ToDo.toBeImplemented("driver.deliverBolus")
+                driver.deliverBolus(command.amount)
             }
             is PumpCommand.SetTempBasal -> {
-                // driver.setTempBasal(command.unitsPerHour, command.durationMinutes)
-                ToDo.toBeImplemented("driver.setTempBasal")
+                driver.setTempBasal(command.unitsPerHour, command.durationMinutes)
             }
             is PumpCommand.SetProfile -> {
-                // driver.setProfile(command.profile)
-                ToDo.toBeImplemented("driver.setProfile")
+                driver.setProfile(command.profile)
             }
             is PumpCommand.CancelTempBasal -> {
-                // driver.cancelTempBasal()
-                ToDo.toBeImplemented("driver.cancelTempBasal")
+                driver.cancelTempBasal()
             }
             is PumpCommand.CancelBolus -> {
-                // driver.cancelBolus()
-                ToDo.toBeImplemented("driver.cancelBolus")
+                driver.cancelBolus()
             }
         }
     }
@@ -204,9 +223,17 @@ class PumpCoordinator(
 
     companion object {
         fun create(
-            treatmentRepository: TreatmentRepository
+            treatmentRepository: TreatmentRepository,
+            onAcquireBusyState: () -> Unit,
+            onReleaseBusyState: () -> Unit,
+            onRequestWakeup: (timestamp: Timestamp) -> Unit
         ): PumpCoordinator {
-            return PumpCoordinator(treatmentRepository)
+            return PumpCoordinator(
+                treatmentRepository = treatmentRepository,
+                onAcquireBusyState = onAcquireBusyState,
+                onReleaseBusyState = onReleaseBusyState,
+                onRequestWakeup = onRequestWakeup
+            )
         }
     }
 }
