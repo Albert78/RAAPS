@@ -1,7 +1,9 @@
 package de.dh.raaps.core.repository
 
 import de.dh.raaps.common.model.InsulinApplication
+import de.dh.raaps.common.model.InsulinType
 import de.dh.raaps.common.model.MealEntry
+import de.dh.raaps.common.model.MealType
 import de.dh.raaps.common.model.data.Minutes
 import de.dh.raaps.common.model.data.Timestamp
 import de.dh.raaps.core.repository.db.AppDatabase
@@ -23,6 +25,8 @@ class TreatmentRepository(
 
     var mealsHistory: NavigableMap<Timestamp, MutableList<MealEntry>> = TreeMap()
     var insulinApplicationsHistory: NavigableMap<Timestamp, MutableList<InsulinApplication>> = TreeMap()
+    var mealTypes: List<MealType> = emptyList()
+    var insulinTypes: List<InsulinType> = emptyList()
 
     fun historyStart(): Timestamp = Timestamp.now().minus(historySize)
 
@@ -32,20 +36,26 @@ class TreatmentRepository(
     suspend fun load() {
         val historyStart = Timestamp.now() - historySize
 
+        // Load Meal Types
+        mealTypes = metabolicEventsDao.getAllMealTypes().map { it.toModel() }
+        val mealTypesMap = mealTypes.associateBy { it.id }
+
         // Load Meals
         val mealEntities = metabolicEventsDao.getMealsInRange(historyStart.ms, Long.MAX_VALUE)
-        val mealTypes = metabolicEventsDao.getAllMealTypes().associateBy { it.id }
         mealsHistory = mealEntities.mapNotNull { entity ->
-            val typeEntity = mealTypes[entity.meal_type_id]
-            typeEntity?.let { entity.toModel(it.toModel()) }
+            val type = mealTypesMap[entity.meal_type_id]
+            type?.let { entity.toModel(it) }
         }.groupByTo(TreeMap()) { it.timestamp }
+
+        // Load Insulin Types
+        insulinTypes = metabolicEventsDao.getAllInsulinTypes().map { it.toModel() }
+        val insulinTypesMap = insulinTypes.associateBy { it.id }
 
         // Load Insulin Applications
         val insulinEntities = metabolicEventsDao.getInsulinApplicationsInRange(historyStart.ms, Long.MAX_VALUE)
-        val insulinTypes = metabolicEventsDao.getAllInsulinTypes().associateBy { it.id }
         insulinApplicationsHistory = insulinEntities.mapNotNull { entity ->
-            val typeEntity = insulinTypes[entity.insulin_type_id]
-            typeEntity?.let { entity.toModel(it.toModel()) }
+            val type = insulinTypesMap[entity.insulin_type_id]
+            type?.let { entity.toModel(it) }
         }.groupByTo(TreeMap()) { it.timestamp }
     }
 
@@ -126,29 +136,33 @@ class TreatmentRepository(
 
     // --- Meal Types ---
 
-    suspend fun getAllMealTypes(): List<de.dh.raaps.common.model.MealType> {
-        return metabolicEventsDao.getAllMealTypes().map { it.toModel() }
+    fun getAllMealTypes(): List<MealType> {
+        return mealTypes
     }
 
-    suspend fun insertMealType(mealType: de.dh.raaps.common.model.MealType) {
+    suspend fun insertMealType(mealType: MealType) {
         metabolicEventsDao.insertMealType(mealType.toEntity())
+        mealTypes = (mealTypes.filter { it.id != mealType.id } + mealType).sortedBy { it.name }
     }
 
-    suspend fun deleteMealType(mealType: de.dh.raaps.common.model.MealType) {
+    suspend fun deleteMealType(mealType: MealType) {
         metabolicEventsDao.deleteMealType(mealType.id)
+        mealTypes = mealTypes.filter { it.id != mealType.id }
     }
 
     // --- Insulin Types ---
 
-    suspend fun getAllInsulinTypes(): List<de.dh.raaps.common.model.InsulinType> {
-        return metabolicEventsDao.getAllInsulinTypes().map { it.toModel() }
+    fun getAllInsulinTypes(): List<InsulinType> {
+        return insulinTypes
     }
 
-    suspend fun insertInsulinType(insulinType: de.dh.raaps.common.model.InsulinType) {
+    suspend fun insertInsulinType(insulinType: InsulinType) {
         metabolicEventsDao.insertInsulinType(insulinType.toEntity())
+        insulinTypes = (insulinTypes.filter { it.id != insulinType.id } + insulinType).sortedBy { it.name }
     }
 
-    suspend fun deleteInsulinType(insulinType: de.dh.raaps.common.model.InsulinType) {
+    suspend fun deleteInsulinType(insulinType: InsulinType) {
         metabolicEventsDao.deleteInsulinType(insulinType.id)
+        insulinTypes = insulinTypes.filter { it.id != insulinType.id }
     }
 }
