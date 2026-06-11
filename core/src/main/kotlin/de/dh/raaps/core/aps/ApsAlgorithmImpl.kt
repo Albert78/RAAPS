@@ -11,16 +11,17 @@ import de.dh.raaps.common.model.data.Timestamp
 import de.dh.raaps.common.model.data.times
 import de.dh.raaps.core.pump.PumpCommand
 import de.dh.raaps.core.pump.PumpCoordinator
+import de.dh.raaps.core.repository.TreatmentRepository
 
 // TODO: Document the models needed for calculation, document calculation algorithm
 class ApsAlgorithmImpl(
     val timeline: ApsTimeline,
-    val metabolicEventsModel: MetabolicEventsModel,
+    val treatmentRepository: TreatmentRepository,
     val bgReadingsHistory: RecentBgReadingsHistory,
     val predictionModel: PredictionModel,
     val carbsInsulinCalculationModel: CarbsInsulinCalculationModel,
     val therapyModel: TherapyModel,
-    val pumpModel: PumpCoordinator
+    val pumpCoordinator: PumpCoordinator
 ): ApsAlgorithm {
     val sampledBgReadings =
         SampledBgReadings(timeline, bgReadingsHistory)
@@ -107,7 +108,7 @@ class ApsAlgorithmImpl(
             return
         }
 
-        pumpModel.cancelJobs()
+        pumpCoordinator.cancelJobs()
         predictionModel.clearTempBasalsStage_5()
 
         val targetBgRange = therapyModel.getTarget()
@@ -133,7 +134,7 @@ class ApsAlgorithmImpl(
                     minus(insulinPeakTicks * 2),
                 now
             )
-            pumpModel.issueCommand(
+            pumpCoordinator.issueCommand(
                 PumpCommand.SetTempBasal(
                     unitsPerHour = 0.0,
                     durationMinutes = Minutes.timeDifference(startZeroTemp.timestamp, nextMin.tick.timestamp)
@@ -217,11 +218,11 @@ class ApsAlgorithmImpl(
                         insulinUnits -= bgError / state.isf
                     }
                 }
-                pumpModel.issueCommand(
+                pumpCoordinator.issueCommand(
                     PumpCommand.DeliverBolus(InsulinAmount(insulinUnits)),
                     executeAfter = insulinTick.timestamp
                 )
-                predictionModel.calculatePredictionStage_1(metabolicEventsModel, carbsInsulinCalculationModel)
+                predictionModel.calculatePredictionStage_1(treatmentRepository, carbsInsulinCalculationModel)
             }
         }
     }
@@ -236,10 +237,10 @@ class ApsAlgorithmImpl(
         val MIN_BG_SAFETY_MARGIN = BgDelta(10)
 
         suspend fun create(
-            metabolicEventsModel: MetabolicEventsModel,
+            treatmentRepository: TreatmentRepository,
             readingsHistory: List<BgReading>,
             therapyModel: TherapyModel,
-            pumpModel: PumpCoordinator,
+            pumpCoordinator: PumpCoordinator,
             tickInterval: Minutes
         ): ApsAlgorithm {
             val timeline = ApsTimeline(tickInterval)
@@ -251,7 +252,7 @@ class ApsAlgorithmImpl(
             val carbsInsulinCalculationModel =
                 CarbsInsulinCalculationModel(tickInterval)
             predictionModel.calculatePredictionStage_1(
-                metabolicEventsModel,
+                treatmentRepository,
                 carbsInsulinCalculationModel
             )
             val bgReadingsHistory =
@@ -261,12 +262,12 @@ class ApsAlgorithmImpl(
             bgReadingsHistory.setAll(readingsHistory)
             return ApsAlgorithmImpl(
                 timeline = timeline,
-                metabolicEventsModel = metabolicEventsModel,
+                treatmentRepository = treatmentRepository,
                 bgReadingsHistory = bgReadingsHistory,
                 predictionModel = predictionModel,
-                carbsInsulinCalculationModel,
-                therapyModel,
-                pumpModel
+                carbsInsulinCalculationModel = carbsInsulinCalculationModel,
+                therapyModel = therapyModel,
+                pumpCoordinator = pumpCoordinator
             )
         }
     }

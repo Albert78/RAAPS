@@ -7,28 +7,28 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.CreationExtras
 import de.dh.raaps.MainApplication
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
 data class DashboardUiState(
-    val isLoading: Boolean,
-    val isError: Boolean,
+    val isLoading: Boolean = false,
+    val isError: Boolean = false
 )
 
 class DashboardViewModel(
     val application: MainApplication
 ) : AndroidViewModel(application) {
-    private val _uiState = MutableStateFlow(DashboardUiState(isLoading = true, isError = false))
-    val uiState = _uiState.asStateFlow()
+    private val _uiState = MutableStateFlow(DashboardUiState())
+    val uiState: StateFlow<DashboardUiState> = _uiState
 
-    private val dataRepository = application.dataRepository
+    private val glucoseRepository = application.glucoseRepository
+    private val treatmentRepository = application.treatmentRepository
 
     init {
-        viewModelScope.launch {
-            reload_suspend()
-        }
+        reload()
     }
 
     fun reload() {
@@ -38,68 +38,27 @@ class DashboardViewModel(
     }
 
     private suspend fun reload_suspend() {
-//        try {
-//            val (escd, nled) = withContext(Dispatchers.IO) {
-//                val esConfigData = repository.getEventSeriesConfig(eventSeriesId)!!
-//                val nled = repository.getNextLastEventsData(eventSeriesId)!!
-//                Pair(esConfigData, nled)
-//            }
-//            // If we had a situation that the next event could be deleted asynchronously from
-//            // outside, we could leave here via sending a "leave" event. Currently not necessary.
-//            esConfigData = escd
-//            lastEventDateTime = nled.lastPastEventData?.dateTime
-//            nextEventDateCalculator = NextEventDateCalculator(escd)
-//            nextSuggestedEventBySchedule = nextEventDateCalculator?.calculateNextEventDate(
-//                lastEventDateTime,
-//                Constants.DEFAULT_TIME_ZONE_ID,
-//                escd.scheduleOnWorkdaysOnly
-//            )
-//
-//            if (resetEditData) {
-//                val ed = savedStateHandle.decodeFromState<NextEventEditData>(KEY_EDIT_DATA) ?: NextEventEditData.createDefault()
-//                ed.merge(nled, escd)
-//                editData = ed
-//            }
-//        } catch (_: Exception) {
-//            esConfigData = null
-//            lastEventDateTime = null
-//            nextEventDateCalculator = null
-//            nextSuggestedEventBySchedule = null
-//            editData = null
-//        }
-        updateUiModel()
-    }
-
-    private fun updateUiModel() {
-//        val ed = editData
-//        val esCD = esConfigData
-//        if (ed == null || esCD == null) {
-//            _uiState.update { DashboardUiState(isLoading = false, isError = true) }
-//            return
-//        }
-        val res = application.resources
-
-        // TODO: Prepare data
-
-        _uiState.update {
-            DashboardUiState(
-                isLoading = false,
-                isError = false,
-            )
+        _uiState.update { it.copy(isLoading = true) }
+        try {
+            // Simulate heavy loading or actual data fetching
+            delay(500)
+            updateUiModel()
+            _uiState.update { it.copy(isLoading = false, isError = false) }
+        } catch (e: Exception) {
+            _uiState.update { it.copy(isLoading = false, isError = true) }
         }
     }
 
+    private fun updateUiModel() {
+        // Logic to update the dashboard based on repository data
+    }
 
     companion object {
-        class Factory(
-            private val application: Application,
-        ) : ViewModelProvider.Factory {
+        class Factory(private val application: Application) : ViewModelProvider.Factory {
             @Suppress("UNCHECKED_CAST")
             override fun <T : ViewModel> create(modelClass: Class<T>, extras: CreationExtras): T {
-                val app = application as MainApplication
-                return DashboardViewModel(app) as T
+                return DashboardViewModel(application as MainApplication) as T
             }
         }
     }
 }
-

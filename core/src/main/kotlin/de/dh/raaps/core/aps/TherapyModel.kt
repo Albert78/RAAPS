@@ -13,18 +13,18 @@ import de.dh.raaps.common.model.data.BgValue
 import de.dh.raaps.common.model.data.Timestamp
 import de.dh.raaps.common.model.data.getAmountForMinute
 import de.dh.raaps.common.model.data.getTargetForMinute
-import de.dh.raaps.core.repository.DataRepository
+import de.dh.raaps.core.repository.TherapyRepository
 
 class TherapyModel(
-    val dataRepository: DataRepository,
-    val appPreferencesRepository: AppPreferencesRepository
+    private val therapyRepository: TherapyRepository,
+    private val appPreferencesRepository: AppPreferencesRepository
 ) {
     /**
      * Gets the planned basal rate at the given timestamp.
      * Unit: Insulin units.
      */
     suspend fun getBasalPerHour(timestamp: Timestamp): Double {
-        val data = dataRepository.getCurrentTherapyData()?.therapyData ?: return DEFAULT_BASAL_UNITS_PER_HOUR
+        val data = therapyRepository.getCurrentTherapyData()?.therapyData ?: return DEFAULT_BASAL_UNITS_PER_HOUR
         return data.basalBlocks.getAmountForMinute(timestamp.minutesSinceMidnight())
     }
 
@@ -34,7 +34,7 @@ class TherapyModel(
      * Unit: Grams of carbs.
      */
     suspend fun getIcFactor(timestamp: Timestamp): Double {
-        val data = dataRepository.getCurrentTherapyData()?.therapyData ?: return DEFAULT_IC_GRAM_PER_UNIT
+        val data = therapyRepository.getCurrentTherapyData()?.therapyData ?: return DEFAULT_IC_GRAM_PER_UNIT
         return data.icBlocks.getAmountForMinute(timestamp.minutesSinceMidnight())
     }
 
@@ -45,7 +45,7 @@ class TherapyModel(
      * Unit: Blood glucose delta.
      */
     suspend fun getIsfFactor(timestamp: Timestamp): BgDelta {
-        val data = dataRepository.getCurrentTherapyData()?.therapyData ?: return BgDelta(
+        val data = therapyRepository.getCurrentTherapyData()?.therapyData ?: return BgDelta(
             DEFAULT_ISF_MGDL_PER_UNIT.toInt().toShort()
         )
         val amount = data.isfBlocks.getAmountForMinute(timestamp.minutesSinceMidnight())
@@ -53,7 +53,7 @@ class TherapyModel(
     }
 
     suspend fun getTarget(): Range<BgValue> {
-        val data = dataRepository.getCurrentTherapyData()?.therapyData
+        val data = therapyRepository.getCurrentTherapyData()?.therapyData
             ?: return Range(
                 BgValue.fromMgDl(DEFAULT_TARGET_LOW_MGDL),
                 BgValue.fromMgDl(DEFAULT_TARGET_HIGH_MGDL)
@@ -64,12 +64,12 @@ class TherapyModel(
     }
 
     suspend fun getPumpInsulinType(): InsulinType {
-        val currentData = dataRepository.getCurrentTherapyData()
+        val currentData = therapyRepository.getCurrentTherapyData()
         if (currentData != null) {
             return currentData.insulinType
         }
 
-        return dataRepository.getAllInsulinTypes().firstOrNull()
+        return therapyRepository.getAllInsulinTypes().firstOrNull()
             ?: throw IllegalStateException("No insulin type configured for insulin pump")
     }
 }

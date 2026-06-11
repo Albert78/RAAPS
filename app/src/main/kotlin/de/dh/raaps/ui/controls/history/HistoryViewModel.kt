@@ -100,7 +100,7 @@ class HistoryViewModel(
     val historyUiState = _historyUiState.asStateFlow()
 
     private val aps: APS = application.aps
-    private val dataRepository = application.dataRepository
+    private val glucoseRepository = application.glucoseRepository
 
     init {
         viewModelScope.launch {
@@ -122,7 +122,7 @@ class HistoryViewModel(
     private suspend fun reload_suspend() {
         // Load history for the last 25 hours
         val historyLimit = Timestamp.now().minusHours(25)
-        val readings = dataRepository.loadBgReadings(from = historyLimit)
+        val readings = glucoseRepository.loadBgReadings(from = historyLimit)
         updateUiModel(readings)
     }
 

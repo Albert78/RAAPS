@@ -1,14 +1,12 @@
 package de.dh.raaps.core.pump
 
-import de.dh.raaps.AppPreferencesRepository
 import de.dh.raaps.common.model.InsulinAmount
 import de.dh.raaps.common.model.InsulinPump
 import de.dh.raaps.common.model.ToDo
 import de.dh.raaps.common.model.data.Minutes
 import de.dh.raaps.common.model.data.TherapyData
 import de.dh.raaps.common.model.data.Timestamp
-import de.dh.raaps.core.aps.MetabolicEventsModel
-import de.dh.raaps.core.repository.DataRepository
+import de.dh.raaps.core.repository.TreatmentRepository
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -86,9 +84,7 @@ data class PumpState(
  * It ensures that commands from the APS core are eventually executed or invalidated.
  */
 class PumpCoordinator(
-    private val dataRepository: DataRepository,
-    private val appPreferencesRepository: AppPreferencesRepository,
-    private val metabolicEventsModel: MetabolicEventsModel,
+    private val treatmentRepository: TreatmentRepository,
     private val scope: CoroutineScope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
 ) {
     var pumpDriver: InsulinPump? = null
@@ -125,7 +121,7 @@ class PumpCoordinator(
         )
 
         _pendingJobs.update { it + job }
-        // TODO: Persist job via dataRepository if needed across app restarts
+        // TODO: Persist job via repository if needed across app restarts
     }
 
     /**
@@ -197,8 +193,8 @@ class PumpCoordinator(
 
         when (val cmd = job.command) {
             is PumpCommand.DeliverBolus -> {
-                // metabolicEventsModel.addInsulinApplication(...)
-                ToDo.toBeImplemented("Record successful bolus in MetabolicEventsModel")
+                // treatmentRepository.addInsulinApplication(...)
+                ToDo.toBeImplemented("Record successful bolus in TreatmentRepository")
             }
             else -> {
                 // Log other successes
@@ -208,11 +204,9 @@ class PumpCoordinator(
 
     companion object {
         fun create(
-            dataRepository: DataRepository,
-            appPreferencesRepository: AppPreferencesRepository,
-            metabolicEventsModel: MetabolicEventsModel
+            treatmentRepository: TreatmentRepository
         ): PumpCoordinator {
-            return PumpCoordinator(dataRepository, appPreferencesRepository, metabolicEventsModel)
+            return PumpCoordinator(treatmentRepository)
         }
     }
 }

@@ -10,7 +10,9 @@ import de.dh.raaps.common.model.data.Minutes
 import de.dh.raaps.common.model.data.SensorType
 import de.dh.raaps.common.model.data.Timestamp
 import de.dh.raaps.core.pump.PumpCoordinator
-import de.dh.raaps.core.repository.DataRepository
+import de.dh.raaps.core.repository.GlucoseRepository
+import de.dh.raaps.core.repository.TherapyRepository
+import de.dh.raaps.core.repository.TreatmentRepository
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlin.math.abs
@@ -72,11 +74,12 @@ enum class CoreState {
  * The surrounding app is responsible for acquiring a wake lock.
  */
 class Core(
-    private val dataRepository: DataRepository,
+    private val glucoseRepository: GlucoseRepository,
+    private val therapyRepository: TherapyRepository,
+    val treatmentRepository: TreatmentRepository,
     private val appPreferencesRepository: AppPreferencesRepository,
-    val metabolicEventsModel: MetabolicEventsModel,
     val therapyModel: TherapyModel,
-    val pumpModel: PumpCoordinator,
+    val pumpCoordinator: PumpCoordinator,
     private val onDataUpdated: () -> Unit,
     private val onCoreStateChanged: () -> Unit,
     private val onAcquireBusyState: () -> Unit,
@@ -141,23 +144,23 @@ class Core(
                 Log.d(TAG, "Initializing...")
                 setCoreState(CoreState.Initializing)
 
-                metabolicEventsModel.load()
+                treatmentRepository.load()
 
                 // Not so nice, in fact, the readings history is part of the ApsAlgorithmImpl and should
                 // be built there. But for the moment, I want to keep ApsAlgorithmImpl free of dataRepository,
                 // lets see if we change that in the future.
-                val readingsHistory = dataRepository.loadBgReadings(from = Timestamp.now().minus(
+                val readingsHistory = glucoseRepository.loadBgReadings(from = Timestamp.now().minus(
                     ApsAlgorithmImpl.DEVIATION_TIME_BASE))
 
                 currentBg = readingsHistory.lastOrNull()
                 lastBg = if (readingsHistory.size >= 2) readingsHistory[readingsHistory.size - 2] else null
 
                 calculationAlgorithm = ApsAlgorithmImpl.create(
-                    metabolicEventsModel,
+                    treatmentRepository,
                     readingsHistory,
                     therapyModel,
-                    pumpModel,
-                    TICK_INTERVAL
+                    pumpCoordinator = pumpCoordinator,
+                    tickInterval = TICK_INTERVAL
                 )
                 onDataUpdated()
 
@@ -185,7 +188,7 @@ class Core(
 
         // Persist values
         val persistedValues = plugin.getValues()
-            .persist(dataRepository, dataProvider, sensorType)
+            .persist(glucoseRepository, dataProvider, sensorType)
 
         // Collect for core calculation
         persistedValues
@@ -240,28 +243,27 @@ class Core(
         val TICK_INTERVAL = Minutes(TICK_INTERVAL_MINUTES)
 
         fun createProductiveCore(
-            dataRepository: DataRepository,
+            glucoseRepository: GlucoseRepository,
+            therapyRepository: TherapyRepository,
+            treatmentRepository: TreatmentRepository,
             appPreferencesRepository: AppPreferencesRepository,
             onDataUpdated: () -> Unit,
             onCoreStateChanged: () -> Unit,
             onAcquireBusyState: () -> Unit,
             onReleaseBusyState: () -> Unit
         ): Core {
-            val metabolicEventsModel =
-                MetabolicEventsModel(
-                    Minutes.ofHours(METABOLIC_EVENTS_HISTORY_HOURS), dataRepository
-                )
             val therapyModel = TherapyModel(
-                dataRepository,
+                therapyRepository,
                 appPreferencesRepository
             )
-            val pumpModel = PumpCoordinator.create(dataRepository, appPreferencesRepository, metabolicEventsModel)
+            val pumpCoordinator = PumpCoordinator.create(treatmentRepository)
             return Core(
-                dataRepository = dataRepository,
+                glucoseRepository = glucoseRepository,
+                therapyRepository = therapyRepository,
+                treatmentRepository = treatmentRepository,
                 appPreferencesRepository = appPreferencesRepository,
-                metabolicEventsModel = metabolicEventsModel,
                 therapyModel = therapyModel,
-                pumpModel = pumpModel,
+                pumpCoordinator = pumpCoordinator,
                 onDataUpdated = onDataUpdated,
                 onCoreStateChanged = onCoreStateChanged,
                 onAcquireBusyState = onAcquireBusyState,

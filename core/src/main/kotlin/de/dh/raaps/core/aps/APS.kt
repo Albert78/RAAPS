@@ -8,7 +8,9 @@ import de.dh.raaps.common.model.InsulinPump
 import de.dh.raaps.common.model.data.BgReading
 import de.dh.raaps.common.model.data.Timestamp
 import de.dh.raaps.core.pump.PumpCoordinator
-import de.dh.raaps.core.repository.DataRepository
+import de.dh.raaps.core.repository.GlucoseRepository
+import de.dh.raaps.core.repository.TherapyRepository
+import de.dh.raaps.core.repository.TreatmentRepository
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -28,7 +30,9 @@ import java.util.concurrent.atomic.AtomicInteger
  * on a single background thread.
  */
 class APS(
-    val dataRepository: DataRepository,
+    val glucoseRepository: GlucoseRepository,
+    val therapyRepository: TherapyRepository,
+    val treatmentRepository: TreatmentRepository,
     val appPreferencesRepository: AppPreferencesRepository,
     val context: Context
 ) {
@@ -44,7 +48,9 @@ class APS(
 
     // Computation Core: Pure logic and state, completely thread-agnostic
     private val core: Core = Core.createProductiveCore(
-        dataRepository = dataRepository,
+        glucoseRepository = glucoseRepository,
+        therapyRepository = therapyRepository,
+        treatmentRepository = treatmentRepository,
         appPreferencesRepository = appPreferencesRepository,
         onDataUpdated = { emitDataUpdateEvent() },
         onCoreStateChanged = { emitCoreStateChangedEvent() },
@@ -53,8 +59,7 @@ class APS(
     )
 
     val therapyModel: TherapyModel get() = core.therapyModel
-    val metabolicEventsModel: MetabolicEventsModel get() = core.metabolicEventsModel
-    val pumpModel: PumpCoordinator get() = core.pumpModel
+    val pumpModel: PumpCoordinator get() = core.pumpCoordinator
 
     // Plugins & Active Jobs
     private var glucoseJob: Job? = null
@@ -151,9 +156,9 @@ class APS(
     }
 
     private suspend fun installGlucosePipeline_ApsThread(plugin: GlucoseSource) {
-        val sensorType = dataRepository.getOrCreateSensorTypeByName(plugin.getSensorTypeName())
+        val sensorType = glucoseRepository.getOrCreateSensorTypeByName(plugin.getSensorTypeName())
         val dataProvider =
-            dataRepository.getOrCreateDataProviderByName(plugin.name, plugin.dataProviderType)
+            glucoseRepository.getOrCreateDataProviderByName(plugin.name, plugin.dataProviderType)
         core.installGlucosePipeline(plugin, dataProvider, sensorType)
     }
 

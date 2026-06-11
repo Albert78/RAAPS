@@ -5,9 +5,13 @@ import android.app.ForegroundServiceStartNotAllowedException
 import android.content.Intent
 import androidx.core.content.ContextCompat
 import de.dh.raaps.common.model.PluginManager
+import de.dh.raaps.common.model.data.Minutes
 import de.dh.raaps.core.aps.APS
-import de.dh.raaps.core.repository.DataRepository
+import de.dh.raaps.core.aps.Core
 import de.dh.raaps.core.repository.DatabaseInitializer
+import de.dh.raaps.core.repository.GlucoseRepository
+import de.dh.raaps.core.repository.TherapyRepository
+import de.dh.raaps.core.repository.TreatmentRepository
 import de.dh.raaps.core.repository.db.AppDatabase
 import de.dh.raaps.notifications.ApsNotificationData
 import de.dh.raaps.notifications.ApsNotificationManager
@@ -30,7 +34,11 @@ class MainApplication : Application() {
         private set
     lateinit var pluginManager: PluginManager
         private set
-    lateinit var dataRepository: DataRepository
+    lateinit var glucoseRepository: GlucoseRepository
+        private set
+    lateinit var therapyRepository: TherapyRepository
+        private set
+    lateinit var treatmentRepository: TreatmentRepository
         private set
     lateinit var aps: APS
         private set
@@ -47,15 +55,24 @@ class MainApplication : Application() {
         notificationManager = ApsNotificationManager(this)
         appPreferencesRepository = AppPreferencesRepository(context = this, scope = applicationScope)
         val appDatabase = AppDatabase.getInstance(this)
-        dataRepository = DataRepository(appDatabase)
+
+        glucoseRepository = GlucoseRepository(appDatabase)
+        therapyRepository = TherapyRepository(appDatabase)
+        treatmentRepository = TreatmentRepository(
+            historySize = Minutes.ofHours(Core.METABOLIC_EVENTS_HISTORY_HOURS),
+            appDatabase = appDatabase
+        )
 
         runBlocking {
-            DatabaseInitializer.initialize(this@MainApplication, dataRepository)
+            DatabaseInitializer.initialize(
+                context = this@MainApplication,
+                treatmentRepository = treatmentRepository,
+                therapyRepository = therapyRepository)
         }
 
         startApsService()
 
-        aps = APS(dataRepository, appPreferencesRepository, this)
+        aps = APS(glucoseRepository, therapyRepository, treatmentRepository, appPreferencesRepository, this)
         aps.startInitialization()
 
         pluginManager = PluginManagerImpl(this)

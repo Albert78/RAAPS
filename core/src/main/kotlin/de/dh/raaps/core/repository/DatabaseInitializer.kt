@@ -26,13 +26,13 @@ import de.dh.raaps.common.model.data.TargetBlock
 import de.dh.raaps.common.model.data.TherapyData
 
 object DatabaseInitializer {
-    suspend fun initialize(context: Context, repository: DataRepository) {
-        initializeInsulinTypes(context, repository)
-        initializeMealTypes(context, repository)
-        initializeDefaultProfileAndCurrentTherapy(context, repository)
+    suspend fun initialize(context: Context, treatmentRepository: TreatmentRepository, therapyRepository: TherapyRepository) {
+        initializeInsulinTypes(context, treatmentRepository)
+        initializeMealTypes(context, treatmentRepository)
+        initializeDefaultProfileAndCurrentTherapy(context, therapyRepository)
     }
 
-    private suspend fun initializeInsulinTypes(context: Context, repository: DataRepository) {
+    private suspend fun initializeInsulinTypes(context: Context, repository: TreatmentRepository) {
         if (repository.getAllInsulinTypes().isNotEmpty()) {
             return
         }
@@ -54,7 +54,7 @@ object DatabaseInitializer {
         )
     }
 
-    private suspend fun initializeMealTypes(context: Context, repository: DataRepository) {
+    private suspend fun initializeMealTypes(context: Context, repository: TreatmentRepository) {
         if (repository.getAllMealTypes().isNotEmpty()) {
             return
         }
@@ -103,7 +103,7 @@ object DatabaseInitializer {
         )
     }
 
-    private suspend fun initializeDefaultProfileAndCurrentTherapy(context: Context, repository: DataRepository) {
+    private suspend fun initializeDefaultProfileAndCurrentTherapy(context: Context, repository: TherapyRepository) {
         var profiles = repository.getAllProfiles()
         if (profiles.isEmpty()) {
             val normalProfile = Profile(

@@ -28,7 +28,7 @@ class ProfileSettingsViewModel(
     private val _uiState = MutableStateFlow(ProfileSettingsUiState())
     val uiState = _uiState.asStateFlow()
 
-    private val dataRepository = application.dataRepository
+    private val therapyRepository = application.therapyRepository
 
     init {
         loadProfiles()
@@ -37,7 +37,7 @@ class ProfileSettingsViewModel(
     fun loadProfiles() {
         viewModelScope.launch {
             _uiState.update { it.copy(isLoading = true) }
-            val profiles = dataRepository.getAllProfiles()
+            val profiles = therapyRepository.getAllProfiles()
             _uiState.update { it.copy(profiles = profiles, isLoading = false) }
         }
     }
@@ -60,9 +60,9 @@ class ProfileSettingsViewModel(
     fun saveProfile(profile: Profile) {
         viewModelScope.launch {
             if (profile.id == ID_UNDEFINED) {
-                dataRepository.insertProfile(profile)
+                therapyRepository.insertProfile(profile)
             } else {
-                dataRepository.updateProfile(profile)
+                therapyRepository.updateProfile(profile)
             }
             loadProfiles()
             stopEditing()
@@ -79,7 +79,7 @@ class ProfileSettingsViewModel(
 
     fun deleteProfile(profile: Profile) {
         viewModelScope.launch {
-            dataRepository.deleteProfile(profile)
+            therapyRepository.deleteProfile(profile)
             loadProfiles()
             cancelDelete()
         }

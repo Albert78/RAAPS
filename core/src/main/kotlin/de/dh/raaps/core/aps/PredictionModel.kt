@@ -7,6 +7,7 @@ import de.dh.raaps.common.model.data.Tick
 import de.dh.raaps.common.model.data.Timestamp
 import de.dh.raaps.common.model.data.times
 import de.dh.raaps.core.aps.ApsAlgorithmImpl.Companion.DEVIATION_DECAY_FACTOR_PER_TICK
+import de.dh.raaps.core.repository.TreatmentRepository
 
 /**
  * Predicts future blood glucose levels based on current blood glucose, treatment history
@@ -45,11 +46,11 @@ class PredictionModel(
      * are calculated.
      */
     inline suspend fun calculatePredictionStage_1(
-        metabolicEventsModel: MetabolicEventsModel,
+        treatmentRepository: TreatmentRepository,
         carbsInsulinCalculationModel: CarbsInsulinCalculationModel
     ) {
-        val meals = metabolicEventsModel.getMeals()
-        val insulinApplications = metabolicEventsModel.getInsulinApplications()
+        val meals = treatmentRepository.getMeals()
+        val insulinApplications = treatmentRepository.getInsulinApplications()
         forEach { tick, tickState ->
             tickState.initializeToTick(tick)
             // We only need to initialize insulin and carbs, since they only depend on the treatments.
