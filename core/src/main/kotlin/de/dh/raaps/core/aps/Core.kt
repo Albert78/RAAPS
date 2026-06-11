@@ -144,6 +144,7 @@ class Core(
                 Log.d(TAG, "Initializing...")
                 setCoreState(CoreState.Initializing)
 
+                therapyManager.load()
                 treatmentRepository.load()
 
                 // Not so nice, in fact, the readings history is part of the ApsAlgorithmImpl and should
