@@ -20,7 +20,7 @@ class ApsAlgorithmImpl(
     val bgReadingsHistory: RecentBgReadingsHistory,
     val predictionModel: PredictionModel,
     val carbsInsulinCalculationModel: CarbsInsulinCalculationModel,
-    val therapyModel: TherapyModel,
+    val therapyManager: TherapyManager,
     val pumpCoordinator: PumpCoordinator
 ): ApsAlgorithm {
     val sampledBgReadings =
@@ -101,7 +101,7 @@ class ApsAlgorithmImpl(
         predictionModel.advanceToTick(now.minus(PRESERVE_PREDICTIONS_PAST_TIME))
 
         // Materialize assumed ISF and IC values, update predicted BGI if changed, update BG if changed
-        val continueCalculations = predictionModel.calculatePredictionStates_2_3_4(currentBgFiltered, avgCurrentDeviation, therapyModel)
+        val continueCalculations = predictionModel.calculatePredictionStates_2_3_4(currentBgFiltered, avgCurrentDeviation, therapyManager)
 
         if (!continueCalculations) {
             // Base values didn't change and predictions came true, just keep all decisions already made.
@@ -111,8 +111,8 @@ class ApsAlgorithmImpl(
         pumpCoordinator.cancelJobs()
         predictionModel.clearTempBasalsStage_5()
 
-        val targetBgRange = therapyModel.getTarget()
-        val pumpInsulinType = therapyModel.getPumpInsulinType()
+        val targetBgRange = therapyManager.getTarget()
+        val pumpInsulinType = therapyManager.getPumpInsulinType()
         val insulinPeakTicks = timeline.inTicks(pumpInsulinType.peak)
 
         // Goal 1: Get out of a current or impending low by lowering your basal rate early
@@ -120,8 +120,8 @@ class ApsAlgorithmImpl(
         predictionModel.findNext(startAt = now) {
             it.predictedBg1 < targetBgRange.lower
         }?.let { firstLowPoint ->
-            val basalRate = therapyModel.getBasalPerHour(firstLowPoint.tick.timestamp)
-            val isf = therapyModel.getIsfFactor(firstLowPoint.tick.timestamp)
+            val basalRate = therapyManager.getBasalPerHour(firstLowPoint.tick.timestamp)
+            val isf = therapyManager.getIsfFactor(firstLowPoint.tick.timestamp)
             val zeroTempDeltaBgPerHour = (basalRate * isf).mgdl.toDouble()
             val nextMin = predictionModel.findNextBgMin(startAt = firstLowPoint.tick, returnLatestIfFalling = true) ?: return@let
             val bgError = targetBgRange.lower - nextMin.predictedBg1 + MIN_BG_SAFETY_MARGIN
@@ -171,7 +171,7 @@ class ApsAlgorithmImpl(
                 else
                     BgDelta.fromMgDl(minOf(bgError.mgdl, lowBuffer.mgdl))
 
-                val isf = therapyModel.getIsfFactor(firstHighPoint.tick.timestamp)
+                val isf = therapyManager.getIsfFactor(firstHighPoint.tick.timestamp)
                 val maxCorrectionInsulinUnits = maxCorrection / isf
 
                 // We've found the next maximum before, so we can assume a monotonous rising BG curve.
@@ -239,7 +239,7 @@ class ApsAlgorithmImpl(
         suspend fun create(
             treatmentRepository: TreatmentRepository,
             readingsHistory: List<BgReading>,
-            therapyModel: TherapyModel,
+            therapyManager: TherapyManager,
             pumpCoordinator: PumpCoordinator,
             tickInterval: Minutes
         ): ApsAlgorithm {
@@ -266,7 +266,7 @@ class ApsAlgorithmImpl(
                 bgReadingsHistory = bgReadingsHistory,
                 predictionModel = predictionModel,
                 carbsInsulinCalculationModel = carbsInsulinCalculationModel,
-                therapyModel = therapyModel,
+                therapyManager = therapyManager,
                 pumpCoordinator = pumpCoordinator
             )
         }

@@ -20,7 +20,7 @@ class TherapyRepository(
     private val therapyDao: TherapyDao = appDatabase.therapyDao()
     private val metabolicEventsDao: MetabolicEventsDao = appDatabase.metabolicEventsDao()
 
-        // --- Insulin Types (Lookup Helper) ---
+    // --- Insulin Types (Lookup Helper) ---
 
     /**
      * Internal lookup to resolve InsulinType for CurrentTherapyData.

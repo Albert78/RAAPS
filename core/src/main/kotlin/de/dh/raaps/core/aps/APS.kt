@@ -58,7 +58,7 @@ class APS(
         onReleaseBusyState = { releaseBusyState() }
     )
 
-    val therapyModel: TherapyModel get() = core.therapyModel
+    val therapyManager: TherapyManager get() = core.therapyManager
     val pumpModel: PumpCoordinator get() = core.pumpCoordinator
 
     // Plugins & Active Jobs

@@ -78,7 +78,7 @@ class Core(
     private val therapyRepository: TherapyRepository,
     val treatmentRepository: TreatmentRepository,
     private val appPreferencesRepository: AppPreferencesRepository,
-    val therapyModel: TherapyModel,
+    val therapyManager: TherapyManager,
     val pumpCoordinator: PumpCoordinator,
     private val onDataUpdated: () -> Unit,
     private val onCoreStateChanged: () -> Unit,
@@ -158,7 +158,7 @@ class Core(
                 calculationAlgorithm = ApsAlgorithmImpl.create(
                     treatmentRepository,
                     readingsHistory,
-                    therapyModel,
+                    therapyManager,
                     pumpCoordinator = pumpCoordinator,
                     tickInterval = TICK_INTERVAL
                 )
@@ -252,7 +252,7 @@ class Core(
             onAcquireBusyState: () -> Unit,
             onReleaseBusyState: () -> Unit
         ): Core {
-            val therapyModel = TherapyModel(
+            val therapyManager = TherapyManager(
                 therapyRepository,
                 appPreferencesRepository
             )
@@ -262,7 +262,7 @@ class Core(
                 therapyRepository = therapyRepository,
                 treatmentRepository = treatmentRepository,
                 appPreferencesRepository = appPreferencesRepository,
-                therapyModel = therapyModel,
+                therapyManager = therapyManager,
                 pumpCoordinator = pumpCoordinator,
                 onDataUpdated = onDataUpdated,
                 onCoreStateChanged = onCoreStateChanged,

@@ -7,15 +7,18 @@ import de.dh.raaps.common.model.DEFAULT_IC_GRAM_PER_UNIT
 import de.dh.raaps.common.model.DEFAULT_ISF_MGDL_PER_UNIT
 import de.dh.raaps.common.model.DEFAULT_TARGET_HIGH_MGDL
 import de.dh.raaps.common.model.DEFAULT_TARGET_LOW_MGDL
+import de.dh.raaps.common.model.ID_UNDEFINED
 import de.dh.raaps.common.model.InsulinType
 import de.dh.raaps.common.model.data.BgDelta
 import de.dh.raaps.common.model.data.BgValue
+import de.dh.raaps.common.model.data.CurrentTherapyData
+import de.dh.raaps.common.model.data.Profile
 import de.dh.raaps.common.model.data.Timestamp
 import de.dh.raaps.common.model.data.getAmountForMinute
 import de.dh.raaps.common.model.data.getTargetForMinute
 import de.dh.raaps.core.repository.TherapyRepository
 
-class TherapyModel(
+class TherapyManager(
     private val therapyRepository: TherapyRepository,
     private val appPreferencesRepository: AppPreferencesRepository
 ) {
@@ -71,5 +74,26 @@ class TherapyModel(
 
         return therapyRepository.getAllInsulinTypes().firstOrNull()
             ?: throw IllegalStateException("No insulin type configured for insulin pump")
+    }
+
+    suspend fun getAllProfiles() = therapyRepository.getAllProfiles()
+
+    suspend fun getCurrentTherapyData() = therapyRepository.getCurrentTherapyData()
+
+    /**
+     * Updates the current therapy settings based on a selected profile.
+     * This will create a copy of the profile's therapy data as the active configuration.
+     */
+    suspend fun selectProfile(profile: Profile) {
+        val currentData = therapyRepository.getCurrentTherapyData()
+        val newData = (currentData ?: CurrentTherapyData(
+            profileId = profile.id,
+            therapyData = profile.therapyData,
+            insulinType = getPumpInsulinType()
+        )).copy(
+            profileId = profile.id,
+            therapyData = profile.therapyData.copy(id = ID_UNDEFINED)
+        )
+        therapyRepository.updateCurrentTherapyData(newData)
     }
 }

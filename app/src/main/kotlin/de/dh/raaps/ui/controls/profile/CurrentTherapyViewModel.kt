@@ -8,7 +8,6 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.CreationExtras
 import de.dh.raaps.MainApplication
-import de.dh.raaps.common.model.ID_UNDEFINED
 import de.dh.raaps.common.model.data.BgDelta
 import de.dh.raaps.common.model.data.BgValue
 import de.dh.raaps.common.model.data.CurrentTherapyData
@@ -38,8 +37,7 @@ class CurrentTherapyViewModel(
     private val _uiState = MutableStateFlow(CurrentTherapyUiState())
     val uiState: StateFlow<CurrentTherapyUiState> = _uiState
 
-    private val therapyRepository = application.therapyRepository
-    private val therapyModel = application.aps.therapyModel
+    private val therapyManager = application.aps.therapyManager
     private val appPreferencesRepository = application.appPreferencesRepository
 
     init {
@@ -49,17 +47,17 @@ class CurrentTherapyViewModel(
     fun loadData() {
         viewModelScope.launch {
             _uiState.update { it.copy(isLoading = true) }
-            val currentData = therapyRepository.getCurrentTherapyData()
-            val profiles = therapyRepository.getAllProfiles()
+            val currentData = therapyManager.getCurrentTherapyData()
+            val profiles = therapyManager.getAllProfiles()
             updateState(currentData, profiles)
         }
     }
 
     private suspend fun updateState(currentData: CurrentTherapyData?, profiles: List<Profile>) {
         val now = Timestamp.now()
-        val isf = therapyModel.getIsfFactor(now)
-        val ic = therapyModel.getIcFactor(now)
-        val target = therapyModel.getTarget()
+        val isf = therapyManager.getIsfFactor(now)
+        val ic = therapyManager.getIcFactor(now)
+        val target = therapyManager.getTarget()
 
         val activeProfileName = currentData?.profileId?.let { pid ->
             profiles.find { it.id == pid }?.name
@@ -80,16 +78,7 @@ class CurrentTherapyViewModel(
 
     fun selectProfile(profile: Profile) {
         viewModelScope.launch {
-            val currentData = therapyRepository.getCurrentTherapyData()
-            val newData = (currentData ?: CurrentTherapyData(
-                profileId = profile.id,
-                therapyData = profile.therapyData,
-                insulinType = therapyRepository.getAllInsulinTypes().first() // Fallback
-            )).copy(
-                profileId = profile.id,
-                therapyData = profile.therapyData.copy(id = ID_UNDEFINED)
-            )
-            therapyRepository.updateCurrentTherapyData(newData)
+            therapyManager.selectProfile(profile)
             loadData()
         }
     }

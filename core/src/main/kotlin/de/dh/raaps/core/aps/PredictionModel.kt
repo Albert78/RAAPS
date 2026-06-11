@@ -75,7 +75,7 @@ class PredictionModel(
     inline suspend fun calculatePredictionStates_2_3_4(
         currentBG: BgValue,
         avgCurrentDeviation: BgDelta,
-        therapyModel: TherapyModel
+        therapyManager: TherapyManager
     ): Boolean {
         var bg = currentBG
         var deviation = avgCurrentDeviation
@@ -83,9 +83,9 @@ class PredictionModel(
         val timestampIn30Minutes = Timestamp.now().plusMinutes(30)
         forEachS(from = timeline.getNowTick() + 1, to = getLastTick()) { tick, state ->
             val timestamp = timeline.timestamp(tick)
-            val isf = therapyModel.getIsfFactor(timestamp)
-            val ic = therapyModel.getIcFactor(timestamp)
-            val basalPerHour = therapyModel.getBasalPerHour(timestamp)
+            val isf = therapyManager.getIsfFactor(timestamp)
+            val ic = therapyManager.getIcFactor(timestamp)
+            val basalPerHour = therapyManager.getBasalPerHour(timestamp)
 
             if (isf != state.isf || ic != state.ic || basalPerHour != state.basalRateUph) {
                 state.isf = isf
