@@ -131,7 +131,9 @@ class ApsAlgorithmImpl(
                 val bgError = targetBgRange.lower - nextMin.predictedBg1 + MIN_BG_SAFETY_MARGIN
                 val startZeroTemp = maxOf(
                     nextMin.tick.minusHours((bgError.mgdl / zeroTempDeltaBgPerHour).toInt()).
-                        // We must drop the basal long time before the next minimum 1) to avoid falling to min and 2) because of the long insulin effect.
+                        // We must drop the basal long time before the next minimum
+                        // - to avoid falling to min and
+                        // - because of the long insulin effect.
                         // How long would be the best? I don't know. Let's take twice the peak time as first approximation.
                         minus(insulinPeakTicks * 2),
                     now
@@ -179,10 +181,11 @@ class ApsAlgorithmImpl(
                     // or if we must divide the insulin in multiple parts because the blood glucose
                     // raises too slowly.
 
-                    // As a heuristic, we start as early as possible.
-                    // We choose as first insulin application the insulin peak interval before raising high,
-                    // which is a heuristic which seems well to me but could be improved in the future.
-
+                    // Proactive correction strategy: To effectively dampen the glucose rise,
+                    // the peak insulin action is synchronized with the onset of the predicted
+                    // hyperglycemia. This allows for the earliest possible intervention without
+                    // increasing the risk of an immediate drop.
+                    // This is a heuristic which seems well to me but could be improved in the future.
                     val insulinTick = maxOf(firstHighPoint.tick.minus(insulinPeakTicks), now)
                     if (insulinTick > now.plusMinutes(10)) {
                         // Don't schedule the insulin too early, we never know what will happen...
@@ -192,11 +195,10 @@ class ApsAlgorithmImpl(
 
                     var insulinUnits = maxCorrectionInsulinUnits
 
-                    // Simulate an insulin application of errorCorrectionInsulinUnits at insulinTime and check
-                    // if we fall under the low threshold. If yes, reduce the insulin amount for this
-                    // first insulin administration.
-                    // To calculate the right amount, we reduce the application until we don't find
-                    // any more ticks where we will drop down the low mark.
+                    // Safety validation: The calculated correction dose is verified against the
+                    // prediction model. If the simulated insulin action results in a projected
+                    // dip below the target range at any point within the prediction window,
+                    // the dose is iteratively reduced until safety is ensured.
                     predictionModel.forEach(to = nextMax.tick) { tick, state ->
                         val bg = state.predictedBg2
                         if (bg == BgValue.INVALID) return@forEach
