@@ -41,7 +41,7 @@ class TreatmentRepository(
         val mealTypesMap = mealTypes.associateBy { it.id }
 
         // Load Meals
-        val mealEntities = metabolicEventsDao.getMealsInRange(historyStart.ms, Long.MAX_VALUE)
+        val mealEntities = metabolicEventsDao.getMealsSince(historyStart.ms)
         mealsHistory = mealEntities.mapNotNull { entity ->
             val type = mealTypesMap[entity.meal_type_id]
             type?.let { entity.toModel(it) }
@@ -52,7 +52,7 @@ class TreatmentRepository(
         val insulinTypesMap = insulinTypes.associateBy { it.id }
 
         // Load Insulin Applications
-        val insulinEntities = metabolicEventsDao.getInsulinApplicationsInRange(historyStart.ms, Long.MAX_VALUE)
+        val insulinEntities = metabolicEventsDao.getInsulinApplicationsSince(historyStart.ms)
         insulinApplicationsHistory = insulinEntities.mapNotNull { entity ->
             val type = insulinTypesMap[entity.insulin_type_id]
             type?.let { entity.toModel(it) }

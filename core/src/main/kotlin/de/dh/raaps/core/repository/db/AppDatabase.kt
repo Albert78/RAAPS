@@ -112,8 +112,8 @@ interface MetabolicEventsDao {
     @Query("SELECT * FROM meal ORDER BY timestamp ASC")
     suspend fun getAllMeals(): List<MealEntity>
 
-    @Query("SELECT * FROM meal WHERE timestamp >= :from AND timestamp <= :to ORDER BY timestamp ASC")
-    suspend fun getMealsInRange(from: Long, to: Long): List<MealEntity>
+    @Query("SELECT * FROM meal WHERE timestamp >= :since ORDER BY timestamp ASC")
+    suspend fun getMealsSince(since: Long): List<MealEntity>
 
     @Insert
     suspend fun insertMeal(meal: MealEntity): Long
@@ -147,8 +147,8 @@ interface MetabolicEventsDao {
     @Query("SELECT * FROM insulin_application ORDER BY timestamp ASC")
     suspend fun getAllInsulinApplications(): List<InsulinApplicationEntity>
 
-    @Query("SELECT * FROM insulin_application WHERE timestamp >= :from AND timestamp <= :to ORDER BY timestamp ASC")
-    suspend fun getInsulinApplicationsInRange(from: Long, to: Long): List<InsulinApplicationEntity>
+    @Query("SELECT * FROM insulin_application WHERE timestamp >= :since ORDER BY timestamp ASC")
+    suspend fun getInsulinApplicationsSince(since: Long): List<InsulinApplicationEntity>
 
     @Insert
     suspend fun insertInsulinApplication(insulin: InsulinApplicationEntity): Long
