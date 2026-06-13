@@ -30,7 +30,6 @@ import java.util.concurrent.atomic.AtomicInteger
  * Manages threading and plugin lifecycles, ensuring all calls to the core are serialized
  * on a single background thread.
  */
-TODO: Fehlerstatus, der sich aus den Fehlern von Sensor (Fehlende Werte) und Pumpe (PumpCoordinator) zusammensetzt
 class APS(
     val glucoseRepository: GlucoseRepository,
     val therapyRepository: TherapyRepository,
@@ -70,6 +69,7 @@ class APS(
         appPreferencesRepository = appPreferencesRepository,
         onDataUpdated = { emitDataUpdateEvent() },
         onCoreStateChanged = { emitCoreStateChangedEvent() },
+        onIssuesChanged = { emitIssuesChangedEvent() },
         onAcquireBusyState = { acquireBusyState() },
         onReleaseBusyState = { releaseBusyState() }
     )
@@ -101,15 +101,21 @@ class APS(
     private val _lastDataTime = MutableStateFlow<Timestamp>(Timestamp(0))
     val lastDataTime: StateFlow<Timestamp> = _lastDataTime.asStateFlow()
 
-    private val _coreState = MutableStateFlow(CoreState.Initializing)
+    private val _coreState = MutableStateFlow<CoreState>(CoreState.Initializing)
     /**
      * State of the core.
      * Watch the core state to be notified when it changes, e.g.:
      * ```
-     * aps.coreState.first { it == APSCoreState.Idle }
+     * aps.coreState.first { it is CoreState.Active }
      * ```
      */
     val coreState: StateFlow<CoreState> = _coreState.asStateFlow()
+
+    private val _activeIssues = MutableStateFlow<Set<CoreIssue>>(emptySet())
+    /**
+     * Active issues of the core.
+     */
+    val activeIssues: StateFlow<Set<CoreIssue>> = _activeIssues.asStateFlow()
 
     /**
      * Executes the given block on the internal APS thread.
@@ -183,6 +189,10 @@ class APS(
 
     private fun emitCoreStateChangedEvent() = inExternalDispatcher {
         _coreState.emit(core.coreState)
+    }
+
+    private fun emitIssuesChangedEvent() = inExternalDispatcher {
+        _activeIssues.emit(core.activeIssues)
     }
 
     /**

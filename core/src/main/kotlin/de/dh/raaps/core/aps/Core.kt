@@ -16,38 +16,56 @@ import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlin.math.abs
 
-enum class CoreState {
+sealed interface CoreState {
     /**
      * The APS core was created but not initialized yet. No data have been loaded from the DB
      * and the calculation modules have not been connected yet.
      */
-    Uninitialized,
+    data object Uninitialized : CoreState
 
     /**
      * The APS core is being initialized. During this time, the data is not reliable yet.
      */
-    Initializing,
+    data object Initializing : CoreState
 
     /**
      * The APS core is working and all data are valid.
      */
-    Active,
+    data object Active : CoreState
 
     /**
      * The APS Core is suspended by the user.
      */
-    Suspended,
+    data object Suspended : CoreState
 
     /**
      * The system is being shut down. No more calculation will take place anymore.
      */
-    Shutdown,
+    data object Shutdown : CoreState
+}
+
+enum class CoreIssue {
+    /**
+     * No recent glucose value available, the loop cannot calculate new treatments.
+     */
+    StaleBG,
 
     /**
-     * The system cannot work due to an error, either in the glucose data pipeline, the pump or
-     * other reasons. See the error flags.
+     * The pump connection is missing, APS Core is not able to do its work.
+     * The work will be continued when the connection is available again.
      */
-    Error
+    PumpConnectionMissing,
+
+    /**
+     * The pump is connected but in a state where it cannot deliver insulin (e.g. suspended,
+     * battery empty, reservoir empty, hardware error).
+     */
+    PumpInoperative,
+
+    /**
+     * Any other issue that prevents the core from working.
+     */
+    Other
 }
 
 /**
@@ -69,6 +87,7 @@ class Core(
     private val appPreferencesRepository: AppPreferencesRepository,
     private val onDataUpdated: () -> Unit,
     private val onCoreStateChanged: () -> Unit,
+    private val onIssuesChanged: () -> Unit,
     private val onAcquireBusyState: () -> Unit,
     private val onReleaseBusyState: () -> Unit
 ) {
@@ -81,6 +100,9 @@ class Core(
         private set
 
     var coreState: CoreState = CoreState.Uninitialized
+        private set
+
+    var activeIssues: Set<CoreIssue> = emptySet()
         private set
 
     /**
@@ -123,6 +145,20 @@ class Core(
     private fun setCoreState(state: CoreState) {
         coreState = state
         onCoreStateChanged()
+    }
+
+    fun addIssue(issue: CoreIssue) {
+        if (issue !in activeIssues) {
+            activeIssues = activeIssues + issue
+            onIssuesChanged()
+        }
+    }
+
+    fun removeIssue(issue: CoreIssue) {
+        if (issue in activeIssues) {
+            activeIssues = activeIssues - issue
+            onIssuesChanged()
+        }
     }
 
     suspend fun initialize() {
@@ -229,7 +265,9 @@ class Core(
         busyWork {
             val alg = calculationAlgorithm
             if (alg?.isStale() ?: false) {
-                setCoreState(CoreState.StaleBG)
+                addIssue(CoreIssue.StaleBG)
+            } else {
+                removeIssue(CoreIssue.StaleBG)
             }
         }
     }
@@ -249,6 +287,7 @@ class Core(
             appPreferencesRepository: AppPreferencesRepository,
             onDataUpdated: () -> Unit,
             onCoreStateChanged: () -> Unit,
+            onIssuesChanged: () -> Unit,
             onAcquireBusyState: () -> Unit,
             onReleaseBusyState: () -> Unit,
         ): Core {
@@ -260,6 +299,7 @@ class Core(
                 pumpCoordinator = pumpCoordinator,
                 onDataUpdated = onDataUpdated,
                 onCoreStateChanged = onCoreStateChanged,
+                onIssuesChanged = onIssuesChanged,
                 onAcquireBusyState = onAcquireBusyState,
                 onReleaseBusyState = onReleaseBusyState
             )
