@@ -4,6 +4,14 @@ import de.dh.raaps.common.model.data.Minutes
 import de.dh.raaps.common.model.data.TherapyData
 
 /**
+ * Status information returned by the pump.
+ */
+data class PumpStatus(
+    val reservoirLevel: InsulinAmount,
+    val batteryLevel: Int?
+)
+
+/**
  * Interface for an insulin delivery device.
  * Manages the connection to the physical pump hardware and handles insulin delivery operations.
  */
@@ -37,4 +45,9 @@ interface InsulinPump {
      * Cancels any currently delivering bolus.
      */
     suspend fun cancelBolus()
+
+    /**
+     * Reads the current status (reservoir, battery) from the pump.
+     */
+    suspend fun readStatus(): PumpStatus
 }

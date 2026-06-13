@@ -3,6 +3,7 @@ package de.dh.raaps.core.aps
 import android.app.AlarmManager
 import android.content.Context
 import android.os.PowerManager
+import android.util.Log
 import de.dh.raaps.AppPreferencesRepository
 import de.dh.raaps.common.model.GlucoseSource
 import de.dh.raaps.common.model.InsulinPump
@@ -53,7 +54,8 @@ class APS(
         treatmentRepository = treatmentRepository,
         onAcquireBusyState = { acquireBusyState() },
         onReleaseBusyState = { releaseBusyState() },
-        onJobError = { _TODO() }
+        onRequestWakeup = { timestamp -> scheduleSystemWakeup(timestamp, WAKEUP_PUMP_COORDINATOR) },
+        onJobError = { _TODO() },
     )
     val therapyManager = TherapyManager(
         therapyRepository,
@@ -70,6 +72,7 @@ class APS(
         onDataUpdated = { emitDataUpdateEvent() },
         onCoreStateChanged = { emitCoreStateChangedEvent() },
         onIssuesChanged = { emitIssuesChangedEvent() },
+        onRescheduleWakeup = { timestamp -> scheduleSystemWakeup(timestamp, WAKEUP_CORE) },
         onAcquireBusyState = { acquireBusyState() },
         onReleaseBusyState = { releaseBusyState() }
     )
@@ -161,10 +164,16 @@ class APS(
         if (wakeLock.isHeld) {
             try {
                 wakeLock.release()
-            } catch (e: RuntimeException) {
+            } catch (_: RuntimeException) {
                 // Ignore if already released
             }
         }
+    }
+
+    private fun scheduleSystemWakeup(timestamp: Timestamp, wakeupId: Int) {
+        _TODO()
+        // Implement actual AlarmManager scheduling
+        Log.d("APS", "Scheduling system wakeup at $timestamp with ID $wakeupId")
     }
 
     private fun restartGlucosePipeline() {
@@ -204,6 +213,18 @@ class APS(
     }
 
     /**
+     * Entry point for system wakeups.
+     * Guaranteed to run on the internal APS thread.
+     */
+    fun wakeup(wakeupId: Int) = inAPSThread {
+        if (wakeupId == WAKEUP_CORE) {
+            core.wakeup()
+        } else if (wakeupId == WAKEUP_PUMP_COORDINATOR) {
+            pumpCoordinator.wakeup()
+        }
+    }
+
+    /**
      * Gracefully stops the APS system and releases all background resources.
      */
     fun stop() {
@@ -225,5 +246,10 @@ class APS(
 
     fun getLastBg(): BgReading? {
         return core.lastBg
+    }
+
+    companion object {
+        const val WAKEUP_CORE = 0
+        const val WAKEUP_PUMP_COORDINATOR = 1
     }
 }

@@ -88,6 +88,7 @@ class Core(
     private val onDataUpdated: () -> Unit,
     private val onCoreStateChanged: () -> Unit,
     private val onIssuesChanged: () -> Unit,
+    private val onRescheduleWakeup: (Timestamp) -> Unit,
     private val onAcquireBusyState: () -> Unit,
     private val onReleaseBusyState: () -> Unit
 ) {
@@ -254,7 +255,7 @@ class Core(
                 if (isRecent && alg != null) {
                     alg.recalculateForNewBgValue(bg)
                     val nextStaleCheckTime = alg.nextStaleCheck()
-                    scheduleNextWakeup(nextStaleCheckTime)
+                    onRescheduleWakeup(nextStaleCheckTime)
                 }
             }
             onDataUpdated()
@@ -288,6 +289,7 @@ class Core(
             onDataUpdated: () -> Unit,
             onCoreStateChanged: () -> Unit,
             onIssuesChanged: () -> Unit,
+            onRescheduleWakeup: (Timestamp) -> Unit,
             onAcquireBusyState: () -> Unit,
             onReleaseBusyState: () -> Unit,
         ): Core {
@@ -300,6 +302,7 @@ class Core(
                 onDataUpdated = onDataUpdated,
                 onCoreStateChanged = onCoreStateChanged,
                 onIssuesChanged = onIssuesChanged,
+                onRescheduleWakeup = onRescheduleWakeup,
                 onAcquireBusyState = onAcquireBusyState,
                 onReleaseBusyState = onReleaseBusyState
             )

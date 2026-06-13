@@ -42,6 +42,8 @@ value class Timestamp(val ms: Long): Comparable<Timestamp> {
     }
 
     companion object {
+        val INVALID = Timestamp(0)
+
         fun now(): Timestamp  = Timestamp(System.currentTimeMillis())
     }
 }

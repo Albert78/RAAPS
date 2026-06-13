@@ -2,6 +2,7 @@ package de.dh.raaps.core.pump
 
 import de.dh.raaps.common.model.InsulinAmount
 import de.dh.raaps.common.model.InsulinPump
+import de.dh.raaps.common.model.PumpStatus
 import de.dh.raaps.common.model.data.Minutes
 import de.dh.raaps.common.model.data.TherapyData
 import de.dh.raaps.common.model.data.Timestamp
@@ -40,9 +41,12 @@ data class PumpJob(
     val id: String = UUID.randomUUID().toString(),
     val command: PumpCommand,
     val createdAt: Timestamp = Timestamp.now(),
-    val expiresAt: Timestamp? = null
+    val expiresAt: Timestamp? = null,
+    val retryCount: Int = 0,
+    val nextAttemptAt: Timestamp = createdAt
 ) {
     fun isExpired(): Boolean = expiresAt?.let { it < Timestamp.now() } ?: false
+    fun isReady(): Boolean = nextAttemptAt <= Timestamp.now()
 }
 
 enum class JobErrorCode {
@@ -81,7 +85,7 @@ interface PumpState {
      * Dynamic state of the connected pump.
      */
     data class Normal(
-        val lastConnectionTime: Long = 0,
+        val lastConnectionTime: Timestamp = Timestamp.INVALID,
         val reservoirLevel: InsulinAmount? = null,
         val batteryLevel: Int? = null,
         val isConnected: Boolean = false
@@ -100,10 +104,13 @@ interface PumpState {
  * pumps can be attached and removed. While a pump is attached, the pump loop runs and dispatches
  * pump commands, even if the pump is suspended or erroneous.
  */
+// TODO: Multithreading/thread allocation
+// TODO: Notifications from pump; persist insulin applications in repository
 class PumpCoordinator(
     private val treatmentRepository: TreatmentRepository,
     private val onAcquireBusyState: () -> Unit,
     private val onReleaseBusyState: () -> Unit,
+    private val onRequestWakeup: (Timestamp) -> Unit,
     private val onJobError: (job: PumpJob, code: JobErrorCode) -> Unit,
     private val scope: CoroutineScope = CoroutineScope(SupervisorJob() + Dispatchers.Default),
 ) {
@@ -129,7 +136,7 @@ class PumpCoordinator(
     suspend fun initialize(driver: InsulinPump) {
         stop()
         initializePump(driver)
-        startJobLoop()
+        startPumpConnection()
     }
 
     /**
@@ -138,9 +145,6 @@ class PumpCoordinator(
     suspend fun stop() {
         _TODO()
         // Detach pump listeners
-
-        pumpDriver = null // This will automatically stop our job loop
-        _pumpState.value = PumpState.NoPump
 
         // Wait for job loop to finish
         pumpCoordinatorState.first { it == PumpCoordinatorState.Idle }
@@ -176,6 +180,7 @@ class PumpCoordinator(
         )
 
         _pendingJobs.update { it + job }
+        wakeup()
     }
 
     /**
@@ -185,106 +190,165 @@ class PumpCoordinator(
         _pendingJobs.update { it.filterNot(predicate) }
     }
 
-    fun startJobLoop() {
+    fun wakeup() {
+        if (pumpCoordinatorState.value == PumpCoordinatorState.Idle) {
+            startPumpConnection()
+        }
+    }
+
+    private fun startPumpConnection() {
         scope.launch {
+            onAcquireBusyState()
             _pumpCoordinatorState.value = PumpCoordinatorState.Running
             try {
-                jobLoop()
+                sync()
+                scheduleNextWakeup()
             } finally {
                 _pumpCoordinatorState.value = PumpCoordinatorState.Idle
+                onReleaseBusyState()
             }
         }
     }
 
-    suspend fun jobLoop() {
-        while (true) {
-            val driver = pumpDriver
-            if (driver == null) {
-                _pumpState.value = PumpState.NoPump
-            }
-            val pumpState = pumpState.value
-            if (pumpState == PumpState.NoPump) {
-                return
-            }
+    private suspend fun sync() {
+        val driver = pumpDriver ?: return
 
-            if (pumpState is PumpState.Normal && _pendingJobs.value.isNotEmpty()) {
-                onAcquireBusyState()
+        checkHeartbeat(driver)
+        processJobs(driver)
+    }
+
+    private suspend fun checkHeartbeat(driver: InsulinPump) {
+        val now = Timestamp.now()
+        val currentState = _pumpState.value
+        val lastConn = if (currentState is PumpState.Normal) currentState.lastConnectionTime else Timestamp.INVALID
+
+        if (lastConn + HEARTBEAT_INTERVAL < now) {
+            repeat(3) {
                 try {
-                    while (_pendingJobs.value.isNotEmpty()) {
-                        val job = _pendingJobs.value.firstOrNull() ?: break
-
-                        if (job.isExpired()) {
-                            _pendingJobs.update { it - job }
-                            onJobError(job, JobErrorCode.Expired)
-                        }
-
-                        _TODO()
-                        // Increment Job retry state
-                        try {
-                            executeOnDriver(driver!!, job.command)
-                            handleSuccess(job)
-                            _pendingJobs.update { it - job }
-                        } catch (_: Exception) {
-                            _pumpState.update {
-                                if (it is PumpState.Normal) {
-                                    it.copy(isConnected = false)
-                                } else {
-                                    it
-                                }
-                            }
-                            // Job stays in queue for next attempt
-                        }
-                    }
-                } finally {
-                    onReleaseBusyState()
+                    val status = driver.readStatus()
+                    handleStatusSuccess(status)
+                    return
+                } catch (_: Exception) {
+                    if (it < 2) delay(1000)
                 }
             }
-            delay(10000) // Re-check every 10 seconds
+            // If heartbeat failed, we don't necessarily abort everything,
+            // but jobs will probably fail too.
         }
+    }
+
+    private suspend fun processJobs(driver: InsulinPump) {
+        while (true) {
+            val job = _pendingJobs.value
+                .filter { it.isReady() && !it.isExpired() }
+                .minByOrNull { it.nextAttemptAt } ?: break
+
+            val success = tryExecuteJobWithRetries(driver, job)
+            if (success) {
+                _pendingJobs.update { it - job }
+            } else {
+                // Schedule for 1 minute later
+                val updatedJob = job.copy(
+                    retryCount = job.retryCount + 3,
+                    nextAttemptAt = Timestamp.now().plusMinutes(1)
+                )
+                _pendingJobs.update { (it - job) + updatedJob }
+                // Break loop and try again next time
+                break
+            }
+        }
+
+        // Cleanup expired jobs
+        val expired = _pendingJobs.value.filter { it.isExpired() }
+        if (expired.isNotEmpty()) {
+            _pendingJobs.update { it - expired.toSet() }
+            expired.forEach { onJobError(it, JobErrorCode.Expired) }
+        }
+    }
+
+    private suspend fun tryExecuteJobWithRetries(driver: InsulinPump, job: PumpJob): Boolean {
+        repeat(3) {
+            try {
+                executeOnDriver(driver, job.command)
+                handleSuccess(job)
+                return true
+            } catch (_: Exception) {
+                if (it < 2) delay(RETRY_INTERVAL_MS)
+            }
+        }
+        return false
     }
 
     private suspend fun executeOnDriver(driver: InsulinPump, command: PumpCommand) {
-        // Translation layer to the driver interface
         when (command) {
-            is PumpCommand.DeliverBolus -> {
-                driver.deliverBolus(command.amount)
-            }
-            is PumpCommand.SetTempBasal -> {
-                driver.setTempBasal(command.unitsPerHour, command.durationMinutes)
-            }
-            is PumpCommand.SetProfile -> {
-                driver.setProfile(command.profile)
-            }
-            is PumpCommand.CancelTempBasal -> {
-                driver.cancelTempBasal()
-            }
-            is PumpCommand.CancelBolus -> {
-                driver.cancelBolus()
+            is PumpCommand.DeliverBolus -> driver.deliverBolus(command.amount)
+            is PumpCommand.SetTempBasal -> driver.setTempBasal(command.unitsPerHour, command.durationMinutes)
+            is PumpCommand.SetProfile -> driver.setProfile(command.profile)
+            is PumpCommand.CancelTempBasal -> driver.cancelTempBasal()
+            is PumpCommand.CancelBolus -> driver.cancelBolus()
+        }
+    }
+
+    private fun handleStatusSuccess(status: PumpStatus) {
+        val now = Timestamp.now()
+        _pumpState.update {
+            PumpState.Normal(
+                lastConnectionTime = now,
+                reservoirLevel = status.reservoirLevel,
+                batteryLevel = status.batteryLevel,
+                isConnected = true
+            )
+        }
+    }
+
+    private fun handleSuccess(job: PumpJob) {
+        val now = Timestamp.now()
+        _pumpState.update {
+            if (it is PumpState.Normal) {
+                it.copy(isConnected = true, lastConnectionTime = now)
+            } else {
+                PumpState.Normal(isConnected = true, lastConnectionTime = now)
             }
         }
     }
 
-    private suspend fun handleSuccess(job: PumpJob) {
-        var pumpState = _pumpState.value
-        if (pumpState is PumpState.Normal) {
-           pumpState = pumpState.copy(isConnected = true, lastConnectionTime = System.currentTimeMillis())
-        } else {
-            pumpState = PumpState.Normal(isConnected = true, lastConnectionTime = System.currentTimeMillis())
+    private fun scheduleNextWakeup() {
+        val nextWakeup = calculateNextWakeup()
+        if (nextWakeup != null) {
+            onRequestWakeup(nextWakeup)
         }
-        _pumpState.value = pumpState
+    }
+
+    private fun calculateNextWakeup(): Timestamp? {
+        val now = Timestamp.now()
+        val nextJobTime = _pendingJobs.value
+            .filter { !it.isExpired() }
+            .minOfOrNull { it.nextAttemptAt }
+
+        val currentState = _pumpState.value
+        val lastConn = if (currentState is PumpState.Normal) currentState.lastConnectionTime else Timestamp.INVALID
+        val nextHeartbeatTime = lastConn + HEARTBEAT_INTERVAL
+
+        val candidates = listOfNotNull(nextJobTime, nextHeartbeatTime).filter { it > now }
+        return candidates.minOrNull()
     }
 
     companion object {
+        private val HEARTBEAT_INTERVAL = Minutes(15)
+        private const val RETRY_INTERVAL_MS: Long = 10_000
+
         fun create(
             treatmentRepository: TreatmentRepository,
             onAcquireBusyState: () -> Unit,
             onReleaseBusyState: () -> Unit,
+            onRequestWakeup: (Timestamp) -> Unit,
             onJobError: (PumpJob, JobErrorCode) -> Unit,
         ): PumpCoordinator {
             return PumpCoordinator(
                 treatmentRepository = treatmentRepository,
                 onAcquireBusyState = onAcquireBusyState,
                 onReleaseBusyState = onReleaseBusyState,
+                onRequestWakeup = onRequestWakeup,
                 onJobError = onJobError,
             )
         }
