@@ -172,6 +172,10 @@ class RecentBgReadingsHistory(
         return BgValue.fromMgDl((weightedSum / weightTotal).toInt())
     }
 
+    fun last(): BgReading? {
+        return buffer[0]
+    }
+
     /**
      * Returns all stored readings as a list.
      */

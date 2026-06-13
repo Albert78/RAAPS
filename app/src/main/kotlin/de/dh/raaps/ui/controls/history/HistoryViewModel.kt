@@ -105,7 +105,7 @@ class HistoryViewModel(
     init {
         viewModelScope.launch {
             // This will block the thread until the core is idle
-            aps.coreState.first { it == CoreState.Idle }
+            aps.coreState.first { it == CoreState.Active }
             reload_suspend()
             aps.lastDataTime.collect {
                 reload_suspend()

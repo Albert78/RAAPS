@@ -29,20 +29,9 @@ enum class CoreState {
     Initializing,
 
     /**
-     * The APS core data is valid and can be used.
+     * The APS core is working and all data are valid.
      */
-    Idle,
-
-    /**
-     * The APS core is currently calculating a new state. All data is valid in the meantime.
-     */
-    Calculating,
-
-    /**
-     * Either CGM input or pump connection is missing, APS Core is not able to do its work.
-     * The work will be continued when the connection is available again.
-     */
-    ConnectionMissing,
+    Active,
 
     /**
      * The APS Core is suspended by the user.
@@ -55,8 +44,8 @@ enum class CoreState {
     Shutdown,
 
     /**
-     * The system is in an unrecoverable error. This is a fatal situation and should
-     * hopefully not happen.
+     * The system cannot work due to an error, either in the glucose data pipeline, the pump or
+     * other reasons. See the error flags.
      */
     Error
 }
@@ -164,7 +153,7 @@ class Core(
                 onDataUpdated()
 
                 Log.d(TAG, "Finished initialization...")
-                setCoreState(CoreState.Idle)
+                setCoreState(CoreState.Active)
             }
         }
     }
@@ -224,13 +213,24 @@ class Core(
 
                 val isRecent = abs(bg.timestamp.ms - Timestamp.now().ms) < RECENT_BG_THRESHOLD.inMs()
                 val alg = calculationAlgorithm
+                _TODO()
+                // Pumpenaufträge ein paar Sekunden lang abwarten, dann alle abbrechen, wieder abwarten
                 if (isRecent && alg != null) {
-                    setCoreState(CoreState.Calculating)
                     alg.recalculateForNewBgValue(bg)
-                    setCoreState(CoreState.Idle)
+                    val nextStaleCheckTime = alg.nextStaleCheck()
+                    scheduleNextWakeup(nextStaleCheckTime)
                 }
             }
             onDataUpdated()
+        }
+    }
+
+    suspend fun wakeup() {
+        busyWork {
+            val alg = calculationAlgorithm
+            if (alg?.isStale() ?: false) {
+                setCoreState(CoreState.StaleBG)
+            }
         }
     }
 

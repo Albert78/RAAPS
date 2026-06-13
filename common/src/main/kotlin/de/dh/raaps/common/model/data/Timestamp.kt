@@ -14,6 +14,7 @@ value class Timestamp(val ms: Long): Comparable<Timestamp> {
 
     operator fun minus(other: Timestamp): Long = ms - other.ms
     operator fun minus(minutes: Minutes) = minusMinutes(minutes.value.toInt())
+    operator fun plus(minutes: Minutes) = plusMinutes(minutes.value.toInt())
 
     fun toInstant(): Instant = Instant.fromEpochMilliseconds(ms)
     fun plusSeconds(sec: Int) = Timestamp(ms + sec * 1000)

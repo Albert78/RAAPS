@@ -30,6 +30,7 @@ import java.util.concurrent.atomic.AtomicInteger
  * Manages threading and plugin lifecycles, ensuring all calls to the core are serialized
  * on a single background thread.
  */
+TODO: Fehlerstatus, der sich aus den Fehlern von Sensor (Fehlende Werte) und Pumpe (PumpCoordinator) zusammensetzt
 class APS(
     val glucoseRepository: GlucoseRepository,
     val therapyRepository: TherapyRepository,
@@ -53,7 +54,7 @@ class APS(
         treatmentRepository = treatmentRepository,
         onAcquireBusyState = { acquireBusyState() },
         onReleaseBusyState = { releaseBusyState() },
-        onRequestWakeup = { timestamp -> requestPumpCoordinatorWakeup(timestamp) }
+        onJobError = { _TODO() }
     )
     val therapyManager = TherapyManager(
         therapyRepository,
@@ -85,10 +86,14 @@ class APS(
 
     var insulinPump: InsulinPump? = null
         set(value) {
-            field?.stop()
             field = value
-            field?.start()
-            pumpCoordinator.pumpDriver = value
+            inAPSThread {
+                if (value == null) {
+                    pumpCoordinator.stop()
+                } else {
+                    pumpCoordinator.initialize(value)
+                }
+            }
         }
 
     // Observers: Exposed from the internal core
@@ -186,11 +191,6 @@ class APS(
      */
     fun updateBg(bg: BgReading) = inAPSThread {
         core.updateBg(bg)
-    }
-
-    fun requestPumpCoordinatorWakeup(timestamp: Timestamp) {
-        _TODO()
-        // TODO: Trigger alarm manager, route callback to pumpCoordinator.wakeup()
     }
 
     /**

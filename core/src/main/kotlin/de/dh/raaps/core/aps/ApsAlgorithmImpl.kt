@@ -134,13 +134,17 @@ class ApsAlgorithmImpl(
                     minus(insulinPeakTicks * 2),
                 now
             )
-            pumpCoordinator.issueCommand(
-                PumpCommand.SetTempBasal(
-                    unitsPerHour = 0.0,
-                    durationMinutes = Minutes.timeDifference(startZeroTemp.timestamp, nextMin.tick.timestamp)
-                ),
-                executeAfter = startZeroTemp.timestamp
-            )
+            // We expect that when the earliest time to reduce the temp basal is `startZeroTemp`.
+            // Since we don't issue treatments for the future for safety, we'll only issue the pump
+            // command if it's due now.
+            if (startZeroTemp <= now) {
+                pumpCoordinator.issueCommand(
+                    PumpCommand.SetTempBasal(
+                        unitsPerHour = 0.0,
+                        durationMinutes = Minutes.timeDifference(startZeroTemp.timestamp, nextMin.tick.timestamp)
+                    ),
+                )
+            }
             predictionModel.setTempBasalDeviationStage_5(-basalRate, startZeroTemp, nextMin.tick)
         }
 
@@ -189,8 +193,8 @@ class ApsAlgorithmImpl(
                 // increasing the risk of an immediate drop.
                 // This is a heuristic which seems well to me but could be improved in the future.
                 val insulinTick = maxOf(firstHighPoint.tick.minus(insulinPeakTicks), now)
-                if (insulinTick > now.plusMinutes(10)) {
-                    // Don't schedule the insulin too early, we never know what will happen...
+                if (insulinTick > now) {
+                    // Don't schedule the insulin in the future, we never know what will happen...
                     // (User could change the target temporarily, user could do sports, ...)
                     return@let
                 }
@@ -220,11 +224,19 @@ class ApsAlgorithmImpl(
                 }
                 pumpCoordinator.issueCommand(
                     PumpCommand.DeliverBolus(InsulinAmount(insulinUnits)),
-                    executeAfter = insulinTick.timestamp
                 )
                 predictionModel.calculatePredictionStage_1(treatmentRepository, carbsInsulinCalculationModel)
             }
         }
+    }
+
+    override suspend fun nextStaleCheck(): Timestamp {
+        return Timestamp.now() + STALE_BG_THRESHOLD
+    }
+
+    override suspend fun isStale(): Boolean {
+        val lastReading = bgReadingsHistory.last()
+        return lastReading != null && lastReading.timestamp + STALE_BG_THRESHOLD < Timestamp.now()
     }
 
     companion object {

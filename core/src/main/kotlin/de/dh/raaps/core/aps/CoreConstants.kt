@@ -15,4 +15,9 @@ val RECENT_BG_THRESHOLD = Minutes(1)
  */
 val EARLY_BG_GUARD = Minutes(1)
 
+/**
+ * Timespan until last BG value when the Core will mark the BG as stale.
+ */
+val STALE_BG_THRESHOLD = Minutes(12)
+
 val MAX_BG_DEVIATION_FOR_KEEP_PREDICTION = BgDelta(10)
