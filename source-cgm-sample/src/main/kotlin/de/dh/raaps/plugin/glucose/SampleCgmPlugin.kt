@@ -34,10 +34,6 @@ class SampleCgmPlugin : GlucoseSource, Plugin {
         // Nothing to do
     }
 
-    override fun start() {
-        // Nothing to do
-    }
-
     override fun stop() {
         // Nothing to do
     }

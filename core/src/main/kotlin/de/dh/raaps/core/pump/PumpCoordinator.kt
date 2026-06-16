@@ -2,6 +2,7 @@ package de.dh.raaps.core.pump
 
 import de.dh.raaps.common.model.InsulinAmount
 import de.dh.raaps.common.model.InsulinPump
+import de.dh.raaps.common.model.InsulinPumpStatus
 import de.dh.raaps.common.model.PumpStatus
 import de.dh.raaps.common.model.data.Minutes
 import de.dh.raaps.common.model.data.TherapyData
@@ -21,6 +22,12 @@ import java.util.UUID
 
 enum class PumpCoordinatorState {
     Idle, Running
+}
+
+data object EmptyInsulinPumpStatus : InsulinPumpStatus {
+    override val batteryRemainingPercent: Int = 0
+    override val reservoirRemainingUnits: Double = 0.0
+    override val lastSyncTimestamp: Long = 0
 }
 
 /**
@@ -96,13 +103,21 @@ interface PumpState {
 }
 
 /**
- * The PumpCoordinator is the high-level interface to the insulin pump subsystem.
- * It abstracts from the connection state and manages a queue of [PumpJob]s.
- * It ensures that commands from the APS core are eventually executed or invalidated.
+ * The PumpCoordinator is the high-level orchestrator for the insulin pump subsystem.
+ * It acts as a mediator between the APS core and the physical pump hardware (abstracted via [InsulinPump]).
  *
- * The lifetime of a PumpCoordinator is as big as the enclosing APS instance. During its lifetime,
- * pumps can be attached and removed. While a pump is attached, the pump loop runs and dispatches
- * pump commands, even if the pump is suspended or erroneous.
+ * Key Responsibilities:
+ * - **Job Management:** Manages a queue of [PumpJob]s, ensuring commands are executed in order
+ *   or invalidated upon expiration.
+ * - **Resilience:** Implements a multi-tier retry strategy (immediate retries followed by
+ *   time-delayed attempts) to handle transient connectivity issues.
+ * - **Connectivity Monitoring:** Maintains a persistent link via a regular "heartbeat" to
+ *   keep status information (reservoir, battery) up to date.
+ * - **Power Management:** Coordinates with the system's power state by acquiring wake-locks
+ *   during active communication and scheduling system wakeups for future tasks.
+ *
+ * The coordinator's lifecycle is bound to the enclosing APS instance. It remains active
+ * and continues to dispatch commands even if pump drivers are detached or replaced.
  */
 // TODO: Multithreading/thread allocation
 // TODO: Notifications from pump; persist insulin applications in repository
@@ -121,6 +136,9 @@ class PumpCoordinator(
 
     private val _pumpState = MutableStateFlow<PumpState>(PumpState.Initializing)
     val pumpState: StateFlow<PumpState> = _pumpState.asStateFlow()
+
+    private val _pumpStatus = MutableStateFlow<InsulinPumpStatus>(EmptyInsulinPumpStatus)
+    val pumpStatus: StateFlow<InsulinPumpStatus> = _pumpStatus.asStateFlow()
 
     // Provided by the driver during initialization
     var pumpInformation: PumpInformation? = null
@@ -226,6 +244,7 @@ class PumpCoordinator(
             repeat(3) {
                 try {
                     val status = driver.readStatus()
+                    _pumpStatus.value = status
                     handleStatusSuccess(status)
                     return
                 } catch (_: Exception) {

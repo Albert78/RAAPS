@@ -5,7 +5,6 @@ import de.dh.raaps.common.model.GlucoseSource
 import de.dh.raaps.common.model.data.BgReading
 import de.dh.raaps.common.model.data.BgReadingsInterval
 import de.dh.raaps.common.model.data.BgSampleKind
-import de.dh.raaps.common.model.data.BgValue
 import de.dh.raaps.common.model.data.Minutes
 import de.dh.raaps.common.model.data.RawBg
 import de.dh.raaps.common.model.data.Timestamp
@@ -13,7 +12,6 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.map
-import kotlin.random.Random
 
 class SimBodyCgmSource(
     val bodyModel: BodyModel,
@@ -29,10 +27,6 @@ class SimBodyCgmSource(
     override val readingsTimeDelay = Minutes(5)
 
     override fun getSensorTypeName() = "Sim Body Dexcom G6 Plugin"
-
-    override fun start() {
-        // Nothing to do
-    }
 
     override fun stop() {
         // Nothing to do

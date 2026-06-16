@@ -3,7 +3,6 @@ package de.dh.raaps.plugin.pump
 import de.dh.raaps.common.model.InsulinPump
 import de.dh.raaps.common.model.Plugin
 import de.dh.raaps.common.model.PluginManager
-import de.dh.raaps.common.model.ToDo
 
 class SampleInsulinPumpPlugin : InsulinPump, Plugin {
     override val neededPermissions: Collection<String> = emptyList()
@@ -13,10 +12,6 @@ class SampleInsulinPumpPlugin : InsulinPump, Plugin {
 
     override fun initialize(pluginManager: PluginManager) {
         // Nothing to do
-    }
-
-    override fun start() {
-        ToDo.toBeImplemented("SamplePumpPlugin")
     }
 
     override fun stop() {
