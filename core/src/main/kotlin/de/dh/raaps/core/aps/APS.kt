@@ -50,16 +50,17 @@ class APS(
 
     private val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
 
+    val therapyManager = TherapyManager(
+        therapyRepository,
+        appPreferencesRepository
+    )
+
     val pumpCoordinator = PumpCoordinator.create(
         treatmentRepository = treatmentRepository,
         onAcquireBusyState = { acquireBusyState() },
         onReleaseBusyState = { releaseBusyState() },
         onRequestWakeup = { timestamp -> scheduleSystemWakeup(timestamp, WAKEUP_PUMP_COORDINATOR) },
-        onJobError = { _TODO() },
-    )
-    val therapyManager = TherapyManager(
-        therapyRepository,
-        appPreferencesRepository
+        onJobError = { _, _ -> _TODO() },
     )
 
     // Computation Core: Pure logic and state, completely thread-agnostic
