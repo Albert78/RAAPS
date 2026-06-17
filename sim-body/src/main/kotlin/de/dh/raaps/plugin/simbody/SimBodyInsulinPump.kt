@@ -13,11 +13,11 @@ class SimBodyInsulinPump(
     val bodyModel: BodyModel,
     val application: Application
 ): InsulinPump {
-    override val status: StateFlow<InsulinPumpStatus>
+    override val pumpStatus: StateFlow<InsulinPumpStatus>
         get() = TODO("Not yet implemented")
     override val alerts: StateFlow<PumpAlerts>
         get() = TODO("Not yet implemented")
-    override val basal: StateFlow<BasalStatus>
+    override val basalStatus: StateFlow<BasalStatus>
         get() = TODO("Not yet implemented")
     override val basalHistory: StateFlow<List<BasalHistoryPoint>>
         get() = TODO("Not yet implemented")

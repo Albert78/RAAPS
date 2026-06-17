@@ -1,23 +1,25 @@
 package de.dh.raaps.core.pump
 
-import de.dh.raaps.common.model.BasalStatus
 import de.dh.raaps.common.model.InsulinAmount
 import de.dh.raaps.common.model.InsulinPump
 import de.dh.raaps.common.model.InsulinPumpStatus
-import de.dh.raaps.common.model.PumpAlerts
 import de.dh.raaps.common.model.data.Minutes
 import de.dh.raaps.common.model.data.TherapyData
 import de.dh.raaps.common.model.data.Timestamp
 import de.dh.raaps.core.repository.TreatmentRepository
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.Job
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import java.util.UUID
@@ -27,6 +29,7 @@ enum class PumpCoordinatorState {
 }
 
 data object EmptyInsulinPumpStatus : InsulinPumpStatus {
+    override val pumpSuspended: Boolean = false
     override val batteryRemainingPercent: Int = 0
     override val reservoirRemainingUnits: Double = 0.0
     override val lastSyncTimestamp: Long = 0
@@ -63,35 +66,6 @@ enum class JobErrorCode {
 }
 
 /**
- * Static information about the bonded pump.
- */
-data class PumpInformation(
-    val manufacturer: String,
-    val model: String,
-    val serialNumber: String,
-    val pumpDescription: String
-)
-
-/**
- * Technical specification and hardware characteristics.
- */
-data class PumpCapabilities(
-    val minBasalIncrement: Double,
-    val minBolusIncrement: Double,
-    val maxBolusSize: Double,
-    // TODO: Continue list for sensible capability values
-//    val supportsTempBasal: Boolean,
-//    val supportsExtendedBolus: Boolean,
-//    val audibleTempBasalReminder: Boolean,
-//    val deliversBasalWhileBolusing: Boolean,
-//    val internalTimeManagement: Boolean
-)
-
-enum class PumpState {
-    Initializing, Normal, NoPump, Suspended
-}
-
-/**
  * The PumpCoordinator is the high-level orchestrator for the insulin pump subsystem.
  * It acts as a mediator between the APS core and the physical pump hardware (abstracted via [InsulinPump]).
  *
@@ -111,6 +85,8 @@ enum class PumpState {
  */
 // TODO: Multithreading/thread allocation
 // TODO: Notifications from pump; persist insulin applications in repository
+// TODO: Show pending pump jobs in UI
+@OptIn(ExperimentalCoroutinesApi::class)
 class PumpCoordinator(
     private val treatmentRepository: TreatmentRepository,
     private val onAcquireBusyState: () -> Unit,
@@ -122,40 +98,45 @@ class PumpCoordinator(
     private val _pumpCoordinatorState = MutableStateFlow(PumpCoordinatorState.Idle)
     val pumpCoordinatorState: StateFlow<PumpCoordinatorState> = _pumpCoordinatorState.asStateFlow()
 
-    private var pumpDriver: InsulinPump? = null
-    private var flowCollectionJob: Job? = null
+    private val activePump =
+        MutableStateFlow<InsulinPump?>(null)
 
-    private val _pumpState = MutableStateFlow(PumpState.Initializing)
-    val pumpState: StateFlow<PumpState> = _pumpState.asStateFlow()
+    val hardwareInformation =
+        activePump.flatMapLatest {
+            it?.hardwareInformation ?: flowOf(null)
+        }.stateIn(scope, SharingStarted.Eagerly, null)
+
+    val pumpCapabilities =
+        activePump.flatMapLatest {
+            it?.pumpCapabilities ?: flowOf(null)
+        }.stateIn(scope, SharingStarted.Eagerly, null)
 
     private val _lastConnectionTime = MutableStateFlow(Timestamp.INVALID)
     val lastConnectionTime: StateFlow<Timestamp> = _lastConnectionTime.asStateFlow()
 
-    private val _isConnected = MutableStateFlow(false)
-    val isConnected: StateFlow<Boolean> = _isConnected.asStateFlow()
+    val isConnected =
+        activePump.flatMapLatest {
+            it?.isConnected ?: flowOf(false)
+        }.stateIn(scope, SharingStarted.Eagerly, false)
 
-    private val _pumpStatus = MutableStateFlow<InsulinPumpStatus>(EmptyInsulinPumpStatus)
-    val pumpStatus: StateFlow<InsulinPumpStatus> = _pumpStatus.asStateFlow()
+    val pumpStatus =
+        activePump.flatMapLatest {
+            it?.pumpStatus ?: flowOf(null)
+        }.stateIn(scope, SharingStarted.Eagerly, null)
 
-    private val _reservoirLevel = MutableStateFlow<InsulinAmount?>(null)
-    val reservoirLevel: StateFlow<InsulinAmount?> = _reservoirLevel.asStateFlow()
+    val alerts =
+        activePump.flatMapLatest {
+            it?.alerts ?: flowOf(null)
+        }.stateIn(scope, SharingStarted.Eagerly, null)
 
-    private val _batteryLevel = MutableStateFlow<Int?>(null)
-    val batteryLevel: StateFlow<Int?> = _batteryLevel.asStateFlow()
-
-    private val _alerts = MutableStateFlow(PumpAlerts())
-    val alerts: StateFlow<PumpAlerts> = _alerts.asStateFlow()
-
-    private val _basalStatus = MutableStateFlow(BasalStatus())
-    val basalStatus: StateFlow<BasalStatus> = _basalStatus.asStateFlow()
+    val basalStatus =
+        activePump.flatMapLatest {
+            it?.basalStatus ?: flowOf(null)
+        }.stateIn(scope, SharingStarted.Eagerly, null)
 
     // TODO: Should we mirror these from the driver?
 //    val basalHistory: StateFlow<List<BasalHistoryPoint>>
 //    val bolusHistory: StateFlow<List<BolusHistoryPoint>>
-
-    // Provided by the driver during initialization
-    var pumpInformation: PumpInformation? = null
-    var pumpCapabilities: PumpCapabilities? = null
 
     private val _pendingJobs = MutableStateFlow<List<PumpJob>>(emptyList())
     val pendingJobs: StateFlow<List<PumpJob>> = _pendingJobs.asStateFlow()
@@ -174,57 +155,42 @@ class PumpCoordinator(
      * Stops this PumpCoordinator and removes the pump.
      */
     suspend fun stop() {
-        flowCollectionJob?.cancel()
-        flowCollectionJob = null
-        pumpDriver = null // This will automatically stop our job loop
-        _pumpState.value = PumpState.NoPump
-        _isConnected.value = false
+        activePump.value = null
 
         // Wait for job loop to finish
+        waitForIdle()
+    }
+
+    suspend fun waitForIdle() {
         pumpCoordinatorState.first { it == PumpCoordinatorState.Idle }
     }
 
-    private suspend fun initializePump(driver: InsulinPump) {
-        pumpDriver = driver
-        _pumpState.value = PumpState.Initializing
+    private suspend fun initializePump(pump: InsulinPump) {
+        activePump.value = pump
 
-        flowCollectionJob?.cancel()
-        flowCollectionJob = scope.launch {
-            // Collect status
-            launch {
-                driver.status.collect { status ->
-                    _pumpStatus.value = status
-                    handleStatusSuccess(status)
-                }
-            }
-
-            // Collect basal status
-            launch {
-                driver.basal.collect { basal ->
-                    _basalStatus.value = basal
-                }
-            }
-
-            // Collect alerts
-            launch {
-                driver.alerts.collect { alerts ->
-                    _alerts.value = alerts
-                }
-            }
-
+        scope.launch {
             // Sync history
             launch {
-                driver.bolusHistory.collect { /* TODO: Sync with repository */ }
+                pump.bolusHistory.collect { /* TODO: Sync with repository */ }
             }
             launch {
-                driver.basalHistory.collect { /* TODO: Sync with repository */ }
+                pump.basalHistory.collect { /* TODO: Sync with repository */ }
             }
             launch {
-                driver.refreshStatus()
-                driver.syncHistory()
+                pump.isConnected.collect { _ ->
+                    // Set last connection time on each change of isConnected -
+                    // If we're currently connected, lastConnectionTime is the time when the
+                    // connection was established, if we currently disconnected,
+                    // lastConnectionTime is the time when the connection was disconnected.
+                    _lastConnectionTime.value = Timestamp.now()
+                }
             }
-            _pumpState.value = PumpState.Normal
         }
+
+        pump.refreshStatus()
+        pump.syncHistory()
+        // Update more data, if necessary...
+        // Here, we have all data from the pump and we are operational.
     }
 
     fun clearPendingJobs() {
@@ -277,21 +243,21 @@ class PumpCoordinator(
     }
 
     private suspend fun sync() {
-        val driver = pumpDriver ?: return
+        val pump = activePump.value ?: return
 
-        checkHeartbeat(driver)
-        processJobs(driver)
+        checkHeartbeat(pump)
+        processJobs(pump)
     }
 
-    private suspend fun checkHeartbeat(driver: InsulinPump) {
+    private suspend fun checkHeartbeat(pump: InsulinPump) {
         val now = Timestamp.now()
         val lastConn = _lastConnectionTime.value
 
         if (lastConn + HEARTBEAT_INTERVAL < now) {
             repeat(3) {
                 try {
-                    driver.refreshStatus()
-                    driver.syncHistory()
+                    pump.refreshStatus()
+                    pump.syncHistory()
                     return
                 } catch (_: Exception) {
                     if (it < 2) delay(1000)
@@ -302,13 +268,13 @@ class PumpCoordinator(
         }
     }
 
-    private suspend fun processJobs(driver: InsulinPump) {
+    private suspend fun processJobs(pump: InsulinPump) {
         while (true) {
             val job = _pendingJobs.value
                 .filter { it.isReady() && !it.isExpired() }
                 .minByOrNull { it.nextAttemptAt } ?: break
 
-            val success = tryExecuteJobWithRetries(driver, job)
+            val success = tryExecuteJobWithRetries(pump, job)
             if (success) {
                 _pendingJobs.update { it - job }
             } else {
@@ -331,11 +297,10 @@ class PumpCoordinator(
         }
     }
 
-    private suspend fun tryExecuteJobWithRetries(driver: InsulinPump, job: PumpJob): Boolean {
+    private suspend fun tryExecuteJobWithRetries(pump: InsulinPump, job: PumpJob): Boolean {
         repeat(3) {
             try {
-                executeOnDriver(driver, job.command)
-                handleSuccess(job)
+                executeOnPump(pump, job.command)
                 return true
             } catch (_: Exception) {
                 if (it < 2) delay(RETRY_INTERVAL_MS)
@@ -344,34 +309,18 @@ class PumpCoordinator(
         return false
     }
 
-    private suspend fun executeOnDriver(driver: InsulinPump, command: PumpCommand) {
+    private suspend fun executeOnPump(pump: InsulinPump, command: PumpCommand) {
         when (command) {
-            is PumpCommand.DeliverBolus -> driver.bolus(command.amount.iu)
+            is PumpCommand.DeliverBolus -> pump.bolus(command.amount.iu)
             is PumpCommand.SetTempBasal -> {
-                driver.tempBasal(command.percent, command.durationHours)
+                pump.tempBasal(command.percent, command.durationHours)
             }
             is PumpCommand.SetProfile -> {
                 // TODO: SetProfile not supported by current InsulinPump interface
             }
-            is PumpCommand.CancelTempBasal -> driver.cancelTempBasal()
-            is PumpCommand.CancelBolus -> driver.stopBolus()
+            is PumpCommand.CancelTempBasal -> pump.cancelTempBasal()
+            is PumpCommand.CancelBolus -> pump.stopBolus()
         }
-    }
-
-    private fun handleStatusSuccess(status: InsulinPumpStatus) {
-        val now = Timestamp.now()
-        _lastConnectionTime.value = now
-        _reservoirLevel.value = InsulinAmount(status.reservoirRemainingUnits)
-        _batteryLevel.value = status.batteryRemainingPercent
-        _isConnected.value = true
-        _pumpState.value = PumpState.Normal
-    }
-
-    private fun handleSuccess(job: PumpJob) {
-        val now = Timestamp.now()
-        _isConnected.value = true
-        _lastConnectionTime.value = now
-        _pumpState.value = PumpState.Normal
     }
 
     private fun scheduleNextWakeup() {

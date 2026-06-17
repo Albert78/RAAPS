@@ -3,14 +3,51 @@ package de.dh.raaps.common.model
 import kotlinx.coroutines.flow.StateFlow
 
 /**
+ * Manufacturer and hardware information about a pump.
+ */
+data class HardwareInformation(
+    val manufacturer: String,
+    val model: String,
+    val serialNumber: String,
+    val pumpDescription: String
+)
+
+/**
+ * Technical specification and hardware characteristics.
+ */
+data class PumpCapabilities(
+    val minBasalRate: Double,
+    val supportsZeroBasal: Boolean,
+    val minBasalIncrement: Double,
+    val minBolusIncrement: Double,
+    val maxBolusSize: Double,
+    // TODO: Continue list for sensible capability values
+//    val supportsTempBasal: Boolean,
+//    val supportsExtendedBolus: Boolean,
+//    val audibleTempBasalReminder: Boolean,
+//    val deliversBasalWhileBolusing: Boolean,
+//    val internalTimeManagement: Boolean
+)
+
+/**
+ * Generic data representing the general status of an insulin pump.
+ */
+interface InsulinPumpStatus {
+    val pumpSuspended: Boolean
+    val batteryRemainingPercent: Int
+    val reservoirRemainingUnits: Double
+    val lastSyncTimestamp: Long
+}
+
+/**
  * Normalized state of pump-related alerts.
  */
 data class PumpAlerts(
     val batteryLow: Boolean = false,
     val reservoirLow: Boolean = false,
-    val suspended: Boolean = false,
     val other: Boolean = false
 )
+
 /**
  * Normalized state of the basal insulin delivery.
  */
@@ -39,15 +76,6 @@ data class BasalStatus(
 )
 
 /**
- * Generic data representing the general status of an insulin pump.
- */
-interface InsulinPumpStatus {
-    val batteryRemainingPercent: Int
-    val reservoirRemainingUnits: Double
-    val lastSyncTimestamp: Long
-}
-
-/**
  * Snapshot of a basal rate at a specific point in time.
  */
 interface BasalHistoryPoint {
@@ -68,21 +96,33 @@ interface BolusHistoryPoint {
  */
 interface InsulinPump {
     /**
+     * Pump hardware information. Null if not yet retrieved.
+     */
+    val hardwareInformation: StateFlow<HardwareInformation?>
+
+    /**
+     * Pump capabilities information. Null if not yet retrieved.
+     */
+    val pumpCapabilities: StateFlow<PumpCapabilities>
+
+    val isConnected: StateFlow<Boolean>
+
+    /**
      * General status and data of the pump (Battery, Reservoir, etc.).
      * Can be updated by calling [refreshStatus].
      */
-    val status: StateFlow<InsulinPumpStatus>
+    val pumpStatus: StateFlow<InsulinPumpStatus>
 
     /**
-     * Current state of normalized pump alerts. If one or more alerts are set, the user should check the pump.
+     * Current status of normalized pump alerts. If one or more alerts are set, the user should check the pump.
      * Can be updated by calling [syncHistory].
      */
     val alerts: StateFlow<PumpAlerts>
 
     /**
-     * Current state of the basal insulin delivery.
+     * Current status of the basal insulin delivery.
      */
-    val basal: StateFlow<BasalStatus>
+    val basalStatus: StateFlow<BasalStatus>
 
     /**
      * History of basal insulin delivery for the last 24 hours.

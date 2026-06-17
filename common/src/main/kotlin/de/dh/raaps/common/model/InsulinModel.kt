@@ -34,6 +34,10 @@ value class InsulinAmount(val iu: Double) {
 
     companion object {
         val ZERO = InsulinAmount(0.0)
+
+        fun fromPumpUnits(value: Double, concentration: InsulinConcentration): InsulinAmount {
+            return InsulinAmount(value * concentration.factor)
+        }
     }
 }
 
