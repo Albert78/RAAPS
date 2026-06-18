@@ -101,6 +101,19 @@ class PumpCoordinator(
     private val activePump =
         MutableStateFlow<InsulinPump?>(null)
 
+    private val _pendingJobs = MutableStateFlow<List<PumpJob>>(emptyList())
+    val pendingJobs: StateFlow<List<PumpJob>> = _pendingJobs.asStateFlow()
+
+    private val _lastConnectionTime = MutableStateFlow(Timestamp.INVALID)
+    val lastConnectionTime: StateFlow<Timestamp> = _lastConnectionTime.asStateFlow()
+
+    val isConnected =
+        activePump.flatMapLatest {
+            it?.isConnected ?: flowOf(false)
+        }.stateIn(scope, SharingStarted.Eagerly, false)
+
+    // ----------------------------------------- Pump data ----------------------------------------
+
     val hardwareInformation =
         activePump.flatMapLatest {
             it?.hardwareInformation ?: flowOf(null)
@@ -110,14 +123,6 @@ class PumpCoordinator(
         activePump.flatMapLatest {
             it?.pumpCapabilities ?: flowOf(null)
         }.stateIn(scope, SharingStarted.Eagerly, null)
-
-    private val _lastConnectionTime = MutableStateFlow(Timestamp.INVALID)
-    val lastConnectionTime: StateFlow<Timestamp> = _lastConnectionTime.asStateFlow()
-
-    val isConnected =
-        activePump.flatMapLatest {
-            it?.isConnected ?: flowOf(false)
-        }.stateIn(scope, SharingStarted.Eagerly, false)
 
     val pumpStatus =
         activePump.flatMapLatest {
@@ -134,12 +139,17 @@ class PumpCoordinator(
             it?.basalStatus ?: flowOf(null)
         }.stateIn(scope, SharingStarted.Eagerly, null)
 
-    // TODO: Should we mirror these from the driver?
-//    val basalHistory: StateFlow<List<BasalHistoryPoint>>
-//    val bolusHistory: StateFlow<List<BolusHistoryPoint>>
+    val basalHistory =
+        activePump.flatMapLatest {
+            it?.basalHistory ?: flowOf(null)
+        }.stateIn(scope, SharingStarted.Eagerly, null)
 
-    private val _pendingJobs = MutableStateFlow<List<PumpJob>>(emptyList())
-    val pendingJobs: StateFlow<List<PumpJob>> = _pendingJobs.asStateFlow()
+    val bolusHistory =
+        activePump.flatMapLatest {
+            it?.bolusHistory ?: flowOf(null)
+        }.stateIn(scope, SharingStarted.Eagerly, null)
+
+    // --------------------------------------------------------------------------------------------
 
     /**
      * Sets the pump and initializes this [PumpCoordinator].
