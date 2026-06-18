@@ -4,12 +4,12 @@ import android.util.Log
 import de.dh.raaps.AppPreferencesRepository
 import de.dh.raaps.common.model.DataProvider
 import de.dh.raaps.common.model.GlucoseSource
+import de.dh.raaps.common.model.InsulinAmount
 import de.dh.raaps.common.model.data.BgReading
 import de.dh.raaps.common.model.data.BgSampleKind
 import de.dh.raaps.common.model.data.Minutes
 import de.dh.raaps.common.model.data.SensorType
 import de.dh.raaps.common.model.data.Timestamp
-import de.dh.raaps.core.pump.PumpCoordinator
 import de.dh.raaps.core.repository.GlucoseRepository
 import de.dh.raaps.core.repository.TreatmentRepository
 import kotlinx.coroutines.sync.Mutex
@@ -81,16 +81,20 @@ enum class CoreIssue {
  */
 class Core(
     val therapyManager: TherapyManager,
-    val pumpCoordinator: PumpCoordinator,
     private val glucoseRepository: GlucoseRepository,
     val treatmentRepository: TreatmentRepository,
     private val appPreferencesRepository: AppPreferencesRepository,
+
     private val onDataUpdated: () -> Unit,
     private val onCoreStateChanged: () -> Unit,
     private val onIssuesChanged: () -> Unit,
     private val onRescheduleWakeup: (Timestamp) -> Unit,
     private val onAcquireBusyState: () -> Unit,
-    private val onReleaseBusyState: () -> Unit
+    private val onReleaseBusyState: () -> Unit,
+
+    private val onCancelInsulinJobs: () -> Unit,
+    private val onDeliverBolus: (amount: InsulinAmount) -> Unit,
+    private val onZeroTemp: (durationInHours: Int) -> Unit,
 ) {
     private var calculationAlgorithm: ApsAlgorithm? = null
 
@@ -184,7 +188,9 @@ class Core(
                     treatmentRepository,
                     readingsHistory,
                     therapyManager,
-                    pumpCoordinator = pumpCoordinator,
+                    onCancelInsulinJobs = onCancelInsulinJobs,
+                    onDeliverBolus = onDeliverBolus,
+                    onZeroTemp = onZeroTemp,
                     tickInterval = TICK_INTERVAL
                 )
                 onDataUpdated()
@@ -281,30 +287,38 @@ class Core(
         val TICK_INTERVAL = Minutes(TICK_INTERVAL_MINUTES)
 
         fun createProductiveCore(
-            pumpCoordinator: PumpCoordinator,
             therapyManager: TherapyManager,
             glucoseRepository: GlucoseRepository,
             treatmentRepository: TreatmentRepository,
             appPreferencesRepository: AppPreferencesRepository,
+
             onDataUpdated: () -> Unit,
             onCoreStateChanged: () -> Unit,
             onIssuesChanged: () -> Unit,
             onRescheduleWakeup: (Timestamp) -> Unit,
             onAcquireBusyState: () -> Unit,
             onReleaseBusyState: () -> Unit,
+
+            onCancelInsulinJobs: () -> Unit,
+            onDeliverBolus: (amount: InsulinAmount) -> Unit,
+            onZeroTemp: (durationInHours: Int) -> Unit,
         ): Core {
             return Core(
                 glucoseRepository = glucoseRepository,
                 treatmentRepository = treatmentRepository,
                 appPreferencesRepository = appPreferencesRepository,
                 therapyManager = therapyManager,
-                pumpCoordinator = pumpCoordinator,
+
                 onDataUpdated = onDataUpdated,
                 onCoreStateChanged = onCoreStateChanged,
                 onIssuesChanged = onIssuesChanged,
                 onRescheduleWakeup = onRescheduleWakeup,
                 onAcquireBusyState = onAcquireBusyState,
-                onReleaseBusyState = onReleaseBusyState
+                onReleaseBusyState = onReleaseBusyState,
+
+                onCancelInsulinJobs = onCancelInsulinJobs,
+                onZeroTemp = onZeroTemp,
+                onDeliverBolus = onDeliverBolus,
             )
         }
     }

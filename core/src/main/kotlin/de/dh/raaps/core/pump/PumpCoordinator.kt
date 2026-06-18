@@ -13,13 +13,9 @@ import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.flow.flatMapLatest
-import kotlinx.coroutines.flow.flowOf
-import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import java.util.UUID
@@ -80,14 +76,15 @@ enum class JobErrorCode {
  *   during active communication and scheduling system wakeups for future tasks.
  *
  * The coordinator's lifecycle is bound to the enclosing APS instance. It remains active
- * and continues to dispatch commands even if pump drivers are detached or replaced,
- * effectively decoupling the core logic from the specific driver's lifetime.
+ * and continues to dispatch commands even if the pump is disconnected,
+ * effectively decoupling the core logic from the pump availability.
  */
 // TODO: Multithreading/thread allocation
 // TODO: Notifications from pump; persist insulin applications in repository
 // TODO: Show pending pump jobs in UI
 @OptIn(ExperimentalCoroutinesApi::class)
 class PumpCoordinator(
+    val pump: InsulinPump,
     private val treatmentRepository: TreatmentRepository,
     private val onAcquireBusyState: () -> Unit,
     private val onReleaseBusyState: () -> Unit,
@@ -98,86 +95,18 @@ class PumpCoordinator(
     private val _pumpCoordinatorState = MutableStateFlow(PumpCoordinatorState.Idle)
     val pumpCoordinatorState: StateFlow<PumpCoordinatorState> = _pumpCoordinatorState.asStateFlow()
 
-    private val activePump =
-        MutableStateFlow<InsulinPump?>(null)
-
     private val _pendingJobs = MutableStateFlow<List<PumpJob>>(emptyList())
     val pendingJobs: StateFlow<List<PumpJob>> = _pendingJobs.asStateFlow()
 
     private val _lastConnectionTime = MutableStateFlow(Timestamp.INVALID)
     val lastConnectionTime: StateFlow<Timestamp> = _lastConnectionTime.asStateFlow()
 
-    val isConnected =
-        activePump.flatMapLatest {
-            it?.isConnected ?: flowOf(false)
-        }.stateIn(scope, SharingStarted.Eagerly, false)
-
-    // ----------------------------------------- Pump data ----------------------------------------
-
-    val hardwareInformation =
-        activePump.flatMapLatest {
-            it?.hardwareInformation ?: flowOf(null)
-        }.stateIn(scope, SharingStarted.Eagerly, null)
-
-    val pumpCapabilities =
-        activePump.flatMapLatest {
-            it?.pumpCapabilities ?: flowOf(null)
-        }.stateIn(scope, SharingStarted.Eagerly, null)
-
-    val pumpStatus =
-        activePump.flatMapLatest {
-            it?.pumpStatus ?: flowOf(null)
-        }.stateIn(scope, SharingStarted.Eagerly, null)
-
-    val alerts =
-        activePump.flatMapLatest {
-            it?.alerts ?: flowOf(null)
-        }.stateIn(scope, SharingStarted.Eagerly, null)
-
-    val basalStatus =
-        activePump.flatMapLatest {
-            it?.basalStatus ?: flowOf(null)
-        }.stateIn(scope, SharingStarted.Eagerly, null)
-
-    val basalHistory =
-        activePump.flatMapLatest {
-            it?.basalHistory ?: flowOf(null)
-        }.stateIn(scope, SharingStarted.Eagerly, null)
-
-    val bolusHistory =
-        activePump.flatMapLatest {
-            it?.bolusHistory ?: flowOf(null)
-        }.stateIn(scope, SharingStarted.Eagerly, null)
-
-    // --------------------------------------------------------------------------------------------
-
-    /**
-     * Sets the pump and initializes this [PumpCoordinator].
-     * @param driver The pump driver to use.
-     */
-    suspend fun initialize(driver: InsulinPump) {
-        stop()
-        initializePump(driver)
+    init {
+        setupPump()
         startPumpConnection()
     }
 
-    /**
-     * Stops this PumpCoordinator and removes the pump.
-     */
-    suspend fun stop() {
-        activePump.value = null
-
-        // Wait for job loop to finish
-        waitForIdle()
-    }
-
-    suspend fun waitForIdle() {
-        pumpCoordinatorState.first { it == PumpCoordinatorState.Idle }
-    }
-
-    private suspend fun initializePump(pump: InsulinPump) {
-        activePump.value = pump
-
+    private fun setupPump() {
         scope.launch {
             // Sync history
             launch {
@@ -195,12 +124,30 @@ class PumpCoordinator(
                     _lastConnectionTime.value = Timestamp.now()
                 }
             }
-        }
 
-        pump.refreshStatus()
-        pump.syncHistory()
-        // Update more data, if necessary...
-        // Here, we have all data from the pump and we are operational.
+            pump.refreshStatus()
+            pump.syncHistory()
+            // Update more data, if necessary...
+            // Here, we have all data from the pump and we are operational.
+        }
+    }
+
+    private fun startPumpConnection() {
+        scope.launch {
+            onAcquireBusyState()
+            _pumpCoordinatorState.value = PumpCoordinatorState.Running
+            try {
+                sync()
+                scheduleNextWakeup()
+            } finally {
+                _pumpCoordinatorState.value = PumpCoordinatorState.Idle
+                onReleaseBusyState()
+            }
+        }
+    }
+
+    suspend fun waitForIdle() {
+        pumpCoordinatorState.first { it == PumpCoordinatorState.Idle }
     }
 
     fun clearPendingJobs() {
@@ -238,28 +185,12 @@ class PumpCoordinator(
         }
     }
 
-    private fun startPumpConnection() {
-        scope.launch {
-            onAcquireBusyState()
-            _pumpCoordinatorState.value = PumpCoordinatorState.Running
-            try {
-                sync()
-                scheduleNextWakeup()
-            } finally {
-                _pumpCoordinatorState.value = PumpCoordinatorState.Idle
-                onReleaseBusyState()
-            }
-        }
-    }
-
     private suspend fun sync() {
-        val pump = activePump.value ?: return
-
-        checkHeartbeat(pump)
-        processJobs(pump)
+        checkHeartbeat()
+        processJobs()
     }
 
-    private suspend fun checkHeartbeat(pump: InsulinPump) {
+    private suspend fun checkHeartbeat() {
         val now = Timestamp.now()
         val lastConn = _lastConnectionTime.value
 
@@ -278,13 +209,13 @@ class PumpCoordinator(
         }
     }
 
-    private suspend fun processJobs(pump: InsulinPump) {
+    private suspend fun processJobs() {
         while (true) {
             val job = _pendingJobs.value
                 .filter { it.isReady() && !it.isExpired() }
                 .minByOrNull { it.nextAttemptAt } ?: break
 
-            val success = tryExecuteJobWithRetries(pump, job)
+            val success = tryExecuteJobWithRetries(job)
             if (success) {
                 _pendingJobs.update { it - job }
             } else {
@@ -307,10 +238,10 @@ class PumpCoordinator(
         }
     }
 
-    private suspend fun tryExecuteJobWithRetries(pump: InsulinPump, job: PumpJob): Boolean {
+    private suspend fun tryExecuteJobWithRetries(job: PumpJob): Boolean {
         repeat(3) {
             try {
-                executeOnPump(pump, job.command)
+                executeOnPump(job.command)
                 return true
             } catch (_: Exception) {
                 if (it < 2) delay(RETRY_INTERVAL_MS)
@@ -319,7 +250,7 @@ class PumpCoordinator(
         return false
     }
 
-    private suspend fun executeOnPump(pump: InsulinPump, command: PumpCommand) {
+    private suspend fun executeOnPump(command: PumpCommand) {
         when (command) {
             is PumpCommand.DeliverBolus -> pump.bolus(command.amount.iu)
             is PumpCommand.SetTempBasal -> {
@@ -360,6 +291,7 @@ class PumpCoordinator(
         private const val RETRY_INTERVAL_MS: Long = 10_000
 
         fun create(
+            pump: InsulinPump,
             treatmentRepository: TreatmentRepository,
             onAcquireBusyState: () -> Unit,
             onReleaseBusyState: () -> Unit,
@@ -367,6 +299,7 @@ class PumpCoordinator(
             onJobError: (PumpJob, JobErrorCode) -> Unit,
         ): PumpCoordinator {
             return PumpCoordinator(
+                pump = pump,
                 treatmentRepository = treatmentRepository,
                 onAcquireBusyState = onAcquireBusyState,
                 onReleaseBusyState = onReleaseBusyState,

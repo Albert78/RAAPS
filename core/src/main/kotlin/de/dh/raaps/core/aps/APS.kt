@@ -6,9 +6,11 @@ import android.os.PowerManager
 import android.util.Log
 import de.dh.raaps.AppPreferencesRepository
 import de.dh.raaps.common.model.GlucoseSource
+import de.dh.raaps.common.model.InsulinAmount
 import de.dh.raaps.common.model.InsulinPump
 import de.dh.raaps.common.model.data.BgReading
 import de.dh.raaps.common.model.data.Timestamp
+import de.dh.raaps.core.pump.PumpCommand
 import de.dh.raaps.core.pump.PumpCoordinator
 import de.dh.raaps.core.repository.GlucoseRepository
 import de.dh.raaps.core.repository.TherapyRepository
@@ -55,27 +57,25 @@ class APS(
         appPreferencesRepository
     )
 
-    val pumpCoordinator = PumpCoordinator.create(
-        treatmentRepository = treatmentRepository,
-        onAcquireBusyState = { acquireBusyState() },
-        onReleaseBusyState = { releaseBusyState() },
-        onRequestWakeup = { timestamp -> scheduleSystemWakeup(timestamp, WAKEUP_PUMP_COORDINATOR) },
-        onJobError = { _, _ -> _TODO() },
-    )
+    var pumpCoordinator: PumpCoordinator? = null
 
     // Computation Core: Pure logic and state, completely thread-agnostic
     private val core: Core = Core.createProductiveCore(
-        pumpCoordinator = pumpCoordinator,
         therapyManager = therapyManager,
         glucoseRepository = glucoseRepository,
         treatmentRepository = treatmentRepository,
         appPreferencesRepository = appPreferencesRepository,
+
         onDataUpdated = { emitDataUpdateEvent() },
         onCoreStateChanged = { emitCoreStateChangedEvent() },
         onIssuesChanged = { emitIssuesChangedEvent() },
         onRescheduleWakeup = { timestamp -> scheduleSystemWakeup(timestamp, WAKEUP_CORE) },
         onAcquireBusyState = { acquireBusyState() },
-        onReleaseBusyState = { releaseBusyState() }
+        onReleaseBusyState = { releaseBusyState() },
+
+        onCancelInsulinJobs = { cancelInsulinJobs() },
+        onDeliverBolus = { amount -> deliverBolus(amount) },
+        onZeroTemp = { durationInHours -> issueZeroTemp(durationInHours) },
     )
 
     // Plugins & Active Jobs
@@ -92,10 +92,17 @@ class APS(
         set(value) {
             field = value
             inAPSThread {
-                if (value == null) {
-                    pumpCoordinator.stop()
+                pumpCoordinator = if (value == null) {
+                    null
                 } else {
-                    pumpCoordinator.initialize(value)
+                    PumpCoordinator.create(
+                        pump = value,
+                        treatmentRepository = treatmentRepository,
+                        onAcquireBusyState = { acquireBusyState() },
+                        onReleaseBusyState = { releaseBusyState() },
+                        onRequestWakeup = { timestamp -> scheduleSystemWakeup(timestamp, WAKEUP_PUMP_COORDINATOR) },
+                        onJobError = { _, _ -> _TODO() },
+                    )
                 }
             }
         }
@@ -205,6 +212,27 @@ class APS(
         _activeIssues.emit(core.activeIssues)
     }
 
+    fun cancelInsulinJobs() {
+        pumpCoordinator?.cancelJobs()
+    }
+
+    fun deliverBolus(amount: InsulinAmount) {
+        pumpCoordinator?.issueCommand(
+            PumpCommand.DeliverBolus(amount),
+        )
+        // TODO: If no pump is present, tell the user to inject the bolus
+    }
+
+    fun issueZeroTemp(durationInHours: Int) {
+        pumpCoordinator?.issueCommand(
+            PumpCommand.SetTempBasal(
+                percent = 0,
+                durationHours = durationInHours
+            ),
+        )
+        // TODO: If no pump is present, tell the user to eat
+    }
+
     /**
      * Entry point for external BG updates.
      * Guaranteed to run on the internal APS thread.
@@ -221,7 +249,7 @@ class APS(
         if (wakeupId == WAKEUP_CORE) {
             core.wakeup()
         } else if (wakeupId == WAKEUP_PUMP_COORDINATOR) {
-            pumpCoordinator.wakeup()
+            pumpCoordinator?.wakeup()
         }
     }
 

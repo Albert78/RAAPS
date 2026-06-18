@@ -1,6 +1,7 @@
 package de.dh.raaps.core.aps
 
 import de.dh.raaps.common.model.InsulinAmount
+import de.dh.raaps.common.model.MS_PER_HOUR
 import de.dh.raaps.common.model.calculation.CarbsInsulinCalculationModel
 import de.dh.raaps.common.model.data.BgDelta
 import de.dh.raaps.common.model.data.BgReading
@@ -9,8 +10,6 @@ import de.dh.raaps.common.model.data.Minutes
 import de.dh.raaps.common.model.data.Tick
 import de.dh.raaps.common.model.data.Timestamp
 import de.dh.raaps.common.model.data.times
-import de.dh.raaps.core.pump.PumpCommand
-import de.dh.raaps.core.pump.PumpCoordinator
 import de.dh.raaps.core.repository.TreatmentRepository
 
 // TODO: Document the models needed for calculation, document calculation algorithm
@@ -21,7 +20,9 @@ class ApsAlgorithmImpl(
     val predictionModel: PredictionModel,
     val carbsInsulinCalculationModel: CarbsInsulinCalculationModel,
     val therapyManager: TherapyManager,
-    val pumpCoordinator: PumpCoordinator
+    val onCancelInsulinJobs: () -> Unit,
+    val onDeliverBolus: (amount: InsulinAmount) -> Unit,
+    val onZeroTemp: (durationInHours: Int) -> Unit,
 ): ApsAlgorithm {
     val sampledBgReadings =
         SampledBgReadings(timeline, bgReadingsHistory)
@@ -108,7 +109,7 @@ class ApsAlgorithmImpl(
             return
         }
 
-        pumpCoordinator.cancelJobs()
+        onCancelInsulinJobs()
         predictionModel.clearTempBasalsStage_5()
 
         val targetBgRange = therapyManager.getTarget()
@@ -138,12 +139,9 @@ class ApsAlgorithmImpl(
             // Since we don't issue treatments for the future for safety, we'll only issue the pump
             // command if it's due now.
             if (startZeroTemp <= now) {
-                pumpCoordinator.issueCommand(
-                    PumpCommand.SetTempBasal(
-                        unitsPerHour = 0.0,
-                        durationMinutes = Minutes.timeDifference(startZeroTemp.timestamp, nextMin.tick.timestamp)
-                    ),
-                )
+                val zeroTempDurationHours =
+                    (nextMin.tick.timestamp - startZeroTemp.timestamp).floorDiv(MS_PER_HOUR).toInt()
+                onZeroTemp(zeroTempDurationHours)
             }
             predictionModel.setTempBasalDeviationStage_5(-basalRate, startZeroTemp, nextMin.tick)
         }
@@ -205,6 +203,8 @@ class ApsAlgorithmImpl(
                 // prediction model. If the simulated insulin action results in a projected
                 // dip below the target range at any point within the prediction window,
                 // the dose is iteratively reduced until safety is ensured.
+                // The remaining correction will be calculated in one of the next cycles, when
+                // BG has risen higher again.
                 predictionModel.forEach(to = nextMax.tick) { tick, state ->
                     val bg = state.predictedBg2
                     if (bg == BgValue.INVALID) return@forEach
@@ -222,9 +222,7 @@ class ApsAlgorithmImpl(
                         insulinUnits -= bgError / state.isf
                     }
                 }
-                pumpCoordinator.issueCommand(
-                    PumpCommand.DeliverBolus(InsulinAmount(insulinUnits)),
-                )
+                onDeliverBolus(InsulinAmount(insulinUnits))
                 predictionModel.calculatePredictionStage_1(treatmentRepository, carbsInsulinCalculationModel)
             }
         }
@@ -252,7 +250,9 @@ class ApsAlgorithmImpl(
             treatmentRepository: TreatmentRepository,
             readingsHistory: List<BgReading>,
             therapyManager: TherapyManager,
-            pumpCoordinator: PumpCoordinator,
+            onCancelInsulinJobs: () -> Unit,
+            onDeliverBolus: (amount: InsulinAmount) -> Unit,
+            onZeroTemp: (durationInHours: Int) -> Unit,
             tickInterval: Minutes
         ): ApsAlgorithm {
             val timeline = ApsTimeline(tickInterval)
@@ -279,7 +279,9 @@ class ApsAlgorithmImpl(
                 predictionModel = predictionModel,
                 carbsInsulinCalculationModel = carbsInsulinCalculationModel,
                 therapyManager = therapyManager,
-                pumpCoordinator = pumpCoordinator
+                onCancelInsulinJobs = onCancelInsulinJobs,
+                onZeroTemp = onZeroTemp,
+                onDeliverBolus = onDeliverBolus,
             )
         }
     }
