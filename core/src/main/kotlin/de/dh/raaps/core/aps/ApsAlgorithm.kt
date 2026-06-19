@@ -5,6 +5,6 @@ import de.dh.raaps.common.model.data.Timestamp
 
 interface ApsAlgorithm {
     suspend fun recalculateForNewBgValue(currentBG: BgReading)
-    suspend fun nextStaleCheck(): Timestamp
+    suspend fun nextBgStaleCheckAt(): Timestamp
     suspend fun isStale(): Boolean
 }

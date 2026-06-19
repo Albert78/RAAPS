@@ -44,30 +44,6 @@ sealed interface CoreState {
     data object Shutdown : CoreState
 }
 
-enum class CoreIssue {
-    /**
-     * No recent glucose value available, the loop cannot calculate new treatments.
-     */
-    StaleBG,
-
-    /**
-     * The pump connection is missing, APS Core is not able to do its work.
-     * The work will be continued when the connection is available again.
-     */
-    PumpConnectionMissing,
-
-    /**
-     * The pump is connected but in a state where it cannot deliver insulin (e.g. suspended,
-     * battery empty, reservoir empty, hardware error).
-     */
-    PumpInoperative,
-
-    /**
-     * Any other issue that prevents the core from working.
-     */
-    Other
-}
-
 /**
  * The computation core of the APS system.
  *
@@ -87,8 +63,6 @@ class Core(
 
     private val onDataUpdated: () -> Unit,
     private val onCoreStateChanged: () -> Unit,
-    private val onIssuesChanged: () -> Unit,
-    private val onRescheduleWakeup: (Timestamp) -> Unit,
     private val onAcquireBusyState: () -> Unit,
     private val onReleaseBusyState: () -> Unit,
 
@@ -108,8 +82,8 @@ class Core(
     var coreState: CoreState = CoreState.Uninitialized
         private set
 
-    var activeIssues: Set<CoreIssue> = emptySet()
-        private set
+    suspend fun nextBgStaleCheckAt(): Timestamp? = calculationAlgorithm?.nextBgStaleCheckAt()
+    suspend fun isStale(): Boolean = calculationAlgorithm?.isStale() ?: false
 
     /**
      * Time delay between a glucose value in blood and the given Timestamp of the bg reading.
@@ -151,20 +125,6 @@ class Core(
     private fun setCoreState(state: CoreState) {
         coreState = state
         onCoreStateChanged()
-    }
-
-    fun addIssue(issue: CoreIssue) {
-        if (issue !in activeIssues) {
-            activeIssues = activeIssues + issue
-            onIssuesChanged()
-        }
-    }
-
-    fun removeIssue(issue: CoreIssue) {
-        if (issue in activeIssues) {
-            activeIssues = activeIssues - issue
-            onIssuesChanged()
-        }
     }
 
     suspend fun initialize() {
@@ -260,22 +220,9 @@ class Core(
                 onAwaitOrCancelPumpJobs()
                 if (isRecent && alg != null) {
                     alg.recalculateForNewBgValue(bg)
-                    val nextStaleCheckTime = alg.nextStaleCheck()
-                    onRescheduleWakeup(nextStaleCheckTime)
                 }
             }
             onDataUpdated()
-        }
-    }
-
-    suspend fun wakeup() {
-        busyWork {
-            val alg = calculationAlgorithm
-            if (alg?.isStale() ?: false) {
-                addIssue(CoreIssue.StaleBG)
-            } else {
-                removeIssue(CoreIssue.StaleBG)
-            }
         }
     }
 
@@ -294,8 +241,6 @@ class Core(
 
             onDataUpdated: () -> Unit,
             onCoreStateChanged: () -> Unit,
-            onIssuesChanged: () -> Unit,
-            onRescheduleWakeup: (Timestamp) -> Unit,
             onAcquireBusyState: () -> Unit,
             onReleaseBusyState: () -> Unit,
 
@@ -312,8 +257,6 @@ class Core(
 
                 onDataUpdated = onDataUpdated,
                 onCoreStateChanged = onCoreStateChanged,
-                onIssuesChanged = onIssuesChanged,
-                onRescheduleWakeup = onRescheduleWakeup,
                 onAcquireBusyState = onAcquireBusyState,
                 onReleaseBusyState = onReleaseBusyState,
 

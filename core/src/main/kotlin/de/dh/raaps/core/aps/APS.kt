@@ -28,6 +28,30 @@ import kotlinx.coroutines.launch
 import java.util.concurrent.Executors
 import java.util.concurrent.atomic.AtomicInteger
 
+enum class ApsIssue {
+    /**
+     * No recent glucose value available, the loop cannot calculate new treatments.
+     */
+    StaleBG,
+
+    /**
+     * The pump connection is missing, APS Core is not able to do its work.
+     * The work will be continued when the connection is available again.
+     */
+    PumpConnectionMissing,
+
+    /**
+     * The pump is connected but in a state where it cannot deliver insulin (e.g. suspended,
+     * battery empty, reservoir empty, hardware error).
+     */
+    PumpInoperative,
+
+    /**
+     * Any other issue that prevents the core from working.
+     */
+    Other
+}
+
 /**
  * APS system facade for the access from outside (UI, ...).
  * Manages threading and plugin lifecycles, ensuring all calls to the core are serialized
@@ -68,8 +92,6 @@ class APS(
 
         onDataUpdated = { emitDataUpdateEvent() },
         onCoreStateChanged = { emitCoreStateChangedEvent() },
-        onIssuesChanged = { emitIssuesChangedEvent() },
-        onRescheduleWakeup = { timestamp -> scheduleSystemWakeup(timestamp, WAKEUP_CORE) },
         onAcquireBusyState = { acquireBusyState() },
         onReleaseBusyState = { releaseBusyState() },
 
@@ -123,11 +145,23 @@ class APS(
      */
     val coreState: StateFlow<CoreState> = _coreState.asStateFlow()
 
-    private val _activeIssues = MutableStateFlow<Set<CoreIssue>>(emptySet())
+    private val _apsIssues = MutableStateFlow<Set<ApsIssue>>(emptySet())
     /**
-     * Active issues of the core.
+     * Active issues of the APS.
      */
-    val activeIssues: StateFlow<Set<CoreIssue>> = _activeIssues.asStateFlow()
+    val apsIssues: StateFlow<Set<ApsIssue>> = _apsIssues.asStateFlow()
+
+    private fun addIssue(issue: ApsIssue) {
+        if (issue !in _apsIssues.value) {
+            _apsIssues.value = _apsIssues.value + issue
+        }
+    }
+
+    private fun removeIssue(issue: ApsIssue) {
+        if (issue in _apsIssues.value) {
+            _apsIssues.value = _apsIssues.value - issue
+        }
+    }
 
     /**
      * Executes the given block on the internal APS thread.
@@ -209,10 +243,6 @@ class APS(
         _coreState.emit(core.coreState)
     }
 
-    private fun emitIssuesChangedEvent() = inExternalDispatcher {
-        _activeIssues.emit(core.activeIssues)
-    }
-
     fun cancelInsulinJobs() {
         pumpCoordinator?.cancelJobs()
     }
@@ -251,6 +281,9 @@ class APS(
      */
     fun updateBg(bg: BgReading) = inAPSThread {
         core.updateBg(bg)
+        core.nextBgStaleCheckAt()?.let {
+            scheduleSystemWakeup(it, WAKEUP_STALE_CHECK)
+        }
     }
 
     /**
@@ -258,8 +291,12 @@ class APS(
      * Guaranteed to run on the internal APS thread.
      */
     fun wakeup(wakeupId: Int) = inAPSThread {
-        if (wakeupId == WAKEUP_CORE) {
-            core.wakeup()
+        if (wakeupId == WAKEUP_STALE_CHECK) {
+            if (core.isStale()) {
+                addIssue(ApsIssue.StaleBG)
+            } else {
+                removeIssue(ApsIssue.StaleBG)
+            }
         } else if (wakeupId == WAKEUP_PUMP_COORDINATOR) {
             pumpCoordinator?.wakeup()
         }
@@ -290,7 +327,7 @@ class APS(
     }
 
     companion object {
-        const val WAKEUP_CORE = 0
+        const val WAKEUP_STALE_CHECK = 0
         const val WAKEUP_PUMP_COORDINATOR = 1
     }
 }

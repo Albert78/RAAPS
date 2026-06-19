@@ -228,7 +228,7 @@ class ApsAlgorithmImpl(
         }
     }
 
-    override suspend fun nextStaleCheck(): Timestamp {
+    override suspend fun nextBgStaleCheckAt(): Timestamp {
         return Timestamp.now() + STALE_BG_THRESHOLD
     }
 
