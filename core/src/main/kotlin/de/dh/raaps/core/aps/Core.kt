@@ -95,6 +95,7 @@ class Core(
     private val onCancelInsulinJobs: () -> Unit,
     private val onDeliverBolus: (amount: InsulinAmount) -> Unit,
     private val onZeroTemp: (durationInHours: Int) -> Unit,
+    private val onAwaitOrCancelPumpJobs: suspend () -> Unit,
 ) {
     private var calculationAlgorithm: ApsAlgorithm? = null
 
@@ -256,8 +257,7 @@ class Core(
 
                 val isRecent = abs(bg.timestamp.ms - Timestamp.now().ms) < RECENT_BG_THRESHOLD.inMs()
                 val alg = calculationAlgorithm
-                _TODO()
-                // Pumpenaufträge ein paar Sekunden lang abwarten, dann alle abbrechen, wieder abwarten
+                onAwaitOrCancelPumpJobs()
                 if (isRecent && alg != null) {
                     alg.recalculateForNewBgValue(bg)
                     val nextStaleCheckTime = alg.nextStaleCheck()
@@ -302,6 +302,7 @@ class Core(
             onCancelInsulinJobs: () -> Unit,
             onDeliverBolus: (amount: InsulinAmount) -> Unit,
             onZeroTemp: (durationInHours: Int) -> Unit,
+            onAwaitOrCancelPumpJobs: suspend () -> Unit,
         ): Core {
             return Core(
                 glucoseRepository = glucoseRepository,
@@ -319,6 +320,7 @@ class Core(
                 onCancelInsulinJobs = onCancelInsulinJobs,
                 onZeroTemp = onZeroTemp,
                 onDeliverBolus = onDeliverBolus,
+                onAwaitOrCancelPumpJobs = onAwaitOrCancelPumpJobs,
             )
         }
     }

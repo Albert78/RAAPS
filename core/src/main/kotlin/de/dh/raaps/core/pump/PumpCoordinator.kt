@@ -150,6 +150,8 @@ class PumpCoordinator(
         pumpCoordinatorState.first { it == PumpCoordinatorState.Idle }
     }
 
+    fun hasPendingJobs() = _pendingJobs.value.isNotEmpty()
+
     fun clearPendingJobs() {
         _pendingJobs.value = emptyList()
     }

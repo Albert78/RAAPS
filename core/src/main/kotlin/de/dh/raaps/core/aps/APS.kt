@@ -76,6 +76,7 @@ class APS(
         onCancelInsulinJobs = { cancelInsulinJobs() },
         onDeliverBolus = { amount -> deliverBolus(amount) },
         onZeroTemp = { durationInHours -> issueZeroTemp(durationInHours) },
+        onAwaitOrCancelPumpJobs = { awaitOrCancelPumpJobs() }
     )
 
     // Plugins & Active Jobs
@@ -231,6 +232,17 @@ class APS(
             ),
         )
         // TODO: If no pump is present, tell the user to eat
+    }
+
+    suspend fun awaitOrCancelPumpJobs() {
+        val pc = pumpCoordinator ?: return
+        if (pc.hasPendingJobs()) {
+            pc.wakeup()
+            pc.waitForIdle()
+        }
+        if (pc.hasPendingJobs()) {
+            pc.cancelJobs()
+        }
     }
 
     /**
