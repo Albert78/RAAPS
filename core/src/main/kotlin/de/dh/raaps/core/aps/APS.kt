@@ -131,9 +131,20 @@ class APS(
                         onJobError = { _, _ -> _TODO() },
                     )
                     pumpMonitorJob = launch {
-                        pc.lastConnectionTime.collect { time ->
-                            if (time != Timestamp.INVALID) {
-                                removeIssue(ApsIssue.PumpConnectionMissing)
+                        launch {
+                            pc.lastConnectionTime.collect { time ->
+                                if (time != Timestamp.INVALID) {
+                                    removeIssue(ApsIssue.PumpConnectionMissing)
+                                }
+                            }
+                        }
+                        launch {
+                            pc.pump.pumpStatus.collect { status ->
+                                if (status.pumpSuspended) {
+                                    addIssue(ApsIssue.PumpInoperative)
+                                } else {
+                                    removeIssue(ApsIssue.PumpInoperative)
+                                }
                             }
                         }
                     }
