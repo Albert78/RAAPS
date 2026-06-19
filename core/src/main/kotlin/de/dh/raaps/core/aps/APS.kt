@@ -21,12 +21,14 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.asCoroutineDispatcher
 import kotlinx.coroutines.cancel
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import java.util.concurrent.Executors
 import java.util.concurrent.atomic.AtomicInteger
+import kotlin.time.Duration.Companion.seconds
 
 enum class ApsIssue {
     /**
@@ -82,6 +84,7 @@ class APS(
     )
 
     var pumpCoordinator: PumpCoordinator? = null
+    private var pumpMonitorJob: Job? = null
 
     // Computation Core: Pure logic and state, completely thread-agnostic
     private val core: Core = Core.createProductiveCore(
@@ -98,7 +101,7 @@ class APS(
         onCancelInsulinJobs = { cancelInsulinJobs() },
         onDeliverBolus = { amount -> deliverBolus(amount) },
         onZeroTemp = { durationInHours -> issueZeroTemp(durationInHours) },
-        onAwaitOrCancelPumpJobs = { awaitOrCancelPumpJobs() }
+        onWaitForAndResetPumpJobs = { waitForAndResetPumpJobs() }
     )
 
     // Plugins & Active Jobs
@@ -115,10 +118,11 @@ class APS(
         set(value) {
             field = value
             inAPSThread {
+                pumpMonitorJob?.cancel()
                 pumpCoordinator = if (value == null) {
                     null
                 } else {
-                    PumpCoordinator.create(
+                    val pc = PumpCoordinator.create(
                         pump = value,
                         treatmentRepository = treatmentRepository,
                         onAcquireBusyState = { acquireBusyState() },
@@ -126,6 +130,14 @@ class APS(
                         onRequestWakeup = { timestamp -> scheduleSystemWakeup(timestamp, WAKEUP_PUMP_COORDINATOR) },
                         onJobError = { _, _ -> _TODO() },
                     )
+                    pumpMonitorJob = launch {
+                        pc.lastConnectionTime.collect { time ->
+                            if (time != Timestamp.INVALID) {
+                                removeIssue(ApsIssue.PumpConnectionMissing)
+                            }
+                        }
+                    }
+                    pc
                 }
             }
         }
@@ -264,13 +276,15 @@ class APS(
         // TODO: If no pump is present, tell the user to eat
     }
 
-    suspend fun awaitOrCancelPumpJobs() {
+    suspend fun waitForAndResetPumpJobs() {
         val pc = pumpCoordinator ?: return
         if (pc.hasPendingJobs()) {
             pc.wakeup()
             pc.waitForIdle()
+            delay(10.seconds)
         }
         if (pc.hasPendingJobs()) {
+            addIssue(ApsIssue.PumpConnectionMissing)
             pc.cancelJobs()
         }
     }
