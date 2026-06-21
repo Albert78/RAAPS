@@ -10,6 +10,7 @@ import de.dh.raaps.common.model.Plugin
 import de.dh.raaps.common.model.PluginManager
 import de.dh.raaps.common.model.PumpAlerts
 import de.dh.raaps.common.model.PumpCapabilities
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 
 class SampleInsulinPumpPlugin : InsulinPump, Plugin {
@@ -25,45 +26,59 @@ class SampleInsulinPumpPlugin : InsulinPump, Plugin {
 
     // *************************** Insulin pump members ********************************
 
-    override val hardwareInformation: StateFlow<HardwareInformation?>
-        get() = TODO("Not yet implemented")
-    override val pumpCapabilities: StateFlow<PumpCapabilities>
-        get() = TODO("Not yet implemented")
-    override val isConnected: StateFlow<Boolean>
-        get() = TODO("Not yet implemented")
-    override val pumpStatus: StateFlow<InsulinPumpStatus>
-        get() = TODO("Not yet implemented")
-    override val alerts: StateFlow<PumpAlerts>
-        get() = TODO("Not yet implemented")
-    override val basalStatus: StateFlow<BasalStatus>
-        get() = TODO("Not yet implemented")
-    override val basalHistory: StateFlow<List<BasalHistoryPoint>>
-        get() = TODO("Not yet implemented")
-    override val bolusHistory: StateFlow<List<BolusHistoryPoint>>
-        get() = TODO("Not yet implemented")
+    override val hardwareInformation: StateFlow<HardwareInformation?> = MutableStateFlow(
+        HardwareInformation(
+            manufacturer = "Sample Manufacturer",
+            model = "Sample Model",
+            serialNumber = "12345678",
+            pumpDescription = "A sample insulin pump for testing purposes"
+        )
+    )
+    override val pumpCapabilities: StateFlow<PumpCapabilities> = MutableStateFlow(
+        PumpCapabilities(
+            minBasalRate = 0.05,
+            supportsZeroBasal = true,
+            minBasalIncrement = 0.01,
+            minBolusIncrement = 0.1,
+            maxBolusSize = 25.0
+        )
+    )
+    override val isConnected: StateFlow<Boolean> = MutableStateFlow(true)
+    override val pumpStatus: StateFlow<InsulinPumpStatus> = MutableStateFlow(
+        object : InsulinPumpStatus {
+            override val pumpSuspended: Boolean = false
+            override val batteryRemainingPercent: Int = 85
+            override val reservoirRemainingUnits: Double = 120.5
+            override val lastSyncTimestamp: Long = System.currentTimeMillis()
+        }
+    )
+    override val alerts: StateFlow<PumpAlerts> = MutableStateFlow(PumpAlerts())
+    override val basalStatus: StateFlow<BasalStatus> = MutableStateFlow(BasalStatus(activeRate = 0.5))
+    override val basalHistory: StateFlow<List<BasalHistoryPoint>> = MutableStateFlow(emptyList())
+    override val bolusHistory: StateFlow<List<BolusHistoryPoint>> = MutableStateFlow(emptyList())
 
     override suspend fun bolus(amount: Double) {
-        TODO("Not yet implemented")
+        // TODO: Implement bolus delivery
     }
 
     override suspend fun stopBolus() {
-        TODO("Not yet implemented")
+        // TODO: Stop ongoing bolus
     }
 
     override suspend fun tempBasal(percent: Int, durationHours: Int) {
-        TODO("Not yet implemented")
+        // TODO: Set temporary basal rate
     }
 
     override suspend fun cancelTempBasal() {
-        TODO("Not yet implemented")
+        // TODO: Cancel temporary basal rate
     }
 
     override suspend fun syncHistory() {
-        TODO("Not yet implemented")
+        // TODO: Sync pump history
     }
 
     override suspend fun refreshStatus() {
-        TODO("Not yet implemented")
+        // TODO: Refresh pump status from hardware
     }
 
     override fun stop() {
