@@ -10,8 +10,10 @@ import de.dh.raaps.common.model.InsulinAmount
 import de.dh.raaps.common.model.InsulinPump
 import de.dh.raaps.common.model.data.BgReading
 import de.dh.raaps.common.model.data.Timestamp
+import de.dh.raaps.core.pump.JobErrorCode
 import de.dh.raaps.core.pump.PumpCommand
 import de.dh.raaps.core.pump.PumpCoordinator
+import de.dh.raaps.core.pump.PumpJob
 import de.dh.raaps.core.repository.GlucoseRepository
 import de.dh.raaps.core.repository.TherapyRepository
 import de.dh.raaps.core.repository.TreatmentRepository
@@ -128,7 +130,7 @@ class APS(
                         onAcquireBusyState = { acquireBusyState() },
                         onReleaseBusyState = { releaseBusyState() },
                         onRequestWakeup = { timestamp -> scheduleSystemWakeup(timestamp, WAKEUP_PUMP_COORDINATOR) },
-                        onJobError = { _, _ -> _TODO() },
+                        onJobError = { job, jobErrorCode -> handleJobError(job, jobErrorCode) },
                     )
                     pumpMonitorJob = launch {
                         launch {
@@ -176,13 +178,23 @@ class APS(
 
     private fun addIssue(issue: ApsIssue) {
         if (issue !in _apsIssues.value) {
-            _apsIssues.value = _apsIssues.value + issue
+            _apsIssues.value += issue
         }
     }
 
     private fun removeIssue(issue: ApsIssue) {
         if (issue in _apsIssues.value) {
-            _apsIssues.value = _apsIssues.value - issue
+            _apsIssues.value -= issue
+        }
+    }
+
+    private fun handleJobError(job: PumpJob, jobErrorCode: JobErrorCode) {
+        when (jobErrorCode) {
+            JobErrorCode.Expired -> addIssue(ApsIssue.PumpConnectionMissing)
+            else -> {
+                // TODO: Log
+                addIssue(ApsIssue.Other)
+            }
         }
     }
 

@@ -2,7 +2,6 @@ package de.dh.raaps.core.pump
 
 import de.dh.raaps.common.model.InsulinAmount
 import de.dh.raaps.common.model.InsulinPump
-import de.dh.raaps.common.model.InsulinPumpStatus
 import de.dh.raaps.common.model.data.Minutes
 import de.dh.raaps.common.model.data.TherapyData
 import de.dh.raaps.common.model.data.Timestamp
@@ -19,16 +18,10 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import java.util.UUID
+import kotlin.time.Duration.Companion.milliseconds
 
 enum class PumpCoordinatorState {
     Idle, Running
-}
-
-data object EmptyInsulinPumpStatus : InsulinPumpStatus {
-    override val pumpSuspended: Boolean = false
-    override val batteryRemainingPercent: Int = 0
-    override val reservoirRemainingUnits: Double = 0.0
-    override val lastSyncTimestamp: Long = 0
 }
 
 /**
@@ -57,8 +50,9 @@ data class PumpJob(
     fun isReady(): Boolean = nextAttemptAt <= Timestamp.now()
 }
 
-enum class JobErrorCode {
-    Expired
+sealed interface JobErrorCode {
+    data object Expired : JobErrorCode
+    data class Other(val reason: String) : JobErrorCode
 }
 
 /**
@@ -86,8 +80,11 @@ enum class JobErrorCode {
 class PumpCoordinator(
     val pump: InsulinPump,
     private val treatmentRepository: TreatmentRepository,
+    /** Callback to acquire a wake-lock in the system to ensure the CPU stays awake during pump communication. */
     private val onAcquireBusyState: () -> Unit,
+    /** Callback to release the wake-lock acquired via [onAcquireBusyState]. */
     private val onReleaseBusyState: () -> Unit,
+    /** Callback to request a wakeup from the system at a specific time. The caller should ensure [wakeup] is called at that time. */
     private val onRequestWakeup: (Timestamp) -> Unit,
     private val onJobError: (job: PumpJob, code: JobErrorCode) -> Unit,
     private val scope: CoroutineScope = CoroutineScope(SupervisorJob() + Dispatchers.Default),
@@ -181,6 +178,10 @@ class PumpCoordinator(
         _pendingJobs.update { it.filterNot(predicate) }
     }
 
+    /**
+     * Triggers a synchronization cycle.
+     * This should be called by the system when a requested wakeup time (via [onRequestWakeup]) is reached.
+     */
     fun wakeup() {
         if (pumpCoordinatorState.value == PumpCoordinatorState.Idle) {
             startPumpConnection()
@@ -203,7 +204,7 @@ class PumpCoordinator(
                     pump.syncHistory()
                     return
                 } catch (_: Exception) {
-                    if (it < 2) delay(1000)
+                    if (it < 2) delay(1000.milliseconds)
                 }
             }
             // If heartbeat failed, we don't necessarily abort everything,
@@ -246,7 +247,8 @@ class PumpCoordinator(
                 executeOnPump(job.command)
                 return true
             } catch (_: Exception) {
-                if (it < 2) delay(RETRY_INTERVAL_MS)
+                // TODO: Handle different types of exceptions: Connection/Operation/Runtime
+                if (it < 2) delay(RETRY_INTERVAL_MS.milliseconds)
             }
         }
         return false
@@ -295,8 +297,11 @@ class PumpCoordinator(
         fun create(
             pump: InsulinPump,
             treatmentRepository: TreatmentRepository,
+            /** Callback to acquire a wake-lock in the system to ensure the CPU stays awake during pump communication. */
             onAcquireBusyState: () -> Unit,
+            /** Callback to release the wake-lock acquired via [onAcquireBusyState]. */
             onReleaseBusyState: () -> Unit,
+            /** Callback to request a wakeup from the system at a specific time. The caller should ensure [wakeup] is called at that time. */
             onRequestWakeup: (Timestamp) -> Unit,
             onJobError: (PumpJob, JobErrorCode) -> Unit,
         ): PumpCoordinator {
