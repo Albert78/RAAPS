@@ -63,13 +63,6 @@ class MainApplication : Application() {
             appDatabase = appDatabase
         )
 
-        runBlocking {
-            DatabaseInitializer.initialize(
-                context = this@MainApplication,
-                treatmentRepository = treatmentRepository,
-                therapyRepository = therapyRepository)
-        }
-
         startApsService()
 
         aps = APS(glucoseRepository, therapyRepository, treatmentRepository, appPreferencesRepository, this)

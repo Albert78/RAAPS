@@ -16,6 +16,7 @@ import de.dh.raaps.core.pump.JobErrorCode
 import de.dh.raaps.core.pump.PumpCommand
 import de.dh.raaps.core.pump.PumpCoordinator
 import de.dh.raaps.core.pump.PumpJob
+import de.dh.raaps.core.repository.DatabaseInitializer
 import de.dh.raaps.core.repository.GlucoseRepository
 import de.dh.raaps.core.repository.TherapyRepository
 import de.dh.raaps.core.repository.TreatmentRepository
@@ -229,6 +230,9 @@ class APS(
      */
     fun startInitialization() {
         inAPSThread {
+            therapyManager.load()
+            treatmentRepository.load()
+            DatabaseInitializer.initialize(context, treatmentRepository, therapyRepository)
             core.initialize()
         }
         restartGlucosePipeline()
