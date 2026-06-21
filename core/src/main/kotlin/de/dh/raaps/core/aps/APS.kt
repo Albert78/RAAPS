@@ -1,7 +1,9 @@
 package de.dh.raaps.core.aps
 
 import android.app.AlarmManager
+import android.app.PendingIntent
 import android.content.Context
+import android.content.Intent
 import android.os.PowerManager
 import android.util.Log
 import de.dh.raaps.AppPreferencesRepository
@@ -79,6 +81,10 @@ class APS(
     private val wakeLock = powerManager.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, "raaps:ApsCoreLock")
 
     private val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
+
+    init {
+        instance = this
+    }
 
     val therapyManager = TherapyManager(
         therapyRepository,
@@ -249,9 +255,23 @@ class APS(
     }
 
     private fun scheduleSystemWakeup(timestamp: Timestamp, wakeupId: Int) {
-        _TODO()
-        // Implement actual AlarmManager scheduling
-        Log.d("APS", "Scheduling system wakeup at $timestamp with ID $wakeupId")
+        val intent = Intent(context, ApsAlarmReceiver::class.java).apply {
+            action = ACTION_WAKEUP
+            putExtra(EXTRA_WAKEUP_ID, wakeupId)
+        }
+        val pendingIntent = PendingIntent.getBroadcast(
+            context,
+            wakeupId,
+            intent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        )
+
+        alarmManager.setExactAndAllowWhileIdle(
+            AlarmManager.RTC_WAKEUP,
+            timestamp.ms,
+            pendingIntent
+        )
+        Log.d("APS", "Scheduled system wakeup at $timestamp with ID $wakeupId")
     }
 
     private fun restartGlucosePipeline() {
@@ -343,6 +363,7 @@ class APS(
      * Gracefully stops the APS system and releases all background resources.
      */
     fun stop() {
+        instance = null
         glucoseSource?.let {
             it.stop()
             glucoseSource = null
@@ -366,5 +387,23 @@ class APS(
     companion object {
         const val WAKEUP_STALE_CHECK = 0
         const val WAKEUP_PUMP_COORDINATOR = 1
+
+        private const val ACTION_WAKEUP = "de.dh.raaps.core.aps.ACTION_WAKEUP"
+        private const val EXTRA_WAKEUP_ID = "wakeup_id"
+
+        @Volatile
+        private var instance: APS? = null
+
+        /**
+         * Entry point for the [ApsAlarmReceiver] to forward the alarm to the APS instance.
+         */
+        fun handleWakeup(context: Context, intent: Intent) {
+            if (intent.action == ACTION_WAKEUP) {
+                val wakeupId = intent.getIntExtra(EXTRA_WAKEUP_ID, -1)
+                if (wakeupId != -1) {
+                    instance?.wakeup(wakeupId)
+                }
+            }
+        }
     }
 }
