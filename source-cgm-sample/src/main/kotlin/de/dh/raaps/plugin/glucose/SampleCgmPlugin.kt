@@ -15,6 +15,7 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.map
 import kotlin.random.Random
+import kotlin.time.Duration.Companion.milliseconds
 
 class SampleCgmPlugin : GlucoseSource, Plugin {
     override val neededPermissions: Collection<String> = emptyList()
@@ -34,6 +35,10 @@ class SampleCgmPlugin : GlucoseSource, Plugin {
         // Nothing to do
     }
 
+    override fun start() {
+        // Nothing to do
+    }
+
     override fun stop() {
         // Nothing to do
     }
@@ -45,7 +50,7 @@ class SampleCgmPlugin : GlucoseSource, Plugin {
                 timestamp = Timestamp(System.currentTimeMillis()),
             )
             emit(reading)
-            delay(1000*60) // Emit minute for demo purposes
+            delay((1000*60).milliseconds) // Emit minute for demo purposes
         }
     }
 

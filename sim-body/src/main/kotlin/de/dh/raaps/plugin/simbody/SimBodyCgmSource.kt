@@ -28,6 +28,10 @@ class SimBodyCgmSource(
 
     override fun getSensorTypeName() = "Sim Body Dexcom G6 Plugin"
 
+    override fun start() {
+        // Nothing to do
+    }
+
     override fun stop() {
         // Nothing to do
     }
