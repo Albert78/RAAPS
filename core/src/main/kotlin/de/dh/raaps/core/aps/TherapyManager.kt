@@ -30,15 +30,19 @@ class TherapyManager(
     /**
      * Ensures the therapy data is loaded from the repository.
      */
-    suspend fun load() = mutex.withLock {
+    suspend fun load() {
         getActiveTherapyData()
     }
 
-    suspend fun getActiveTherapyData(): CurrentTherapyData? = mutex.withLock {
+    private suspend fun getActiveTherapyDataInternal(): CurrentTherapyData? {
         if (cachedTherapyData == null) {
             cachedTherapyData = therapyRepository.getCurrentTherapyData()
         }
-        cachedTherapyData
+        return cachedTherapyData
+    }
+
+    suspend fun getActiveTherapyData(): CurrentTherapyData? = mutex.withLock {
+        getActiveTherapyDataInternal()
     }
 
     /**
@@ -105,7 +109,7 @@ class TherapyManager(
      */
     suspend fun selectProfile(profile: Profile) {
         mutex.withLock {
-            val currentData = getActiveTherapyData()
+            val currentData = getActiveTherapyDataInternal()
             val newData = (currentData ?: CurrentTherapyData(
                 profileId = profile.id,
                 therapyData = profile.therapyData,

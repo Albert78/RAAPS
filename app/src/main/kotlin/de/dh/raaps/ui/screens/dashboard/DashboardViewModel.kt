@@ -7,7 +7,6 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.CreationExtras
 import de.dh.raaps.MainApplication
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.update
@@ -40,8 +39,6 @@ class DashboardViewModel(
     private suspend fun reload_suspend() {
         _uiState.update { it.copy(isLoading = true) }
         try {
-            // Simulate heavy loading or actual data fetching
-            delay(500)
             updateUiModel()
             _uiState.update { it.copy(isLoading = false, isError = false) }
         } catch (e: Exception) {

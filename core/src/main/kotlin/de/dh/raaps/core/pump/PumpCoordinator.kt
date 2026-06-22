@@ -5,7 +5,6 @@ import de.dh.raaps.common.model.InsulinPump
 import de.dh.raaps.common.model.data.Minutes
 import de.dh.raaps.common.model.data.TherapyData
 import de.dh.raaps.common.model.data.Timestamp
-import de.dh.raaps.core.repository.TreatmentRepository
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -79,7 +78,6 @@ sealed interface JobErrorCode {
 @OptIn(ExperimentalCoroutinesApi::class)
 class PumpCoordinator(
     val pump: InsulinPump,
-    private val treatmentRepository: TreatmentRepository,
     /** Callback to acquire a wake-lock in the system to ensure the CPU stays awake during pump communication. */
     private val onAcquireBusyState: () -> Unit,
     /** Callback to release the wake-lock acquired via [onAcquireBusyState]. */
@@ -296,7 +294,6 @@ class PumpCoordinator(
 
         fun create(
             pump: InsulinPump,
-            treatmentRepository: TreatmentRepository,
             /** Callback to acquire a wake-lock in the system to ensure the CPU stays awake during pump communication. */
             onAcquireBusyState: () -> Unit,
             /** Callback to release the wake-lock acquired via [onAcquireBusyState]. */
@@ -307,7 +304,6 @@ class PumpCoordinator(
         ): PumpCoordinator {
             return PumpCoordinator(
                 pump = pump,
-                treatmentRepository = treatmentRepository,
                 onAcquireBusyState = onAcquireBusyState,
                 onReleaseBusyState = onReleaseBusyState,
                 onRequestWakeup = onRequestWakeup,

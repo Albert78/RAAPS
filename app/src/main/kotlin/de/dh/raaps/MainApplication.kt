@@ -63,6 +63,11 @@ class MainApplication : Application() {
             appDatabase = appDatabase
         )
 
+        runBlocking {
+            treatmentRepository.load()
+            DatabaseInitializer.initialize(this@MainApplication, treatmentRepository, therapyRepository)
+        }
+
         startApsService()
 
         aps = APS(glucoseRepository, therapyRepository, treatmentRepository, appPreferencesRepository, this)
@@ -103,7 +108,7 @@ class MainApplication : Application() {
 
     fun installNotificationUpdater() {
         applicationScope.launch {
-            aps.lastDataTime.collect { timestamp ->
+            aps.lastDataTime.collect { _ ->
                 val notificationData = ApsNotificationData.create(aps)
                 notificationManager.updateNotification(notificationData)
             }
