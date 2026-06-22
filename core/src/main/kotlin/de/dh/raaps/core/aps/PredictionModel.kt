@@ -50,14 +50,14 @@ class PredictionModel(
         carbsInsulinCalculationModel: CarbsInsulinCalculationModel
     ) {
         val meals = treatmentRepository.getMeals()
-        val insulinApplications = treatmentRepository.getInsulinApplications()
+        val boluses = treatmentRepository.getBoluses()
         forEach { tick, tickState ->
             tickState.initializeToTick(tick)
             // We only need to initialize insulin and carbs, since they only depend on the treatments.
-            // They only need to be touched when we have more meals or insulin applications.
+            // They only need to be touched when we have more meals or boluses.
             // All other data is calculated in each tick cycle.
             tickState.effectiveInsulin = carbsInsulinCalculationModel.effectiveInsulin(
-                insulinApplications,
+                boluses,
                 timeline.timestamp(tick)
             )
             tickState.effectiveCarbs = carbsInsulinCalculationModel.carbAbsorption(

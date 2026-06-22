@@ -63,11 +63,11 @@ value class InsulinConcentration(val factor: Double) {
 }
 
 /**
- * Historical insulin application.
+ * Historical bolus application.
  */
-data class InsulinApplication(
+data class Bolus(
     var id: Long = ID_UNDEFINED,
     val timestamp: Timestamp,
-    val insulinUnits: Double,
+    val amount: Double,
     val insulinType: InsulinType
 )

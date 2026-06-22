@@ -25,7 +25,7 @@ import kotlin.math.exp
  *
  * Therefore:
  *
- * insulinUnits * k(t)
+ * amount * k(t)
  *
  * directly yields the insulin activity at time t.
  *
@@ -159,7 +159,7 @@ class SampledInsulinCalculationCache(
      * Unit: Unit / interval
      */
     fun effectiveInsulin(
-        insulinUnits: Double,
+        amount: Double,
         insulinType: InsulinType,
         intervalsSinceApplication: Int
     ): Double {
@@ -168,7 +168,7 @@ class SampledInsulinCalculationCache(
         if (intervalsSinceApplication >= samples.size - 1) return 0.0
         val remainingFractionAtIntervalStart = samples[intervalsSinceApplication]
         val remainingFractionAtIntervalEnd = samples[intervalsSinceApplication + 1]
-        return insulinUnits * (remainingFractionAtIntervalEnd - remainingFractionAtIntervalStart)
+        return amount * (remainingFractionAtIntervalEnd - remainingFractionAtIntervalStart)
     }
 
     /**
@@ -176,7 +176,7 @@ class SampledInsulinCalculationCache(
      * Unit: Units
      */
     fun remainingInsulin(
-        insulinUnits: Double,
+        amount: Double,
         insulinType: InsulinType,
         intervalsSinceApplication: Int
     ): Double {
@@ -185,16 +185,16 @@ class SampledInsulinCalculationCache(
         if (intervalsSinceApplication >= samples.size - 1) return 0.0
         val remainingFractionAtIntervalStart = samples[intervalsSinceApplication]
         val remainingFractionAtIntervalEnd = samples[intervalsSinceApplication + 1]
-        return insulinUnits * (remainingFractionAtIntervalEnd + remainingFractionAtIntervalStart) / 2.0
+        return amount * (remainingFractionAtIntervalEnd + remainingFractionAtIntervalStart) / 2.0
     }
 
     fun spentInsulin(
-        insulinUnits: Double,
+        amount: Double,
         insulinType: InsulinType,
         intervalsSinceApplication: Int
     ): Double {
-        return insulinUnits - remainingInsulin(
-            insulinUnits = insulinUnits,
+        return amount - remainingInsulin(
+            amount = amount,
             insulinType = insulinType,
             intervalsSinceApplication = intervalsSinceApplication
         )

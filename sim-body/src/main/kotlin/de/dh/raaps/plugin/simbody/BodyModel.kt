@@ -1,7 +1,7 @@
 package de.dh.raaps.plugin.simbody
 
+import de.dh.raaps.common.model.Bolus
 import de.dh.raaps.common.model.CarbCurveComponentData
-import de.dh.raaps.common.model.InsulinApplication
 import de.dh.raaps.common.model.InsulinType
 import de.dh.raaps.common.model.MealEntry
 import de.dh.raaps.common.model.MealType
@@ -35,7 +35,7 @@ class BodyModel {
 
     // Inputs (historical data)
     val meals = CopyOnWriteArrayList<MealEntry>()
-    val insulinApplications = CopyOnWriteArrayList<InsulinApplication>()
+    val boluses = CopyOnWriteArrayList<Bolus>()
 
     // Health factors (external influences, controlled via UI)
     var exerciseIntensity: Double = 0.0 // 0.0 (rest) to 1.0 (max)
@@ -64,11 +64,11 @@ class BodyModel {
         // Calculate deltas
         val insulinImpact = calculateInsulinImpact(lastTickTimestamp, currentTimestamp)
         val carbImpact = calculateCarbImpact(lastTickTimestamp, currentTimestamp)
-        
-        // Liver production offsets normal basal insulin. 
+
+        // Liver production offsets normal basal insulin.
         // We assume liver production matches the profile basal rate.
         val endogenousImpact = (basalRateUph * isf) * durationHours
-        
+
         // Exercise and Stress impact on BG level directly
         val exerciseImpact = exerciseIntensity * 60.0 * durationHours
         val stressImpact = stressLevel * 30.0 * durationHours
@@ -79,7 +79,7 @@ class BodyModel {
         // Update BG state
         val newMgDl = bloodGlucose.mgdl + bgDelta
         bloodGlucose = BgValue.fromMgDl(newMgDl.coerceIn(20.0, 500.0).toInt())
-        
+
         lastTickTimestamp = currentTimestamp
         cleanup(currentTimestamp)
     }
@@ -90,9 +90,9 @@ class BodyModel {
     private fun cleanup(currentTimestamp: Timestamp) {
         val horizonMs = 10 * 60 * 60 * 1000L
         val threshold = currentTimestamp.ms - horizonMs
-        
+
         meals.removeIf { it.timestamp.ms < threshold }
-        insulinApplications.removeIf { it.timestamp.ms < threshold }
+        boluses.removeIf { it.timestamp.ms < threshold }
     }
 
     /**
@@ -109,50 +109,50 @@ class BodyModel {
     /**
      * Simulates an insulin bolus.
      */
-    fun bolus(units: Double, type: InsulinType? = null) {
-        insulinApplications.add(InsulinApplication(
+    fun bolus(amount: Double, type: InsulinType? = null) {
+        boluses.add(Bolus(
             timestamp = Timestamp.now(),
-            insulinUnits = units,
+            amount = amount,
             insulinType = type ?: defaultInsulinType
         ))
     }
 
     private fun calculateInsulinImpact(start: Timestamp, end: Timestamp): Double {
         var totalUnitsAbsorbed = 0.0
-        
-        for (app in insulinApplications) {
+
+        for (bolus in boluses) {
             val curve = InsulinCurve(
-                diaMinutes = app.insulinType.dia.value.toDouble(),
-                peakMinutes = app.insulinType.peak.value.toDouble()
+                diaMinutes = bolus.insulinType.dia.value.toDouble(),
+                peakMinutes = bolus.insulinType.peak.value.toDouble()
             )
-            
-            val timeStart = (start.ms - app.timestamp.ms) / 60000.0
-            val timeEnd = (end.ms - app.timestamp.ms) / 60000.0
-            
+
+            val timeStart = (start.ms - bolus.timestamp.ms) / 60000.0
+            val timeEnd = (end.ms - bolus.timestamp.ms) / 60000.0
+
             val fractionStart = curve.spentFraction(timeStart)
             val fractionEnd = curve.spentFraction(timeEnd)
-            
-            totalUnitsAbsorbed += app.insulinUnits * (fractionEnd - fractionStart)
+
+            totalUnitsAbsorbed += bolus.amount * (fractionEnd - fractionStart)
         }
 
         // Apply resistance factors
         val currentResistance = illnessFactor + (stressLevel * 0.5)
         // Exercise increases insulin sensitivity
         val currentSensitivity = 1.0 + (exerciseIntensity * 0.5)
-        
+
         return (totalUnitsAbsorbed * isf) * (currentSensitivity / currentResistance)
     }
 
     private fun calculateCarbImpact(start: Timestamp, end: Timestamp): Double {
         var totalCarbsAbsorbed = 0.0
-        
+
         for (meal in meals) {
             val type = meal.mealType
             var mealAbsorbedInWindow = 0.0
-            
+
             val timeStart = (start.ms - meal.timestamp.ms) / 60000.0
             val timeEnd = (end.ms - meal.timestamp.ms) / 60000.0
-            
+
             for (comp in type.components) {
                 val curve = CarbCurveComponent(comp.peakMinutes.value.toDouble())
                 val fStart = curve.absorbedFraction(timeStart)

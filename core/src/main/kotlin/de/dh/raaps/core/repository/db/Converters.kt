@@ -2,7 +2,7 @@ package de.dh.raaps.core.repository.db
 
 import de.dh.raaps.common.model.CarbCurveComponentData
 import de.dh.raaps.common.model.DataProvider
-import de.dh.raaps.common.model.InsulinApplication
+import de.dh.raaps.common.model.Bolus
 import de.dh.raaps.common.model.InsulinType
 import de.dh.raaps.common.model.MealEntry
 import de.dh.raaps.common.model.MealType
@@ -21,7 +21,7 @@ import de.dh.raaps.core.repository.db.entities.DBBlock
 import de.dh.raaps.core.repository.db.entities.DBTargetBlock
 import de.dh.raaps.core.repository.db.entities.DataProviderEntity
 import de.dh.raaps.core.repository.db.entities.GlucoseReadingEntity
-import de.dh.raaps.core.repository.db.entities.InsulinApplicationEntity
+import de.dh.raaps.core.repository.db.entities.BolusEntity
 import de.dh.raaps.core.repository.db.entities.InsulinTypeEntity
 import de.dh.raaps.core.repository.db.entities.MealEntity
 import de.dh.raaps.core.repository.db.entities.MealTypeEntity
@@ -132,17 +132,17 @@ fun InsulinTypeEntity.toModel() = InsulinType(
     dia = this.dia
 )
 
-fun InsulinApplication.toEntity() = InsulinApplicationEntity(
+fun Bolus.toEntity() = BolusEntity(
     id = this.id,
     insulin_type_id = this.insulinType.id,
     timestamp = this.timestamp,
-    insulinUnits = this.insulinUnits
+    amount = this.amount
 )
 
-fun InsulinApplicationEntity.toModel(type: InsulinType) = InsulinApplication(
+fun BolusEntity.toModel(type: InsulinType) = Bolus(
     id = this.id,
     timestamp = this.timestamp,
-    insulinUnits = this.insulinUnits,
+    amount = this.amount,
     insulinType = type
 )
 

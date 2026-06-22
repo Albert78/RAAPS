@@ -49,7 +49,7 @@ data class InsulinTypeEntity(
 )
 
 @Entity(
-    tableName = "insulin_application",
+    tableName = "bolus",
     foreignKeys = [
         ForeignKey(
             entity = InsulinTypeEntity::class,
@@ -59,10 +59,20 @@ data class InsulinTypeEntity(
         )
     ]
 )
-data class InsulinApplicationEntity(
+data class BolusEntity(
     @PrimaryKey(autoGenerate = true)
     var id: Long = ID_UNDEFINED,
     val insulin_type_id: String,
     val timestamp: Timestamp,
-    val insulinUnits: Double
+    val amount: Double
+)
+
+@Entity(
+    tableName = "basal_hourly"
+)
+data class BasalHourlyEntity(
+    @PrimaryKey
+    val hour: Int, // 0-23 UTC
+    val date: Long, // Midnight UTC
+    val amount: Double
 )

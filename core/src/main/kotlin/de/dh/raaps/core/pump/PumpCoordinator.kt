@@ -103,13 +103,6 @@ class PumpCoordinator(
 
     private fun setupPump() {
         scope.launch {
-            // Sync history
-            launch {
-                pump.bolusHistory.collect { /* TODO: Sync with repository */ }
-            }
-            launch {
-                pump.basalHistory.collect { /* TODO: Sync with repository */ }
-            }
             launch {
                 pump.isConnected.collect { _ ->
                     // Set last connection time on each change of isConnected -

@@ -1,6 +1,6 @@
 package de.dh.raaps.common.model.calculation
 
-import de.dh.raaps.common.model.InsulinApplication
+import de.dh.raaps.common.model.Bolus
 import de.dh.raaps.common.model.InsulinType
 import de.dh.raaps.common.model.MealEntry
 import de.dh.raaps.common.model.data.Minutes
@@ -68,15 +68,15 @@ class CarbsInsulinCalculationModel(
      * @return Effective insulin in Units / interval
      */
     fun effectiveInsulin(
-        insulinApplications: List<InsulinApplication>,
+        boluses: List<Bolus>,
         timestamp: Timestamp
     ): Double {
-        return insulinApplications.sumOf { entry ->
+        return boluses.sumOf { entry ->
             val intervalsSinceApplication =
                 Minutes.timeDifference(entry.timestamp, timestamp).value / intervalSize.value
 
             insulinCalculationCache.effectiveInsulin(
-                insulinUnits = entry.insulinUnits,
+                amount = entry.amount,
                 insulinType = entry.insulinType,
                 intervalsSinceApplication = intervalsSinceApplication
             )
@@ -89,15 +89,15 @@ class CarbsInsulinCalculationModel(
      * @return IOB in Units
      */
     fun iob(
-        insulinEntries: List<InsulinApplication>,
+        bolusEntries: List<Bolus>,
         timestamp: Timestamp
     ): Double {
-        return insulinEntries.sumOf { entry ->
+        return bolusEntries.sumOf { entry ->
             val intervalsSinceApplication =
                 Minutes.timeDifference(entry.timestamp, timestamp).value / intervalSize.value
 
             insulinCalculationCache.remainingInsulin(
-                insulinUnits = entry.insulinUnits,
+                amount = entry.amount,
                 insulinType = entry.insulinType,
                 intervalsSinceApplication = intervalsSinceApplication
             )
@@ -105,28 +105,28 @@ class CarbsInsulinCalculationModel(
     }
 
     fun remainingInsulin(
-        insulinApplication: InsulinApplication,
+        bolus: Bolus,
         timestamp: Timestamp
     ): Double {
         val intervalsSinceApplication =
-            Minutes.timeDifference(insulinApplication.timestamp, timestamp).value / intervalSize.value
+            Minutes.timeDifference(bolus.timestamp, timestamp).value / intervalSize.value
         return insulinCalculationCache.remainingInsulin(
-            insulinApplication.insulinUnits,
-            insulinApplication.insulinType,
+            bolus.amount,
+            bolus.insulinType,
             intervalsSinceApplication = intervalsSinceApplication
         )
     }
 
     fun spentInsulin(
-        insulinUnits: Double,
+        amount: Double,
         insulinType: InsulinType,
-        insulinApplicationTimestamp: Timestamp,
+        applicationTimestamp: Timestamp,
         timestamp: Timestamp
     ): Double {
         val intervalsSinceApplication =
-            Minutes.timeDifference(insulinApplicationTimestamp, timestamp).value / intervalSize.value
+            Minutes.timeDifference(applicationTimestamp, timestamp).value / intervalSize.value
         return insulinCalculationCache.spentInsulin(
-            insulinUnits = insulinUnits,
+            amount = amount,
             insulinType = insulinType,
             intervalsSinceApplication = intervalsSinceApplication
         )
@@ -138,12 +138,12 @@ class CarbsInsulinCalculationModel(
      * Unit: Depending on isf unit, mg/dL or mmol/L
      */
     fun bgi(
-        insulinEntries: List<InsulinApplication>,
+        bolusEntries: List<Bolus>,
         isf: Double,
         timestamp: Timestamp
     ): Double {
         val effectiveInsulin = effectiveInsulin(
-            insulinApplications = insulinEntries,
+            boluses = bolusEntries,
             timestamp
         )
 

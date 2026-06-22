@@ -174,7 +174,7 @@ class ApsAlgorithmImpl(
                     BgDelta.fromMgDl(minOf(bgError.mgdl, lowBuffer.mgdl))
 
                 val isf = therapyManager.getIsfFactor(firstHighPoint.tick.timestamp)
-                val maxCorrectionInsulinUnits = maxCorrection / isf
+                val maxCorrectionAmount = maxCorrection / isf
 
                 // We've found the next maximum before, so we can assume a monotonous rising BG curve.
 
@@ -197,7 +197,7 @@ class ApsAlgorithmImpl(
                     return@let
                 }
 
-                var insulinUnits = maxCorrectionInsulinUnits
+                var bolusAmount = maxCorrectionAmount
 
                 // Safety validation: The calculated correction dose is verified against the
                 // prediction model. If the simulated insulin action results in a projected
@@ -209,9 +209,9 @@ class ApsAlgorithmImpl(
                     val bg = state.predictedBg2
                     if (bg == BgValue.INVALID) return@forEach
                     val spentInsulin = carbsInsulinCalculationModel.spentInsulin(
-                        insulinUnits = insulinUnits,
+                        amount = bolusAmount,
                         insulinType = pumpInsulinType,
-                        insulinApplicationTimestamp = insulinTick.timestamp,
+                        applicationTimestamp = insulinTick.timestamp,
                         timestamp = timeline.timestamp(tick)
                     )
                     val bgDeltaFromTestInsulin = spentInsulin * state.isf
@@ -219,10 +219,10 @@ class ApsAlgorithmImpl(
                     val bgError = targetBgRange.lower - resultBG
                     if (bgError > BgDelta(0)) {
                         // We would drop too low, reduce insulin
-                        insulinUnits -= bgError / state.isf
+                        bolusAmount -= bgError / state.isf
                     }
                 }
-                onDeliverBolus(InsulinAmount(insulinUnits))
+                onDeliverBolus(InsulinAmount(bolusAmount))
                 predictionModel.calculatePredictionStage_1(treatmentRepository, carbsInsulinCalculationModel)
             }
         }

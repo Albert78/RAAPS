@@ -154,6 +154,13 @@ class APS(
                                 }
                             }
                         }
+                        // Sync history
+                        launch {
+                            pc.pump.bolusHistory.collect { /* TODO: Sync with treatmentRepository */ }
+                        }
+                        launch {
+                            pc.pump.basalHistory.collect { /* TODO: Sync with treatmentRepository */ }
+                        }
                     }
                     pc
                 }
