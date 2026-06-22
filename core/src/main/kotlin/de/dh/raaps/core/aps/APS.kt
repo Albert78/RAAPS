@@ -1,9 +1,11 @@
 package de.dh.raaps.core.aps
 
+import android.annotation.SuppressLint
 import android.app.AlarmManager
 import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
+import android.os.Build
 import android.os.PowerManager
 import android.util.Log
 import de.dh.raaps.AppPreferencesRepository
@@ -261,7 +263,15 @@ class APS(
         }
     }
 
+    @SuppressLint("ObsoleteSdkInt", "MissingPermission")
     private fun scheduleSystemWakeup(timestamp: Timestamp, wakeupId: Int) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            if (!alarmManager.canScheduleExactAlarms()) {
+                Log.e(TAG, "Permission for exact alarms is missing, APS cannot do its work")
+                return
+            }
+        }
+
         val intent = Intent(context, ApsAlarmReceiver::class.java).apply {
             action = ACTION_WAKEUP
             putExtra(EXTRA_WAKEUP_ID, wakeupId)
@@ -273,12 +283,16 @@ class APS(
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
 
-        alarmManager.setExactAndAllowWhileIdle(
-            AlarmManager.RTC_WAKEUP,
-            timestamp.ms,
-            pendingIntent
-        )
-        Log.d("APS", "Scheduled system wakeup at $timestamp with ID $wakeupId")
+        try {
+            alarmManager.setExactAndAllowWhileIdle(
+                AlarmManager.RTC_WAKEUP,
+                timestamp.ms,
+                pendingIntent
+            )
+            Log.d(TAG, "Scheduled system wakeup at $timestamp with ID $wakeupId")
+        } catch (e: SecurityException) {
+            Log.e(TAG, "Unable to schedule exact alarm", e)
+        }
     }
 
     private fun restartGlucosePipeline() {
@@ -392,6 +406,7 @@ class APS(
     }
 
     companion object {
+        private const val TAG = "APS"
         const val WAKEUP_STALE_CHECK = 0
         const val WAKEUP_PUMP_COORDINATOR = 1
 
