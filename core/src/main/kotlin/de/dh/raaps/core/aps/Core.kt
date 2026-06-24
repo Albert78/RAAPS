@@ -7,6 +7,7 @@ import de.dh.raaps.common.model.GlucoseSource
 import de.dh.raaps.common.model.InsulinAmount
 import de.dh.raaps.common.model.data.BgReading
 import de.dh.raaps.common.model.data.BgSampleKind
+import de.dh.raaps.common.model.data.CurrentTherapyData
 import de.dh.raaps.common.model.data.Minutes
 import de.dh.raaps.common.model.data.SensorType
 import de.dh.raaps.common.model.data.Timestamp
@@ -56,9 +57,9 @@ sealed interface CoreState {
  * The surrounding app is responsible for acquiring a wake lock.
  */
 class Core(
+    val treatmentRepository: TreatmentRepository,
     val therapyManager: TherapyManager,
     private val glucoseRepository: GlucoseRepository,
-    val treatmentRepository: TreatmentRepository,
     private val appPreferencesRepository: AppPreferencesRepository,
 
     private val onDataUpdated: () -> Unit,
@@ -223,6 +224,27 @@ class Core(
         }
     }
 
+    /**
+     * Triggered when the therapy data (e.g. profile) has changed.
+     * Triggers a recalculation based on the new settings.
+     */
+    suspend fun onTherapyDataChanged(data: CurrentTherapyData?) {
+        busyWork {
+            atomic {
+                updateBasalHistory(data)
+                Log.d(TAG, "Therapy data changed, triggering recalculation")
+                val alg = calculationAlgorithm
+                if (alg != null && currentBg != null) {
+                    alg.recalculateForNewBgValue(currentBg!!)
+                }
+            }
+        }
+    }
+
+    fun updateBasalHistory(data: CurrentTherapyData?) {
+        // TODO: Update treatmentRepository
+    }
+
     companion object {
         val TAG = Core::class.simpleName
 
@@ -247,10 +269,10 @@ class Core(
             onWaitForAndResetPumpJobs: suspend () -> Unit,
         ): Core {
             return Core(
-                glucoseRepository = glucoseRepository,
                 treatmentRepository = treatmentRepository,
-                appPreferencesRepository = appPreferencesRepository,
                 therapyManager = therapyManager,
+                glucoseRepository = glucoseRepository,
+                appPreferencesRepository = appPreferencesRepository,
 
                 onDataUpdated = onDataUpdated,
                 onCoreStateChanged = onCoreStateChanged,
@@ -258,8 +280,8 @@ class Core(
                 onReleaseBusyState = onReleaseBusyState,
 
                 onCancelInsulinJobs = onCancelInsulinJobs,
-                onZeroTemp = onZeroTemp,
                 onDeliverBolus = onDeliverBolus,
+                onZeroTemp = onZeroTemp,
                 onWaitForAndResetPumpJobs = onWaitForAndResetPumpJobs,
             )
         }

@@ -47,7 +47,7 @@ class CurrentTherapyViewModel(
     fun loadData() {
         viewModelScope.launch {
             _uiState.update { it.copy(isLoading = true) }
-            val currentData = therapyManager.getCurrentTherapyData()
+            val currentData = therapyManager.getActiveTherapyData()
             val profiles = therapyManager.getAllProfiles()
             updateState(currentData, profiles)
         }

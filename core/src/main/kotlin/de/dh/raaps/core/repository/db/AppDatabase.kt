@@ -21,6 +21,7 @@ import de.dh.raaps.core.repository.db.entities.MealTypeEntity
 import de.dh.raaps.core.repository.db.entities.ProfileEntity
 import de.dh.raaps.core.repository.db.entities.SensorTypeEntity
 import de.dh.raaps.core.repository.db.entities.TherapyDataEntity
+import kotlinx.coroutines.flow.Flow
 import java.util.concurrent.Executors
 
 @Dao
@@ -84,6 +85,9 @@ interface TherapyDao {
     // Current Therapy Data
     @Query("SELECT * FROM current_therapy_data LIMIT 1")
     suspend fun getCurrentTherapyData(): CurrentTherapyDataEntity?
+
+    @Query("SELECT * FROM current_therapy_data LIMIT 1")
+    fun observeCurrentTherapyData(): Flow<CurrentTherapyDataEntity?>
 
     @Insert
     suspend fun insertCurrentTherapyData(data: CurrentTherapyDataEntity): Long

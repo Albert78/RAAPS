@@ -17,6 +17,7 @@ import de.dh.raaps.common.model.data.Timestamp
 import de.dh.raaps.common.model.data.getAmountForMinute
 import de.dh.raaps.common.model.data.getTargetForMinute
 import de.dh.raaps.core.repository.TherapyRepository
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 
@@ -26,6 +27,8 @@ class TherapyManager(
 ) {
     private val mutex = Mutex()
     private var cachedTherapyData: CurrentTherapyData? = null
+
+    val currentTherapyDataFlow: Flow<CurrentTherapyData?> = therapyRepository.observeCurrentTherapyData()
 
     /**
      * Ensures the therapy data is loaded from the repository.
@@ -100,8 +103,6 @@ class TherapyManager(
     }
 
     suspend fun getAllProfiles() = therapyRepository.getAllProfiles()
-
-    suspend fun getCurrentTherapyData() = getActiveTherapyData()
 
     /**
      * Updates the current therapy settings based on a selected profile.

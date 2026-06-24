@@ -10,6 +10,8 @@ import de.dh.raaps.core.repository.db.MetabolicEventsDao
 import de.dh.raaps.core.repository.db.TherapyDao
 import de.dh.raaps.core.repository.db.toEntity
 import de.dh.raaps.core.repository.db.toModel
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.map
 
 /**
  * Repository for therapy settings, profiles and active therapy data.
@@ -96,6 +98,9 @@ class TherapyRepository(
     }
 
     // --- Current Therapy Data Operations ---
+
+    fun observeCurrentTherapyData(): Flow<CurrentTherapyData?> = therapyDao.observeCurrentTherapyData()
+        .map { getCurrentTherapyData() }
 
     suspend fun getCurrentTherapyData(): CurrentTherapyData? {
         val entity = therapyDao.getCurrentTherapyData() ?: return null
