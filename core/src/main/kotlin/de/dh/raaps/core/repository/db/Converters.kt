@@ -2,6 +2,7 @@ package de.dh.raaps.core.repository.db
 
 import de.dh.raaps.common.model.CarbCurveComponentData
 import de.dh.raaps.common.model.DataProvider
+import de.dh.raaps.common.model.BasalHistoryEntry
 import de.dh.raaps.common.model.Bolus
 import de.dh.raaps.common.model.InsulinType
 import de.dh.raaps.common.model.MealEntry
@@ -16,6 +17,7 @@ import de.dh.raaps.common.model.data.SensorType
 import de.dh.raaps.common.model.data.TargetBlock
 import de.dh.raaps.common.model.data.TherapyData
 import de.dh.raaps.common.model.data.Timestamp
+import de.dh.raaps.core.repository.db.entities.BasalHistoryEntity
 import de.dh.raaps.core.repository.db.entities.CurrentTherapyDataEntity
 import de.dh.raaps.core.repository.db.entities.DBBlock
 import de.dh.raaps.core.repository.db.entities.DBTargetBlock
@@ -28,6 +30,19 @@ import de.dh.raaps.core.repository.db.entities.MealTypeEntity
 import de.dh.raaps.core.repository.db.entities.ProfileEntity
 import de.dh.raaps.core.repository.db.entities.SensorTypeEntity
 import de.dh.raaps.core.repository.db.entities.TherapyDataEntity
+
+// Basal History Converters
+fun BasalHistoryEntry.toEntity() = BasalHistoryEntity(
+    startTick = this.startTick,
+    scheduledRate = this.scheduledRate,
+    actualRate = this.actualRate
+)
+
+fun BasalHistoryEntity.toModel() = BasalHistoryEntry(
+    startTick = this.startTick,
+    scheduledRate = this.scheduledRate,
+    actualRate = this.actualRate
+)
 
 // BgReading Converters
 fun BgReading.toEntity(dataProviderId: Long, sourceSensorId: Long) = GlucoseReadingEntity(

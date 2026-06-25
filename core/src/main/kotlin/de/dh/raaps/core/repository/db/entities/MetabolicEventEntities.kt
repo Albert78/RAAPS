@@ -2,6 +2,7 @@ package de.dh.raaps.core.repository.db.entities
 
 import androidx.room.Entity
 import androidx.room.ForeignKey
+import androidx.room.Index
 import androidx.room.PrimaryKey
 import de.dh.raaps.common.model.ID_UNDEFINED
 import de.dh.raaps.common.model.data.Minutes
@@ -68,11 +69,12 @@ data class BolusEntity(
 )
 
 @Entity(
-    tableName = "basal_hourly"
+    tableName = "basal_history",
+    indices = [Index("startTick")]
 )
-data class BasalHourlyEntity(
+data class BasalHistoryEntity(
     @PrimaryKey
-    val hour: Int, // 0-23 UTC
-    val date: Long, // Midnight UTC
-    val amount: Double
+    val startTick: Int, // Ticks since epoch, e.g. with duration of 20 minutes
+    val scheduledRate: Double,
+    val actualRate: Double
 )

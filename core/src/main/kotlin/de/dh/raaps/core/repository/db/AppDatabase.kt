@@ -10,7 +10,7 @@ import androidx.room.Room
 import androidx.room.RoomDatabase
 import androidx.room.TypeConverters
 import androidx.room.Update
-import de.dh.raaps.core.repository.db.entities.BasalHourlyEntity
+import de.dh.raaps.core.repository.db.entities.BasalHistoryEntity
 import de.dh.raaps.core.repository.db.entities.BolusEntity
 import de.dh.raaps.core.repository.db.entities.CurrentTherapyDataEntity
 import de.dh.raaps.core.repository.db.entities.DataProviderEntity
@@ -165,12 +165,20 @@ interface MetabolicEventsDao {
     @Query("DELETE FROM bolus where id = :bolusId")
     suspend fun deleteBolus(bolusId: Long)
 
-    // Basal Hourly
-    @Query("SELECT * FROM basal_hourly ORDER BY hour ASC")
-    suspend fun getAllBasalHourly(): List<BasalHourlyEntity>
+    @Query("SELECT * FROM basal_history WHERE startTick = :tick LIMIT 1")
+    suspend fun getBasalHistoryEntry(tick: Int): BasalHistoryEntity?
+
+    @Query("SELECT * FROM basal_history ORDER BY startTick DESC LIMIT 1")
+    suspend fun getLastBasalHistoryEntry(): BasalHistoryEntity?
+
+    @Query("SELECT * FROM basal_history WHERE startTick >= :since ORDER BY startTick ASC")
+    suspend fun getBasalHistoryEntriesSince(since: Int): List<BasalHistoryEntity>
+
+    @Query("SELECT * FROM basal_history ORDER BY startTick ASC")
+    suspend fun getAllBasalHistoryEntries(): List<BasalHistoryEntity>
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
-    suspend fun insertBasalHourly(basal: BasalHourlyEntity)
+    suspend fun insertBasalHistoryEntry(basal: BasalHistoryEntity)
 }
 
 @Database(entities = [
@@ -189,7 +197,7 @@ interface MetabolicEventsDao {
     MealEntity::class,
     InsulinTypeEntity::class,
     BolusEntity::class,
-    BasalHourlyEntity::class
+    BasalHistoryEntity::class
 ], version = 1)
 @TypeConverters(
     DbTypeConverters::class

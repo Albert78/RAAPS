@@ -71,3 +71,12 @@ data class Bolus(
     val amount: Double,
     val insulinType: InsulinType
 )
+
+/**
+ * Calculated basal rate entry for a specific time interval (tick).
+ */
+data class BasalHistoryEntry(
+    val startTick: Int,
+    val scheduledRate: Double,
+    val actualRate: Double
+)

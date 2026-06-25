@@ -68,7 +68,7 @@ class PredictionModel(
     }
 
     /**
-     * Calculates all "prediction stages" of the future ticks in our prediction model.
+     * Calculates the "prediction stages" 2-4 of the future ticks in our prediction model.
      * @return `true` if values have changed compared to the previous settings; next stages must be
      * calculated. Else `false`.
      */
