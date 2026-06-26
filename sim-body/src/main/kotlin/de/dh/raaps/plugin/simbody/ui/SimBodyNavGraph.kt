@@ -9,8 +9,7 @@ import androidx.compose.ui.unit.dp
 import androidx.navigation3.runtime.NavEntry
 import androidx.navigation3.runtime.NavKey
 import de.dh.raaps.common.navigation.FeatureNavGraph
-import de.dh.raaps.common.navigation.SimBodyMainRoute
-import de.dh.raaps.ui.navigation.NavigationViewModel
+import de.dh.raaps.common.navigation.NavigationViewModel
 
 class SimBodyNavGraph(
     private val navViewModel: NavigationViewModel

@@ -6,6 +6,7 @@ import android.content.Intent
 import androidx.core.content.ContextCompat
 import de.dh.raaps.common.model.PluginManager
 import de.dh.raaps.common.model.data.Minutes
+import de.dh.raaps.core.RAAPSApplication
 import de.dh.raaps.core.aps.APS
 import de.dh.raaps.core.aps.Core
 import de.dh.raaps.core.repository.DatabaseInitializer
@@ -27,20 +28,20 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 
-class MainApplication : Application() {
+class MainApplication : Application(), RAAPSApplication {
     lateinit var notificationManager: ApsNotificationManager
         private set
-    lateinit var appPreferencesRepository: AppPreferencesRepository
+    override lateinit var appPreferencesRepository: AppPreferencesRepository
         private set
-    lateinit var pluginManager: PluginManager
+    override lateinit var pluginManager: PluginManager
         private set
-    lateinit var glucoseRepository: GlucoseRepository
+    override lateinit var glucoseRepository: GlucoseRepository
         private set
-    lateinit var therapyRepository: TherapyRepository
+    override lateinit var therapyRepository: TherapyRepository
         private set
-    lateinit var treatmentRepository: TreatmentRepository
+    override lateinit var treatmentRepository: TreatmentRepository
         private set
-    lateinit var aps: APS
+    override lateinit var aps: APS
         private set
 
     val applicationScope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
@@ -88,7 +89,7 @@ class MainApplication : Application() {
         super.onTerminate()
     }
 
-    fun triggerUpdatesAfterPermissionsChange() {
+    override fun triggerUpdatesAfterPermissionsChange() {
         pluginManager.triggerUpdatesAfterPermissionsChange()
         startApsService()
     }

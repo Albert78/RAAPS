@@ -3,7 +3,6 @@ package de.dh.raaps.common.navigation
 import androidx.compose.runtime.Composable
 import androidx.navigation3.runtime.NavEntry
 import androidx.navigation3.runtime.NavKey
-import kotlinx.serialization.Serializable
 
 interface FeatureNavGraph {
     fun getEntry(key: NavKey): NavEntry<NavKey>?
@@ -13,10 +12,3 @@ interface FeatureNavGraph {
         // Default: no extension
     }
 }
-
-@Serializable object DashboardRoute : NavKey
-@Serializable object HistoryRoute : NavKey
-@Serializable object PermissionsRoute : NavKey
-@Serializable object PreferencesMainRoute : NavKey
-@Serializable object ProfileEditorRoute : NavKey
-@Serializable object SimBodyMainRoute : NavKey

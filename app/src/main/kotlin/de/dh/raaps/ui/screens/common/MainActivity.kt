@@ -1,41 +1,34 @@
 package de.dh.raaps.ui.screens.common
 
-import android.Manifest
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
-import android.os.Build
 import android.os.Bundle
 import androidx.activity.ComponentActivity
-import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
-import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
-import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewmodel.navigation3.rememberViewModelStoreNavEntryDecorator
 import androidx.navigation3.runtime.rememberSaveableStateHolderNavEntryDecorator
 import androidx.navigation3.ui.NavDisplay
 import de.dh.raaps.MainApplication
 import de.dh.raaps.common.navigation.DashboardRoute
+import de.dh.raaps.common.navigation.NavigationViewModel
+import de.dh.raaps.common.navigation.combineEntryProviders
 import de.dh.raaps.common.ui.composables.EdgeToEdgeHandler
 import de.dh.raaps.common.ui.theme.AppTheme
 import de.dh.raaps.common.ui.theme.rememberUseDarkTheme
 import de.dh.raaps.getExtraNavGraphs
 import de.dh.raaps.services.ApsService
 import de.dh.raaps.ui.navigation.MainFeatureNavGraph
-import de.dh.raaps.ui.navigation.NavigationViewModel
-import de.dh.raaps.ui.navigation.combineEntryProviders
 import de.dh.raaps.ui.screens.permissions.canPostNotifications
 import de.dh.raaps.ui.screens.permissions.isAutoRevokePermissions
-import kotlinx.serialization.Serializable
 
 class MainActivity : ComponentActivity() {
     private lateinit var navViewModel: NavigationViewModel

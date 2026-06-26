@@ -4,10 +4,10 @@ import android.app.Application
 import androidx.activity.ComponentActivity
 import de.dh.raaps.common.model.PluginManager
 import de.dh.raaps.common.navigation.FeatureNavGraph
+import de.dh.raaps.common.navigation.NavigationViewModel
 import de.dh.raaps.core.aps.APS
 import de.dh.raaps.plugin.simbody.SimBodyPlugin
 import de.dh.raaps.plugin.simbody.ui.SimBodyNavGraph
-import de.dh.raaps.ui.navigation.NavigationViewModel
 
 /**
  * Setup for a system where glucose source and insulin pump are provided by the [SimBodyPlugin],

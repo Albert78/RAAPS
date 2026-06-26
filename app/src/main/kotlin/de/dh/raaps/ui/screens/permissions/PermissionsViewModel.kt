@@ -4,9 +4,8 @@ import android.app.Application
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
-import androidx.lifecycle.application
 import androidx.lifecycle.viewModelScope
-import de.dh.raaps.MainApplication
+import de.dh.raaps.core.RAAPSApplication
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.launchIn
@@ -24,9 +23,9 @@ import kotlinx.coroutines.flow.update
  * [updateAppPermissions] but we need the UI to call this method when permissions have changed.
  */
 class PermissionsViewModel(
-    application: MainApplication
-) : AndroidViewModel(application) {
-    private val appStateRepository = application.appPreferencesRepository
+    val raapsApp: RAAPSApplication
+) : AndroidViewModel(raapsApp as Application) {
+    private val appStateRepository = raapsApp.appPreferencesRepository
 
     private val _uiState = MutableStateFlow(PermissionsUiModel.loading())
     val uiState = _uiState.asStateFlow()
@@ -52,9 +51,10 @@ class PermissionsViewModel(
      * Updates the internal state of the system permissions with the current system settings for this app.
      */
     fun updateAppPermissions() {
-        val canPost = canPostNotifications(application)
-        val isIgnoring = isIgnoringBatteryOptimizations(application)
-        val isAutoRevoke = isAutoRevokePermissions(application)
+        val app = raapsApp as Application
+        val canPost = canPostNotifications(app)
+        val isIgnoring = isIgnoringBatteryOptimizations(app)
+        val isAutoRevoke = isAutoRevokePermissions(app)
 
         val activeFunctions = RestrictedAppFunctions.Companion.getActiveAppFunctions(functionSwitch1, functionSwitch2)
 
@@ -90,19 +90,18 @@ class PermissionsViewModel(
                 notificationPermissionStatus,
                 ignoreBatteryOptimizationPermissionStatus,
                 autoRevokePermissionsPermissionStatus,
-                application
+                raapsApp as Application
             )
         }
     }
 
     companion object {
         class Factory(
-            private val application: Application
+            private val raapsApp: RAAPSApplication
         ) : ViewModelProvider.Factory {
             @Suppress("UNCHECKED_CAST")
             override fun <T : ViewModel> create(modelClass: Class<T>): T {
-                val app = application as MainApplication
-                return PermissionsViewModel(app) as T
+                return PermissionsViewModel(raapsApp) as T
             }
         }
     }

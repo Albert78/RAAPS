@@ -6,7 +6,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.CreationExtras
-import de.dh.raaps.MainApplication
+import de.dh.raaps.core.RAAPSApplication
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.update
@@ -18,8 +18,8 @@ data class DashboardUiState(
 )
 
 class DashboardViewModel(
-    val application: MainApplication
-) : AndroidViewModel(application) {
+    val application: RAAPSApplication
+) : AndroidViewModel(application as Application) {
     private val _uiState = MutableStateFlow(DashboardUiState())
     val uiState: StateFlow<DashboardUiState> = _uiState
 
@@ -51,10 +51,10 @@ class DashboardViewModel(
     }
 
     companion object {
-        class Factory(private val application: Application) : ViewModelProvider.Factory {
+        class Factory(private val raapsApp: RAAPSApplication) : ViewModelProvider.Factory {
             @Suppress("UNCHECKED_CAST")
             override fun <T : ViewModel> create(modelClass: Class<T>, extras: CreationExtras): T {
-                return DashboardViewModel(application as MainApplication) as T
+                return DashboardViewModel(raapsApp) as T
             }
         }
     }

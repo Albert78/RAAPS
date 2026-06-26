@@ -7,7 +7,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.CreationExtras
-import de.dh.raaps.MainApplication
+import de.dh.raaps.core.RAAPSApplication
 import de.dh.raaps.common.model.data.BgDelta
 import de.dh.raaps.common.model.data.BgValue
 import de.dh.raaps.common.model.data.CurrentTherapyData
@@ -31,8 +31,8 @@ data class CurrentTherapyUiState(
 )
 
 class CurrentTherapyViewModel(
-    application: MainApplication
-) : AndroidViewModel(application) {
+    val application: RAAPSApplication
+) : AndroidViewModel(application as Application) {
 
     private val _uiState = MutableStateFlow(CurrentTherapyUiState())
     val uiState: StateFlow<CurrentTherapyUiState> = _uiState
@@ -84,10 +84,10 @@ class CurrentTherapyViewModel(
     }
 
     companion object {
-        class Factory(private val application: Application) : ViewModelProvider.Factory {
+        class Factory(private val raapsApp: RAAPSApplication) : ViewModelProvider.Factory {
             @Suppress("UNCHECKED_CAST")
             override fun <T : ViewModel> create(modelClass: Class<T>, extras: CreationExtras): T {
-                return CurrentTherapyViewModel(application as MainApplication) as T
+                return CurrentTherapyViewModel(raapsApp) as T
             }
         }
     }

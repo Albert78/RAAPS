@@ -7,7 +7,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.CreationExtras
-import de.dh.raaps.MainApplication
+import de.dh.raaps.core.RAAPSApplication
 import de.dh.raaps.common.model.ToDo
 import de.dh.raaps.common.model.data.BgDelta
 import de.dh.raaps.common.model.data.BgReading
@@ -88,8 +88,8 @@ data class HistoryUiState(
 )
 
 class HistoryViewModel(
-    val application: MainApplication
-) : AndroidViewModel(application) {
+    val application: RAAPSApplication
+) : AndroidViewModel(application as Application) {
     private val _currentBgUiState = MutableStateFlow(CurrentBgUiState(
         isLoading = true,
         isError = false
@@ -238,12 +238,11 @@ class HistoryViewModel(
         val TAG = HistoryViewModel::class.simpleName
 
         class Factory(
-            private val application: Application,
+            private val raapsApp: RAAPSApplication,
         ) : ViewModelProvider.Factory {
             @Suppress("UNCHECKED_CAST")
             override fun <T : ViewModel> create(modelClass: Class<T>, extras: CreationExtras): T {
-                val app = application as MainApplication
-                return HistoryViewModel(app) as T
+                return HistoryViewModel(raapsApp) as T
             }
         }
     }
