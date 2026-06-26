@@ -2,6 +2,7 @@ package de.dh.raaps.plugin.simbody
 
 import de.dh.raaps.common.model.InsulinApplication
 import de.dh.raaps.common.model.CarbCurveComponentData
+import de.dh.raaps.common.model.InsulinOrigin
 import de.dh.raaps.common.model.InsulinType
 import de.dh.raaps.common.model.MealEntry
 import de.dh.raaps.common.model.MealType
@@ -55,7 +56,7 @@ class BodyModel {
      * Advances the simulation state to the [currentTimestamp].
      * Calculates the delta in blood glucose based on all active influences.
      */
-    fun tick(currentTimestamp: Timestamp = Timestamp.now()) {
+    fun advanceToTick(currentTimestamp: Timestamp = Timestamp.now()) {
         val durationMs = currentTimestamp.ms - lastTickTimestamp.ms
         if (durationMs <= 0) return
 
@@ -113,7 +114,8 @@ class BodyModel {
         insulinApplications.add(InsulinApplication(
             timestamp = Timestamp.now(),
             amount = amount,
-            insulinType = type ?: defaultInsulinType
+            insulinType = type ?: defaultInsulinType,
+            origin = InsulinOrigin.Pump
         ))
     }
 

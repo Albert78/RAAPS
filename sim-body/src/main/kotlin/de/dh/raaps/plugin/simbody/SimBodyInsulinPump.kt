@@ -9,12 +9,16 @@ import de.dh.raaps.common.model.InsulinPump
 import de.dh.raaps.common.model.InsulinPumpStatus
 import de.dh.raaps.common.model.PumpAlerts
 import de.dh.raaps.common.model.PumpCapabilities
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 
 class SimBodyInsulinPump(
     val bodyModel: BodyModel,
-    val application: Application
+    val application: Application,
+    private val scope: CoroutineScope = CoroutineScope(SupervisorJob() + Dispatchers.Default),
 ): InsulinPump {
     override val hardwareInformation: StateFlow<HardwareInformation?> = MutableStateFlow(
         HardwareInformation(
@@ -73,6 +77,6 @@ class SimBodyInsulinPump(
     }
 
     override fun stop() {
-        // TODO
+        // Nothing to do
     }
 }

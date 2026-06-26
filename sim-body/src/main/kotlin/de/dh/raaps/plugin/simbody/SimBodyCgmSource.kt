@@ -12,6 +12,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.map
+import kotlin.time.Duration.Companion.minutes
 
 class SimBodyCgmSource(
     val bodyModel: BodyModel,
@@ -38,13 +39,13 @@ class SimBodyCgmSource(
 
     fun getRawGlucoseReadings(): Flow<RawBg> = flow {
         while (true) {
-            bodyModel.tick() // Update the simulation
+            bodyModel.advanceToTick() // Update the simulation
             val reading = RawBg(
                 value = bodyModel.bloodGlucose,
                 timestamp = Timestamp.now(),
             )
             emit(reading)
-            delay(1000*60*5) // Every 5 minutes
+            delay(5.minutes)
         }
     }
 
