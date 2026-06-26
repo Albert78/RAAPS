@@ -18,7 +18,7 @@ import de.dh.raaps.core.repository.TreatmentRepository
  *
  * When a new blood glucose value is received, these cached BGI values are projected forward from
  * the current reading. Recalculation of the underlying BGI values is only necessary if the
- * user profile (ISF, IC) or the treatment history changes.
+ * user profile (ISF, IC, Basal) or the treatment history changes.
  */
 class PredictionModel(
     val predictionWindowHours: Int = 10,
@@ -50,14 +50,14 @@ class PredictionModel(
         carbsInsulinCalculationModel: CarbsInsulinCalculationModel
     ) {
         val meals = treatmentRepository.getMeals()
-        val boluses = treatmentRepository.getBoluses()
+        val insulinApplications = InsulinHistoryHelper.calculateBolusesAndBasalDeviations(treatmentRepository)
         forEach { tick, tickState ->
             tickState.initializeToTick(tick)
             // We only need to initialize insulin and carbs, since they only depend on the treatments.
             // They only need to be touched when we have more meals or boluses.
             // All other data is calculated in each tick cycle.
             tickState.effectiveInsulin = carbsInsulinCalculationModel.effectiveInsulin(
-                boluses,
+                insulinApplications,
                 timeline.timestamp(tick)
             )
             tickState.effectiveCarbs = carbsInsulinCalculationModel.carbAbsorption(

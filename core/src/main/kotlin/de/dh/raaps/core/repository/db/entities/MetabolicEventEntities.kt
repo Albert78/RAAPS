@@ -4,6 +4,7 @@ import androidx.room.Entity
 import androidx.room.ForeignKey
 import androidx.room.Index
 import androidx.room.PrimaryKey
+import de.dh.raaps.common.model.InsulinOrigin
 import de.dh.raaps.common.model.ID_UNDEFINED
 import de.dh.raaps.common.model.data.Minutes
 import de.dh.raaps.common.model.data.Timestamp
@@ -65,6 +66,7 @@ data class BolusEntity(
     var id: Long = ID_UNDEFINED,
     val insulin_type_id: String,
     val timestamp: Timestamp,
+    val origin: InsulinOrigin,
     val amount: Double
 )
 
@@ -76,5 +78,6 @@ data class BasalHistoryEntity(
     @PrimaryKey
     val startTick: Int, // Ticks since epoch, e.g. with duration of 20 minutes
     val scheduledRate: Double,
-    val actualRate: Double
+    val actualRate: Double,
+    val insulin_type_id: String
 )

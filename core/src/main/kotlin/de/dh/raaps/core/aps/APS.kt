@@ -112,7 +112,7 @@ class APS(
         onCancelInsulinJobs = { cancelInsulinJobs() },
         onDeliverBolus = { amount -> deliverBolus(amount) },
         onZeroTemp = { durationInHours -> issueZeroTemp(durationInHours) },
-        onWaitForAndResetPumpJobs = { waitForAndResetPumpJobs() }
+        onWaitForAndResetInsulinJobs = { waitForAndResetInsulinJobs() }
     )
 
     // Plugins & Active Jobs
@@ -159,10 +159,10 @@ class APS(
                         }
                         // Sync history
                         launch {
-                            pc.pump.bolusHistory.collect { /* TODO: Sync with treatmentRepository */ }
+                            pc.pump.bolusHistory.collect { core.updatePumpBolusHistory(it) }
                         }
                         launch {
-                            pc.pump.basalHistory.collect { /* TODO: Sync with treatmentRepository */ }
+                            pc.pump.basalHistory.collect { core.updatePumpActualBasalHistory(it) }
                         }
                     }
                     pc
@@ -170,8 +170,7 @@ class APS(
             }
         }
 
-    // Observers: Exposed from the internal core
-    // Observers (Updated by the core, read by the facade/UI)
+    // Observers (Updated by the internal core, read by the facade/UI)
     private val _lastDataTime = MutableStateFlow<Timestamp>(Timestamp(0))
     val lastDataTime: StateFlow<Timestamp> = _lastDataTime.asStateFlow()
 
@@ -243,8 +242,27 @@ class APS(
 
             launch {
                 therapyManager.currentTherapyDataFlow.drop(1).collect { data ->
-                    // TODO: Set basal rates to pump
+                    if (data == null) return@collect
+                    pumpCoordinator?.issueCommand(
+                        PumpCommand.SetProfile(data.therapyData),
+                        isCancelableAPSCommand = false
+                    )
                     core.onTherapyDataChanged(data)
+                }
+            }
+            launch {
+                treatmentRepository.observeMeals().drop(1).collect { data ->
+                    core.onMetabolicEventsChanged()
+                }
+            }
+            launch {
+                treatmentRepository.observeBoluses().drop(1).collect { data ->
+                    core.onMetabolicEventsChanged()
+                }
+            }
+            launch {
+                treatmentRepository.observeBasalHistory().drop(1).collect { data ->
+                    core.onMetabolicEventsChanged()
                 }
             }
         }
@@ -334,6 +352,7 @@ class APS(
     fun deliverBolus(amount: InsulinAmount) {
         pumpCoordinator?.issueCommand(
             PumpCommand.DeliverBolus(amount),
+            isCancelableAPSCommand = true
         )
         // TODO: If no pump is present, tell the user to inject the bolus
     }
@@ -344,11 +363,12 @@ class APS(
                 percent = 0,
                 durationHours = durationInHours
             ),
+            isCancelableAPSCommand = true
         )
         // TODO: If no pump is present, tell the user to eat
     }
 
-    suspend fun waitForAndResetPumpJobs() {
+    suspend fun waitForAndResetInsulinJobs() {
         val pc = pumpCoordinator ?: return
         if (pc.hasPendingJobs()) {
             pc.wakeup()
@@ -357,7 +377,7 @@ class APS(
         }
         if (pc.hasPendingJobs()) {
             addIssue(ApsIssue.PumpConnectionMissing)
-            pc.cancelJobs()
+            pc.cancelJobs({ it.isCancelableAPSCommand })
         }
     }
 
@@ -414,7 +434,8 @@ class APS(
     }
 
     companion object {
-        private const val TAG = "APS"
+        private val TAG = APS::class.simpleName
+
         const val WAKEUP_STALE_CHECK = 0
         const val WAKEUP_PUMP_COORDINATOR = 1
 

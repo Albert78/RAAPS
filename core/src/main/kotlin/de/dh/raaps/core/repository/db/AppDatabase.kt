@@ -10,6 +10,7 @@ import androidx.room.Room
 import androidx.room.RoomDatabase
 import androidx.room.TypeConverters
 import androidx.room.Update
+import de.dh.raaps.common.model.InsulinOrigin
 import de.dh.raaps.core.repository.db.entities.BasalHistoryEntity
 import de.dh.raaps.core.repository.db.entities.BolusEntity
 import de.dh.raaps.core.repository.db.entities.CurrentTherapyDataEntity
@@ -118,6 +119,9 @@ interface MetabolicEventsDao {
     @Query("SELECT * FROM meal ORDER BY timestamp ASC")
     suspend fun getAllMeals(): List<MealEntity>
 
+    @Query("SELECT * FROM meal ORDER BY timestamp ASC")
+    fun observeAllMeals(): Flow<List<MealEntity>>
+
     @Query("SELECT * FROM meal WHERE timestamp >= :since ORDER BY timestamp ASC")
     suspend fun getMealsSince(since: Long): List<MealEntity>
 
@@ -153,6 +157,9 @@ interface MetabolicEventsDao {
     @Query("SELECT * FROM bolus ORDER BY timestamp ASC")
     suspend fun getAllBoluses(): List<BolusEntity>
 
+    @Query("SELECT * FROM bolus ORDER BY timestamp ASC")
+    fun observeAllBoluses(): Flow<List<BolusEntity>>
+
     @Query("SELECT * FROM bolus WHERE timestamp >= :since ORDER BY timestamp ASC")
     suspend fun getBolusesSince(since: Long): List<BolusEntity>
 
@@ -165,6 +172,9 @@ interface MetabolicEventsDao {
     @Query("DELETE FROM bolus where id = :bolusId")
     suspend fun deleteBolus(bolusId: Long)
 
+    @Query("DELETE FROM bolus WHERE origin = :origin")
+    suspend fun deleteBolusesByOrigin(origin: InsulinOrigin)
+
     @Query("SELECT * FROM basal_history WHERE startTick = :tick LIMIT 1")
     suspend fun getBasalHistoryEntry(tick: Int): BasalHistoryEntity?
 
@@ -176,6 +186,9 @@ interface MetabolicEventsDao {
 
     @Query("SELECT * FROM basal_history ORDER BY startTick ASC")
     suspend fun getAllBasalHistoryEntries(): List<BasalHistoryEntity>
+
+    @Query("SELECT * FROM basal_history ORDER BY startTick ASC")
+    fun observeAllBasalHistoryEntries(): Flow<List<BasalHistoryEntity>>
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertBasalHistoryEntry(basal: BasalHistoryEntity)

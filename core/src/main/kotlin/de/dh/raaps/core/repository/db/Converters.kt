@@ -3,7 +3,7 @@ package de.dh.raaps.core.repository.db
 import de.dh.raaps.common.model.CarbCurveComponentData
 import de.dh.raaps.common.model.DataProvider
 import de.dh.raaps.common.model.BasalHistoryEntry
-import de.dh.raaps.common.model.Bolus
+import de.dh.raaps.common.model.InsulinApplication
 import de.dh.raaps.common.model.InsulinType
 import de.dh.raaps.common.model.MealEntry
 import de.dh.raaps.common.model.MealType
@@ -30,19 +30,6 @@ import de.dh.raaps.core.repository.db.entities.MealTypeEntity
 import de.dh.raaps.core.repository.db.entities.ProfileEntity
 import de.dh.raaps.core.repository.db.entities.SensorTypeEntity
 import de.dh.raaps.core.repository.db.entities.TherapyDataEntity
-
-// Basal History Converters
-fun BasalHistoryEntry.toEntity() = BasalHistoryEntity(
-    startTick = this.startTick,
-    scheduledRate = this.scheduledRate,
-    actualRate = this.actualRate
-)
-
-fun BasalHistoryEntity.toModel() = BasalHistoryEntry(
-    startTick = this.startTick,
-    scheduledRate = this.scheduledRate,
-    actualRate = this.actualRate
-)
 
 // BgReading Converters
 fun BgReading.toEntity(dataProviderId: Long, sourceSensorId: Long) = GlucoseReadingEntity(
@@ -147,17 +134,34 @@ fun InsulinTypeEntity.toModel() = InsulinType(
     dia = this.dia
 )
 
-fun Bolus.toEntity() = BolusEntity(
-    id = this.id,
-    insulin_type_id = this.insulinType.id,
-    timestamp = this.timestamp,
-    amount = this.amount
-)
-
-fun BolusEntity.toModel(type: InsulinType) = Bolus(
+fun InsulinApplication.toBolusEntity() = BolusEntity(
     id = this.id,
     timestamp = this.timestamp,
     amount = this.amount,
+    insulin_type_id = this.insulinType.id,
+    origin = this.origin
+)
+
+fun BolusEntity.toModel(type: InsulinType) = InsulinApplication(
+    id = this.id,
+    timestamp = this.timestamp,
+    amount = this.amount,
+    insulinType = type,
+    origin = this.origin
+)
+
+// Basal History Converters
+fun BasalHistoryEntry.toEntity() = BasalHistoryEntity(
+    startTick = this.startTick,
+    scheduledRate = this.scheduledRate,
+    actualRate = this.actualRate,
+    insulin_type_id = this.insulinType.id
+)
+
+fun BasalHistoryEntity.toModel(type: InsulinType) = BasalHistoryEntry(
+    startTick = this.startTick,
+    scheduledRate = this.scheduledRate,
+    actualRate = this.actualRate,
     insulinType = type
 )
 

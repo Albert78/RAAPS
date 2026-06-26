@@ -2,7 +2,7 @@
   "formatVersion": 1,
   "database": {
     "version": 1,
-    "identityHash": "f8409905ec238c42cea541c3d05df35c",
+    "identityHash": "a19f53d4b2a49752f0725417c8898b8f",
     "entities": [
       {
         "tableName": "sensor_type",
@@ -459,7 +459,7 @@
       },
       {
         "tableName": "bolus",
-        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `insulin_type_id` TEXT NOT NULL, `timestamp` INTEGER NOT NULL, `amount` REAL NOT NULL, FOREIGN KEY(`insulin_type_id`) REFERENCES `insulin_type`(`id`) ON UPDATE NO ACTION ON DELETE RESTRICT )",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `insulin_type_id` TEXT NOT NULL, `timestamp` INTEGER NOT NULL, `origin` TEXT NOT NULL, `amount` REAL NOT NULL, FOREIGN KEY(`insulin_type_id`) REFERENCES `insulin_type`(`id`) ON UPDATE NO ACTION ON DELETE RESTRICT )",
         "fields": [
           {
             "fieldPath": "id",
@@ -477,6 +477,12 @@
             "fieldPath": "timestamp",
             "columnName": "timestamp",
             "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "origin",
+            "columnName": "origin",
+            "affinity": "TEXT",
             "notNull": true
           },
           {
@@ -507,39 +513,56 @@
         ]
       },
       {
-        "tableName": "basal_hourly",
-        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`hour` INTEGER NOT NULL, `date` INTEGER NOT NULL, `amount` REAL NOT NULL, PRIMARY KEY(`hour`))",
+        "tableName": "basal_history",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`startTick` INTEGER NOT NULL, `scheduledRate` REAL NOT NULL, `actualRate` REAL NOT NULL, `insulin_type_id` TEXT NOT NULL, PRIMARY KEY(`startTick`))",
         "fields": [
           {
-            "fieldPath": "hour",
-            "columnName": "hour",
+            "fieldPath": "startTick",
+            "columnName": "startTick",
             "affinity": "INTEGER",
             "notNull": true
           },
           {
-            "fieldPath": "date",
-            "columnName": "date",
-            "affinity": "INTEGER",
-            "notNull": true
-          },
-          {
-            "fieldPath": "amount",
-            "columnName": "amount",
+            "fieldPath": "scheduledRate",
+            "columnName": "scheduledRate",
             "affinity": "REAL",
+            "notNull": true
+          },
+          {
+            "fieldPath": "actualRate",
+            "columnName": "actualRate",
+            "affinity": "REAL",
+            "notNull": true
+          },
+          {
+            "fieldPath": "insulin_type_id",
+            "columnName": "insulin_type_id",
+            "affinity": "TEXT",
             "notNull": true
           }
         ],
         "primaryKey": {
           "autoGenerate": false,
           "columnNames": [
-            "hour"
+            "startTick"
           ]
-        }
+        },
+        "indices": [
+          {
+            "name": "index_basal_history_startTick",
+            "unique": false,
+            "columnNames": [
+              "startTick"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_basal_history_startTick` ON `${TABLE_NAME}` (`startTick`)"
+          }
+        ]
       }
     ],
     "setupQueries": [
       "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
-      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, 'f8409905ec238c42cea541c3d05df35c')"
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, 'a19f53d4b2a49752f0725417c8898b8f')"
     ]
   }
 }

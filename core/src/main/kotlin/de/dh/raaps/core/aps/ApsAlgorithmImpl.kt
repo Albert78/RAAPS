@@ -37,6 +37,13 @@ class ApsAlgorithmImpl(
     private val Tick.timestamp get() = timeline.timestamp(this)
 
     /**
+     * Called when meals or insulin events occured. This recalculates prediction stage 1.
+     */
+    override suspend fun updateMealsAndInsulin() {
+        predictionModel.calculatePredictionStage_1(treatmentRepository, carbsInsulinCalculationModel)
+    }
+
+    /**
      * Calculate the deviation between previous forecasts and the blood glucose values actually received.
      * This is done by comparing recent blood glucose slopes to the predicted BGI (Blood Glucose Impact) values.
      * Deviations typically occur due to unannounced meals or variations in insulin/carb sensitivity
@@ -100,6 +107,9 @@ class ApsAlgorithmImpl(
         // Move the prediction window forward. It always covers roughly our BG readings history cache
         // to be able to calculate deviations between the static predictions and the actual readings.
         predictionModel.advanceToTick(now.minus(PRESERVE_PREDICTIONS_PAST_TIME))
+
+        // Stage 1: Influence of meals and insulin - This is updated when metabolic events occur,
+        // the data is reused in succeeding calculation calls until another metabolic event occurs.
 
         // Materialize assumed ISF and IC values, update predicted BGI if changed, update BG if changed
         val continueCalculations = predictionModel.calculatePredictionStates_2_3_4(currentBgFiltered, avgCurrentDeviation, therapyManager)
@@ -223,7 +233,6 @@ class ApsAlgorithmImpl(
                     }
                 }
                 onDeliverBolus(InsulinAmount(bolusAmount))
-                predictionModel.calculatePredictionStage_1(treatmentRepository, carbsInsulinCalculationModel)
             }
         }
     }

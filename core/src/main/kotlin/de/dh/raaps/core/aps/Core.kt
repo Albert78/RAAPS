@@ -2,6 +2,8 @@ package de.dh.raaps.core.aps
 
 import android.util.Log
 import de.dh.raaps.AppPreferencesRepository
+import de.dh.raaps.common.model.BasalHistoryPoint
+import de.dh.raaps.common.model.BolusHistoryPoint
 import de.dh.raaps.common.model.DataProvider
 import de.dh.raaps.common.model.GlucoseSource
 import de.dh.raaps.common.model.InsulinAmount
@@ -70,15 +72,18 @@ class Core(
     private val onCancelInsulinJobs: () -> Unit,
     private val onDeliverBolus: (amount: InsulinAmount) -> Unit,
     private val onZeroTemp: (durationInHours: Int) -> Unit,
-    private val onWaitForAndResetPumpJobs: suspend () -> Unit,
+    private val onWaitForAndResetInsulinJobs: suspend () -> Unit,
 ) {
-    private var calculationAlgorithm: ApsAlgorithm? = null
+    private var calculationAlgorithm: ApsAlgorithm = NoopAlgorithm()
 
     // State
     var currentBg: BgReading? = null
         private set
     var lastBg: BgReading? = null
         private set
+    var currentTherapyData: CurrentTherapyData? = null
+        private set
+    var isPredictionsStale: Boolean = true
 
     var coreState: CoreState = CoreState.Uninitialized
         private set
@@ -99,6 +104,7 @@ class Core(
      * we're single-threaded inside this class by design.
      */
     private val atomicOperationLock = Mutex()
+    private val atomicOperationOwner = Any()
 
     /**
      * Block marker for code blocks which need a wake lock in the system during their executions.
@@ -118,8 +124,12 @@ class Core(
      * for other functions in case our block suspends.
      */
     private suspend fun <T> atomic(block: suspend () -> T): T {
-        return atomicOperationLock.withLock {
+        return if (atomicOperationLock.holdsLock(atomicOperationOwner)) {
             block()
+        } else {
+            atomicOperationLock.withLock(atomicOperationOwner) {
+                block()
+            }
         }
     }
 
@@ -142,6 +152,7 @@ class Core(
 
                 currentBg = readingsHistory.lastOrNull()
                 lastBg = if (readingsHistory.size >= 2) readingsHistory[readingsHistory.size - 2] else null
+                currentTherapyData = therapyManager.getActiveTherapyData()
 
                 calculationAlgorithm = ApsAlgorithmImpl.create(
                     treatmentRepository,
@@ -213,11 +224,12 @@ class Core(
                     currentBg = bg
                 }
 
-                val isRecent = abs(bg.timestamp.ms - Timestamp.now().ms) < RECENT_BG_THRESHOLD.inMs()
+                val isRecentBg = abs(bg.timestamp.ms - Timestamp.now().ms) < RECENT_BG_THRESHOLD.inMs()
                 val alg = calculationAlgorithm
-                onWaitForAndResetPumpJobs()
-                if (isRecent && alg != null) {
+                onWaitForAndResetInsulinJobs()
+                if (isRecentBg || isPredictionsStale) {
                     alg.recalculateForNewBgValue(bg)
+                    isPredictionsStale = false
                 }
             }
             onDataUpdated()
@@ -225,24 +237,58 @@ class Core(
     }
 
     /**
-     * Triggered when the therapy data (e.g. profile) has changed.
-     * Triggers a recalculation based on the new settings.
+     * Triggered when the therapy data (i.e. profile) has changed.
      */
-    suspend fun onTherapyDataChanged(data: CurrentTherapyData?) {
+    suspend fun onTherapyDataChanged(newData: CurrentTherapyData?) {
         busyWork {
             atomic {
-                updateBasalHistory(data)
-                Log.d(TAG, "Therapy data changed, triggering recalculation")
-                val alg = calculationAlgorithm
-                if (alg != null && currentBg != null) {
-                    alg.recalculateForNewBgValue(currentBg!!)
+                if (newData == null) {
+                    return@atomic
                 }
+                val oldTherapyData = currentTherapyData ?: newData
+                InsulinHistoryHelper.updateScheduledBasal(
+                    oldTherapyData.therapyData,
+                    newData!!.therapyData,
+                    oldTherapyData.insulinType,
+                    treatmentRepository
+                )
+                currentTherapyData = newData
             }
         }
     }
 
-    fun updateBasalHistory(data: CurrentTherapyData?) {
-        // TODO: Update treatmentRepository
+    /**
+     * Triggered on insulin or meal events.
+     */
+    suspend fun onMetabolicEventsChanged() {
+        atomic {
+            calculationAlgorithm.updateMealsAndInsulin()
+            isPredictionsStale = true
+        }
+    }
+
+    /**
+     * Triggered when the history of actual basal values was updated.
+     */
+    suspend fun updatePumpActualBasalHistory(basalHistory: List<BasalHistoryPoint>) {
+        busyWork {
+            atomic {
+                val therapyData = currentTherapyData?.therapyData ?: return@atomic
+                InsulinHistoryHelper.updateHistoricalBasal(basalHistory, therapyData, currentTherapyData!!.insulinType, treatmentRepository)
+            }
+        }
+    }
+
+    /**
+     * Triggered when the history of actual bolus values was updated.
+     */
+    suspend fun updatePumpBolusHistory(bolusHistory: List<BolusHistoryPoint>) {
+        busyWork {
+            atomic {
+                val ctd = currentTherapyData ?: return@atomic
+                InsulinHistoryHelper.updatePumpBolusHistory(bolusHistory, ctd.insulinType, treatmentRepository)
+            }
+        }
     }
 
     companion object {
@@ -266,7 +312,7 @@ class Core(
             onCancelInsulinJobs: () -> Unit,
             onDeliverBolus: (amount: InsulinAmount) -> Unit,
             onZeroTemp: (durationInHours: Int) -> Unit,
-            onWaitForAndResetPumpJobs: suspend () -> Unit,
+            onWaitForAndResetInsulinJobs: suspend () -> Unit,
         ): Core {
             return Core(
                 treatmentRepository = treatmentRepository,
@@ -282,7 +328,7 @@ class Core(
                 onCancelInsulinJobs = onCancelInsulinJobs,
                 onDeliverBolus = onDeliverBolus,
                 onZeroTemp = onZeroTemp,
-                onWaitForAndResetPumpJobs = onWaitForAndResetPumpJobs,
+                onWaitForAndResetInsulinJobs = onWaitForAndResetInsulinJobs,
             )
         }
     }

@@ -62,14 +62,20 @@ value class InsulinConcentration(val factor: Double) {
     }
 }
 
+enum class InsulinOrigin {
+    Pump,
+    Manual
+}
+
 /**
  * Historical bolus application.
  */
-data class Bolus(
+data class InsulinApplication(
     var id: Long = ID_UNDEFINED,
     val timestamp: Timestamp,
     val amount: Double,
-    val insulinType: InsulinType
+    val insulinType: InsulinType,
+    val origin: InsulinOrigin
 )
 
 /**
@@ -78,5 +84,6 @@ data class Bolus(
 data class BasalHistoryEntry(
     val startTick: Int,
     val scheduledRate: Double,
-    val actualRate: Double
+    val actualRate: Double,
+    val insulinType: InsulinType
 )

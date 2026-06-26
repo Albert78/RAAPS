@@ -40,6 +40,7 @@ sealed class PumpCommand {
 data class PumpJob(
     val id: String = UUID.randomUUID().toString(),
     val command: PumpCommand,
+    val isCancelableAPSCommand: Boolean,
     val createdAt: Timestamp = Timestamp.now(),
     val expiresAt: Timestamp? = null,
     val retryCount: Int = 0,
@@ -147,14 +148,18 @@ class PumpCoordinator(
     /**
      * Issues a new command to the pump.
      * @param command The command to execute.
+     * @param isCancelableAPSCommand Whether the command is issued by the APS core. This fills the [PumpJob.isCancelableAPSCommand] field
+     * which is used for the decision whether to cancel the command before restarting the calculation.
      * @param expiresAt Optional time when the command becomes invalid.
      */
     fun issueCommand(
         command: PumpCommand,
+        isCancelableAPSCommand: Boolean,
         expiresAt: Timestamp? = null
     ) {
         val job = PumpJob(
             command = command,
+            isCancelableAPSCommand = isCancelableAPSCommand,
             expiresAt = expiresAt
         )
 

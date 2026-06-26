@@ -23,10 +23,10 @@ dependencyResolutionManagement {
 }
 
 rootProject.name = "RAAPS"
-include(":app")
 include(":common")
 include(":core")
 include(":sim-body")
 include(":pump-sample")
 include(":source-cgm-sample")
 include(":source-glucose-receiver")
+include(":app")

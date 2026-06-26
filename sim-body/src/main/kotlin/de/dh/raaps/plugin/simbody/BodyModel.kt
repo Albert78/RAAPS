@@ -1,6 +1,6 @@
 package de.dh.raaps.plugin.simbody
 
-import de.dh.raaps.common.model.Bolus
+import de.dh.raaps.common.model.InsulinApplication
 import de.dh.raaps.common.model.CarbCurveComponentData
 import de.dh.raaps.common.model.InsulinType
 import de.dh.raaps.common.model.MealEntry
@@ -35,7 +35,7 @@ class BodyModel {
 
     // Inputs (historical data)
     val meals = CopyOnWriteArrayList<MealEntry>()
-    val boluses = CopyOnWriteArrayList<Bolus>()
+    val insulinApplications = CopyOnWriteArrayList<InsulinApplication>()
 
     // Health factors (external influences, controlled via UI)
     var exerciseIntensity: Double = 0.0 // 0.0 (rest) to 1.0 (max)
@@ -92,7 +92,7 @@ class BodyModel {
         val threshold = currentTimestamp.ms - horizonMs
 
         meals.removeIf { it.timestamp.ms < threshold }
-        boluses.removeIf { it.timestamp.ms < threshold }
+        insulinApplications.removeIf { it.timestamp.ms < threshold }
     }
 
     /**
@@ -110,7 +110,7 @@ class BodyModel {
      * Simulates an insulin bolus.
      */
     fun bolus(amount: Double, type: InsulinType? = null) {
-        boluses.add(Bolus(
+        insulinApplications.add(InsulinApplication(
             timestamp = Timestamp.now(),
             amount = amount,
             insulinType = type ?: defaultInsulinType
@@ -120,7 +120,7 @@ class BodyModel {
     private fun calculateInsulinImpact(start: Timestamp, end: Timestamp): Double {
         var totalUnitsAbsorbed = 0.0
 
-        for (bolus in boluses) {
+        for (bolus in insulinApplications) {
             val curve = InsulinCurve(
                 diaMinutes = bolus.insulinType.dia.value.toDouble(),
                 peakMinutes = bolus.insulinType.peak.value.toDouble()
