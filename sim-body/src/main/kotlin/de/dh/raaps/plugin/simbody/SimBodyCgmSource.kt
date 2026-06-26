@@ -15,7 +15,8 @@ import kotlinx.coroutines.flow.map
 import kotlin.time.Duration.Companion.minutes
 
 class SimBodyCgmSource(
-    val bodyModel: BodyModel,
+    private val bodyModel: BodyModel,
+    private val device: SimBodyPumpDevice,
     val application: Application
 ): GlucoseSource {
     override val name: String = "Sim Body CGM Plugin"
@@ -39,10 +40,12 @@ class SimBodyCgmSource(
 
     fun getRawGlucoseReadings(): Flow<RawBg> = flow {
         while (true) {
-            bodyModel.advanceToTick() // Update the simulation
+            val now = Timestamp.now()
+            device.advanceToTick(now) // Handle active hardware logic (e.g. basal delivery)
+            bodyModel.advanceToTick(now) // Update the simulation
             val reading = RawBg(
                 value = bodyModel.bloodGlucose,
-                timestamp = Timestamp.now(),
+                timestamp = now,
             )
             emit(reading)
             delay(5.minutes)

@@ -10,6 +10,7 @@ import de.dh.raaps.common.model.Plugin
 import de.dh.raaps.common.model.PluginManager
 import de.dh.raaps.common.model.PumpAlerts
 import de.dh.raaps.common.model.PumpCapabilities
+import de.dh.raaps.common.model.data.TherapyData
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 
@@ -71,6 +72,10 @@ class SampleInsulinPumpPlugin : InsulinPump, Plugin {
 
     override suspend fun cancelTempBasal() {
         // TODO: Cancel temporary basal rate
+    }
+
+    override suspend fun setProfile(profile: TherapyData) {
+        // TODO: Set therapy profile
     }
 
     override suspend fun syncHistory() {

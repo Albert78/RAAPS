@@ -9,14 +9,20 @@ import de.dh.raaps.common.model.InsulinPump
 import de.dh.raaps.common.model.InsulinPumpStatus
 import de.dh.raaps.common.model.PumpAlerts
 import de.dh.raaps.common.model.PumpCapabilities
+import de.dh.raaps.common.model.data.TherapyData
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.launch
 
 class SimBodyInsulinPump(
-    val bodyModel: BodyModel,
+    private val device: SimBodyPumpDevice,
     val application: Application,
     private val scope: CoroutineScope = CoroutineScope(SupervisorJob() + Dispatchers.Default),
 ): InsulinPump {
@@ -39,44 +45,138 @@ class SimBodyInsulinPump(
         )
     )
 
-    override val isConnected: StateFlow<Boolean> = MutableStateFlow(true)
+    private val _isConnected = MutableStateFlow(true)
+    override val isConnected: StateFlow<Boolean> = _isConnected
 
-    override val pumpStatus: StateFlow<InsulinPumpStatus>
-        get() = TODO("Not yet implemented")
-    override val alerts: StateFlow<PumpAlerts>
-        get() = TODO("Not yet implemented")
-    override val basalStatus: StateFlow<BasalStatus>
-        get() = TODO("Not yet implemented")
-    override val basalHistory: StateFlow<List<BasalHistoryPoint>>
-        get() = TODO("Not yet implemented")
-    override val bolusHistory: StateFlow<List<BolusHistoryPoint>>
-        get() = TODO("Not yet implemented")
+    private val _isConnecting = MutableStateFlow(false)
+    val isConnecting: StateFlow<Boolean> = _isConnecting
+
+    fun connect() {
+        scope.launch {
+            _isConnecting.value = true
+            delay(1000) // Simulate connection delay
+            _isConnected.value = true
+            _isConnecting.value = false
+        }
+    }
+
+    fun disconnect() {
+        _isConnected.value = false
+    }
+
+    override val pumpStatus: StateFlow<InsulinPumpStatus> = combine(
+        device.batteryLevel,
+        device.reservoirLevel,
+        device.isBroken,
+        _isConnected
+    ) { battery, reservoir, broken, connected ->
+        object : InsulinPumpStatus {
+            override val pumpSuspended: Boolean = broken
+            override val batteryRemainingPercent: Int = (battery * 100).toInt()
+            override val reservoirRemainingUnits: Double = reservoir
+            override val lastSyncTimestamp: Long = if (connected) System.currentTimeMillis() else 0L
+        }
+    }.stateIn(scope, SharingStarted.Eagerly, object : InsulinPumpStatus {
+        override val pumpSuspended: Boolean = false
+        override val batteryRemainingPercent: Int = 100
+        override val reservoirRemainingUnits: Double = 300.0
+        override val lastSyncTimestamp: Long = System.currentTimeMillis()
+    })
+
+    override val alerts: StateFlow<PumpAlerts> = combine(
+        device.batteryLevel,
+        device.reservoirLevel,
+        device.isOccluded,
+        device.hasHardwareError,
+        combine(device.isBroken, device.isPrimed) { broken, primed -> broken to primed }
+    ) { battery, reservoir, occluded, hwError, brokenPrimed ->
+        val (broken, primed) = brokenPrimed
+        PumpAlerts(
+            batteryLow = battery < 0.1,
+            reservoirLow = reservoir < 20.0,
+            other = occluded || hwError || broken || !primed
+        )
+    }.stateIn(scope, SharingStarted.Eagerly, PumpAlerts())
+
+    private val _basalStatus = MutableStateFlow(BasalStatus(activeRate = 1.0))
+    override val basalStatus: StateFlow<BasalStatus> = _basalStatus
+
+    private val _basalHistory = MutableStateFlow<List<BasalHistoryPoint>>(emptyList())
+    override val basalHistory: StateFlow<List<BasalHistoryPoint>> = _basalHistory
+
+    private val _bolusHistory = MutableStateFlow<List<BolusHistoryPoint>>(emptyList())
+    override val bolusHistory: StateFlow<List<BolusHistoryPoint>> = _bolusHistory
 
     override suspend fun bolus(amount: Double) {
-        TODO("Not yet implemented")
+        if (!_isConnected.value) throw Exception("Pump not connected to App")
+        
+        if (device.deliverBolus(amount)) {
+            // Success - device level handled reporting to body and history
+            refreshStatus()
+        } else {
+            val reason = when {
+                device.isBroken.value -> "Hardware broken"
+                device.hasHardwareError.value -> "Hardware error"
+                device.isOccluded.value -> "Occlusion detected"
+                !device.isPrimed.value -> "Pump not primed"
+                device.reservoirLevel.value < amount -> "Insulin reservoir empty"
+                else -> "Unknown hardware failure"
+            }
+            throw Exception("Bolus failed: $reason")
+        }
     }
 
     override suspend fun stopBolus() {
-        TODO("Not yet implemented")
+        // Simple simulator: bolus is instant
     }
 
     override suspend fun tempBasal(percent: Int, durationHours: Int) {
-        TODO("Not yet implemented")
+        if (!_isConnected.value) throw Exception("Pump not connected to App")
+        
+        if (device.isBroken.value || device.hasHardwareError.value) {
+            throw Exception("Pump hardware error - cannot set temp basal")
+        }
+
+        val normalRate = device.getProfileBasalRate() 
+        val newRate = normalRate * (percent / 100.0)
+        
+        device.updateBasalRate(newRate)
+        
+        _basalStatus.value = BasalStatus(
+            activeRate = newRate,
+            isTempBasal = true,
+            tempBasalPercent = percent
+        )
+        refreshStatus()
     }
 
     override suspend fun cancelTempBasal() {
-        TODO("Not yet implemented")
+        if (!_isConnected.value) throw Exception("Pump not connected to App")
+        device.updateBasalRate(null) // Clear temp basal override
+        val normalRate = device.getProfileBasalRate()
+        _basalStatus.value = BasalStatus(activeRate = normalRate)
+        refreshStatus()
+    }
+
+    override suspend fun setProfile(profile: TherapyData) {
+        if (!_isConnected.value) throw Exception("Pump not connected to App")
+        device.setProfile(profile)
     }
 
     override suspend fun syncHistory() {
-        TODO("Not yet implemented")
+        if (!_isConnected.value) return
+        _bolusHistory.value = device.getBolusHistory()
+        _basalHistory.value = device.getBasalHistory()
     }
 
     override suspend fun refreshStatus() {
-        TODO("Not yet implemented")
+        if (!_isConnected.value) return
+        // pumpStatus and alerts are already connected via flows in this simulator.
+        // We also sync history on refresh in this sim to stay up-to-date.
+        syncHistory()
     }
 
     override fun stop() {
-        // Nothing to do
+        // Cleanup if needed
     }
 }

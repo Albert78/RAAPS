@@ -1,5 +1,6 @@
 package de.dh.raaps.common.model
 
+import de.dh.raaps.common.model.data.TherapyData
 import kotlinx.coroutines.flow.StateFlow
 
 /**
@@ -161,6 +162,13 @@ interface InsulinPump {
      * @throws Exception if the command cannot be sent or the pump connection fails.
      */
     suspend fun cancelTempBasal()
+
+    /**
+     * Sets the active therapy profile on the pump.
+     *
+     * @throws Exception if the command cannot be sent or the pump connection fails.
+     */
+    suspend fun setProfile(profile: TherapyData)
 
     /**
      * Performs a synchronization of the pump's history events.

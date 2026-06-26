@@ -4,6 +4,7 @@ import de.dh.raaps.common.model.BasalHistoryEntry
 import de.dh.raaps.common.model.BasalHistoryPoint
 import de.dh.raaps.common.model.BolusHistoryPoint
 import de.dh.raaps.common.model.ID_UNDEFINED
+import de.dh.raaps.common.model.INSULIN_EPSILON
 import de.dh.raaps.common.model.InsulinApplication
 import de.dh.raaps.common.model.InsulinOrigin
 import de.dh.raaps.common.model.InsulinType

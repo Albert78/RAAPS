@@ -15,6 +15,8 @@ const val ID_MEAL_STANDARD = "f2a7a403-4f9e-4e4b-8e1e-2f8d4c96791a"
 const val ID_MEAL_HIGH_FAT = "a3b8b503-4f9e-4e4b-8e1e-3f8d4c96791a"
 const val ID_MEAL_SLOW = "d4c9c603-4f9e-4e4b-8e1e-4f8d4c96791a"
 
+const val INSULIN_EPSILON = 0.01
+
 const val BASAL_MIN = 0.1
 const val BASAL_MAX = 10.0
 

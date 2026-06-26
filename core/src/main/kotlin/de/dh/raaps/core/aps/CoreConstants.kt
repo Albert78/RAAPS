@@ -3,8 +3,6 @@ package de.dh.raaps.core.aps
 import de.dh.raaps.common.model.data.BgDelta
 import de.dh.raaps.common.model.data.Minutes
 
-const val INSULIN_EPSILON = 0.01
-
 /**
  * Maximum timespan between "now" and a BG reading where we consider the bg reading
  * as the current/recent bg value. If a manual reading id being announced for an earlier time

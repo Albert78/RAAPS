@@ -13,7 +13,8 @@ import de.dh.raaps.common.model.PluginManager
 class SimBodyPlugin(
     val application: Application
 ) : Plugin {
-    val bodyModel = BodyModel()
+    val bodyModel = BodyModel(DEFAULT_SIM_PROFILE)
+    val pumpDevice = SimBodyPumpDevice(bodyModel, DEFAULT_SIM_PROFILE)
     override val name: String = "Sim Body CGM Plugin"
     override val neededPermissions: Collection<String> = emptyList()
 
@@ -21,6 +22,6 @@ class SimBodyPlugin(
         // Nothing to do
     }
 
-    fun getGlucoseSource(): GlucoseSource = SimBodyCgmSource(bodyModel, application)
-    fun getInsulinPump(): InsulinPump = SimBodyInsulinPump(bodyModel, application)
+    fun getGlucoseSource(): GlucoseSource = SimBodyCgmSource(bodyModel, pumpDevice, application)
+    fun getInsulinPump(): InsulinPump = SimBodyInsulinPump(pumpDevice, application)
 }

@@ -257,7 +257,7 @@ class PumpCoordinator(
                 pump.tempBasal(command.percent, command.durationHours)
             }
             is PumpCommand.SetProfile -> {
-                // TODO: SetProfile not supported by current InsulinPump interface
+                pump.setProfile(command.profile)
             }
             is PumpCommand.CancelTempBasal -> pump.cancelTempBasal()
             is PumpCommand.CancelBolus -> pump.stopBolus()

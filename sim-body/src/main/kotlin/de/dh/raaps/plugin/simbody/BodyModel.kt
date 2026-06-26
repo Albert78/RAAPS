@@ -8,8 +8,11 @@ import de.dh.raaps.common.model.MealEntry
 import de.dh.raaps.common.model.MealType
 import de.dh.raaps.common.model.calculation.CarbCurveComponent
 import de.dh.raaps.common.model.calculation.InsulinCurve
+import de.dh.raaps.common.model.data.Block
+import de.dh.raaps.common.model.data.getAmountForMinute
 import de.dh.raaps.common.model.data.BgValue
 import de.dh.raaps.common.model.data.Minutes
+import de.dh.raaps.common.model.data.TherapyData
 import de.dh.raaps.common.model.data.Timestamp
 import java.util.concurrent.CopyOnWriteArrayList
 
@@ -17,7 +20,7 @@ import java.util.concurrent.CopyOnWriteArrayList
  * Models a diabetic's body for simulation purposes.
  * It tracks blood glucose levels influenced by meals, insulin, exercise, and health states.
  */
-class BodyModel {
+class BodyModel(initialProfile: TherapyData) {
     // Simulation Defaults (independent of database)
     private val defaultInsulinType = InsulinType(
         name = "Sim Aspart",
@@ -44,9 +47,20 @@ class BodyModel {
     var stressLevel: Double = 0.0      // 0.0 to 1.0, increases BG and resistance
 
     // Simulated Person Profile (metabolic parameters)
-    var isf: Double = 50.0             // Insulin Sensitivity Factor (mg/dL per Unit)
-    var ic: Double = 10.0              // Insulin to Carb ratio (g Carbs per Unit)
-    var basalRateUph: Double = 1.0     // Normal basal insulin delivery (Units per hour)
+    private var activeProfile: TherapyData = initialProfile
+
+    val isf: Double
+        get() = activeProfile.isfBlocks.getAmountForMinute(Timestamp.now().minutesSinceMidnight())
+    
+    val ic: Double
+        get() = activeProfile.icBlocks.getAmountForMinute(Timestamp.now().minutesSinceMidnight())
+
+    val basalRateUph: Double
+        get() = activeProfile.basalBlocks.getAmountForMinute(Timestamp.now().minutesSinceMidnight())
+
+    fun setProfile(profile: TherapyData) {
+        activeProfile = profile
+    }
 
     // Current state
     var bloodGlucose: BgValue = BgValue.fromMgDl(120)
