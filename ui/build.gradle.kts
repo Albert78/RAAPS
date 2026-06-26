@@ -1,11 +1,11 @@
 plugins {
     alias(libs.plugins.android.library)
+    alias(libs.plugins.ksp)
     alias(libs.plugins.kotlin.compose)
-    alias(libs.plugins.jetbrains.kotlin.serialization)
 }
 
 android {
-    namespace = "de.dh.raaps.plugin.glucose"
+    namespace = "de.dh.raaps.ui"
     compileSdk = libs.versions.sdkCompile.get().toInt()
 
     defaultConfig {
@@ -22,14 +22,20 @@ android {
 
 dependencies {
     implementation(project(":common"))
-    implementation(project(":ui"))
+
     implementation(libs.androidx.core.ktx)
-    implementation(libs.androidx.navigation3.runtime)
+    implementation(libs.androidx.lifecycle.runtime.ktx)
+
     implementation(libs.androidx.navigation3.ui)
+    implementation(libs.androidx.navigation3.runtime)
     implementation(libs.androidx.lifecycle.viewmodel.navigation3)
+    implementation(libs.androidx.material3.adaptive.navigation3)
 
     implementation(platform(libs.androidx.compose.bom))
+    implementation(libs.androidx.compose.material.icons.extended)
     implementation(libs.androidx.compose.material3)
+    implementation(libs.androidx.activity.compose)
     implementation(libs.androidx.compose.ui)
+    implementation(libs.androidx.compose.ui.graphics)
     implementation(libs.androidx.compose.ui.tooling.preview)
 }

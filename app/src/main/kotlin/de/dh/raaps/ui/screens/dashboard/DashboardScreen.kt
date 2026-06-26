@@ -75,7 +75,8 @@ fun DashboardScreen(
     onNavigateToPermissions: () -> Unit,
     onNavigateToPreferences: () -> Unit,
     onNavigateToProfileEditor: () -> Unit,
-    onHistoryChartClick: () -> Unit
+    onHistoryChartClick: () -> Unit,
+    extraContent: @Composable () -> Unit = {}
 ) {
     val uiState by viewModel.uiState.collectAsState()
     val currentBgUiState by historyViewModel.currentBgUiState.collectAsState()
@@ -94,7 +95,8 @@ fun DashboardScreen(
         onNavigateToPreferences = onNavigateToPreferences,
         onNavigateToProfileEditor = onNavigateToProfileEditor,
         onHistoryChartClick = onHistoryChartClick,
-        onProfileSelect = { currentTherapyViewModel.selectProfile(it) }
+        onProfileSelect = { currentTherapyViewModel.selectProfile(it) },
+        extraContent = extraContent
     )
 }
 
@@ -111,7 +113,8 @@ fun DashboardContent(
     onNavigateToPreferences: () -> Unit,
     onNavigateToProfileEditor: () -> Unit,
     onHistoryChartClick: (() -> Unit)?,
-    onProfileSelect: (Profile) -> Unit
+    onProfileSelect: (Profile) -> Unit,
+    extraContent: @Composable () -> Unit = {}
 ) {
     val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
     var menuExpanded by remember { mutableStateOf(false) }
@@ -268,6 +271,10 @@ fun DashboardContent(
                         )
                     }
                 }
+
+                Spacer(modifier = Modifier.weight(1f))
+
+                extraContent()
             }
         }
     }

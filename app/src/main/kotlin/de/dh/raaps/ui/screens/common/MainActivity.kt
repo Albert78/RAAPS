@@ -20,55 +20,25 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.ViewModelProvider
-import androidx.lifecycle.compose.LifecycleEventEffect
-import androidx.lifecycle.lifecycleScope
-import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.lifecycle.viewmodel.navigation3.rememberViewModelStoreNavEntryDecorator
-import androidx.navigation3.runtime.NavKey
-import androidx.navigation3.runtime.entryProvider
 import androidx.navigation3.runtime.rememberSaveableStateHolderNavEntryDecorator
 import androidx.navigation3.ui.NavDisplay
 import de.dh.raaps.MainApplication
+import de.dh.raaps.common.navigation.DashboardRoute
 import de.dh.raaps.common.ui.composables.EdgeToEdgeHandler
 import de.dh.raaps.common.ui.theme.AppTheme
 import de.dh.raaps.common.ui.theme.rememberUseDarkTheme
+import de.dh.raaps.getExtraNavGraphs
 import de.dh.raaps.services.ApsService
-import de.dh.raaps.setUserDeclinedPermissions
-import de.dh.raaps.ui.controls.history.HistoryViewModel
-import de.dh.raaps.ui.controls.profile.CurrentTherapyViewModel
-import de.dh.raaps.ui.screens.dashboard.DashboardScreen
-import de.dh.raaps.ui.screens.dashboard.DashboardViewModel
-import de.dh.raaps.ui.screens.history.HistoryScreen
-import de.dh.raaps.ui.screens.permissions.PermissionsScreen
-import de.dh.raaps.ui.screens.permissions.PermissionsViewModel
+import de.dh.raaps.ui.navigation.MainFeatureNavGraph
+import de.dh.raaps.ui.navigation.NavigationViewModel
+import de.dh.raaps.ui.navigation.combineEntryProviders
 import de.dh.raaps.ui.screens.permissions.canPostNotifications
 import de.dh.raaps.ui.screens.permissions.isAutoRevokePermissions
-import de.dh.raaps.ui.screens.permissions.openAutoRevokeSettings
-import de.dh.raaps.ui.screens.permissions.openNotificationSettings
-import de.dh.raaps.ui.screens.permissions.requestIgnoreBatteryOptimizations
-import de.dh.raaps.ui.screens.preferences.PreferencesScreen
-import de.dh.raaps.ui.screens.preferences.PreferencesViewModel
-import de.dh.raaps.ui.screens.profile.ProfileEditorScreen
-import de.dh.raaps.ui.controls.profile.ProfileSettingsViewModel
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
 import kotlinx.serialization.Serializable
-
-// --- Navigation Routes
-
-@Serializable object DashboardRoute : NavKey
-
-@Serializable object HistoryRoute : NavKey
-
-@Serializable object PermissionsRoute : NavKey
-
-@Serializable object PreferencesMainRoute : NavKey
-
-@Serializable object ProfileEditorRoute : NavKey
 
 class MainActivity : ComponentActivity() {
     private lateinit var navViewModel: NavigationViewModel
-    private lateinit var permissionsViewModel: PermissionsViewModel
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -84,11 +54,6 @@ class MainActivity : ComponentActivity() {
         handleIntent(intent)
 
         val application = application as MainApplication
-
-        permissionsViewModel = ViewModelProvider(
-            this,
-            PermissionsViewModel.Companion.Factory(application)
-        )[PermissionsViewModel::class.java]
 
         setContent {
             val useDarkTheme = rememberUseDarkTheme(application.appPreferencesRepository)
@@ -122,9 +87,18 @@ class MainActivity : ComponentActivity() {
 
     @Composable
     fun MainApp() {
-        val application = application as MainApplication
-
         val backStack by navViewModel.backstack.collectAsState()
+
+        val extraGraphs = getExtraNavGraphs(this, navViewModel)
+
+        val extraDashboardContent = @Composable {
+            extraGraphs.forEach { it.DashboardExtension() }
+        }
+
+        val mainGraph = MainFeatureNavGraph(this, navViewModel, extraDashboardContent)
+        val allGraphs = listOf(mainGraph) + extraGraphs
+
+        val combinedProvider = combineEntryProviders(*allGraphs.toTypedArray())
 
         NavDisplay(
             backStack = backStack,
@@ -133,122 +107,7 @@ class MainActivity : ComponentActivity() {
                 rememberSaveableStateHolderNavEntryDecorator(),
                 rememberViewModelStoreNavEntryDecorator()
             ),
-            entryProvider = entryProvider {
-                entry<DashboardRoute> { _ ->
-                    val vm: DashboardViewModel =
-                        viewModel(factory = DashboardViewModel.Companion.Factory(application))
-                    val historyVM: HistoryViewModel =
-                        viewModel(factory = HistoryViewModel.Companion.Factory(application))
-                    val currentTherapyVM: CurrentTherapyViewModel =
-                        viewModel(factory = CurrentTherapyViewModel.Companion.Factory(application))
-                    val permissionsViewModel: PermissionsViewModel =
-                        viewModel(factory = PermissionsViewModel.Companion.Factory(application))
-
-                    LifecycleEventEffect(Lifecycle.Event.ON_RESUME) {
-                        vm.reload()
-                        currentTherapyVM.loadData()
-                        permissionsViewModel.updateAppPermissions()
-                    }
-
-                    DashboardScreen(
-                        viewModel = vm,
-                        historyViewModel = historyVM,
-                        currentTherapyViewModel = currentTherapyVM,
-                        permissionsViewModel = permissionsViewModel,
-                        onFixPermissions = { navViewModel.push(PermissionsRoute) },
-                        onNavigateToPermissions = { navViewModel.push(PermissionsRoute) },
-                        onNavigateToPreferences = { navViewModel.push(PreferencesMainRoute) },
-                        onNavigateToProfileEditor = { navViewModel.push(ProfileEditorRoute) },
-                        onHistoryChartClick = {navViewModel.push(HistoryRoute)}
-                    )
-                }
-
-                entry<ProfileEditorRoute> { _ ->
-                    val vm: ProfileSettingsViewModel = viewModel(
-                        factory = ProfileSettingsViewModel.Companion.Factory(
-                            application
-                        )
-                    )
-
-                    ProfileEditorScreen(
-                        viewModel = vm,
-                        onNavigateUp = { navViewModel.pop() }
-                    )
-                }
-
-                entry<HistoryRoute> { _ ->
-                    val historyVM: HistoryViewModel =
-                        viewModel(factory = HistoryViewModel.Companion.Factory(application))
-
-                    HistoryScreen(
-                        historyViewModel = historyVM
-                    )
-                }
-
-                entry<PermissionsRoute> { _ ->
-                    permissionsViewModel.updateAppPermissions()
-
-                    LifecycleEventEffect(Lifecycle.Event.ON_RESUME) {
-                        permissionsViewModel.updateAppPermissions()
-
-                        lifecycleScope.launch(Dispatchers.IO) {
-                            application.triggerUpdatesAfterPermissionsChange()
-                        }
-                    }
-
-                    DisposableEffect(Unit) {
-                        onDispose {
-                            lifecycleScope.launch(Dispatchers.IO) {
-                                val userDeclinedPermissions = isPermissionsMissing(this@MainActivity)
-                                application.appPreferencesRepository.setUserDeclinedPermissions(userDeclinedPermissions)
-
-                                // Not really the right place to trigger the update but there is no
-                                // better place.
-                                // The user could also close the app after he changed the system permissions and avoid
-                                // to come back to this screen, which then will not trigger the effect.
-                                application.triggerUpdatesAfterPermissionsChange()
-                            }
-                        }
-                    }
-
-                    val permissionLauncher = rememberLauncherForActivityResult(
-                        ActivityResultContracts.RequestPermission()
-                    ) { _ ->
-                        permissionsViewModel.updateAppPermissions()
-                    }
-
-                    PermissionsScreen(
-                        viewModel = permissionsViewModel,
-                        onNavigateUp = { navViewModel.pop() },
-                        onOpenNotificationSettings = {
-                            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                                permissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
-                            } else {
-                                openNotificationSettings(this@MainActivity)
-                            }
-                        },
-                        onOpenBatteryOptimizationSettings = { requestIgnoreBatteryOptimizations(this@MainActivity) },
-                        onOpenAutoRevokeSettings = { openAutoRevokeSettings(this@MainActivity) }
-                    )
-                }
-
-                entry<PreferencesMainRoute> { _ ->
-                    val vm: PreferencesViewModel = viewModel(
-                        factory = PreferencesViewModel.Companion.Factory(
-                            application
-                        )
-                    )
-
-                    LifecycleEventEffect(Lifecycle.Event.ON_RESUME) {
-                        vm.reload()
-                    }
-
-                    PreferencesScreen(
-                        viewModel = vm,
-                        onNavigateUp = { navViewModel.pop() }
-                    )
-                }
-            }
+            entryProvider = combinedProvider
         )
     }
 

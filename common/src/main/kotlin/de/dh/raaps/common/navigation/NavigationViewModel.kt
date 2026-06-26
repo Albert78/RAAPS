@@ -1,4 +1,4 @@
-package de.dh.raaps.ui.screens.common
+package de.dh.raaps.common.navigation
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
@@ -47,4 +47,3 @@ class NavigationViewModel(
         }
     }
 }
-

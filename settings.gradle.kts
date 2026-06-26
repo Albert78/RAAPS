@@ -25,6 +25,7 @@ dependencyResolutionManagement {
 rootProject.name = "RAAPS"
 include(":common")
 include(":core")
+include(":ui")
 include(":sim-body")
 include(":pump-sample")
 include(":source-cgm-sample")
