@@ -1,0 +1,97 @@
+package de.dh.raaps.ui.controls.profile
+
+import android.app.Application
+import androidx.lifecycle.AndroidViewModel
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.ViewModelProvider
+import androidx.lifecycle.viewModelScope
+import androidx.lifecycle.viewmodel.CreationExtras
+import de.dh.raaps.core.RAAPSApplication
+import de.dh.raaps.common.model.ID_UNDEFINED
+import de.dh.raaps.common.model.data.Profile
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.launch
+
+data class ProfileSettingsUiState(
+    val profiles: List<Profile> = emptyList(),
+    val isLoading: Boolean = false,
+    val editingProfile: Profile? = null,
+    val showDeleteConfirmation: Profile? = null
+)
+
+class ProfileSettingsViewModel(
+    application: Application
+) : AndroidViewModel(application) {
+
+    private val raapsApp = application as RAAPSApplication
+    private val _uiState = MutableStateFlow(ProfileSettingsUiState())
+    val uiState = _uiState.asStateFlow()
+
+    private val therapyRepository = raapsApp.therapyRepository
+
+    init {
+        loadProfiles()
+    }
+
+    fun loadProfiles() {
+        viewModelScope.launch {
+            _uiState.update { it.copy(isLoading = true) }
+            val profiles = therapyRepository.getAllProfiles()
+            _uiState.update { it.copy(profiles = profiles, isLoading = false) }
+        }
+    }
+
+    fun startEditing(profile: Profile?) {
+        _uiState.update { it.copy(editingProfile = profile) }
+    }
+
+    fun isNameUnique(name: String, excludeId: Long): Boolean {
+        val trimmedName = name.trim()
+        return _uiState.value.profiles.none { 
+            it.name.trim().equals(trimmedName, ignoreCase = true) && it.id != excludeId 
+        }
+    }
+
+    fun stopEditing() {
+        _uiState.update { it.copy(editingProfile = null) }
+    }
+
+    fun saveProfile(profile: Profile) {
+        viewModelScope.launch {
+            if (profile.id == ID_UNDEFINED) {
+                therapyRepository.insertProfile(profile)
+            } else {
+                therapyRepository.updateProfile(profile)
+            }
+            loadProfiles()
+            stopEditing()
+        }
+    }
+
+    fun confirmDelete(profile: Profile) {
+        _uiState.update { it.copy(showDeleteConfirmation = profile) }
+    }
+
+    fun cancelDelete() {
+        _uiState.update { it.copy(showDeleteConfirmation = null) }
+    }
+
+    fun deleteProfile(profile: Profile) {
+        viewModelScope.launch {
+            therapyRepository.deleteProfile(profile)
+            loadProfiles()
+            cancelDelete()
+        }
+    }
+
+    companion object {
+        class Factory(private val application: Application) : ViewModelProvider.Factory {
+            @Suppress("UNCHECKED_CAST")
+            override fun <T : ViewModel> create(modelClass: Class<T>, extras: CreationExtras): T {
+                return ProfileSettingsViewModel(application) as T
+            }
+        }
+    }
+}

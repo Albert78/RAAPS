@@ -90,7 +90,7 @@ class RollingPredictionWindow(
 
         for (v in start..maxTick) {
             val state = buffer[bufferIndex(Tick(v))]
-            if (state != null && predicate(state)) {
+            if (predicate(state)) {
                 return state
             }
         }
@@ -106,7 +106,7 @@ class RollingPredictionWindow(
 
         for (v in start..maxTick) {
             val state = buffer[bufferIndex(Tick(v))]
-            if (state != null && predicate(state)) {
+            if (predicate(state)) {
                 return state
             }
         }
@@ -127,7 +127,7 @@ class RollingPredictionWindow(
 
         for (v in start downTo minTick) {
             val state = buffer[bufferIndex(Tick(v))]
-            if (state != null && predicate(state)) {
+            if (predicate(state)) {
                 return state
             }
         }
@@ -143,7 +143,7 @@ class RollingPredictionWindow(
 
         for (v in start downTo minTick) {
             val state = buffer[bufferIndex(Tick(v))]
-            if (state != null && predicate(state)) {
+            if (predicate(state)) {
                 return state
             }
         }

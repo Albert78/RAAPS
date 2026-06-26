@@ -88,8 +88,8 @@ class Core(
     var coreState: CoreState = CoreState.Uninitialized
         private set
 
-    suspend fun nextBgStaleCheckAt(): Timestamp? = calculationAlgorithm?.nextBgStaleCheckAt()
-    suspend fun isStale(): Boolean = calculationAlgorithm?.isStale() ?: false
+    suspend fun nextBgStaleCheckAt(): Timestamp? = calculationAlgorithm.nextBgStaleCheckAt()
+    suspend fun isStale(): Boolean = calculationAlgorithm.isStale() ?: false
 
     /**
      * Time delay between a glucose value in blood and the given Timestamp of the bg reading.
@@ -248,7 +248,7 @@ class Core(
                 val oldTherapyData = currentTherapyData ?: newData
                 InsulinHistoryHelper.updateScheduledBasal(
                     oldTherapyData.therapyData,
-                    newData!!.therapyData,
+                    newData.therapyData,
                     oldTherapyData.insulinType,
                     treatmentRepository
                 )

@@ -9,7 +9,6 @@ import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import de.dh.raaps.common.model.data.GlucoseUnit
-import de.dh.raaps.common.ui.ThemeMode
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -18,15 +17,6 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.stateIn
 
 val Context.dataStore: DataStore<Preferences> by preferencesDataStore(name = "settings")
-
-val Preferences?.themeMode: ThemeMode
-    get() = this?.get(THEME_MODE_KEY)?.let { ThemeMode.fromValue(it) } ?: ThemeMode.SYSTEM
-
-suspend fun AppPreferencesRepository.setThemeMode(value: ThemeMode) {
-    editPreferences { mutablePreferences ->
-        mutablePreferences[THEME_MODE_KEY] = value.value
-    }
-}
 
 val Preferences?.userDeclinedPermissions: Boolean
     get() = this?.get(USER_DECLINED_PERMISSIONS_KEY) ?: false
@@ -46,7 +36,6 @@ suspend fun AppPreferencesRepository.setGlucoseUnit(value: GlucoseUnit) {
     }
 }
 
-val THEME_MODE_KEY = stringPreferencesKey("theme_mode")
 val USER_DECLINED_PERMISSIONS_KEY = booleanPreferencesKey("user_declined_permissions")
 val GLUCOSE_UNIT_KEY = stringPreferencesKey("glucose_unit")
 

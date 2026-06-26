@@ -23,12 +23,14 @@ import java.util.concurrent.CopyOnWriteArrayList
 class BodyModel(initialProfile: TherapyData) {
     // Simulation Defaults (independent of database)
     private val defaultInsulinType = InsulinType(
+        id = "sim-aspart-id",
         name = "Sim Aspart",
         dia = Minutes.ofHours(5),
         peak = Minutes(75)
     )
 
     private val defaultMealType = MealType(
+        id = "sim-standard-meal-id",
         name = "Sim Standard Meal",
         components = listOf(
             CarbCurveComponentData(weight = 70, peakMinutes = Minutes(75)),
@@ -44,14 +46,14 @@ class BodyModel(initialProfile: TherapyData) {
     // Health factors (external influences, controlled via UI)
     var exerciseIntensity: Double = 0.0 // 0.0 (rest) to 1.0 (max)
     var illnessFactor: Double = 1.0     // > 1.0 increases insulin resistance
-    var stressLevel: Double = 0.0      // 0.0 to 1.0, increases BG and resistance
+    var stressLevel: Double = 0.0       // 0.0 to 1.0, increases BG and resistance
 
     // Simulated Person Profile (metabolic parameters)
     private var activeProfile: TherapyData = initialProfile
 
     val isf: Double
         get() = activeProfile.isfBlocks.getAmountForMinute(Timestamp.now().minutesSinceMidnight())
-    
+
     val ic: Double
         get() = activeProfile.icBlocks.getAmountForMinute(Timestamp.now().minutesSinceMidnight())
 

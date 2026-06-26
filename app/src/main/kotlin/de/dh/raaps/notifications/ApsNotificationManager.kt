@@ -9,10 +9,11 @@ import android.content.Context.NOTIFICATION_SERVICE
 import android.util.Log
 import androidx.core.app.NotificationCompat
 import androidx.core.content.getSystemService
+import de.dh.raaps.MainActivity
 import de.dh.raaps.R
+import de.dh.raaps.ui.R as UiR
 import de.dh.raaps.common.model.ToDo
 import de.dh.raaps.common.model.data.BgValue
-import de.dh.raaps.ui.screens.common.MainActivity
 import de.dh.raaps.ui.screens.permissions.canPostNotifications
 import java.util.Locale
 
@@ -22,7 +23,7 @@ class ApsNotificationManager(
     private val manager = context.getSystemService<NotificationManager>()!!
 
     fun createNotificationChannels() {
-        val name = context.getString(R.string.aps_service_notification_channel_name)
+        val name = context.getString(UiR.string.aps_service_notification_channel_name)
         val importance = NotificationManager.IMPORTANCE_HIGH
         val channel = NotificationChannel(CHANNEL_ID, name, importance)
         channel.setShowBadge(false)
@@ -47,8 +48,8 @@ class ApsNotificationManager(
     fun createForegroundServiceNotification(data: ApsNotificationData): Notification {
         Log.d(TAG, "Build notification for ${data.lastBgSample}")
         ToDo.toBeImplemented("Take glucose unit from preferences")
-        val bgValueStr = getBgValueString(data.lastBgSample?.value, false);
-        val title = bgValueStr ?: context.getString(R.string.aps_service_notification_content_no_value_yet)
+        val bgValueStr = getBgValueString(data.lastBgSample?.value, false)
+        val title = bgValueStr ?: context.getString(UiR.string.aps_service_notification_content_no_value_yet)
         val details = getBgDeltaString(data.getBgDelta())
 
         val dashboardIntent = MainActivity.createStartDashboardIntent(context)
