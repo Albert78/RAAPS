@@ -1,5 +1,6 @@
 package de.dh.raaps.plugin.simbody
 
+import androidx.compose.runtime.mutableStateListOf
 import de.dh.raaps.common.model.CarbCurveComponentData
 import de.dh.raaps.common.model.InsulinApplication
 import de.dh.raaps.common.model.InsulinOrigin
@@ -13,7 +14,9 @@ import de.dh.raaps.common.model.data.Minutes
 import de.dh.raaps.common.model.data.Timestamp
 import de.dh.raaps.common.model.data.getAmountForMinute
 import de.dh.raaps.plugin.simbody.model.BodyProfile
-import java.util.concurrent.CopyOnWriteArrayList
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 
 /**
  * Models a diabetic's body for simulation purposes.
@@ -38,17 +41,35 @@ class BodyModel(initialProfile: BodyProfile) {
         cat = Minutes.ofHours(4)
     )
 
-    // Inputs (historical data)
-    val meals = CopyOnWriteArrayList<MealEntry>()
-    val insulinApplications = CopyOnWriteArrayList<InsulinApplication>()
+    // Inputs (historical data) - using Compose state for UI updates
+    val meals = mutableStateListOf<MealEntry>()
+    val insulinApplications = mutableStateListOf<InsulinApplication>()
 
     // Health factors (external influences, controlled via UI)
-    var exerciseIntensity: Double = 0.0 // 0.0 (rest) to 1.0 (max)
-    var illnessFactor: Double = 1.0     // > 1.0 increases insulin resistance
-    var stressLevel: Double = 0.0       // 0.0 to 1.0, increases BG and resistance
+    private val _exerciseIntensity = MutableStateFlow(0.0)
+    var exerciseIntensity: Double
+        get() = _exerciseIntensity.value
+        set(value) { _exerciseIntensity.value = value }
+    val exerciseIntensityFlow: StateFlow<Double> = _exerciseIntensity.asStateFlow()
+
+    private val _illnessFactor = MutableStateFlow(1.0)
+    var illnessFactor: Double
+        get() = _illnessFactor.value
+        set(value) { _illnessFactor.value = value }
+    val illnessFactorFlow: StateFlow<Double> = _illnessFactor.asStateFlow()
+
+    private val _stressLevel = MutableStateFlow(0.0)
+    var stressLevel: Double
+        get() = _stressLevel.value
+        set(value) { _stressLevel.value = value }
+    val stressLevelFlow: StateFlow<Double> = _stressLevel.asStateFlow()
 
     // Simulated Person Profile (metabolic parameters)
-    private var activeProfile: BodyProfile = initialProfile
+    private val _activeProfile = MutableStateFlow(initialProfile)
+    var activeProfile: BodyProfile
+        get() = _activeProfile.value
+        private set(value) { _activeProfile.value = value }
+    val activeProfileFlow: StateFlow<BodyProfile> = _activeProfile.asStateFlow()
 
     val isf: Double
         get() = activeProfile.isfBlocks.getAmountForMinute(Timestamp.now().minutesSinceMidnight())
@@ -64,7 +85,12 @@ class BodyModel(initialProfile: BodyProfile) {
     }
 
     // Current state
-    var bloodGlucose: BgValue = BgValue.fromMgDl(120)
+    private val _bloodGlucose = MutableStateFlow(BgValue.fromMgDl(120))
+    var bloodGlucose: BgValue
+        get() = _bloodGlucose.value
+        set(value) { _bloodGlucose.value = value }
+    val bloodGlucoseFlow: StateFlow<BgValue> = _bloodGlucose.asStateFlow()
+
     var lastTickTimestamp: Timestamp = Timestamp.now()
 
     /**

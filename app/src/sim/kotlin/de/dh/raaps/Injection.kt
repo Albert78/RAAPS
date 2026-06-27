@@ -9,6 +9,8 @@ import de.dh.raaps.core.aps.APS
 import de.dh.raaps.plugin.simbody.SimBodyPlugin
 import de.dh.raaps.plugin.simbody.ui.SimBodyNavGraph
 
+private var simBodyPlugin: SimBodyPlugin? = null
+
 /**
  * Setup for a system where glucose source and insulin pump are provided by the [SimBodyPlugin],
  * which simulates real situations like food intake, sports, illness, stress etc.
@@ -17,6 +19,7 @@ import de.dh.raaps.plugin.simbody.ui.SimBodyNavGraph
  */
 fun setupSystem(aps: APS, pluginManager: PluginManager, application: Application) {
     val plugin = SimBodyPlugin(application)
+    simBodyPlugin = plugin
     pluginManager.addPlugin(plugin)
     val glucoseSource = plugin.getGlucoseSource()
     aps.glucoseSource = glucoseSource
@@ -28,5 +31,6 @@ fun getExtraNavGraphs(
     activity: ComponentActivity,
     navViewModel: NavigationViewModel
 ): List<FeatureNavGraph> {
-    return listOf(SimBodyNavGraph(navViewModel))
+    val bodyModel = simBodyPlugin?.bodyModel
+    return listOf(SimBodyNavGraph(navViewModel, bodyModel))
 }

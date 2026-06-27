@@ -12,6 +12,8 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material3.CardDefaults
@@ -159,123 +161,111 @@ fun DashboardContent(
                 },
                 scrollBehavior = scrollBehavior
             )
-        }, floatingActionButton = {
-//            if (!uiState.isLoading && !uiState.isError) {
-//                ExtendedFloatingActionButton(
-//                    onClick = onAddEventSeries,
-//                    containerColor = MaterialTheme.colorScheme.primaryContainer,
-//                    contentColor = MaterialTheme.colorScheme.onPrimaryContainer
-//                ) {
-//                    Icon(Icons.Default.Add, contentDescription = null)
-//                    Spacer(Modifier.width(8.dp))
-//                    Text(text = stringResource(R.string.add_button))
-//                }
-//            }
         }
     ) { innerPadding ->
-        Box(
+        Column(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(innerPadding)
+                .verticalScroll(rememberScrollState())
+                .padding(16.dp)
         ) {
-            Column(modifier = Modifier.padding(16.dp)) {
-                // Permissions warning header
-                if (!permissionsUiState.isPermissionsConfigComplete) {
-                    WarningBanner(
-                        warningText = stringResource(id = R.string.dashboard_permissions_missing),
-                        actionText = stringResource(id = R.string.dashboard_fix_permissions_link),
-                        onActionClick = onFixPermissionsClick
-                    )
-                }
+            // Permissions warning header
+            if (!permissionsUiState.isPermissionsConfigComplete) {
+                WarningBanner(
+                    warningText = stringResource(id = R.string.dashboard_permissions_missing),
+                    actionText = stringResource(id = R.string.dashboard_fix_permissions_link),
+                    onActionClick = onFixPermissionsClick
+                )
+            }
 
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    CurrentBgView(
-                        currentBgUiState
-                    )
-
-                    var showProfileDialog by remember { mutableStateOf(false) }
-
-                    OutlinedCard(
-                        modifier = Modifier
-                            .weight(1f)
-                            .padding(vertical = 8.dp)
-                            .clickable { showProfileDialog = true }
-                            .padding(8.dp),
-                        colors = CardDefaults.outlinedCardColors(
-                            containerColor = MaterialTheme.colorScheme.surface
-                        ),
-                        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
-                    ) {
-                        Column(modifier = Modifier.padding(12.dp)) {
-                            Text(
-                                text = currentTherapyUiState.profileName,
-                                style = MaterialTheme.typography.titleMedium,
-                                modifier = Modifier.padding(bottom = 4.dp)
-                            )
-
-                            val targetStr = currentTherapyUiState.currentTarget?.let { targetRange(it, currentTherapyUiState.glucoseUnit) } ?: "-"
-                            val unitStr = when(currentTherapyUiState.glucoseUnit) {
-                                GlucoseUnit.MG_DL -> "mg/dL"
-                                GlucoseUnit.MMOL -> "mmol/l"
-                            }
-
-                            Text(
-                                text = "$targetStr $unitStr",
-                                style = MaterialTheme.typography.bodyMedium,
-                                fontWeight = FontWeight.Bold
-                            )
-                        }
-                    }
-
-                    if (showProfileDialog) {
-                        ProfileSelectionDialog(
-                            profiles = currentTherapyUiState.availableProfiles,
-                            activeProfileId = currentTherapyUiState.activeProfileId,
-                            onProfileSelected = {
-                                onProfileSelect(it)
-                                showProfileDialog = false
-                            },
-                            onDismiss = { showProfileDialog = false },
-                            onEditProfilesClick = {
-                                showProfileDialog = false
-                                onNavigateToProfileEditor()
-                            }
-                        )
-                    }
-                }
-
-                Text(
-                    text = stringResource(R.string.dashboard_glucose_title),
-                    style = MaterialTheme.typography.bodyLarge
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                CurrentBgView(
+                    currentBgUiState
                 )
 
-                Spacer(modifier = Modifier.padding(top = 15.dp))
+                var showProfileDialog by remember { mutableStateOf(false) }
 
-                Box(
-                    modifier = Modifier.height(300.dp)
+                OutlinedCard(
+                    modifier = Modifier
+                        .weight(1f)
+                        .padding(vertical = 8.dp)
+                        .clickable { showProfileDialog = true }
+                        .padding(8.dp),
+                    colors = CardDefaults.outlinedCardColors(
+                        containerColor = MaterialTheme.colorScheme.surface
+                    ),
+                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
                 ) {
-                    if (historyUiState.isLoading) {
-                        CircularProgressIndicator(
-                            modifier = Modifier.align(Alignment.Center)
+                    Column(modifier = Modifier.padding(12.dp)) {
+                        Text(
+                            text = currentTherapyUiState.profileName,
+                            style = MaterialTheme.typography.titleMedium,
+                            modifier = Modifier.padding(bottom = 4.dp)
                         )
-                    } else {
-                        val chartState = rememberBgHistoryChartState()
 
-                        BgHistoryChartOrDefault(
-                            diagramData = DiagramData.fromReadings(historyUiState.readings),
-                            state = chartState,
-                            onChartClick = onHistoryChartClick
+                        val targetStr = currentTherapyUiState.currentTarget?.let { targetRange(it, currentTherapyUiState.glucoseUnit) } ?: "-"
+                        val unitStr = when(currentTherapyUiState.glucoseUnit) {
+                            GlucoseUnit.MG_DL -> "mg/dL"
+                            GlucoseUnit.MMOL -> "mmol/l"
+                        }
+
+                        Text(
+                            text = "$targetStr $unitStr",
+                            style = MaterialTheme.typography.bodyMedium,
+                            fontWeight = FontWeight.Bold
                         )
                     }
                 }
 
-                Spacer(modifier = Modifier.weight(1f))
-
-                extraContent()
+                if (showProfileDialog) {
+                    ProfileSelectionDialog(
+                        profiles = currentTherapyUiState.availableProfiles,
+                        activeProfileId = currentTherapyUiState.activeProfileId,
+                        onProfileSelected = {
+                            onProfileSelect(it)
+                            showProfileDialog = false
+                        },
+                        onDismiss = { showProfileDialog = false },
+                        onEditProfilesClick = {
+                            showProfileDialog = false
+                            onNavigateToProfileEditor()
+                        }
+                    )
+                }
             }
+
+            Text(
+                text = stringResource(R.string.dashboard_glucose_title),
+                style = MaterialTheme.typography.bodyLarge
+            )
+
+            Spacer(modifier = Modifier.padding(top = 15.dp))
+
+            Box(
+                modifier = Modifier.height(300.dp)
+            ) {
+                if (historyUiState.isLoading) {
+                    CircularProgressIndicator(
+                        modifier = Modifier.align(Alignment.Center)
+                    )
+                } else {
+                    val chartState = rememberBgHistoryChartState()
+
+                    BgHistoryChartOrDefault(
+                        diagramData = DiagramData.fromReadings(historyUiState.readings),
+                        state = chartState,
+                        onChartClick = onHistoryChartClick
+                    )
+                }
+            }
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            extraContent()
         }
     }
 }
