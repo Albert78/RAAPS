@@ -1,19 +1,18 @@
 package de.dh.raaps.plugin.simbody
 
-import de.dh.raaps.common.model.InsulinApplication
 import de.dh.raaps.common.model.CarbCurveComponentData
+import de.dh.raaps.common.model.InsulinApplication
 import de.dh.raaps.common.model.InsulinOrigin
 import de.dh.raaps.common.model.InsulinType
 import de.dh.raaps.common.model.MealEntry
 import de.dh.raaps.common.model.MealType
 import de.dh.raaps.common.model.calculation.CarbCurveComponent
 import de.dh.raaps.common.model.calculation.InsulinCurve
-import de.dh.raaps.common.model.data.Block
-import de.dh.raaps.common.model.data.getAmountForMinute
 import de.dh.raaps.common.model.data.BgValue
 import de.dh.raaps.common.model.data.Minutes
 import de.dh.raaps.common.model.data.TherapyData
 import de.dh.raaps.common.model.data.Timestamp
+import de.dh.raaps.common.model.data.getAmountForMinute
 import java.util.concurrent.CopyOnWriteArrayList
 
 /**
