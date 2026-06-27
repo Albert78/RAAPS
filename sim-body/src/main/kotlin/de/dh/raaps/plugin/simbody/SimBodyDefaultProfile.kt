@@ -5,11 +5,12 @@ import de.dh.raaps.common.model.data.Block
 import de.dh.raaps.common.model.data.Minutes
 import de.dh.raaps.common.model.data.TargetBlock
 import de.dh.raaps.common.model.data.TherapyData
+import de.dh.raaps.plugin.simbody.model.BodyProfile
 
 /**
- * A standard therapy profile used to initialize the simulation components.
+ * A standard therapy profile.
  */
-val DEFAULT_SIM_PROFILE = TherapyData(
+val DEFAULT_SIM_THERAPY_PROFILE = TherapyData(
     basalBlocks = listOf(Block(Minutes.ofHours(24), 0.5)),
     isfBlocks = listOf(Block(Minutes.ofHours(24), 50.0)),
     icBlocks = listOf(Block(Minutes.ofHours(24), 10.0)),
@@ -20,4 +21,13 @@ val DEFAULT_SIM_PROFILE = TherapyData(
             highTarget = BgValue.fromMgDl(120)
         )
     )
+)
+
+/**
+ * A standard body profile.
+ */
+val DEFAULT_SIM_BODY_PROFILE = BodyProfile(
+    liverGlucoseOutputBlocks = listOf(Block(Minutes.ofHours(24), 0.5)),
+    isfBlocks = listOf(Block(Minutes.ofHours(24), 50.0)),
+    icBlocks = listOf(Block(Minutes.ofHours(24), 10.0))
 )

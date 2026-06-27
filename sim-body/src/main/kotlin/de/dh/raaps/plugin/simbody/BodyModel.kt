@@ -10,16 +10,16 @@ import de.dh.raaps.common.model.calculation.CarbCurveComponent
 import de.dh.raaps.common.model.calculation.InsulinCurve
 import de.dh.raaps.common.model.data.BgValue
 import de.dh.raaps.common.model.data.Minutes
-import de.dh.raaps.common.model.data.TherapyData
 import de.dh.raaps.common.model.data.Timestamp
 import de.dh.raaps.common.model.data.getAmountForMinute
+import de.dh.raaps.plugin.simbody.model.BodyProfile
 import java.util.concurrent.CopyOnWriteArrayList
 
 /**
  * Models a diabetic's body for simulation purposes.
  * It tracks blood glucose levels influenced by meals, insulin, exercise, and health states.
  */
-class BodyModel(initialProfile: TherapyData) {
+class BodyModel(initialProfile: BodyProfile) {
     // Simulation Defaults (independent of database)
     private val defaultInsulinType = InsulinType(
         id = "sim-aspart-id",
@@ -48,7 +48,7 @@ class BodyModel(initialProfile: TherapyData) {
     var stressLevel: Double = 0.0       // 0.0 to 1.0, increases BG and resistance
 
     // Simulated Person Profile (metabolic parameters)
-    private var activeProfile: TherapyData = initialProfile
+    private var activeProfile: BodyProfile = initialProfile
 
     val isf: Double
         get() = activeProfile.isfBlocks.getAmountForMinute(Timestamp.now().minutesSinceMidnight())
@@ -56,10 +56,10 @@ class BodyModel(initialProfile: TherapyData) {
     val ic: Double
         get() = activeProfile.icBlocks.getAmountForMinute(Timestamp.now().minutesSinceMidnight())
 
-    val basalRateUph: Double
-        get() = activeProfile.basalBlocks.getAmountForMinute(Timestamp.now().minutesSinceMidnight())
+    val liverGlucoseOutputUph: Double
+        get() = activeProfile.liverGlucoseOutputBlocks.getAmountForMinute(Timestamp.now().minutesSinceMidnight())
 
-    fun setProfile(profile: TherapyData) {
+    fun setProfile(profile: BodyProfile) {
         activeProfile = profile
     }
 
@@ -83,7 +83,7 @@ class BodyModel(initialProfile: TherapyData) {
 
         // Liver production offsets normal basal insulin.
         // We assume liver production matches the profile basal rate.
-        val endogenousImpact = (basalRateUph * isf) * durationHours
+        val endogenousImpact = (liverGlucoseOutputUph * isf) * durationHours
 
         // Exercise and Stress impact on BG level directly
         val exerciseImpact = exerciseIntensity * 60.0 * durationHours

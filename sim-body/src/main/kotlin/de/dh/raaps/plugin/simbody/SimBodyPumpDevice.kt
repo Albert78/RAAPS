@@ -2,9 +2,9 @@ package de.dh.raaps.plugin.simbody
 
 import de.dh.raaps.common.model.BasalHistoryPoint
 import de.dh.raaps.common.model.BolusHistoryPoint
-import de.dh.raaps.common.model.data.getAmountForMinute
 import de.dh.raaps.common.model.data.TherapyData
 import de.dh.raaps.common.model.data.Timestamp
+import de.dh.raaps.common.model.data.getAmountForMinute
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -75,7 +75,6 @@ class SimBodyPumpDevice(
 
     fun setProfile(profile: TherapyData) {
         _activeProfile.value = profile
-        bodyModel.setProfile(profile)
     }
 
     fun getProfileBasalRate(): Double {
@@ -121,22 +120,22 @@ class SimBodyPumpDevice(
         if (reservoirLevel.value < units) {
             return false
         }
-        
+
         _reservoirLevel.value = (reservoirLevel.value - units).coerceAtLeast(0.0)
-        
+
         // Report to body
         bodyModel.bolus(units)
-        
+
         // Record in history
         _bolusHistory.add(BolusHistoryEntry(System.currentTimeMillis(), units))
         cleanupHistory()
-        
+
         return true
     }
 
     fun updateBasalRate(unitsPerHour: Double?) {
         tempBasalRate = unitsPerHour
-        
+
         _basalHistory.add(BasalHistoryEntry(System.currentTimeMillis(), unitsPerHour ?: getProfileBasalRate()))
         cleanupHistory()
     }

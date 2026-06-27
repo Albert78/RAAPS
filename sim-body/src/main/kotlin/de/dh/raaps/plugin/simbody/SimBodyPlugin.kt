@@ -13,8 +13,8 @@ import de.dh.raaps.common.model.PluginManager
 class SimBodyPlugin(
     val application: Application
 ) : Plugin {
-    val bodyModel = BodyModel(DEFAULT_SIM_PROFILE)
-    val pumpDevice = SimBodyPumpDevice(bodyModel, DEFAULT_SIM_PROFILE)
+    val bodyModel = BodyModel(DEFAULT_SIM_BODY_PROFILE)
+    val pumpDevice = SimBodyPumpDevice(bodyModel, DEFAULT_SIM_THERAPY_PROFILE)
     override val name: String = "Sim Body CGM Plugin"
     override val neededPermissions: Collection<String> = emptyList()
 
