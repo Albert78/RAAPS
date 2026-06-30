@@ -84,7 +84,7 @@ fun SimBodyDashboardCard(
             )
             ParameterRow("ISF", "${bodyModel.isf} mg/dL/U") { }
             ParameterRow("IC", "${bodyModel.ic} g/U") { }
-            ParameterRow("Liver Output", "${bodyModel.liverGlucoseOutputUph} U/h") { }
+            ParameterRow("Liver Output", "${bodyModel.liverGlucoseOutputGph} g/h") { }
 
             Text(
                 "Inputs: ${bodyModel.meals.size} meals, ${bodyModel.insulinApplications.size} boluses",
@@ -165,7 +165,7 @@ fun SimBodyDashboardCardPreview() {
     val mockProfile = BodyProfile(
         icBlocks = listOf(Block(Minutes.ofHours(24), 10.0)),
         isfBlocks = listOf(Block(Minutes.ofHours(24), 50.0)),
-        liverGlucoseOutputBlocks = listOf(Block(Minutes.ofHours(24), 0.5))
+        liverGlucoseOutputBlocks = listOf(Block(Minutes.ofHours(24), 5.0))
     )
     val bodyModel = remember {
         BodyModel(mockProfile).apply {
