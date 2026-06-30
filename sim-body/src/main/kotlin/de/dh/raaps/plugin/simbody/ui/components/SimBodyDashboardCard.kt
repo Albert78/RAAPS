@@ -36,7 +36,8 @@ import java.util.Locale
 @Composable
 fun SimBodyDashboardCard(
     bodyModel: BodyModel,
-    onDetailsClick: () -> Unit
+    onDetailsClick: () -> Unit,
+    onHistoryClick: () -> Unit
 ) {
     val exercise by bodyModel.exerciseIntensityFlow.collectAsState()
     val illness by bodyModel.illnessFactorFlow.collectAsState()
@@ -86,11 +87,23 @@ fun SimBodyDashboardCard(
             ParameterRow("IC", "${bodyModel.ic} g/U") { }
             ParameterRow("Liver Output", "${bodyModel.liverGlucoseOutputGph} g/h") { }
 
-            Text(
-                "Inputs: ${bodyModel.meals.size} meals, ${bodyModel.insulinApplications.size} boluses",
-                style = MaterialTheme.typography.bodySmall,
-                modifier = Modifier.padding(top = 8.dp)
-            )
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clickable(onClick = onHistoryClick)
+                    .padding(top = 8.dp),
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Text(
+                    "Inputs: ${bodyModel.meals.size} meals, ${bodyModel.insulinApplications.size} boluses",
+                    style = MaterialTheme.typography.bodySmall,
+                )
+                Text(
+                    "Show History",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.primary
+                )
+            }
         }
     }
 
@@ -180,7 +193,8 @@ fun SimBodyDashboardCardPreview() {
         Column(modifier = Modifier.padding(16.dp)) {
             SimBodyDashboardCard(
                 bodyModel = bodyModel,
-                onDetailsClick = {}
+                onDetailsClick = {},
+                onHistoryClick = {}
             )
         }
     }

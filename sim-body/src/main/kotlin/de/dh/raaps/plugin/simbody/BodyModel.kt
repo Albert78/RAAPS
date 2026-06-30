@@ -53,6 +53,7 @@ class BodyModel(initialProfile: BodyProfile) {
     // Inputs (historical data) - using Compose state for UI updates
     val meals = mutableStateListOf<MealEntry>()
     val insulinApplications = mutableStateListOf<InsulinApplication>()
+    val impactHistory = mutableStateListOf<Impacts>()
 
     // Health factors (external influences, controlled via UI)
     private val _exerciseIntensity = MutableStateFlow(0.0)
@@ -100,9 +101,6 @@ class BodyModel(initialProfile: BodyProfile) {
         set(value) { _bloodGlucose.value = value }
     val bloodGlucoseFlow: StateFlow<BgValue> = _bloodGlucose.asStateFlow()
 
-    private val _impacts = MutableStateFlow<Impacts?>(null)
-    val impactsFlow: StateFlow<Impacts?> = _impacts.asStateFlow()
-
     var lastTickTimestamp: Timestamp = Timestamp.now()
 
     /**
@@ -130,7 +128,8 @@ class BodyModel(initialProfile: BodyProfile) {
         // Total delta calculation
         val bgDelta = carbImpact - insulinImpact + endogenousImpact - exerciseImpact + stressImpact
 
-        _impacts.value = Impacts(carbImpact, insulinImpact, endogenousImpact, exerciseImpact, stressImpact, currentTimestamp)
+        val newImpact = Impacts(carbImpact, insulinImpact, endogenousImpact, exerciseImpact, stressImpact, currentTimestamp)
+        impactHistory.add(0, newImpact) // Add to top for history view
 
         // Update BG state
         val newMgDl = bloodGlucose.mgdl + bgDelta
@@ -149,6 +148,7 @@ class BodyModel(initialProfile: BodyProfile) {
 
         meals.removeIf { it.timestamp.ms < threshold }
         insulinApplications.removeIf { it.timestamp.ms < threshold }
+        impactHistory.removeIf { it.currentTimestamp.ms < threshold }
     }
 
     /**

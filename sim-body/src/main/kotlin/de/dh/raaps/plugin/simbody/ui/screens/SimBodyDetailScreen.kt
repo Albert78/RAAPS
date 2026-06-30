@@ -10,9 +10,13 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import de.dh.raaps.plugin.simbody.BodyModel
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 
 @Composable
 fun SimBodyDetailScreen(bodyModel: BodyModel?) {
@@ -21,10 +25,12 @@ fun SimBodyDetailScreen(bodyModel: BodyModel?) {
         return
     }
 
+    val dateTimeFormat = remember { SimpleDateFormat("dd.MM.yyyy HH:mm", Locale.getDefault()) }
+
     Scaffold(
         topBar = {
             Text(
-                "Sim Body Detailed Controls",
+                "Sim Body Historical Inputs",
                 style = MaterialTheme.typography.headlineMedium,
                 modifier = Modifier.padding(16.dp)
             )
@@ -37,22 +43,21 @@ fun SimBodyDetailScreen(bodyModel: BodyModel?) {
                 .padding(16.dp)
         ) {
             item {
-                Text("Historical Inputs", style = MaterialTheme.typography.titleLarge)
+                Text("Meals", style = MaterialTheme.typography.titleLarge)
                 HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
             }
-
-            item {
-                Text("Meals", style = MaterialTheme.typography.titleMedium)
-            }
             items(bodyModel.meals) { meal ->
-                Text("${meal.carbGrams}g at ${meal.timestamp}")
+                val carbs = String.format(Locale.US, "%.2f", meal.carbGrams)
+                Text("${carbs}g at ${dateTimeFormat.format(Date(meal.timestamp.ms))}")
             }
 
             item {
-                Text("Insulin", style = MaterialTheme.typography.titleMedium, modifier = Modifier.padding(top = 16.dp))
+                Text("Insulin", style = MaterialTheme.typography.titleLarge, modifier = Modifier.padding(top = 16.dp))
+                HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
             }
             items(bodyModel.insulinApplications) { insulin ->
-                Text("${insulin.amount}U at ${insulin.timestamp} (${insulin.origin})")
+                val units = String.format(Locale.US, "%.2f", insulin.amount)
+                Text("${units}U at ${dateTimeFormat.format(Date(insulin.timestamp.ms))} (${insulin.origin})")
             }
 
             item {
