@@ -4,11 +4,11 @@ import android.app.Application
 import androidx.activity.ComponentActivity
 import de.dh.raaps.common.model.PluginManager
 import de.dh.raaps.common.navigation.FeatureNavGraph
+import de.dh.raaps.common.navigation.NavigationViewModel
 import de.dh.raaps.core.aps.APS
 import de.dh.raaps.plugin.glucose.receiver.ExternalSourceType
 import de.dh.raaps.plugin.glucose.receiver.ReceiverGlucosePlugin
 import de.dh.raaps.plugin.pump.SampleInsulinPumpPlugin
-import de.dh.raaps.ui.navigation.NavigationViewModel
 
 fun setupSystem(aps: APS, pluginManager: PluginManager, application: Application) {
     val glucosePlugin = ReceiverGlucosePlugin(

@@ -18,6 +18,15 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 
+data class Impacts(
+    val carbImpact: Double,
+    val insulinImpact: Double,
+    val endogenousImpact: Double,
+    val exerciseImpact: Double,
+    val stressImpact: Double,
+    val currentTimestamp: Timestamp
+)
+
 /**
  * Models a diabetic's body for simulation purposes.
  * It tracks blood glucose levels influenced by meals, insulin, exercise, and health states.
@@ -77,7 +86,7 @@ class BodyModel(initialProfile: BodyProfile) {
     val ic: Double
         get() = activeProfile.icBlocks.getAmountForMinute(Timestamp.now().minutesSinceMidnight())
 
-    val liverGlucoseOutputUph: Double
+    val liverGlucoseOutputGph: Double
         get() = activeProfile.liverGlucoseOutputBlocks.getAmountForMinute(Timestamp.now().minutesSinceMidnight())
 
     fun setProfile(profile: BodyProfile) {
@@ -90,6 +99,9 @@ class BodyModel(initialProfile: BodyProfile) {
         get() = _bloodGlucose.value
         set(value) { _bloodGlucose.value = value }
     val bloodGlucoseFlow: StateFlow<BgValue> = _bloodGlucose.asStateFlow()
+
+    private val _impacts = MutableStateFlow<Impacts?>(null)
+    val impactsFlow: StateFlow<Impacts?> = _impacts.asStateFlow()
 
     var lastTickTimestamp: Timestamp = Timestamp.now()
 
@@ -108,8 +120,8 @@ class BodyModel(initialProfile: BodyProfile) {
         val carbImpact = calculateCarbImpact(lastTickTimestamp, currentTimestamp)
 
         // Liver production offsets normal basal insulin.
-        // We assume liver production matches the profile basal rate.
-        val endogenousImpact = (liverGlucoseOutputUph * isf) * durationHours
+        // Liver output is in grams of carbs per hour.
+        val endogenousImpact = (liverGlucoseOutputGph / ic) * isf * durationHours
 
         // Exercise and Stress impact on BG level directly
         val exerciseImpact = exerciseIntensity * 60.0 * durationHours
@@ -117,6 +129,8 @@ class BodyModel(initialProfile: BodyProfile) {
 
         // Total delta calculation
         val bgDelta = carbImpact - insulinImpact + endogenousImpact - exerciseImpact + stressImpact
+
+        _impacts.value = Impacts(carbImpact, insulinImpact, endogenousImpact, exerciseImpact, stressImpact, currentTimestamp)
 
         // Update BG state
         val newMgDl = bloodGlucose.mgdl + bgDelta
