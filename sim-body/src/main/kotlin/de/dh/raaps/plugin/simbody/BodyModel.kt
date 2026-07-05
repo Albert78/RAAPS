@@ -90,6 +90,31 @@ class BodyModel(initialProfile: BodyProfile) {
     val liverGlucoseOutputGph: Double
         get() = activeProfile.liverGlucoseOutputBlocks.getAmountForMinute(Timestamp.now().minutesSinceMidnight())
 
+    val iob: Double
+        get() {
+            val now = Timestamp.now()
+            return insulinApplications.sumOf { bolus ->
+                val curve = InsulinCurve(
+                    diaMinutes = bolus.insulinType.dia.value.toDouble(),
+                    peakMinutes = bolus.insulinType.peak.value.toDouble()
+                )
+                val timeSinceBolus = (now.ms - bolus.timestamp.ms) / 60000.0
+                bolus.amount * (1.0 - curve.spentFraction(timeSinceBolus)).coerceAtLeast(0.0)
+            }
+        }
+
+    val cob: Double
+        get() {
+            val now = Timestamp.now()
+            return meals.sumOf { meal ->
+                meal.mealType.components.sumOf { comp ->
+                    val curve = CarbCurveComponent(comp.peakMinutes.value.toDouble())
+                    val timeSinceMeal = (now.ms - meal.timestamp.ms) / 60000.0
+                    meal.carbGrams * (comp.weight / 100.0) * (1.0 - curve.absorbedFraction(timeSinceMeal)).coerceAtLeast(0.0)
+                }
+            }
+        }
+
     fun setProfile(profile: BodyProfile) {
         activeProfile = profile
     }

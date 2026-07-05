@@ -68,6 +68,7 @@ fun SimBodyDashboardCard(
             }
 
             ParameterRow("Blood Glucose", "${bg.mgdl} mg/dL") { showEditDialog = "bg" }
+            ParameterRow("IOB / COB", String.format(Locale.US, "%.2f U / %.1f g", bodyModel.iob, bodyModel.cob)) { }
             ParameterRow("Exercise Intensity", String.format(Locale.US, "%.2f", exercise)) {
                 showEditDialog = "exercise"
             }
