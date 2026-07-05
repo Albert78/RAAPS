@@ -61,6 +61,30 @@ enum class ApsIssue {
     Other
 }
 
+enum class ApsState {
+    /**
+     * The system is controlled manually by the user and doesn't show
+     * treatment hints.
+     */
+    Manual,
+
+    /**
+     * The APS is working and producing treatment hints but doesn't
+     * issue the commands to the pump. Instead, the user gets treatment hints.
+     */
+    OpenLoop,
+
+    /**
+     * The APS completely controls the pump.
+     */
+    ClosedLoop
+}
+
+sealed class ApsRecommendation {
+    data class Carbs(val amountInGram: Int) : ApsRecommendation()
+    data class Bolus(val amount: InsulinAmount) : ApsRecommendation()
+}
+
 /**
  * APS system facade for the access from outside (UI, ...).
  * Manages threading and plugin lifecycles, ensuring all calls to the core are serialized
@@ -109,9 +133,11 @@ class APS(
         onAcquireBusyState = { acquireBusyState() },
         onReleaseBusyState = { releaseBusyState() },
 
-        onCancelInsulinJobs = { cancelInsulinJobs() },
+        onCancelInsulinJobs = { coreCancelInsulinJobs() },
         onDeliverBolus = { amount -> deliverBolus(amount) },
+        onCheckZeroTemp = { canIssueZeroTemp() },
         onZeroTemp = { durationInHours -> issueZeroTemp(durationInHours) },
+        onCarbsHint = { amountInGram -> issueCarbHint(amountInGram) },
         onWaitForAndResetInsulinJobs = { waitForAndResetInsulinJobs() }
     )
 
@@ -184,11 +210,20 @@ class APS(
      */
     val coreState: StateFlow<CoreState> = _coreState.asStateFlow()
 
+    private val _apsState = MutableStateFlow<ApsState>(ApsState.Manual)
+    val apsState: StateFlow<ApsState> = _apsState.asStateFlow()
+
     private val _apsIssues = MutableStateFlow<Set<ApsIssue>>(emptySet())
     /**
      * Active issues of the APS.
      */
     val apsIssues: StateFlow<Set<ApsIssue>> = _apsIssues.asStateFlow()
+
+    private val _recommendations = MutableStateFlow<List<ApsRecommendation>>(emptyList())
+    /**
+     * Active recommendations of the APS.
+     */
+    val recommendations: StateFlow<List<ApsRecommendation>> = _recommendations.asStateFlow()
 
     private fun addIssue(issue: ApsIssue) {
         if (issue !in _apsIssues.value) {
@@ -265,6 +300,8 @@ class APS(
                     core.onMetabolicEventsChanged()
                 }
             }
+
+            _apsState.value = ApsState.Manual
         }
         restartGlucosePipeline()
     }
@@ -345,27 +382,71 @@ class APS(
         _coreState.emit(core.coreState)
     }
 
-    fun cancelInsulinJobs() {
-        pumpCoordinator?.cancelJobs()
+    fun setApsState(state: ApsState) = inAPSThread {
+        _apsState.value = state
+        when {
+            state == ApsState.Manual -> {
+                core.suspend()
+            }
+            else -> {
+                core.activate()
+            }
+        }
+    }
+
+    fun coreCancelInsulinJobs() {
+        when (apsState.value) {
+            ApsState.Manual -> return
+            ApsState.OpenLoop -> return
+            ApsState.ClosedLoop -> {
+                pumpCoordinator?.cancelJobs { it.isCancelableAPSCommand }
+            }
+        }
     }
 
     fun deliverBolus(amount: InsulinAmount) {
-        pumpCoordinator?.issueCommand(
-            PumpCommand.DeliverBolus(amount),
-            isCancelableAPSCommand = true
-        )
-        // TODO: If no pump is present, tell the user to inject the bolus
+        when (apsState.value) {
+            ApsState.Manual -> return
+            ApsState.OpenLoop -> issueBolusHint(amount)
+            ApsState.ClosedLoop -> {
+                pumpCoordinator?.issueCommand(
+                    PumpCommand.DeliverBolus(amount),
+                    isCancelableAPSCommand = true
+                )
+            }
+        }
+    }
+
+    fun canIssueZeroTemp(): Boolean {
+        return when (apsState.value) {
+            ApsState.Manual -> false
+            ApsState.OpenLoop -> false
+            ApsState.ClosedLoop -> true // TODO: Check if pump supports zero temp
+        }
     }
 
     fun issueZeroTemp(durationInHours: Int) {
-        pumpCoordinator?.issueCommand(
-            PumpCommand.SetTempBasal(
-                percent = 0,
-                durationHours = durationInHours
-            ),
-            isCancelableAPSCommand = true
-        )
-        // TODO: If no pump is present, tell the user to eat
+        when (apsState.value) {
+            ApsState.Manual -> return
+            ApsState.OpenLoop -> return
+            ApsState.ClosedLoop -> {
+                pumpCoordinator?.issueCommand(
+                    PumpCommand.SetTempBasal(
+                        percent = 0,
+                        durationHours = durationInHours
+                    ),
+                    isCancelableAPSCommand = true
+                )
+            }
+        }
+    }
+
+    fun issueCarbHint(amountInGram: Int) {
+        _recommendations.value += ApsRecommendation.Carbs(amountInGram)
+    }
+
+    fun issueBolusHint(amount: InsulinAmount) {
+        _recommendations.value += ApsRecommendation.Bolus(amount)
     }
 
     suspend fun waitForAndResetInsulinJobs() {
@@ -375,9 +456,11 @@ class APS(
             pc.waitForIdle()
             delay(10.seconds)
         }
-        if (pc.hasPendingJobs()) {
-            addIssue(ApsIssue.PumpConnectionMissing)
-            pc.cancelJobs({ it.isCancelableAPSCommand })
+        if (apsState.value == ApsState.ClosedLoop) {
+            if (pc.hasPendingJobs()) {
+                addIssue(ApsIssue.PumpConnectionMissing)
+                pc.cancelJobs({ it.isCancelableAPSCommand })
+            }
         }
     }
 
@@ -386,6 +469,7 @@ class APS(
      * Guaranteed to run on the internal APS thread.
      */
     fun updateBg(bg: BgReading) = inAPSThread {
+        _recommendations.value = emptyList()
         core.updateBg(bg)
         core.nextBgStaleCheckAt()?.let {
             scheduleSystemWakeup(it, WAKEUP_STALE_CHECK)

@@ -22,7 +22,9 @@ class ApsAlgorithmImpl(
     val therapyManager: TherapyManager,
     val onCancelInsulinJobs: () -> Unit,
     val onDeliverBolus: (amount: InsulinAmount) -> Unit,
+    val onCheckZeroTemp: () -> Boolean,
     val onZeroTemp: (durationInHours: Int) -> Unit,
+    val onCarbsHint: (Int) -> Unit,
 ): ApsAlgorithm {
     val sampledBgReadings =
         SampledBgReadings(timeline, bgReadingsHistory)
@@ -136,6 +138,8 @@ class ApsAlgorithmImpl(
             val zeroTempDeltaBgPerHour = (basalRate * isf).mgdl.toDouble()
             val nextMin = predictionModel.findNextBgMin(startAt = firstLowPoint.tick, returnLatestIfFalling = true) ?: return@let
             val bgError = targetBgRange.lower - nextMin.predictedBg1 + MIN_BG_SAFETY_MARGIN
+            // TODO: Check if zero temp is available. If not, issue carbs hint.
+            // Also issue carbs hint if zero temp isn't sufficient.
             val startZeroTemp = maxOf(
                 nextMin.tick.minusHours((bgError.mgdl / zeroTempDeltaBgPerHour).toInt()).
                     // We must drop the basal long time before the next minimum
@@ -261,8 +265,10 @@ class ApsAlgorithmImpl(
             therapyManager: TherapyManager,
             onCancelInsulinJobs: () -> Unit,
             onDeliverBolus: (amount: InsulinAmount) -> Unit,
+            onCheckZeroTemp: () -> Boolean,
             onZeroTemp: (durationInHours: Int) -> Unit,
-            tickInterval: Minutes
+            onCarbsHint: (Int) -> Unit,
+            tickInterval: Minutes,
         ): ApsAlgorithm {
             val timeline = ApsTimeline(tickInterval)
             val predictionModel = PredictionModel(
@@ -289,7 +295,9 @@ class ApsAlgorithmImpl(
                 carbsInsulinCalculationModel = carbsInsulinCalculationModel,
                 therapyManager = therapyManager,
                 onCancelInsulinJobs = onCancelInsulinJobs,
+                onCheckZeroTemp = onCheckZeroTemp,
                 onZeroTemp = onZeroTemp,
+                onCarbsHint = onCarbsHint,
                 onDeliverBolus = onDeliverBolus,
             )
         }

@@ -71,7 +71,9 @@ class Core(
 
     private val onCancelInsulinJobs: () -> Unit,
     private val onDeliverBolus: (amount: InsulinAmount) -> Unit,
+    private val onCheckZeroTemp: () -> Boolean,
     private val onZeroTemp: (durationInHours: Int) -> Unit,
+    private val onCarbsHint: (Int) -> Unit,
     private val onWaitForAndResetInsulinJobs: suspend () -> Unit,
 ) {
     private var calculationAlgorithm: ApsAlgorithm = NoopAlgorithm()
@@ -133,6 +135,14 @@ class Core(
         }
     }
 
+    fun suspend() {
+        setCoreState(CoreState.Suspended)
+    }
+
+    fun activate() {
+        setCoreState(CoreState.Active)
+    }
+
     private fun setCoreState(state: CoreState) {
         coreState = state
         onCoreStateChanged()
@@ -160,13 +170,15 @@ class Core(
                     therapyManager,
                     onCancelInsulinJobs = onCancelInsulinJobs,
                     onDeliverBolus = onDeliverBolus,
+                    onCheckZeroTemp = onCheckZeroTemp,
                     onZeroTemp = onZeroTemp,
+                    onCarbsHint = onCarbsHint,
                     tickInterval = TICK_INTERVAL
                 )
                 onDataUpdated()
 
                 Log.d(TAG, "Finished initialization...")
-                setCoreState(CoreState.Active)
+                setCoreState(CoreState.Suspended)
             }
         }
     }
@@ -207,6 +219,7 @@ class Core(
      * can also be called from outside to provide an additional bg value, e.g. from a bloody measure.
      */
     suspend fun updateBg(bg: BgReading) {
+        if (coreState !is CoreState.Active) return
         busyWork {
             if (bg.sampleKind == BgSampleKind.Invalid) {
                 Log.d(TAG, "Skipping BG entry $bg because it has an invalid value")
@@ -311,7 +324,9 @@ class Core(
 
             onCancelInsulinJobs: () -> Unit,
             onDeliverBolus: (amount: InsulinAmount) -> Unit,
+            onCheckZeroTemp: () -> Boolean,
             onZeroTemp: (durationInHours: Int) -> Unit,
+            onCarbsHint: (amountInGram: Int) -> Unit,
             onWaitForAndResetInsulinJobs: suspend () -> Unit,
         ): Core {
             return Core(
@@ -327,7 +342,9 @@ class Core(
 
                 onCancelInsulinJobs = onCancelInsulinJobs,
                 onDeliverBolus = onDeliverBolus,
+                onCheckZeroTemp = onCheckZeroTemp,
                 onZeroTemp = onZeroTemp,
+                onCarbsHint = onCarbsHint,
                 onWaitForAndResetInsulinJobs = onWaitForAndResetInsulinJobs,
             )
         }
