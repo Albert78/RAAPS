@@ -51,6 +51,7 @@ import de.dh.raaps.common.ui.composables.WarningBanner
 import de.dh.raaps.common.ui.composables.screenTitle
 import de.dh.raaps.common.ui.targetRange
 import de.dh.raaps.common.ui.theme.AppTheme
+import de.dh.raaps.core.aps.ApsMode
 import de.dh.raaps.ui.controls.history.BgHistoryChartOrDefault
 import de.dh.raaps.ui.controls.history.CurrentBgUiState
 import de.dh.raaps.ui.controls.history.CurrentBgView
@@ -98,6 +99,7 @@ fun DashboardScreen(
         onNavigateToProfileEditor = onNavigateToProfileEditor,
         onHistoryChartClick = onHistoryChartClick,
         onProfileSelect = { currentTherapyViewModel.selectProfile(it) },
+        onApsModeSelect = { viewModel.setApsMode(it) },
         extraContent = extraContent
     )
 }
@@ -116,10 +118,12 @@ fun DashboardContent(
     onNavigateToProfileEditor: () -> Unit,
     onHistoryChartClick: (() -> Unit)?,
     onProfileSelect: (Profile) -> Unit,
+    onApsModeSelect: (ApsMode) -> Unit,
     extraContent: @Composable () -> Unit = {}
 ) {
     val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
     var menuExpanded by remember { mutableStateOf(false) }
+    var modeMenuExpanded by remember { mutableStateOf(false) }
 
     Scaffold(
         modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
@@ -189,35 +193,76 @@ fun DashboardContent(
 
                 var showProfileDialog by remember { mutableStateOf(false) }
 
-                OutlinedCard(
+                Column(
                     modifier = Modifier
                         .weight(1f)
                         .padding(vertical = 8.dp)
-                        .clickable { showProfileDialog = true }
-                        .padding(8.dp),
-                    colors = CardDefaults.outlinedCardColors(
-                        containerColor = MaterialTheme.colorScheme.surface
-                    ),
-                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
                 ) {
-                    Column(modifier = Modifier.padding(12.dp)) {
-                        Text(
-                            text = currentTherapyUiState.profileName,
-                            style = MaterialTheme.typography.titleMedium,
-                            modifier = Modifier.padding(bottom = 4.dp)
-                        )
-
-                        val targetStr = currentTherapyUiState.currentTarget?.let { targetRange(it, currentTherapyUiState.glucoseUnit) } ?: "-"
-                        val unitStr = when(currentTherapyUiState.glucoseUnit) {
-                            GlucoseUnit.MG_DL -> "mg/dL"
-                            GlucoseUnit.MMOL -> "mmol/l"
+                    Box {
+                        OutlinedCard(
+                            onClick = { modeMenuExpanded = true },
+                            modifier = Modifier.padding(bottom = 4.dp),
+                            colors = CardDefaults.outlinedCardColors(
+                                containerColor = when (dashboardUiState.apsMode) {
+                                    ApsMode.Manual -> MaterialTheme.colorScheme.surfaceVariant
+                                    ApsMode.OpenLoop -> MaterialTheme.colorScheme.primaryContainer
+                                    ApsMode.ClosedLoop -> MaterialTheme.colorScheme.tertiaryContainer
+                                }
+                            ),
+                            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline)
+                        ) {
+                            Text(
+                                text = dashboardUiState.apsMode.name,
+                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                                style = MaterialTheme.typography.labelMedium,
+                                fontWeight = FontWeight.Bold
+                            )
                         }
 
-                        Text(
-                            text = "$targetStr $unitStr",
-                            style = MaterialTheme.typography.bodyMedium,
-                            fontWeight = FontWeight.Bold
-                        )
+                        DropdownMenu(
+                            expanded = modeMenuExpanded,
+                            onDismissRequest = { modeMenuExpanded = false }
+                        ) {
+                            ApsMode.entries.forEach { mode ->
+                                DropdownMenuItem(
+                                    text = { Text(mode.name) },
+                                    onClick = {
+                                        onApsModeSelect(mode)
+                                        modeMenuExpanded = false
+                                    }
+                                )
+                            }
+                        }
+                    }
+
+                    OutlinedCard(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable { showProfileDialog = true },
+                        colors = CardDefaults.outlinedCardColors(
+                            containerColor = MaterialTheme.colorScheme.surface
+                        ),
+                        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
+                    ) {
+                        Column(modifier = Modifier.padding(12.dp)) {
+                            Text(
+                                text = currentTherapyUiState.profileName,
+                                style = MaterialTheme.typography.titleMedium,
+                                modifier = Modifier.padding(bottom = 4.dp)
+                            )
+
+                            val targetStr = currentTherapyUiState.currentTarget?.let { targetRange(it, currentTherapyUiState.glucoseUnit) } ?: "-"
+                            val unitStr = when(currentTherapyUiState.glucoseUnit) {
+                                GlucoseUnit.MG_DL -> "mg/dL"
+                                GlucoseUnit.MMOL -> "mmol/l"
+                            }
+
+                            Text(
+                                text = "$targetStr $unitStr",
+                                style = MaterialTheme.typography.bodyMedium,
+                                fontWeight = FontWeight.Bold
+                            )
+                        }
                     }
                 }
 
@@ -298,7 +343,8 @@ fun DashboardPreview() {
             onNavigateToPreferences = {},
             onNavigateToProfileEditor = {},
             onHistoryChartClick = {},
-            onProfileSelect = {}
+            onProfileSelect = {},
+            onApsModeSelect = {}
         )
     }
 }
@@ -331,7 +377,8 @@ fun DashboardPermissionsWarningPreview() {
             onNavigateToPreferences = {},
             onNavigateToProfileEditor = {},
             onHistoryChartClick = {},
-            onProfileSelect = {}
+            onProfileSelect = {},
+            onApsModeSelect = {}
         )
     }
 }

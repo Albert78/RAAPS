@@ -7,7 +7,6 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.CreationExtras
-import de.dh.raaps.core.RAAPSApplication
 import de.dh.raaps.common.model.ToDo
 import de.dh.raaps.common.model.data.BgDelta
 import de.dh.raaps.common.model.data.BgReading
@@ -15,6 +14,7 @@ import de.dh.raaps.common.model.data.BgSampleKind
 import de.dh.raaps.common.model.data.BgValue
 import de.dh.raaps.common.model.data.GlucoseUnit
 import de.dh.raaps.common.model.data.Timestamp
+import de.dh.raaps.core.RAAPSApplication
 import de.dh.raaps.core.aps.APS
 import de.dh.raaps.core.aps.CoreState
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -105,8 +105,8 @@ class HistoryViewModel(
 
     init {
         viewModelScope.launch {
-            // This will block the thread until the core is idle
-            aps.coreState.first { it == CoreState.Active }
+            // This will block the thread until the core is initialized and data are loaded.
+            aps.coreState.first { it != CoreState.Uninitialized && it != CoreState.Initializing }
             reload_suspend()
             aps.lastDataTime.collect {
                 reload_suspend()
