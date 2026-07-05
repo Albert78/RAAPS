@@ -61,7 +61,7 @@ enum class ApsIssue {
     Other
 }
 
-enum class ApsState {
+enum class ApsMode {
     /**
      * The system is controlled manually by the user and doesn't show
      * treatment hints.
@@ -210,8 +210,8 @@ class APS(
      */
     val coreState: StateFlow<CoreState> = _coreState.asStateFlow()
 
-    private val _apsState = MutableStateFlow<ApsState>(ApsState.Manual)
-    val apsState: StateFlow<ApsState> = _apsState.asStateFlow()
+    private val _apsMode = MutableStateFlow<ApsMode>(ApsMode.Manual)
+    val apsMode: StateFlow<ApsMode> = _apsMode.asStateFlow()
 
     private val _apsIssues = MutableStateFlow<Set<ApsIssue>>(emptySet())
     /**
@@ -301,7 +301,7 @@ class APS(
                 }
             }
 
-            _apsState.value = ApsState.Manual
+            _apsMode.value = ApsMode.Manual
         }
         restartGlucosePipeline()
     }
@@ -382,10 +382,10 @@ class APS(
         _coreState.emit(core.coreState)
     }
 
-    fun setApsState(state: ApsState) = inAPSThread {
-        _apsState.value = state
+    fun setApsMode(mode: ApsMode) = inAPSThread {
+        _apsMode.value = mode
         when {
-            state == ApsState.Manual -> {
+            mode == ApsMode.Manual -> {
                 core.suspend()
             }
             else -> {
@@ -395,20 +395,20 @@ class APS(
     }
 
     fun coreCancelInsulinJobs() {
-        when (apsState.value) {
-            ApsState.Manual -> return
-            ApsState.OpenLoop -> return
-            ApsState.ClosedLoop -> {
+        when (apsMode.value) {
+            ApsMode.Manual -> return
+            ApsMode.OpenLoop -> return
+            ApsMode.ClosedLoop -> {
                 pumpCoordinator?.cancelJobs { it.isCancelableAPSCommand }
             }
         }
     }
 
     fun deliverBolus(amount: InsulinAmount) {
-        when (apsState.value) {
-            ApsState.Manual -> return
-            ApsState.OpenLoop -> issueBolusHint(amount)
-            ApsState.ClosedLoop -> {
+        when (apsMode.value) {
+            ApsMode.Manual -> return
+            ApsMode.OpenLoop -> issueBolusHint(amount)
+            ApsMode.ClosedLoop -> {
                 pumpCoordinator?.issueCommand(
                     PumpCommand.DeliverBolus(amount),
                     isCancelableAPSCommand = true
@@ -418,18 +418,18 @@ class APS(
     }
 
     fun canIssueZeroTemp(): Boolean {
-        return when (apsState.value) {
-            ApsState.Manual -> false
-            ApsState.OpenLoop -> false
-            ApsState.ClosedLoop -> true // TODO: Check if pump supports zero temp
+        return when (apsMode.value) {
+            ApsMode.Manual -> false
+            ApsMode.OpenLoop -> false
+            ApsMode.ClosedLoop -> true // TODO: Check if pump supports zero temp
         }
     }
 
     fun issueZeroTemp(durationInHours: Int) {
-        when (apsState.value) {
-            ApsState.Manual -> return
-            ApsState.OpenLoop -> return
-            ApsState.ClosedLoop -> {
+        when (apsMode.value) {
+            ApsMode.Manual -> return
+            ApsMode.OpenLoop -> return
+            ApsMode.ClosedLoop -> {
                 pumpCoordinator?.issueCommand(
                     PumpCommand.SetTempBasal(
                         percent = 0,
@@ -456,7 +456,7 @@ class APS(
             pc.waitForIdle()
             delay(10.seconds)
         }
-        if (apsState.value == ApsState.ClosedLoop) {
+        if (apsMode.value == ApsMode.ClosedLoop) {
             if (pc.hasPendingJobs()) {
                 addIssue(ApsIssue.PumpConnectionMissing)
                 pc.cancelJobs({ it.isCancelableAPSCommand })
