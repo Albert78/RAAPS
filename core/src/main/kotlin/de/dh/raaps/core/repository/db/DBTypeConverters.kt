@@ -1,6 +1,7 @@
 package de.dh.raaps.core.repository.db
 
 import androidx.room.TypeConverter
+import de.dh.raaps.common.model.ApsMode
 import de.dh.raaps.common.model.data.Minutes
 import de.dh.raaps.common.model.data.Timestamp
 import de.dh.raaps.core.repository.db.entities.DBBlock
@@ -9,6 +10,12 @@ import org.json.JSONArray
 import org.json.JSONObject
 
 class DbTypeConverters {
+    @TypeConverter
+    fun fromApsMode(mode: ApsMode): String = mode.name
+
+    @TypeConverter
+    fun toApsMode(value: String): ApsMode = ApsMode.valueOf(value)
+
     @TypeConverter
     fun fromMinutes(minutes: Minutes?): Short? = minutes?.value
 

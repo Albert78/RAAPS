@@ -3,14 +3,14 @@ package de.dh.raaps.plugin.simbody.repository
 import de.dh.raaps.common.model.data.Block
 import de.dh.raaps.plugin.simbody.model.BodyProfile
 import de.dh.raaps.plugin.simbody.repository.db.BodyProfileEntity
-import de.dh.raaps.plugin.simbody.repository.db.ImpactDao
+import de.dh.raaps.plugin.simbody.repository.db.SimBodyDao
 import de.dh.raaps.plugin.simbody.repository.db.SimulationStateEntity
 import org.json.JSONArray
 import org.json.JSONObject
 
-class SimBodyRepository(private val impactDao: ImpactDao) {
+class SimBodyRepository(private val simBodyDao: SimBodyDao) {
 
-    suspend fun getSimulationState() = impactDao.getSimulationState()
+    suspend fun getSimulationState() = simBodyDao.getSimulationState()
 
     suspend fun updateSimulationState(
         currentBgMgDl: Int,
@@ -19,7 +19,7 @@ class SimBodyRepository(private val impactDao: ImpactDao) {
         stressLevel: Double,
         illnessFactor: Double
     ) {
-        impactDao.updateSimulationState(
+        simBodyDao.updateSimulationState(
             SimulationStateEntity(
                 currentBgMgDl = currentBgMgDl,
                 lastTickTimestampMs = lastTickTimestampMs,
@@ -31,7 +31,7 @@ class SimBodyRepository(private val impactDao: ImpactDao) {
     }
 
     suspend fun getActiveBodyProfile(): BodyProfile? {
-        val entity = impactDao.getActiveBodyProfile() ?: return null
+        val entity = simBodyDao.getActiveBodyProfile() ?: return null
         return BodyProfile(
             icBlocks = parseBlocks(entity.icBlocks),
             isfBlocks = parseBlocks(entity.isfBlocks),
@@ -64,7 +64,7 @@ class SimBodyRepository(private val impactDao: ImpactDao) {
     }
 
     suspend fun saveBodyProfile(name: String, profile: BodyProfile, isActive: Boolean = false) {
-        impactDao.insertBodyProfile(
+        simBodyDao.insertBodyProfile(
             BodyProfileEntity(
                 name = name,
                 icBlocks = blocksToJson(profile.icBlocks),

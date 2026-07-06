@@ -9,6 +9,7 @@ import android.os.Build
 import android.os.PowerManager
 import android.util.Log
 import de.dh.raaps.AppPreferencesRepository
+import de.dh.raaps.common.model.ApsMode
 import de.dh.raaps.common.model.GlucoseSource
 import de.dh.raaps.common.model.InsulinAmount
 import de.dh.raaps.common.model.InsulinPump
@@ -59,25 +60,6 @@ enum class ApsIssue {
      * Any other issue that prevents the core from working.
      */
     Other
-}
-
-enum class ApsMode {
-    /**
-     * The system is controlled manually by the user and doesn't show
-     * treatment hints.
-     */
-    Manual,
-
-    /**
-     * The APS is working and producing treatment hints but doesn't
-     * issue the commands to the pump. Instead, the user gets treatment hints.
-     */
-    OpenLoop,
-
-    /**
-     * The APS completely controls the pump.
-     */
-    ClosedLoop
 }
 
 sealed class ApsRecommendation {
@@ -300,7 +282,12 @@ class APS(
                 }
             }
 
-            _apsMode.value = ApsMode.Manual
+            val initialSettings = therapyManager.getActiveTherapySettings()
+            val initialMode = initialSettings?.apsMode ?: ApsMode.Manual
+            _apsMode.value = initialMode
+            if (initialMode != ApsMode.Manual) {
+                core.activate()
+            }
         }
         restartGlucosePipeline()
     }
@@ -390,6 +377,12 @@ class APS(
             else -> {
                 core.activate()
             }
+        }
+        
+        // Persist mode
+        val currentSettings = therapyManager.getActiveTherapySettings()
+        if (currentSettings != null) {
+            therapyRepository.updateCurrentTherapySettings(currentSettings.copy(apsMode = mode))
         }
     }
 

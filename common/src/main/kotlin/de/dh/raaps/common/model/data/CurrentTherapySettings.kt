@@ -1,5 +1,6 @@
 package de.dh.raaps.common.model.data
 
+import de.dh.raaps.common.model.ApsMode
 import de.dh.raaps.common.model.ID_UNDEFINED
 import de.dh.raaps.common.model.InsulinType
 
@@ -10,5 +11,6 @@ import de.dh.raaps.common.model.InsulinType
 data class CurrentTherapySettings(
     var id: Long = ID_UNDEFINED,
     val profile: Profile,
-    val insulinType: InsulinType
+    val insulinType: InsulinType,
+    val apsMode: ApsMode = ApsMode.Manual
 )

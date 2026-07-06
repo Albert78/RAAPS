@@ -13,7 +13,7 @@ import androidx.room.RoomDatabase
     SimulationConfigEntity::class
 ], version = 1)
 abstract class SimBodyDatabase : RoomDatabase() {
-    abstract fun impactDao(): ImpactDao
+    abstract fun impactDao(): SimBodyDao
 
     companion object {
         private const val DATABASE_NAME = "SimBodyDatabase.db"

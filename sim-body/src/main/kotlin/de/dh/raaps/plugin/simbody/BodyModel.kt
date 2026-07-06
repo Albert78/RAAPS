@@ -14,8 +14,8 @@ import de.dh.raaps.common.model.data.Minutes
 import de.dh.raaps.common.model.data.Timestamp
 import de.dh.raaps.common.model.data.getAmountForMinute
 import de.dh.raaps.plugin.simbody.model.BodyProfile
-import de.dh.raaps.plugin.simbody.repository.db.ImpactDao
 import de.dh.raaps.plugin.simbody.repository.db.ImpactHistoryEntity
+import de.dh.raaps.plugin.simbody.repository.db.SimBodyDao
 import de.dh.raaps.plugin.simbody.repository.db.SimEventEntity
 import de.dh.raaps.plugin.simbody.repository.db.SimulationStateEntity
 import kotlinx.coroutines.CoroutineScope
@@ -40,7 +40,7 @@ data class Impacts(
  */
 class BodyModel(
     initialProfile: BodyProfile,
-    private val impactDao: ImpactDao? = null
+    private val simBodyDao: SimBodyDao? = null
 ) {
     private val scope = CoroutineScope(Dispatchers.IO)
 
@@ -157,7 +157,7 @@ class BodyModel(
         }
 
     private fun persistState() {
-        val dao = impactDao ?: return
+        val dao = simBodyDao ?: return
         scope.launch {
             dao.updateSimulationState(
                 SimulationStateEntity(
@@ -199,7 +199,7 @@ class BodyModel(
         val newImpact = Impacts(carbImpact, insulinImpact, endogenousImpact, exerciseImpact, stressImpact, currentTimestamp)
         impactHistory.add(0, newImpact) // Add to top for history view
 
-        impactDao?.let { dao ->
+        simBodyDao?.let { dao ->
             scope.launch {
                 dao.insertImpact(
                     ImpactHistoryEntity(
@@ -233,7 +233,7 @@ class BodyModel(
         insulinApplications.removeIf { it.timestamp.ms < threshold }
         impactHistory.removeIf { it.currentTimestamp.ms < threshold }
 
-        impactDao?.let { dao ->
+        simBodyDao?.let { dao ->
             scope.launch {
                 dao.deleteOldImpacts(threshold)
                 dao.deleteOldEvents(threshold)
@@ -252,7 +252,7 @@ class BodyModel(
         )
         meals.add(entry)
 
-        impactDao?.let { dao ->
+        simBodyDao?.let { dao ->
             scope.launch {
                 dao.insertEvent(
                     SimEventEntity(
@@ -278,7 +278,7 @@ class BodyModel(
         )
         insulinApplications.add(entry)
 
-        impactDao?.let { dao ->
+        simBodyDao?.let { dao ->
             scope.launch {
                 dao.insertEvent(
                     SimEventEntity(

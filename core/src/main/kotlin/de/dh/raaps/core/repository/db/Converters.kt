@@ -219,11 +219,13 @@ fun ProfileEntity.toModel(therapyData: TherapyData) = Profile(
 fun CurrentTherapySettings.toEntity() = CurrentTherapySettingsEntity(
     id = this.id,
     profile_id = this.profile.id,
-    insulin_type_id = this.insulinType.id
+    insulin_type_id = this.insulinType.id,
+    aps_mode = this.apsMode
 )
 
 fun CurrentTherapySettingsEntity.toModel(profile: Profile, insulinType: InsulinType) = CurrentTherapySettings(
     id = this.id,
     profile = profile,
-    insulinType = insulinType
+    insulinType = insulinType,
+    apsMode = this.aps_mode
 )

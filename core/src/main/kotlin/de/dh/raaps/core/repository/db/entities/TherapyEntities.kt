@@ -4,6 +4,7 @@ import androidx.room.Entity
 import androidx.room.ForeignKey
 import androidx.room.Index
 import androidx.room.PrimaryKey
+import de.dh.raaps.common.model.ApsMode
 import de.dh.raaps.common.model.ID_UNDEFINED
 
 /**
@@ -70,5 +71,6 @@ data class CurrentTherapySettingsEntity(
     @PrimaryKey(autoGenerate = true)
     val id: Long = ID_UNDEFINED,
     val profile_id: Long,
-    val insulin_type_id: String
+    val insulin_type_id: String,
+    val aps_mode: ApsMode
 )

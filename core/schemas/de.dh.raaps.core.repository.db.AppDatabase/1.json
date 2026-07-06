@@ -2,7 +2,7 @@
   "formatVersion": 1,
   "database": {
     "version": 1,
-    "identityHash": "83c283073a8230c941ed11fa1aed6c40",
+    "identityHash": "a76debaa0654e60e3896fed0219e8e5b",
     "entities": [
       {
         "tableName": "sensor_type",
@@ -239,7 +239,7 @@
       },
       {
         "tableName": "current_therapy_settings",
-        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `profile_id` INTEGER NOT NULL, `insulin_type_id` TEXT NOT NULL, FOREIGN KEY(`profile_id`) REFERENCES `profiles`(`id`) ON UPDATE NO ACTION ON DELETE SET NULL , FOREIGN KEY(`insulin_type_id`) REFERENCES `insulin_type`(`id`) ON UPDATE NO ACTION ON DELETE RESTRICT )",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `profile_id` INTEGER NOT NULL, `insulin_type_id` TEXT NOT NULL, `aps_mode` TEXT NOT NULL, FOREIGN KEY(`profile_id`) REFERENCES `profiles`(`id`) ON UPDATE NO ACTION ON DELETE SET NULL , FOREIGN KEY(`insulin_type_id`) REFERENCES `insulin_type`(`id`) ON UPDATE NO ACTION ON DELETE RESTRICT )",
         "fields": [
           {
             "fieldPath": "id",
@@ -256,6 +256,12 @@
           {
             "fieldPath": "insulin_type_id",
             "columnName": "insulin_type_id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "aps_mode",
+            "columnName": "aps_mode",
             "affinity": "TEXT",
             "notNull": true
           }
@@ -537,7 +543,7 @@
     ],
     "setupQueries": [
       "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
-      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '83c283073a8230c941ed11fa1aed6c40')"
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, 'a76debaa0654e60e3896fed0219e8e5b')"
     ]
   }
 }

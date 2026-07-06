@@ -8,7 +8,7 @@ import androidx.room.Update
 import kotlinx.coroutines.flow.Flow
 
 @Dao
-interface ImpactDao {
+interface SimBodyDao {
     // Impact History
     @Query("SELECT * FROM impact_history ORDER BY timestampMs DESC")
     fun observeAllImpacts(): Flow<List<ImpactHistoryEntity>>
