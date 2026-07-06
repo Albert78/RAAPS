@@ -82,4 +82,10 @@
     <string name="aps_service_notification_content_no_value_yet">Kein Glukosewert</string>
 
     <string name="history_screen_title">Historie</string>
+
+    <string name="recommendation_notification_channel_name">Behandlungsempfehlungen</string>
+    <string name="recommendation_title_carbs">Essensempfehlung</string>
+    <string name="recommendation_title_bolus">Insulinempfehlung</string>
+    <string name="recommendation_text_carbs">Essen Sie %1$dg Kohlenhydrate, um eine Hypoglykämie zu vermeiden.</string>
+    <string name="recommendation_text_bolus">Geben Sie %1$.2fU Insulin ab, um einen hohen Blutzucker zu korrigieren.</string>
 </resources>

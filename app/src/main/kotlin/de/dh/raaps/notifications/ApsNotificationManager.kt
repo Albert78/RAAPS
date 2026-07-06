@@ -23,12 +23,22 @@ class ApsNotificationManager(
     private val manager = context.getSystemService<NotificationManager>()!!
 
     fun createNotificationChannels() {
-        val name = context.getString(UiR.string.aps_service_notification_channel_name)
-        val importance = NotificationManager.IMPORTANCE_HIGH
-        val channel = NotificationChannel(CHANNEL_ID, name, importance)
-        channel.setShowBadge(false)
+        // Channel for the foreground service (BG values)
+        val serviceName = context.getString(UiR.string.aps_service_notification_channel_name)
+        val serviceImportance = NotificationManager.IMPORTANCE_HIGH
+        val serviceChannel = NotificationChannel(CHANNEL_ID, serviceName, serviceImportance)
+        serviceChannel.setShowBadge(false)
+        
+        // Channel for recommendations (User interaction required)
+        val recName = context.getString(UiR.string.recommendation_notification_channel_name)
+        val recImportance = NotificationManager.IMPORTANCE_HIGH
+        val recChannel = NotificationChannel(RECOMMENDATION_CHANNEL_ID, recName, recImportance)
+        recChannel.enableVibration(true)
+        recChannel.setShowBadge(true)
+
         val notificationManager = context.getSystemService(NOTIFICATION_SERVICE) as NotificationManager
-        notificationManager.createNotificationChannel(channel)
+        notificationManager.createNotificationChannel(serviceChannel)
+        notificationManager.createNotificationChannel(recChannel)
     }
 
     fun getBgValueString(sample: BgValue?, forceSign: Boolean): String? {
@@ -75,6 +85,47 @@ class ApsNotificationManager(
         notify(NOTIFICATION_ID, notification)
     }
 
+    fun showRecommendationNotification(recommendation: de.dh.raaps.core.aps.ApsRecommendation) {
+        val title = when (recommendation) {
+            is de.dh.raaps.core.aps.ApsRecommendation.Carbs -> context.getString(UiR.string.recommendation_title_carbs)
+            is de.dh.raaps.core.aps.ApsRecommendation.Bolus -> context.getString(UiR.string.recommendation_title_bolus)
+        }
+        val text = when (recommendation) {
+            is de.dh.raaps.core.aps.ApsRecommendation.Carbs -> context.getString(
+                UiR.string.recommendation_text_carbs,
+                recommendation.amountInGram
+            )
+            is de.dh.raaps.core.aps.ApsRecommendation.Bolus -> context.getString(
+                UiR.string.recommendation_text_bolus,
+                recommendation.amount.iu
+            )
+        }
+
+        val dashboardIntent = MainActivity.createStartDashboardIntent(context)
+        val pendingIntent = PendingIntent.getActivity(
+            context, 0,
+            dashboardIntent, PendingIntent.FLAG_IMMUTABLE
+        )
+
+        val notification = NotificationCompat.Builder(context, RECOMMENDATION_CHANNEL_ID)
+            .setContentTitle(title)
+            .setContentText(text)
+            .setSmallIcon(R.mipmap.ic_launcher)
+            .setContentIntent(pendingIntent)
+            .setAutoCancel(true)
+            .setPriority(NotificationCompat.PRIORITY_HIGH)
+            .setCategory(NotificationCompat.CATEGORY_RECOMMENDATION)
+            .build()
+
+        // Use a different ID for each type or just one for all recommendations?
+        // Let's use one ID for now to avoid flooding, or use hash of recommendation
+        notify(RECOMMENDATION_NOTIFICATION_ID, notification)
+    }
+
+    fun cancelRecommendationNotification() {
+        manager.cancel(RECOMMENDATION_NOTIFICATION_ID)
+    }
+
     private fun notify(notificationId: Int, notification: Notification) {
         if (!canPostNotifications(context)) {
             Log.w(TAG, "Missing permissions to show notification")
@@ -91,6 +142,8 @@ class ApsNotificationManager(
     companion object {
         val TAG = ApsNotificationManager::class.simpleName
         const val NOTIFICATION_ID = 1
+        const val RECOMMENDATION_NOTIFICATION_ID = 2
         const val CHANNEL_ID = "aps_service_channel"
+        const val RECOMMENDATION_CHANNEL_ID = "aps_recommendation_channel"
     }
 }

@@ -9,11 +9,17 @@ import de.dh.raaps.MainApplication
 import de.dh.raaps.core.aps.APS
 import de.dh.raaps.notifications.ApsNotificationData
 import de.dh.raaps.notifications.ApsNotificationManager
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancel
+import kotlinx.coroutines.launch
 
 /**
  * Foreground service for the RAAPS system. Makes the RAAPS process remain active with a high priority.
  */
 class ApsService : Service() {
+    private val serviceScope = CoroutineScope(Dispatchers.Main + SupervisorJob())
     private val notificationManager: ApsNotificationManager = MainApplication.instance.notificationManager
 
     val aps : APS = MainApplication.instance.aps
@@ -25,6 +31,21 @@ class ApsService : Service() {
         startServiceInForeground()
 
         MainApplication.instance.setServiceRunning(true)
+        
+        observeRecommendations()
+    }
+
+    private fun observeRecommendations() {
+        serviceScope.launch {
+            aps.recommendations.collect { recommendations ->
+                if (recommendations.isEmpty()) {
+                    notificationManager.cancelRecommendationNotification()
+                } else {
+                    // Show the first one for now, or could show multiple
+                    notificationManager.showRecommendationNotification(recommendations.first())
+                }
+            }
+        }
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
@@ -47,6 +68,7 @@ class ApsService : Service() {
 
     override fun onDestroy() {
         MainApplication.instance.setServiceRunning(false)
+        serviceScope.cancel()
         super.onDestroy()
     }
 }
