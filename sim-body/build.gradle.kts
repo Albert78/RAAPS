@@ -22,6 +22,7 @@ android {
 
 dependencies {
     implementation(project(":common"))
+    implementation(project(":core"))
     implementation(project(":ui"))
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.navigation3.runtime)

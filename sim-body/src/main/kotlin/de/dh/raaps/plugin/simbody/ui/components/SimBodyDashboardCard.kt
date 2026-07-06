@@ -37,7 +37,11 @@ import java.util.Locale
 fun SimBodyDashboardCard(
     bodyModel: BodyModel,
     onDetailsClick: () -> Unit,
-    onHistoryClick: () -> Unit
+    onHistoryClick: () -> Unit,
+    treatmentProfileName: String? = null,
+    treatmentIsf: String? = null,
+    treatmentIc: String? = null,
+    treatmentTarget: String? = null
 ) {
     val exercise by bodyModel.exerciseIntensityFlow.collectAsState()
     val illness by bodyModel.illnessFactorFlow.collectAsState()
@@ -87,6 +91,17 @@ fun SimBodyDashboardCard(
             ParameterRow("ISF", "${bodyModel.isf} mg/dL/U") { }
             ParameterRow("IC", "${bodyModel.ic} g/U") { }
             ParameterRow("Liver Output", "${bodyModel.liverGlucoseOutputGph} g/h") { }
+
+            if (treatmentProfileName != null) {
+                Text(
+                    "Treatment Profile: $treatmentProfileName",
+                    style = MaterialTheme.typography.titleSmall,
+                    modifier = Modifier.padding(top = 12.dp)
+                )
+                if (treatmentIsf != null) ParameterRow("ISF", treatmentIsf) { }
+                if (treatmentIc != null) ParameterRow("IC", treatmentIc) { }
+                if (treatmentTarget != null) ParameterRow("Target", treatmentTarget) { }
+            }
 
             Row(
                 modifier = Modifier
