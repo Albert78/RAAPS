@@ -11,7 +11,7 @@ import de.dh.raaps.common.model.ID_UNDEFINED
 import de.dh.raaps.common.model.InsulinType
 import de.dh.raaps.common.model.data.BgDelta
 import de.dh.raaps.common.model.data.BgValue
-import de.dh.raaps.common.model.data.CurrentTherapyData
+import de.dh.raaps.common.model.data.CurrentTherapySettings
 import de.dh.raaps.common.model.data.Profile
 import de.dh.raaps.common.model.data.Timestamp
 import de.dh.raaps.common.model.data.getAmountForMinute
@@ -26,34 +26,17 @@ class TherapyManager(
     private val appPreferencesRepository: AppPreferencesRepository
 ) {
     private val mutex = Mutex()
-    private var cachedTherapyData: CurrentTherapyData? = null
 
-    val currentTherapyDataFlow: Flow<CurrentTherapyData?> = therapyRepository.observeCurrentTherapyData()
+    val currentTherapySettingsFlow: Flow<CurrentTherapySettings?> = therapyRepository.observeCurrentTherapySettings()
 
-    /**
-     * Ensures the therapy data is loaded from the repository.
-     */
-    suspend fun load() {
-        getActiveTherapyData()
-    }
-
-    private suspend fun getActiveTherapyDataInternal(): CurrentTherapyData? {
-        if (cachedTherapyData == null) {
-            cachedTherapyData = therapyRepository.getCurrentTherapyData()
-        }
-        return cachedTherapyData
-    }
-
-    suspend fun getActiveTherapyData(): CurrentTherapyData? = mutex.withLock {
-        getActiveTherapyDataInternal()
-    }
+    suspend fun getActiveTherapySettings(): CurrentTherapySettings? = therapyRepository.getCurrentTherapySettings()
 
     /**
      * Gets the planned basal rate at the given timestamp.
      * Unit: Insulin units.
      */
     suspend fun getBasalPerHour(timestamp: Timestamp): Double {
-        val data = getActiveTherapyData()?.therapyData ?: return DEFAULT_BASAL_UNITS_PER_HOUR
+        val data = getActiveTherapySettings()?.profile?.therapyData ?: return DEFAULT_BASAL_UNITS_PER_HOUR
         return data.basalBlocks.getAmountForMinute(timestamp.minutesSinceMidnight())
     }
 
@@ -63,7 +46,7 @@ class TherapyManager(
      * Unit: Grams of carbs.
      */
     suspend fun getIcFactor(timestamp: Timestamp): Double {
-        val data = getActiveTherapyData()?.therapyData ?: return DEFAULT_IC_GRAM_PER_UNIT
+        val data = getActiveTherapySettings()?.profile?.therapyData ?: return DEFAULT_IC_GRAM_PER_UNIT
         return data.icBlocks.getAmountForMinute(timestamp.minutesSinceMidnight())
     }
 
@@ -74,7 +57,7 @@ class TherapyManager(
      * Unit: Blood glucose delta.
      */
     suspend fun getIsfFactor(timestamp: Timestamp): BgDelta {
-        val data = getActiveTherapyData()?.therapyData ?: return BgDelta(
+        val data = getActiveTherapySettings()?.profile?.therapyData ?: return BgDelta(
             DEFAULT_ISF_MGDL_PER_UNIT.toInt().toShort()
         )
         val amount = data.isfBlocks.getAmountForMinute(timestamp.minutesSinceMidnight())
@@ -82,7 +65,7 @@ class TherapyManager(
     }
 
     suspend fun getTarget(): Range<BgValue> {
-        val data = getActiveTherapyData()?.therapyData
+        val data = getActiveTherapySettings()?.profile?.therapyData
             ?: return Range(
                 BgValue.fromMgDl(DEFAULT_TARGET_LOW_MGDL),
                 BgValue.fromMgDl(DEFAULT_TARGET_HIGH_MGDL)
@@ -93,9 +76,9 @@ class TherapyManager(
     }
 
     suspend fun getPumpInsulinType(): InsulinType {
-        val currentData = getActiveTherapyData()
-        if (currentData != null) {
-            return currentData.insulinType
+        val currentSettings = getActiveTherapySettings()
+        if (currentSettings != null) {
+            return currentSettings.insulinType
         }
 
         return therapyRepository.getAllInsulinTypes().firstOrNull()
@@ -112,18 +95,15 @@ class TherapyManager(
      */
     suspend fun selectProfile(profile: Profile) {
         mutex.withLock {
-            val currentData = getActiveTherapyDataInternal()
-            val newData = (currentData ?: CurrentTherapyData(
-                profileId = profile.id,
-                therapyData = profile.therapyData,
+            val currentSettings = getActiveTherapySettings()
+            val newSettings = (currentSettings ?: CurrentTherapySettings(
+                profile = profile,
                 insulinType = therapyRepository.getAllInsulinTypes().firstOrNull()
                     ?: throw IllegalStateException("No insulin type configured for insulin pump")
             )).copy(
-                profileId = profile.id,
-                therapyData = profile.therapyData.copy(id = ID_UNDEFINED)
+                profile = profile
             )
-            therapyRepository.updateCurrentTherapyData(newData)
-            cachedTherapyData = newData
+            therapyRepository.updateCurrentTherapySettings(newSettings)
         }
     }
 }

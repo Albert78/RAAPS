@@ -272,17 +272,16 @@ class APS(
      */
     fun startInitialization() {
         inAPSThread {
-            therapyManager.load()
             core.initialize()
 
             launch {
-                therapyManager.currentTherapyDataFlow.drop(1).collect { data ->
-                    if (data == null) return@collect
+                therapyManager.currentTherapySettingsFlow.drop(1).collect { settings ->
+                    if (settings == null) return@collect
                     pumpCoordinator?.issueCommand(
-                        PumpCommand.SetProfile(data.therapyData),
+                        PumpCommand.SetProfile(settings.profile.therapyData),
                         isCancelableAPSCommand = false
                     )
-                    core.onTherapyDataChanged(data)
+                    core.onTherapySettingsChanged(settings)
                 }
             }
             launch {

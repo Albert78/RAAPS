@@ -13,7 +13,7 @@ import androidx.room.Update
 import de.dh.raaps.common.model.InsulinOrigin
 import de.dh.raaps.core.repository.db.entities.BasalHistoryEntity
 import de.dh.raaps.core.repository.db.entities.BolusEntity
-import de.dh.raaps.core.repository.db.entities.CurrentTherapyDataEntity
+import de.dh.raaps.core.repository.db.entities.CurrentTherapySettingsEntity
 import de.dh.raaps.core.repository.db.entities.DataProviderEntity
 import de.dh.raaps.core.repository.db.entities.GlucoseReadingEntity
 import de.dh.raaps.core.repository.db.entities.InsulinTypeEntity
@@ -86,18 +86,18 @@ interface TherapyDao {
     @Query("DELETE FROM profiles WHERE id = :id")
     suspend fun deleteProfile(id: Long)
 
-    // Current Therapy Data
-    @Query("SELECT * FROM current_therapy_data LIMIT 1")
-    suspend fun getCurrentTherapyData(): CurrentTherapyDataEntity?
+    // Current Therapy Settings
+    @Query("SELECT * FROM current_therapy_settings LIMIT 1")
+    suspend fun getCurrentTherapySettings(): CurrentTherapySettingsEntity?
 
-    @Query("SELECT * FROM current_therapy_data LIMIT 1")
-    fun observeCurrentTherapyData(): Flow<CurrentTherapyDataEntity?>
+    @Query("SELECT * FROM current_therapy_settings LIMIT 1")
+    fun observeCurrentTherapySettings(): Flow<CurrentTherapySettingsEntity?>
 
     @Insert
-    suspend fun insertCurrentTherapyData(data: CurrentTherapyDataEntity): Long
+    suspend fun insertCurrentTherapySettings(data: CurrentTherapySettingsEntity): Long
 
     @Update
-    suspend fun updateCurrentTherapyData(data: CurrentTherapyDataEntity)
+    suspend fun updateCurrentTherapySettings(data: CurrentTherapySettingsEntity)
 }
 
 @Dao
@@ -206,7 +206,7 @@ interface MetabolicEventsDao {
     // Therapy
     TherapyDataEntity::class,
     ProfileEntity::class,
-    CurrentTherapyDataEntity::class,
+    CurrentTherapySettingsEntity::class,
 
     // Metabolic events
     MealTypeEntity::class,

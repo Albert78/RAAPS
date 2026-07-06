@@ -1,8 +1,8 @@
 package de.dh.raaps.core.repository.db
 
+import de.dh.raaps.common.model.BasalHistoryEntry
 import de.dh.raaps.common.model.CarbCurveComponentData
 import de.dh.raaps.common.model.DataProvider
-import de.dh.raaps.common.model.BasalHistoryEntry
 import de.dh.raaps.common.model.InsulinApplication
 import de.dh.raaps.common.model.InsulinType
 import de.dh.raaps.common.model.MealEntry
@@ -10,7 +10,7 @@ import de.dh.raaps.common.model.MealType
 import de.dh.raaps.common.model.data.BgReading
 import de.dh.raaps.common.model.data.BgValue
 import de.dh.raaps.common.model.data.Block
-import de.dh.raaps.common.model.data.CurrentTherapyData
+import de.dh.raaps.common.model.data.CurrentTherapySettings
 import de.dh.raaps.common.model.data.Minutes
 import de.dh.raaps.common.model.data.Profile
 import de.dh.raaps.common.model.data.SensorType
@@ -18,12 +18,12 @@ import de.dh.raaps.common.model.data.TargetBlock
 import de.dh.raaps.common.model.data.TherapyData
 import de.dh.raaps.common.model.data.Timestamp
 import de.dh.raaps.core.repository.db.entities.BasalHistoryEntity
-import de.dh.raaps.core.repository.db.entities.CurrentTherapyDataEntity
+import de.dh.raaps.core.repository.db.entities.BolusEntity
+import de.dh.raaps.core.repository.db.entities.CurrentTherapySettingsEntity
 import de.dh.raaps.core.repository.db.entities.DBBlock
 import de.dh.raaps.core.repository.db.entities.DBTargetBlock
 import de.dh.raaps.core.repository.db.entities.DataProviderEntity
 import de.dh.raaps.core.repository.db.entities.GlucoseReadingEntity
-import de.dh.raaps.core.repository.db.entities.BolusEntity
 import de.dh.raaps.core.repository.db.entities.InsulinTypeEntity
 import de.dh.raaps.core.repository.db.entities.MealEntity
 import de.dh.raaps.core.repository.db.entities.MealTypeEntity
@@ -216,16 +216,14 @@ fun ProfileEntity.toModel(therapyData: TherapyData) = Profile(
     therapyData = therapyData
 )
 
-fun CurrentTherapyData.toEntity() = CurrentTherapyDataEntity(
+fun CurrentTherapySettings.toEntity() = CurrentTherapySettingsEntity(
     id = this.id,
-    profile_id = this.profileId,
-    therapy_data_id = this.therapyData.id,
+    profile_id = this.profile.id,
     insulin_type_id = this.insulinType.id
 )
 
-fun CurrentTherapyDataEntity.toModel(therapyData: TherapyData, insulinType: InsulinType) = CurrentTherapyData(
+fun CurrentTherapySettingsEntity.toModel(profile: Profile, insulinType: InsulinType) = CurrentTherapySettings(
     id = this.id,
-    profileId = this.profile_id,
-    therapyData = therapyData,
+    profile = profile,
     insulinType = insulinType
 )

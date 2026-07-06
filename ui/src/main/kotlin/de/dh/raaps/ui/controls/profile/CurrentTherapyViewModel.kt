@@ -9,7 +9,7 @@ import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.CreationExtras
 import de.dh.raaps.common.model.data.BgDelta
 import de.dh.raaps.common.model.data.BgValue
-import de.dh.raaps.common.model.data.CurrentTherapyData
+import de.dh.raaps.common.model.data.CurrentTherapySettings
 import de.dh.raaps.common.model.data.GlucoseUnit
 import de.dh.raaps.common.model.data.Profile
 import de.dh.raaps.common.model.data.Timestamp
@@ -45,20 +45,20 @@ class CurrentTherapyViewModel(
 
     init {
         combine(
-            therapyManager.currentTherapyDataFlow,
+            therapyManager.currentTherapySettingsFlow,
             therapyManager.observeAllProfiles()
-        ) { currentData, profiles ->
-            updateState(currentData, profiles)
+        ) { currentSettings, profiles ->
+            updateState(currentSettings, profiles)
         }.launchIn(viewModelScope)
     }
 
-    private suspend fun updateState(currentData: CurrentTherapyData?, profiles: List<Profile>) {
+    private suspend fun updateState(currentSettings: CurrentTherapySettings?, profiles: List<Profile>) {
         val now = Timestamp.now()
         val isf = therapyManager.getIsfFactor(now)
         val ic = therapyManager.getIcFactor(now)
         val target = therapyManager.getTarget()
 
-        val activeProfileName = currentData?.profileId?.let { pid ->
+        val activeProfileName = currentSettings?.profile?.id?.let { pid ->
             profiles.find { it.id == pid }?.name
         } ?: "Manual Override"
 
@@ -66,7 +66,7 @@ class CurrentTherapyViewModel(
             it.copy(
                 isLoading = false,
                 profileName = activeProfileName,
-                activeProfileId = currentData?.profileId,
+                activeProfileId = currentSettings?.profile?.id,
                 currentIsf = isf,
                 currentIc = ic,
                 currentTarget = target,

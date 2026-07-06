@@ -2,7 +2,7 @@ package de.dh.raaps.core.repository
 
 import de.dh.raaps.common.model.ID_UNDEFINED
 import de.dh.raaps.common.model.InsulinType
-import de.dh.raaps.common.model.data.CurrentTherapyData
+import de.dh.raaps.common.model.data.CurrentTherapySettings
 import de.dh.raaps.common.model.data.Profile
 import de.dh.raaps.common.model.data.TherapyData
 import de.dh.raaps.core.repository.db.AppDatabase
@@ -25,7 +25,7 @@ class TherapyRepository(
     // --- Insulin Types (Lookup Helper) ---
 
     /**
-     * Internal lookup to resolve InsulinType for CurrentTherapyData.
+     * Internal lookup to resolve InsulinType for CurrentTherapySettings.
      * Master CRUD for InsulinTypes is in TreatmentRepository.
      */
     private suspend fun getInsulinTypeById(id: String): InsulinType? {
@@ -73,7 +73,7 @@ class TherapyRepository(
     fun observeAllProfiles(): Flow<List<Profile>> {
         return therapyDao.observeAllProfiles().map { entities ->
             entities.mapNotNull { entity ->
-                // Note: This is not perfectly reactive for TherapyData changes inside the list, 
+                // Note: This is not perfectly reactive for TherapyData changes inside the list,
                 // but usually TherapyData is updated with the profile.
                 val therapyData = therapyDao.getTherapyDataById(entity.therapy_data_id)?.toModel()
                 therapyData?.let { entity.toModel(it) }
@@ -108,35 +108,35 @@ class TherapyRepository(
         therapyDao.deleteProfile(profile.id)
     }
 
-    // --- Current Therapy Data Operations ---
+    // --- Current Therapy Settings Operations ---
 
-    fun observeCurrentTherapyData(): Flow<CurrentTherapyData?> = therapyDao.observeCurrentTherapyData()
-        .map { getCurrentTherapyData() }
+    fun observeCurrentTherapySettings(): Flow<CurrentTherapySettings?> = therapyDao.observeCurrentTherapySettings()
+        .map { getCurrentTherapySettings() }
 
-    suspend fun getCurrentTherapyData(): CurrentTherapyData? {
-        val entity = therapyDao.getCurrentTherapyData() ?: return null
-        val therapyData = therapyDao.getTherapyDataById(entity.therapy_data_id)?.toModel() ?: return null
+    suspend fun getCurrentTherapySettings(): CurrentTherapySettings? {
+        val entity = therapyDao.getCurrentTherapySettings() ?: return null
+        val profile = getProfileById(entity.profile_id) ?: return null
         val insulinType = getInsulinTypeById(entity.insulin_type_id) ?: return null
-        return entity.toModel(therapyData, insulinType)
+        return entity.toModel(profile, insulinType)
     }
 
-    suspend fun updateCurrentTherapyData(currentTherapyData: CurrentTherapyData) {
-        if (currentTherapyData.therapyData.id == ID_UNDEFINED) {
-            insertTherapyData(currentTherapyData.therapyData)
+    suspend fun updateCurrentTherapySettings(currentTherapySettings: CurrentTherapySettings) {
+        if (currentTherapySettings.profile.therapyData.id == ID_UNDEFINED) {
+            insertTherapyData(currentTherapySettings.profile.therapyData)
         } else {
-            updateTherapyData(currentTherapyData.therapyData)
+            updateTherapyData(currentTherapySettings.profile.therapyData)
         }
 
-        val entity = currentTherapyData.toEntity()
-        val existing = therapyDao.getCurrentTherapyData()
+        val entity = currentTherapySettings.toEntity()
+        val existing = therapyDao.getCurrentTherapySettings()
         if (existing == null) {
-            val id = therapyDao.insertCurrentTherapyData(entity)
+            val id = therapyDao.insertCurrentTherapySettings(entity)
             if (id != -1L) {
-                currentTherapyData.id = id
+                currentTherapySettings.id = id
             }
         } else {
-            therapyDao.updateCurrentTherapyData(entity.copy(id = existing.id))
-            currentTherapyData.id = existing.id
+            therapyDao.updateCurrentTherapySettings(entity.copy(id = existing.id))
+            currentTherapySettings.id = existing.id
         }
     }
 }

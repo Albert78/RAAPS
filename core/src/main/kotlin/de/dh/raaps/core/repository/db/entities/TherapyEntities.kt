@@ -46,10 +46,10 @@ data class ProfileEntity(
 )
 
 /**
- * Entity for the current active therapy data.
+ * Entity for the current active therapy settings.
  */
 @Entity(
-    tableName = "current_therapy_data",
+    tableName = "current_therapy_settings",
     foreignKeys = [
         ForeignKey(
             entity = ProfileEntity::class,
@@ -58,24 +58,17 @@ data class ProfileEntity(
             onDelete = ForeignKey.SET_NULL
         ),
         ForeignKey(
-            entity = TherapyDataEntity::class,
-            parentColumns = ["id"],
-            childColumns = ["therapy_data_id"],
-            onDelete = ForeignKey.CASCADE
-        ),
-        ForeignKey(
             entity = InsulinTypeEntity::class,
             parentColumns = ["id"],
             childColumns = ["insulin_type_id"],
             onDelete = ForeignKey.RESTRICT
         )
     ],
-    indices = [Index("profile_id"), Index("therapy_data_id"), Index("insulin_type_id")]
+    indices = [Index("profile_id"), Index("insulin_type_id")]
 )
-data class CurrentTherapyDataEntity(
+data class CurrentTherapySettingsEntity(
     @PrimaryKey(autoGenerate = true)
     val id: Long = ID_UNDEFINED,
-    val profile_id: Long?,
-    val therapy_data_id: Long,
+    val profile_id: Long,
     val insulin_type_id: String
 )

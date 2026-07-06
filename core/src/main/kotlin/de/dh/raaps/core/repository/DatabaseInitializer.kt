@@ -19,7 +19,7 @@ import de.dh.raaps.common.model.InsulinType
 import de.dh.raaps.common.model.MealType
 import de.dh.raaps.common.model.data.BgValue
 import de.dh.raaps.common.model.data.Block
-import de.dh.raaps.common.model.data.CurrentTherapyData
+import de.dh.raaps.common.model.data.CurrentTherapySettings
 import de.dh.raaps.common.model.data.Minutes
 import de.dh.raaps.common.model.data.Profile
 import de.dh.raaps.common.model.data.TargetBlock
@@ -125,19 +125,18 @@ object DatabaseInitializer {
             profiles = listOf(normalProfile)
         }
 
-        if (repository.getCurrentTherapyData() == null) {
+        if (repository.getCurrentTherapySettings() == null) {
             val activeProfile = profiles.first()
             val insulinType = repository.getAllInsulinTypes().firstOrNull()
                 ?: throw IllegalStateException("No insulin type configured for insulin pump")
 
-            // For the current therapy, we create a fresh copy of the therapy data
+            // For the current therapy settings, we create a fresh copy of the therapy data
             // so that overrides don't automatically change the underlying profile.
-            val currentTherapyData = CurrentTherapyData(
-                profileId = activeProfile.id,
-                therapyData = activeProfile.therapyData.copy(id = ID_UNDEFINED),
+            val currentTherapySettings = CurrentTherapySettings(
+                profile = activeProfile,
                 insulinType = insulinType
             )
-            repository.updateCurrentTherapyData(currentTherapyData)
+            repository.updateCurrentTherapySettings(currentTherapySettings)
         }
     }
 }

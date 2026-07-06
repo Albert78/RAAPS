@@ -9,7 +9,7 @@ import de.dh.raaps.common.model.GlucoseSource
 import de.dh.raaps.common.model.InsulinAmount
 import de.dh.raaps.common.model.data.BgReading
 import de.dh.raaps.common.model.data.BgSampleKind
-import de.dh.raaps.common.model.data.CurrentTherapyData
+import de.dh.raaps.common.model.data.CurrentTherapySettings
 import de.dh.raaps.common.model.data.Minutes
 import de.dh.raaps.common.model.data.SensorType
 import de.dh.raaps.common.model.data.Timestamp
@@ -83,7 +83,7 @@ class Core(
         private set
     var lastBg: BgReading? = null
         private set
-    var currentTherapyData: CurrentTherapyData? = null
+    var currentTherapySettings: CurrentTherapySettings? = null
         private set
     var isPredictionsStale: Boolean = true
 
@@ -91,7 +91,7 @@ class Core(
         private set
 
     suspend fun nextBgStaleCheckAt(): Timestamp? = calculationAlgorithm.nextBgStaleCheckAt()
-    suspend fun isStale(): Boolean = calculationAlgorithm.isStale() ?: false
+    suspend fun isStale(): Boolean = calculationAlgorithm.isStale()
 
     /**
      * Time delay between a glucose value in blood and the given Timestamp of the bg reading.
@@ -162,7 +162,7 @@ class Core(
 
                 currentBg = readingsHistory.lastOrNull()
                 lastBg = if (readingsHistory.size >= 2) readingsHistory[readingsHistory.size - 2] else null
-                currentTherapyData = therapyManager.getActiveTherapyData()
+                currentTherapySettings = therapyManager.getActiveTherapySettings()
 
                 calculationAlgorithm = ApsAlgorithmImpl.create(
                     treatmentRepository,
@@ -250,22 +250,22 @@ class Core(
     }
 
     /**
-     * Triggered when the therapy data (i.e. profile) has changed.
+     * Triggered when the therapy settings (i.e. profile) has changed.
      */
-    suspend fun onTherapyDataChanged(newData: CurrentTherapyData?) {
+    suspend fun onTherapySettingsChanged(newData: CurrentTherapySettings?) {
         busyWork {
             atomic {
                 if (newData == null) {
                     return@atomic
                 }
-                val oldTherapyData = currentTherapyData ?: newData
+                val oldTherapySettings = currentTherapySettings ?: newData
                 InsulinHistoryHelper.updateScheduledBasal(
-                    oldTherapyData.therapyData,
-                    newData.therapyData,
-                    oldTherapyData.insulinType,
+                    oldTherapySettings.profile.therapyData,
+                    newData.profile.therapyData,
+                    oldTherapySettings.insulinType,
                     treatmentRepository
                 )
-                currentTherapyData = newData
+                currentTherapySettings = newData
             }
         }
     }
@@ -286,8 +286,8 @@ class Core(
     suspend fun updatePumpActualBasalHistory(basalHistory: List<BasalHistoryPoint>) {
         busyWork {
             atomic {
-                val therapyData = currentTherapyData?.therapyData ?: return@atomic
-                InsulinHistoryHelper.updateHistoricalBasal(basalHistory, therapyData, currentTherapyData!!.insulinType, treatmentRepository)
+                val therapyData = currentTherapySettings?.profile?.therapyData ?: return@atomic
+                InsulinHistoryHelper.updateHistoricalBasal(basalHistory, therapyData, currentTherapySettings!!.insulinType, treatmentRepository)
             }
         }
     }
@@ -298,8 +298,8 @@ class Core(
     suspend fun updatePumpBolusHistory(bolusHistory: List<BolusHistoryPoint>) {
         busyWork {
             atomic {
-                val ctd = currentTherapyData ?: return@atomic
-                InsulinHistoryHelper.updatePumpBolusHistory(bolusHistory, ctd.insulinType, treatmentRepository)
+                val cts = currentTherapySettings ?: return@atomic
+                InsulinHistoryHelper.updatePumpBolusHistory(bolusHistory, cts.insulinType, treatmentRepository)
             }
         }
     }

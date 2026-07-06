@@ -2,7 +2,7 @@
   "formatVersion": 1,
   "database": {
     "version": 1,
-    "identityHash": "a19f53d4b2a49752f0725417c8898b8f",
+    "identityHash": "83c283073a8230c941ed11fa1aed6c40",
     "entities": [
       {
         "tableName": "sensor_type",
@@ -238,8 +238,8 @@
         ]
       },
       {
-        "tableName": "current_therapy_data",
-        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `profile_id` INTEGER, `therapy_data_id` INTEGER NOT NULL, `insulin_type_id` TEXT NOT NULL, FOREIGN KEY(`profile_id`) REFERENCES `profiles`(`id`) ON UPDATE NO ACTION ON DELETE SET NULL , FOREIGN KEY(`therapy_data_id`) REFERENCES `therapy_data`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE , FOREIGN KEY(`insulin_type_id`) REFERENCES `insulin_type`(`id`) ON UPDATE NO ACTION ON DELETE RESTRICT )",
+        "tableName": "current_therapy_settings",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `profile_id` INTEGER NOT NULL, `insulin_type_id` TEXT NOT NULL, FOREIGN KEY(`profile_id`) REFERENCES `profiles`(`id`) ON UPDATE NO ACTION ON DELETE SET NULL , FOREIGN KEY(`insulin_type_id`) REFERENCES `insulin_type`(`id`) ON UPDATE NO ACTION ON DELETE RESTRICT )",
         "fields": [
           {
             "fieldPath": "id",
@@ -250,11 +250,6 @@
           {
             "fieldPath": "profile_id",
             "columnName": "profile_id",
-            "affinity": "INTEGER"
-          },
-          {
-            "fieldPath": "therapy_data_id",
-            "columnName": "therapy_data_id",
             "affinity": "INTEGER",
             "notNull": true
           },
@@ -273,31 +268,22 @@
         },
         "indices": [
           {
-            "name": "index_current_therapy_data_profile_id",
+            "name": "index_current_therapy_settings_profile_id",
             "unique": false,
             "columnNames": [
               "profile_id"
             ],
             "orders": [],
-            "createSql": "CREATE INDEX IF NOT EXISTS `index_current_therapy_data_profile_id` ON `${TABLE_NAME}` (`profile_id`)"
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_current_therapy_settings_profile_id` ON `${TABLE_NAME}` (`profile_id`)"
           },
           {
-            "name": "index_current_therapy_data_therapy_data_id",
-            "unique": false,
-            "columnNames": [
-              "therapy_data_id"
-            ],
-            "orders": [],
-            "createSql": "CREATE INDEX IF NOT EXISTS `index_current_therapy_data_therapy_data_id` ON `${TABLE_NAME}` (`therapy_data_id`)"
-          },
-          {
-            "name": "index_current_therapy_data_insulin_type_id",
+            "name": "index_current_therapy_settings_insulin_type_id",
             "unique": false,
             "columnNames": [
               "insulin_type_id"
             ],
             "orders": [],
-            "createSql": "CREATE INDEX IF NOT EXISTS `index_current_therapy_data_insulin_type_id` ON `${TABLE_NAME}` (`insulin_type_id`)"
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_current_therapy_settings_insulin_type_id` ON `${TABLE_NAME}` (`insulin_type_id`)"
           }
         ],
         "foreignKeys": [
@@ -307,17 +293,6 @@
             "onUpdate": "NO ACTION",
             "columns": [
               "profile_id"
-            ],
-            "referencedColumns": [
-              "id"
-            ]
-          },
-          {
-            "table": "therapy_data",
-            "onDelete": "CASCADE",
-            "onUpdate": "NO ACTION",
-            "columns": [
-              "therapy_data_id"
             ],
             "referencedColumns": [
               "id"
@@ -562,7 +537,7 @@
     ],
     "setupQueries": [
       "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
-      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, 'a19f53d4b2a49752f0725417c8898b8f')"
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '83c283073a8230c941ed11fa1aed6c40')"
     ]
   }
 }
