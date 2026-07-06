@@ -8,9 +8,13 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.Card
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -18,9 +22,14 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import de.dh.raaps.common.R
+import de.dh.raaps.common.model.data.Timestamp
 import de.dh.raaps.plugin.simbody.BodyModel
+import de.dh.raaps.plugin.simbody.DEFAULT_SIM_BODY_PROFILE
 import de.dh.raaps.plugin.simbody.Impacts
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -28,7 +37,10 @@ import java.util.Locale
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun SimBodyImpactsScreen(bodyModel: BodyModel?) {
+fun SimBodyImpactsScreen(
+    bodyModel: BodyModel?,
+    onNavigateUp: () -> Unit = {}
+) {
     if (bodyModel == null) {
         Text("Body Model not available")
         return
@@ -41,6 +53,14 @@ fun SimBodyImpactsScreen(bodyModel: BodyModel?) {
             TopAppBar(
                 title = {
                     Text("Metabolic Impacts History")
+                },
+                navigationIcon = {
+                    IconButton(onClick = onNavigateUp) {
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                            contentDescription = stringResource(R.string.cd_navigate_up)
+                        )
+                    }
                 }
             )
         }
@@ -120,4 +140,34 @@ private fun ImpactRow(label: String, value: String) {
         Text(label, style = MaterialTheme.typography.bodySmall)
         Text(value, style = MaterialTheme.typography.bodySmall)
     }
+}
+
+@Preview(showBackground = true)
+@Composable
+fun SimBodyImpactsScreenPreview() {
+    val bodyModel = remember {
+        BodyModel(DEFAULT_SIM_BODY_PROFILE).apply {
+            impactHistory.add(
+                Impacts(
+                    carbImpact = 1.25,
+                    insulinImpact = 0.8,
+                    endogenousImpact = 0.5,
+                    exerciseImpact = 0.2,
+                    stressImpact = 0.1,
+                    currentTimestamp = Timestamp(System.currentTimeMillis())
+                )
+            )
+            impactHistory.add(
+                Impacts(
+                    carbImpact = 0.0,
+                    insulinImpact = 1.5,
+                    endogenousImpact = 0.5,
+                    exerciseImpact = 0.0,
+                    stressImpact = 0.0,
+                    currentTimestamp = Timestamp(System.currentTimeMillis() - 300000)
+                )
+            )
+        }
+    }
+    SimBodyImpactsScreen(bodyModel = bodyModel, onNavigateUp = {})
 }

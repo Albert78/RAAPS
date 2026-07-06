@@ -17,7 +17,10 @@ class SimBodyNavGraph(
     override fun getEntry(key: NavKey): NavEntry<NavKey>? {
         return when (key) {
             is SimBodyImpactsRoute -> NavEntry(key) {
-                SimBodyImpactsScreen(bodyModel)
+                SimBodyImpactsScreen(
+                    bodyModel = bodyModel,
+                    onNavigateUp = { navViewModel.pop() }
+                )
             }
             is SimBodyHistoryRoute -> NavEntry(key) {
                 SimBodyDetailScreen(bodyModel)
