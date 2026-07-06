@@ -62,7 +62,6 @@ class MainFeatureNavGraph(
 
                 LifecycleEventEffect(Lifecycle.Event.ON_RESUME) {
                     vm.reload()
-                    currentTherapyVM.loadData()
                     permissionsViewModel.updateAppPermissions()
                 }
 

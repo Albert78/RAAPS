@@ -104,6 +104,8 @@ class TherapyManager(
 
     suspend fun getAllProfiles() = therapyRepository.getAllProfiles()
 
+    fun observeAllProfiles() = therapyRepository.observeAllProfiles()
+
     /**
      * Updates the current therapy settings based on a selected profile.
      * This will create a copy of the profile's therapy data as the active configuration.

@@ -7,15 +7,17 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.CreationExtras
-import de.dh.raaps.core.RAAPSApplication
 import de.dh.raaps.common.model.data.BgDelta
 import de.dh.raaps.common.model.data.BgValue
 import de.dh.raaps.common.model.data.CurrentTherapyData
 import de.dh.raaps.common.model.data.GlucoseUnit
 import de.dh.raaps.common.model.data.Profile
 import de.dh.raaps.common.model.data.Timestamp
+import de.dh.raaps.core.RAAPSApplication
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
@@ -42,16 +44,12 @@ class CurrentTherapyViewModel(
     private val appPreferencesRepository = raapsApp.appPreferencesRepository
 
     init {
-        loadData()
-    }
-
-    fun loadData() {
-        viewModelScope.launch {
-            _uiState.update { it.copy(isLoading = true) }
-            val currentData = therapyManager.getActiveTherapyData()
-            val profiles = therapyManager.getAllProfiles()
+        combine(
+            therapyManager.currentTherapyDataFlow,
+            therapyManager.observeAllProfiles()
+        ) { currentData, profiles ->
             updateState(currentData, profiles)
-        }
+        }.launchIn(viewModelScope)
     }
 
     private suspend fun updateState(currentData: CurrentTherapyData?, profiles: List<Profile>) {
@@ -80,7 +78,6 @@ class CurrentTherapyViewModel(
     fun selectProfile(profile: Profile) {
         viewModelScope.launch {
             therapyManager.selectProfile(profile)
-            loadData()
         }
     }
 

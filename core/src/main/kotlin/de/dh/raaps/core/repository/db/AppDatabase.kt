@@ -71,6 +71,9 @@ interface TherapyDao {
     @Query("SELECT * FROM profiles ORDER BY name ASC")
     suspend fun getAllProfiles(): List<ProfileEntity>
 
+    @Query("SELECT * FROM profiles ORDER BY name ASC")
+    fun observeAllProfiles(): Flow<List<ProfileEntity>>
+
     @Query("SELECT * FROM profiles WHERE id = :id")
     suspend fun getProfileById(id: Long): ProfileEntity?
 

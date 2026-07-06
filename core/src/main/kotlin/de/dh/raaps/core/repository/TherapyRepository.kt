@@ -70,6 +70,17 @@ class TherapyRepository(
         }
     }
 
+    fun observeAllProfiles(): Flow<List<Profile>> {
+        return therapyDao.observeAllProfiles().map { entities ->
+            entities.mapNotNull { entity ->
+                // Note: This is not perfectly reactive for TherapyData changes inside the list, 
+                // but usually TherapyData is updated with the profile.
+                val therapyData = therapyDao.getTherapyDataById(entity.therapy_data_id)?.toModel()
+                therapyData?.let { entity.toModel(it) }
+            }
+        }
+    }
+
     suspend fun getProfileById(id: Long): Profile? {
         val entity = therapyDao.getProfileById(id) ?: return null
         val therapyData = therapyDao.getTherapyDataById(entity.therapy_data_id)?.toModel() ?: return null
