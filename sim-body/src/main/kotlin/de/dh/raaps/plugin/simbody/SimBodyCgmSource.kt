@@ -8,7 +8,6 @@ import de.dh.raaps.common.model.data.BgSampleKind
 import de.dh.raaps.common.model.data.Minutes
 import de.dh.raaps.common.model.data.RawBg
 import de.dh.raaps.common.model.data.Timestamp
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.map
@@ -31,24 +30,24 @@ class SimBodyCgmSource(
     override fun getSensorTypeName() = "Sim Body Dexcom G6 Plugin"
 
     override fun start() {
-        // Nothing to do
+        SimBodyHeartbeat.start(application, bodyModel, device)
     }
 
     override fun stop() {
-        // Nothing to do
+        SimBodyHeartbeat.stop(application)
     }
 
     fun getRawGlucoseReadings(): Flow<RawBg> = flow {
-        while (true) {
-            val now = Timestamp.now()
-            device.advanceToTick(now) // Handle active hardware logic (e.g. basal delivery)
-            bodyModel.advanceToTick(now) // Update the simulation
+        // Emit current value immediately on start
+        emit(RawBg(bodyModel.bloodGlucose, Timestamp.now()))
+
+        // Wait for heartbeat ticks
+        SimBodyHeartbeat.ticks.collect { timestamp ->
             val reading = RawBg(
                 value = bodyModel.bloodGlucose,
-                timestamp = now,
+                timestamp = timestamp,
             )
             emit(reading)
-            delay(5.minutes)
         }
     }
 
