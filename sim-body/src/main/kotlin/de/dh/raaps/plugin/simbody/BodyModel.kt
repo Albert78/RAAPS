@@ -14,9 +14,16 @@ import de.dh.raaps.common.model.data.Minutes
 import de.dh.raaps.common.model.data.Timestamp
 import de.dh.raaps.common.model.data.getAmountForMinute
 import de.dh.raaps.plugin.simbody.model.BodyProfile
+import de.dh.raaps.plugin.simbody.repository.db.ImpactDao
+import de.dh.raaps.plugin.simbody.repository.db.ImpactHistoryEntity
+import de.dh.raaps.plugin.simbody.repository.db.SimEventEntity
+import de.dh.raaps.plugin.simbody.repository.db.SimulationStateEntity
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.launch
 
 data class Impacts(
     val carbImpact: Double,
@@ -31,7 +38,12 @@ data class Impacts(
  * Models a diabetic's body for simulation purposes.
  * It tracks blood glucose levels influenced by meals, insulin, exercise, and health states.
  */
-class BodyModel(initialProfile: BodyProfile) {
+class BodyModel(
+    initialProfile: BodyProfile,
+    private val impactDao: ImpactDao? = null
+) {
+    private val scope = CoroutineScope(Dispatchers.IO)
+
     // Simulation Defaults (independent of database)
     private val defaultInsulinType = InsulinType(
         id = "sim-aspart-id",
@@ -59,19 +71,28 @@ class BodyModel(initialProfile: BodyProfile) {
     private val _exerciseIntensity = MutableStateFlow(0.0)
     var exerciseIntensity: Double
         get() = _exerciseIntensity.value
-        set(value) { _exerciseIntensity.value = value }
+        set(value) {
+            _exerciseIntensity.value = value
+            persistState()
+        }
     val exerciseIntensityFlow: StateFlow<Double> = _exerciseIntensity.asStateFlow()
 
     private val _illnessFactor = MutableStateFlow(1.0)
     var illnessFactor: Double
         get() = _illnessFactor.value
-        set(value) { _illnessFactor.value = value }
+        set(value) {
+            _illnessFactor.value = value
+            persistState()
+        }
     val illnessFactorFlow: StateFlow<Double> = _illnessFactor.asStateFlow()
 
     private val _stressLevel = MutableStateFlow(0.0)
     var stressLevel: Double
         get() = _stressLevel.value
-        set(value) { _stressLevel.value = value }
+        set(value) {
+            _stressLevel.value = value
+            persistState()
+        }
     val stressLevelFlow: StateFlow<Double> = _stressLevel.asStateFlow()
 
     // Simulated Person Profile (metabolic parameters)
@@ -123,10 +144,32 @@ class BodyModel(initialProfile: BodyProfile) {
     private val _bloodGlucose = MutableStateFlow(BgValue.fromMgDl(120))
     var bloodGlucose: BgValue
         get() = _bloodGlucose.value
-        set(value) { _bloodGlucose.value = value }
+        set(value) {
+            _bloodGlucose.value = value
+            persistState()
+        }
     val bloodGlucoseFlow: StateFlow<BgValue> = _bloodGlucose.asStateFlow()
 
     var lastTickTimestamp: Timestamp = Timestamp.now()
+        set(value) {
+            field = value
+            persistState()
+        }
+
+    private fun persistState() {
+        val dao = impactDao ?: return
+        scope.launch {
+            dao.updateSimulationState(
+                SimulationStateEntity(
+                    currentBgMgDl = bloodGlucose.mgdl.toInt(),
+                    lastTickTimestampMs = lastTickTimestamp.ms,
+                    exerciseIntensity = exerciseIntensity,
+                    stressLevel = stressLevel,
+                    illnessFactor = illnessFactor
+                )
+            )
+        }
+    }
 
     /**
      * Advances the simulation state to the [currentTimestamp].
@@ -156,6 +199,21 @@ class BodyModel(initialProfile: BodyProfile) {
         val newImpact = Impacts(carbImpact, insulinImpact, endogenousImpact, exerciseImpact, stressImpact, currentTimestamp)
         impactHistory.add(0, newImpact) // Add to top for history view
 
+        impactDao?.let { dao ->
+            scope.launch {
+                dao.insertImpact(
+                    ImpactHistoryEntity(
+                        carbImpact = newImpact.carbImpact,
+                        insulinImpact = newImpact.insulinImpact,
+                        endogenousImpact = newImpact.endogenousImpact,
+                        exerciseImpact = newImpact.exerciseImpact,
+                        stressImpact = newImpact.stressImpact,
+                        timestampMs = newImpact.currentTimestamp.ms
+                    )
+                )
+            }
+        }
+
         // Update BG state
         val newMgDl = bloodGlucose.mgdl + bgDelta
         bloodGlucose = BgValue.fromMgDl(newMgDl.coerceIn(20.0, 500.0).toInt())
@@ -174,29 +232,65 @@ class BodyModel(initialProfile: BodyProfile) {
         meals.removeIf { it.timestamp.ms < threshold }
         insulinApplications.removeIf { it.timestamp.ms < threshold }
         impactHistory.removeIf { it.currentTimestamp.ms < threshold }
+
+        impactDao?.let { dao ->
+            scope.launch {
+                dao.deleteOldImpacts(threshold)
+                dao.deleteOldEvents(threshold)
+            }
+        }
     }
 
     /**
      * Simulates eating a meal.
      */
     fun eat(carbs: Double, type: MealType? = null) {
-        meals.add(MealEntry(
+        val entry = MealEntry(
             timestamp = Timestamp.now(),
             carbGrams = carbs,
             mealType = type ?: defaultMealType
-        ))
+        )
+        meals.add(entry)
+
+        impactDao?.let { dao ->
+            scope.launch {
+                dao.insertEvent(
+                    SimEventEntity(
+                        type = "MEAL",
+                        timestampMs = entry.timestamp.ms,
+                        amount = entry.carbGrams,
+                        detailId = entry.mealType.id
+                    )
+                )
+            }
+        }
     }
 
     /**
      * Simulates an insulin bolus.
      */
     fun bolus(amount: Double, type: InsulinType? = null) {
-        insulinApplications.add(InsulinApplication(
+        val entry = InsulinApplication(
             timestamp = Timestamp.now(),
             amount = amount,
             insulinType = type ?: defaultInsulinType,
             origin = InsulinOrigin.Pump
-        ))
+        )
+        insulinApplications.add(entry)
+
+        impactDao?.let { dao ->
+            scope.launch {
+                dao.insertEvent(
+                    SimEventEntity(
+                        type = "BOLUS",
+                        timestampMs = entry.timestamp.ms,
+                        amount = entry.amount,
+                        detailId = entry.insulinType.id,
+                        insulinOrigin = entry.origin
+                    )
+                )
+            }
+        }
     }
 
     private fun calculateInsulinImpact(start: Timestamp, end: Timestamp): Double {
