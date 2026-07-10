@@ -45,7 +45,7 @@ class SimBodyNavGraph(
         val context = LocalContext.current
         val raapsApp = context.applicationContext as? RAAPSApplication
         val app = context.applicationContext as android.app.Application
-        
+
         var therapyProfileName: String? = null
         var therapyIsf: String? = null
         var therapyIc: String? = null
@@ -54,7 +54,7 @@ class SimBodyNavGraph(
         if (raapsApp != null) {
             val therapyVM: CurrentTherapyViewModel = viewModel(factory = CurrentTherapyViewModel.Companion.Factory(app))
             val therapyState by therapyVM.uiState.collectAsState()
-            
+
             therapyProfileName = therapyState.profileName
             therapyIsf = therapyState.currentIsf?.let { "${it.mgdl} mg/dL/U" }
             therapyIc = therapyState.currentIc?.let { "$it g/U" }

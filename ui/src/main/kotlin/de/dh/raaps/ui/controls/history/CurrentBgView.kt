@@ -40,6 +40,7 @@ import de.dh.raaps.common.ui.composables.Red
 import de.dh.raaps.common.ui.composables.Yellow
 import de.dh.raaps.common.ui.shortRelativeTimeAgo
 import de.dh.raaps.common.ui.theme.AppTheme
+import kotlinx.coroutines.delay
 
 @Composable
 fun CurrentBgView(
@@ -64,7 +65,7 @@ fun CurrentBgView(
 
                 // Wait until the next 10s boundary relative to the BG timestamp
                 val next10sBoundary = ((currentDiff / 10000) + 1) * 10000
-                kotlinx.coroutines.delay(next10sBoundary - currentDiff)
+                delay(next10sBoundary - currentDiff)
             }
         }
     }

@@ -27,7 +27,7 @@ val DEFAULT_SIM_THERAPY_PROFILE = TherapyData(
  * A standard body profile.
  */
 val DEFAULT_SIM_BODY_PROFILE = BodyProfile(
-    liverGlucoseOutputBlocks = listOf(Block(Minutes.ofHours(24), 0.5)),
+    liverGlucoseOutputBlocks = listOf(Block(Minutes.ofHours(24), 5.0)),
     isfBlocks = listOf(Block(Minutes.ofHours(24), 50.0)),
     icBlocks = listOf(Block(Minutes.ofHours(24), 10.0))
 )
