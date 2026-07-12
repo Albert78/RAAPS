@@ -47,7 +47,7 @@ import com.patrykandpatrick.vico.compose.cartesian.axis.rememberAxisLabelCompone
 import com.patrykandpatrick.vico.compose.cartesian.data.CartesianChartModelProducer
 import com.patrykandpatrick.vico.compose.cartesian.data.CartesianLayerRangeProvider
 import com.patrykandpatrick.vico.compose.cartesian.data.CartesianValueFormatter
-import com.patrykandpatrick.vico.compose.cartesian.data.lineSeries
+import com.patrykandpatrick.vico.compose.cartesian.data.lineModel
 import com.patrykandpatrick.vico.compose.cartesian.decoration.Decoration
 import com.patrykandpatrick.vico.compose.cartesian.decoration.HorizontalBox
 import com.patrykandpatrick.vico.compose.cartesian.layer.CartesianLayerDimensions
@@ -228,7 +228,7 @@ fun BgHistoryChart(
 
     LaunchedEffect(diagramData.dataSignature) {
         modelProducer.runTransaction {
-            lineSeries { series(x = diagramData.xValues, y = diagramData.yValues) }
+            lineModel { series(x = diagramData.xValues, y = diagramData.yValues) }
         }
 
         if (!initialScrollToEndDone && diagramData.readings.isNotEmpty()) {
@@ -461,7 +461,7 @@ fun BgOverviewChart(
 
     LaunchedEffect(diagramData.dataSignature) {
         modelProducer.runTransaction {
-            lineSeries { series(x = diagramData.xValues, y = diagramData.yValues) }
+            lineModel { series(x = diagramData.xValues, y = diagramData.yValues) }
         }
     }
 

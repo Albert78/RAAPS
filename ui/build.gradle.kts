@@ -47,4 +47,5 @@ dependencies {
     // Graph
     implementation(libs.vico.compose)
     implementation(libs.vico.compose.m3)
+    debugImplementation(libs.androidx.compose.ui.tooling)
 }
