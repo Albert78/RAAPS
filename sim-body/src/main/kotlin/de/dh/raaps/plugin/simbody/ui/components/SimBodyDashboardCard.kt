@@ -39,6 +39,7 @@ fun SimBodyDashboardCard(
     onDetailsClick: () -> Unit,
     onHistoryClick: () -> Unit,
     treatmentProfileName: String? = null,
+    treatmentBasal: String? = null,
     treatmentIsf: String? = null,
     treatmentIc: String? = null,
     treatmentTarget: String? = null
@@ -98,6 +99,7 @@ fun SimBodyDashboardCard(
                     style = MaterialTheme.typography.titleSmall,
                     modifier = Modifier.padding(top = 12.dp)
                 )
+                if (treatmentBasal != null) ParameterRow("Basal", treatmentBasal) { }
                 if (treatmentIsf != null) ParameterRow("ISF", treatmentIsf) { }
                 if (treatmentIc != null) ParameterRow("IC", treatmentIc) { }
                 if (treatmentTarget != null) ParameterRow("Target", treatmentTarget) { }

@@ -27,6 +27,7 @@ data class CurrentTherapyUiState(
     val activeProfileId: Long? = null,
     val currentIsf: BgDelta? = null,
     val currentIc: Double? = null,
+    val currentBasal: Double? = null,
     val currentTarget: Range<BgValue>? = null,
     val glucoseUnit: GlucoseUnit = GlucoseUnit.MG_DL,
     val availableProfiles: List<Profile> = emptyList()
@@ -56,6 +57,7 @@ class CurrentTherapyViewModel(
         val now = Timestamp.now()
         val isf = therapyManager.getIsfFactor(now)
         val ic = therapyManager.getIcFactor(now)
+        val basal = therapyManager.getBasalPerHour(now)
         val target = therapyManager.getTarget()
 
         val activeProfileName = currentSettings?.profile?.id?.let { pid ->
@@ -69,6 +71,7 @@ class CurrentTherapyViewModel(
                 activeProfileId = currentSettings?.profile?.id,
                 currentIsf = isf,
                 currentIc = ic,
+                currentBasal = basal,
                 currentTarget = target,
                 availableProfiles = profiles
             )

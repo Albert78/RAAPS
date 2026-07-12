@@ -328,6 +328,7 @@ fun DashboardPreview() {
                 profileName = "Normal",
                 currentIsf = BgDelta.fromMgDl(50),
                 currentIc = 10.0,
+                currentBasal = 0.5,
                 currentTarget = Range(BgValue.fromMgDl(80), BgValue.fromMgDl(120))
             ),
             permissionsUiState = PermissionsUiModel(
@@ -362,6 +363,7 @@ fun DashboardPermissionsWarningPreview() {
                 profileName = "Normal",
                 currentIsf = BgDelta.fromMgDl(50),
                 currentIc = 10.0,
+                currentBasal = 0.5,
                 currentTarget = Range(BgValue.fromMgDl(80), BgValue.fromMgDl(120))
             ),
             permissionsUiState = PermissionsUiModel(

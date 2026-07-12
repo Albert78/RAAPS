@@ -47,6 +47,7 @@ class SimBodyNavGraph(
         val app = context.applicationContext as android.app.Application
 
         var therapyProfileName: String? = null
+        var therapyBasal: String? = null
         var therapyIsf: String? = null
         var therapyIc: String? = null
         var therapyTarget: String? = null
@@ -56,6 +57,7 @@ class SimBodyNavGraph(
             val therapyState by therapyVM.uiState.collectAsState()
 
             therapyProfileName = therapyState.profileName
+            therapyBasal = therapyState.currentBasal?.let { "$it U/h" }
             therapyIsf = therapyState.currentIsf?.let { "${it.mgdl} mg/dL/U" }
             therapyIc = therapyState.currentIc?.let { "$it g/U" }
             therapyTarget = therapyState.currentTarget?.let { "${it.lower.mgdl} - ${it.upper.mgdl} mg/dL" }
@@ -66,6 +68,7 @@ class SimBodyNavGraph(
             onDetailsClick = { navViewModel.push(SimBodyImpactsRoute) },
             onHistoryClick = { navViewModel.push(SimBodyHistoryRoute) },
             treatmentProfileName = therapyProfileName,
+            treatmentBasal = therapyBasal,
             treatmentIsf = therapyIsf,
             treatmentIc = therapyIc,
             treatmentTarget = therapyTarget

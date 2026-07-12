@@ -70,6 +70,12 @@ fun CurrentTherapyView(
                 modifier = Modifier.padding(bottom = 2.dp)
             )
             InfoRow(
+                label = stringResource(id = de.dh.raaps.common.R.string.therapy_basal_label),
+                value = uiState.currentBasal?.let { String.format(Locale.getDefault(), "%.2f", it) } ?: "-",
+                unit = "U/h",
+                modifier = Modifier.padding(bottom = 2.dp)
+            )
+            InfoRow(
                 label = stringResource(id = de.dh.raaps.common.R.string.therapy_isf_label),
                 value = uiState.currentIsf?.let { isfValue(it, uiState.glucoseUnit) } ?: "-",
                 unit = "$unitStr/U",
