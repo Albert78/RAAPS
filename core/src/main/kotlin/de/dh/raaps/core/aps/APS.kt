@@ -77,6 +77,7 @@ class APS(
     val therapyRepository: TherapyRepository,
     val treatmentRepository: TreatmentRepository,
     val appPreferencesRepository: AppPreferencesRepository,
+    val therapyManager: TherapyManager,
     val context: Context
 ) {
     // Threading: Single background thread to avoid race conditions in the core logic
@@ -94,11 +95,6 @@ class APS(
     init {
         instance = this
     }
-
-    val therapyManager = TherapyManager(
-        therapyRepository,
-        appPreferencesRepository
-    )
 
     var pumpCoordinator: PumpCoordinator? = null
     private var pumpMonitorJob: Job? = null

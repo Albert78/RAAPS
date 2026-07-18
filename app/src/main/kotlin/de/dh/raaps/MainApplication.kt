@@ -9,7 +9,11 @@ import de.dh.raaps.common.model.data.Minutes
 import de.dh.raaps.core.RAAPSApplication
 import de.dh.raaps.core.aps.APS
 import de.dh.raaps.core.aps.Core
+import de.dh.raaps.core.aps.TherapyManager
+import de.dh.raaps.core.pump.PumpCoordinator
 import de.dh.raaps.core.repository.DatabaseInitializer
+import de.dh.raaps.core.repository.DeviceManagementRepository
+import de.dh.raaps.core.repository.FoodRepository
 import de.dh.raaps.core.repository.GlucoseRepository
 import de.dh.raaps.core.repository.TherapyRepository
 import de.dh.raaps.core.repository.TreatmentRepository
@@ -28,9 +32,14 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 
+/**
+ * Main application class for RAAPS.
+ * Implements [RAAPSApplication] to provide a central registry for all core components.
+ */
 class MainApplication : Application(), RAAPSApplication {
     lateinit var notificationManager: ApsNotificationManager
         private set
+
     override lateinit var appPreferencesRepository: AppPreferencesRepository
         private set
     override lateinit var pluginManager: PluginManager
@@ -41,8 +50,17 @@ class MainApplication : Application(), RAAPSApplication {
         private set
     override lateinit var treatmentRepository: TreatmentRepository
         private set
+    override lateinit var foodRepository: FoodRepository
+        private set
+    override lateinit var deviceManagementRepository: DeviceManagementRepository
+        private set
+    override lateinit var therapyManager: TherapyManager
+        private set
     override lateinit var aps: APS
         private set
+
+    override val pumpCoordinator: PumpCoordinator?
+        get() = if (::aps.isInitialized) aps.pumpCoordinator else null
 
     val applicationScope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
 
@@ -55,14 +73,21 @@ class MainApplication : Application(), RAAPSApplication {
 
         notificationManager = ApsNotificationManager(this)
         appPreferencesRepository = AppPreferencesRepository(context = this, scope = applicationScope)
+        
         val appDatabase = AppDatabase.getInstance(this)
 
+        // Initialize repositories
         glucoseRepository = GlucoseRepository(appDatabase)
         therapyRepository = TherapyRepository(appDatabase)
         treatmentRepository = TreatmentRepository(
             historySize = Minutes.ofHours(Core.METABOLIC_EVENTS_HISTORY_HOURS),
             appDatabase = appDatabase
         )
+        foodRepository = FoodRepository(appDatabase)
+        deviceManagementRepository = DeviceManagementRepository(appDatabase)
+
+        // Initialize Managers
+        therapyManager = TherapyManager(therapyRepository, appPreferencesRepository)
 
         runBlocking {
             treatmentRepository.load()
@@ -71,7 +96,14 @@ class MainApplication : Application(), RAAPSApplication {
 
         startApsService()
 
-        aps = APS(glucoseRepository, therapyRepository, treatmentRepository, appPreferencesRepository, this)
+        aps = APS(
+            glucoseRepository = glucoseRepository,
+            therapyRepository = therapyRepository,
+            treatmentRepository = treatmentRepository,
+            appPreferencesRepository = appPreferencesRepository,
+            therapyManager = therapyManager,
+            context = this
+        )
         aps.startInitialization()
 
         pluginManager = PluginManagerImpl(this)
