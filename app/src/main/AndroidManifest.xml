@@ -55,8 +55,12 @@
             </intent-filter>
         </receiver>
 
-        <receiver android:name="de.dh.raaps.core.aps.ApsAlarmReceiver"
-            android:exported="false" />
+        <receiver android:name="de.dh.raaps.core.system.SystemWakeReceiver"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="de.dh.raaps.core.system.ACTION_WAKEUP" />
+            </intent-filter>
+        </receiver>
 
     </application>
 

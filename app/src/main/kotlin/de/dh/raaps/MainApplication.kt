@@ -6,6 +6,7 @@ import android.content.Intent
 import androidx.core.content.ContextCompat
 import de.dh.raaps.core.RAAPSRegistry
 import de.dh.raaps.core.RAAPSRegistryImpl
+import de.dh.raaps.core.system.SystemWakeReceiver
 import de.dh.raaps.notifications.ApsNotificationData
 import de.dh.raaps.notifications.ApsNotificationManager
 import de.dh.raaps.pluginmanager.PluginManagerImpl
@@ -23,11 +24,11 @@ import kotlinx.coroutines.launch
  * Main application class for RAAPS.
  * Responsibility is limited to system entry points and lifecycle management.
  */
-class MainApplication : Application() {
+class MainApplication : Application(), SystemWakeReceiver.RegistryProvider {
     lateinit var notificationManager: ApsNotificationManager
         private set
     
-    lateinit var registry: RAAPSRegistry
+    override lateinit var registry: RAAPSRegistry
         private set
 
     val applicationScope = CoroutineScope(SupervisorJob() + Dispatchers.Main)

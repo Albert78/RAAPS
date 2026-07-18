@@ -1,12 +1,7 @@
 package de.dh.raaps.core.aps
 
-import android.annotation.SuppressLint
-import android.app.AlarmManager
-import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
-import android.os.Build
-import android.os.PowerManager
 import android.util.Log
 import de.dh.raaps.AppPreferencesRepository
 import de.dh.raaps.common.model.ApsMode
@@ -22,6 +17,8 @@ import de.dh.raaps.core.pump.PumpJob
 import de.dh.raaps.core.repository.GlucoseRepository
 import de.dh.raaps.core.repository.TherapyRepository
 import de.dh.raaps.core.repository.TreatmentRepository
+import de.dh.raaps.core.system.SystemWakeService
+import de.dh.raaps.core.system.WakeupHandler
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -78,22 +75,16 @@ class APS(
     val treatmentRepository: TreatmentRepository,
     val appPreferencesRepository: AppPreferencesRepository,
     val therapyManager: TherapyManager,
+    val wakeService: SystemWakeService,
     val context: Context
-) {
+) : WakeupHandler {
     // Threading: Single background thread to avoid race conditions in the core logic
     private val apsDispatcher = Executors.newSingleThreadExecutor().asCoroutineDispatcher()
     private val apsScope = CoroutineScope(apsDispatcher + SupervisorJob())
 
-    private val recursiveBusyState: AtomicInteger = AtomicInteger(0)
-
-    // Power Management
-    private val powerManager = context.getSystemService(Context.POWER_SERVICE) as PowerManager
-    private val wakeLock = powerManager.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, "raaps:ApsCoreLock")
-
-    private val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
-
     init {
         instance = this
+        wakeService.registerHandler(WAKE_TAG, this)
     }
 
     var pumpCoordinator: PumpCoordinator? = null
@@ -139,9 +130,9 @@ class APS(
                 } else {
                     val pc = PumpCoordinator.create(
                         pump = value,
-                        onAcquireBusyState = { acquireBusyState() },
-                        onReleaseBusyState = { releaseBusyState() },
-                        onRequestWakeup = { timestamp -> scheduleSystemWakeup(timestamp, WAKEUP_PUMP_COORDINATOR) },
+                        onAcquireBusyState = { wakeService.acquireBusyState(WAKE_TAG) },
+                        onReleaseBusyState = { wakeService.releaseBusyState(WAKE_TAG) },
+                        onRequestWakeup = { timestamp -> wakeService.scheduleWakeup(WAKE_TAG, WAKEUP_PUMP_COORDINATOR, timestamp) },
                         onJobError = { job, jobErrorCode -> handleJobError(job, jobErrorCode) },
                     )
                     pumpMonitorJob = launch {
@@ -289,55 +280,11 @@ class APS(
     }
 
     private fun acquireBusyState() {
-        recursiveBusyState.incrementAndGet()
-        if (!wakeLock.isHeld) wakeLock.acquire(5_000)
+        wakeService.acquireBusyState(WAKE_TAG)
     }
 
     private fun releaseBusyState() {
-        val busyState = recursiveBusyState.decrementAndGet()
-        if (busyState > 0) {
-            // Still busy
-            return
-        }
-        if (wakeLock.isHeld) {
-            try {
-                wakeLock.release()
-            } catch (_: RuntimeException) {
-                // Ignore if already released
-            }
-        }
-    }
-
-    @SuppressLint("ObsoleteSdkInt", "MissingPermission")
-    private fun scheduleSystemWakeup(timestamp: Timestamp, wakeupId: Int) {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-            if (!alarmManager.canScheduleExactAlarms()) {
-                Log.e(TAG, "Permission for exact alarms is missing, APS cannot do its work")
-                return
-            }
-        }
-
-        val intent = Intent(context, ApsAlarmReceiver::class.java).apply {
-            action = ACTION_WAKEUP
-            putExtra(EXTRA_WAKEUP_ID, wakeupId)
-        }
-        val pendingIntent = PendingIntent.getBroadcast(
-            context,
-            wakeupId,
-            intent,
-            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
-        )
-
-        try {
-            alarmManager.setExactAndAllowWhileIdle(
-                AlarmManager.RTC_WAKEUP,
-                timestamp.ms,
-                pendingIntent
-            )
-            Log.d(TAG, "Scheduled system wakeup at $timestamp with ID $wakeupId")
-        } catch (e: SecurityException) {
-            Log.e(TAG, "Unable to schedule exact alarm", e)
-        }
+        wakeService.releaseBusyState(WAKE_TAG)
     }
 
     private fun restartGlucosePipeline() {
@@ -460,7 +407,7 @@ class APS(
         _recommendations.value = emptyList()
         core.updateBg(bg)
         core.nextBgStaleCheckAt()?.let {
-            scheduleSystemWakeup(it, WAKEUP_STALE_CHECK)
+            wakeService.scheduleWakeup(WAKE_TAG, WAKEUP_STALE_CHECK, it)
         }
     }
 
@@ -468,15 +415,17 @@ class APS(
      * Entry point for system wakeups.
      * Guaranteed to run on the internal APS thread.
      */
-    fun wakeup(wakeupId: Int) = inAPSThread {
-        if (wakeupId == WAKEUP_STALE_CHECK) {
-            if (core.isStale()) {
-                addIssue(ApsIssue.StaleBG)
-            } else {
-                removeIssue(ApsIssue.StaleBG)
+    override fun onWakeup(wakeupId: Int, intent: Intent?) {
+        inAPSThread {
+            if (wakeupId == WAKEUP_STALE_CHECK) {
+                if (core.isStale()) {
+                    addIssue(ApsIssue.StaleBG)
+                } else {
+                    removeIssue(ApsIssue.StaleBG)
+                }
+            } else if (wakeupId == WAKEUP_PUMP_COORDINATOR) {
+                pumpCoordinator?.wakeup()
             }
-        } else if (wakeupId == WAKEUP_PUMP_COORDINATOR) {
-            pumpCoordinator?.wakeup()
         }
     }
 
@@ -508,25 +457,12 @@ class APS(
     companion object {
         private val TAG = APS::class.simpleName
 
+        const val WAKE_TAG = "APS"
+
         const val WAKEUP_STALE_CHECK = 0
         const val WAKEUP_PUMP_COORDINATOR = 1
 
-        private const val ACTION_WAKEUP = "de.dh.raaps.core.aps.ACTION_WAKEUP"
-        private const val EXTRA_WAKEUP_ID = "wakeup_id"
-
         @Volatile
         private var instance: APS? = null
-
-        /**
-         * Entry point for the [ApsAlarmReceiver] to forward the alarm to the APS instance.
-         */
-        fun handleWakeup(context: Context, intent: Intent) {
-            if (intent.action == ACTION_WAKEUP) {
-                val wakeupId = intent.getIntExtra(EXTRA_WAKEUP_ID, -1)
-                if (wakeupId != -1) {
-                    instance?.wakeup(wakeupId)
-                }
-            }
-        }
     }
 }

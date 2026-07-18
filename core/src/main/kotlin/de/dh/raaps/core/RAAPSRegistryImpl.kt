@@ -8,6 +8,8 @@ import de.dh.raaps.common.model.data.Minutes
 import de.dh.raaps.core.aps.APS
 import de.dh.raaps.core.aps.Core
 import de.dh.raaps.core.aps.TherapyManager
+import de.dh.raaps.core.system.SystemWakeService
+import de.dh.raaps.core.system.SystemWakeServiceImpl
 import de.dh.raaps.core.pump.PumpCoordinator
 import de.dh.raaps.core.repository.DatabaseInitializer
 import de.dh.raaps.core.repository.DeviceManagementRepository
@@ -34,6 +36,7 @@ class RAAPSRegistryImpl(
     override val therapyManager: TherapyManager,
     override val aps: APS,
     override val pluginManager: PluginManager,
+    override val wakeService: SystemWakeService,
     override val permissionsChangedHandler: PermissionsChangedHandler
 ) : RAAPSRegistry {
 
@@ -66,6 +69,7 @@ class RAAPSRegistryImpl(
 
             // Initialize Managers
             val therapyManager = TherapyManager(therapyRepository, appPreferencesRepository)
+            val wakeService = SystemWakeServiceImpl(application)
 
             runBlocking {
                 treatmentRepository.load()
@@ -78,6 +82,7 @@ class RAAPSRegistryImpl(
                 treatmentRepository = treatmentRepository,
                 appPreferencesRepository = appPreferencesRepository,
                 therapyManager = therapyManager,
+                wakeService = wakeService,
                 context = application
             )
             aps.startInitialization()
@@ -98,6 +103,7 @@ class RAAPSRegistryImpl(
                 therapyManager = therapyManager,
                 aps = aps,
                 pluginManager = pluginManager,
+                wakeService = wakeService,
                 permissionsChangedHandler = permissionsHandler
             )
         }
