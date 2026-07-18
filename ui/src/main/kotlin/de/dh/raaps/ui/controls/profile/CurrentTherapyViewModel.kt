@@ -13,7 +13,7 @@ import de.dh.raaps.common.model.data.CurrentTherapySettings
 import de.dh.raaps.common.model.data.GlucoseUnit
 import de.dh.raaps.common.model.data.Profile
 import de.dh.raaps.common.model.data.Timestamp
-import de.dh.raaps.core.RAAPSApplication
+import de.dh.raaps.core.RAAPSRegistry
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
@@ -37,12 +37,12 @@ class CurrentTherapyViewModel(
     application: Application
 ) : AndroidViewModel(application) {
 
-    private val raapsApp = application as RAAPSApplication
+    private val raapsRegistry = RAAPSRegistry.instance
     private val _uiState = MutableStateFlow(CurrentTherapyUiState())
     val uiState: StateFlow<CurrentTherapyUiState> = _uiState
 
-    private val therapyManager = raapsApp.aps.therapyManager
-    private val appPreferencesRepository = raapsApp.appPreferencesRepository
+    private val therapyManager = raapsRegistry.therapyManager
+    private val appPreferencesRepository = raapsRegistry.appPreferencesRepository
 
     init {
         combine(

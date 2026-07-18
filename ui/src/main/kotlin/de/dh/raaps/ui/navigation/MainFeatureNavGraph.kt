@@ -20,7 +20,7 @@ import de.dh.raaps.common.navigation.NavigationViewModel
 import de.dh.raaps.common.navigation.PermissionsRoute
 import de.dh.raaps.common.navigation.PreferencesMainRoute
 import de.dh.raaps.common.navigation.ProfileEditorRoute
-import de.dh.raaps.core.RAAPSApplication
+import de.dh.raaps.core.RAAPSRegistry
 import de.dh.raaps.setUserDeclinedPermissions
 import de.dh.raaps.ui.controls.history.HistoryViewModel
 import de.dh.raaps.ui.controls.profile.CurrentTherapyViewModel
@@ -46,19 +46,18 @@ class MainFeatureNavGraph(
     private val extraDashboardContent: @Composable () -> Unit = {}
 ) : FeatureNavGraph {
     override fun getEntry(key: NavKey): NavEntry<NavKey>? {
-        val application = activity.application
-        val raapsApp = application as RAAPSApplication
+        val raapsRegistry = RAAPSRegistry.instance
 
         return when (key) {
             is DashboardRoute -> NavEntry(key) {
                 val vm: DashboardViewModel =
-                    viewModel(factory = DashboardViewModel.Companion.Factory(application))
+                    viewModel(factory = DashboardViewModel.Companion.Factory(activity.application))
                 val historyVM: HistoryViewModel =
-                    viewModel(factory = HistoryViewModel.Companion.Factory(application))
+                    viewModel(factory = HistoryViewModel.Companion.Factory(activity.application))
                 val currentTherapyVM: CurrentTherapyViewModel =
-                    viewModel(factory = CurrentTherapyViewModel.Companion.Factory(application))
+                    viewModel(factory = CurrentTherapyViewModel.Companion.Factory(activity.application))
                 val permissionsViewModel: PermissionsViewModel =
-                    viewModel(factory = PermissionsViewModel.Companion.Factory(application))
+                    viewModel(factory = PermissionsViewModel.Companion.Factory(activity.application))
 
                 LifecycleEventEffect(Lifecycle.Event.ON_RESUME) {
                     vm.reload()
@@ -81,7 +80,7 @@ class MainFeatureNavGraph(
 
             is ProfileEditorRoute -> NavEntry(key) {
                 val vm: ProfileSettingsViewModel = viewModel(
-                    factory = ProfileSettingsViewModel.Companion.Factory(application)
+                    factory = ProfileSettingsViewModel.Companion.Factory(activity.application)
                 )
 
                 ProfileEditorScreen(
@@ -92,7 +91,7 @@ class MainFeatureNavGraph(
 
             is HistoryRoute -> NavEntry(key) {
                 val historyVM: HistoryViewModel =
-                    viewModel(factory = HistoryViewModel.Companion.Factory(application))
+                    viewModel(factory = HistoryViewModel.Companion.Factory(activity.application))
 
                 HistoryScreen(
                     historyViewModel = historyVM
@@ -101,7 +100,7 @@ class MainFeatureNavGraph(
 
             is PermissionsRoute -> NavEntry(key) {
                 val permissionsViewModel: PermissionsViewModel =
-                    viewModel(factory = PermissionsViewModel.Companion.Factory(application))
+                    viewModel(factory = PermissionsViewModel.Companion.Factory(activity.application))
 
                 permissionsViewModel.updateAppPermissions()
 
@@ -109,7 +108,7 @@ class MainFeatureNavGraph(
                     permissionsViewModel.updateAppPermissions()
 
                     activity.lifecycleScope.launch(Dispatchers.IO) {
-                        raapsApp.triggerUpdatesAfterPermissionsChange()
+                        raapsRegistry.permissionsChangedHandler.onPermissionsChanged()
                     }
                 }
 
@@ -117,8 +116,8 @@ class MainFeatureNavGraph(
                     onDispose {
                         activity.lifecycleScope.launch(Dispatchers.IO) {
                             val userDeclinedPermissions = isPermissionsMissing(activity)
-                            raapsApp.appPreferencesRepository.setUserDeclinedPermissions(userDeclinedPermissions)
-                            raapsApp.triggerUpdatesAfterPermissionsChange()
+                            raapsRegistry.appPreferencesRepository.setUserDeclinedPermissions(userDeclinedPermissions)
+                            raapsRegistry.permissionsChangedHandler.onPermissionsChanged()
                         }
                     }
                 }
@@ -146,7 +145,7 @@ class MainFeatureNavGraph(
 
             is PreferencesMainRoute -> NavEntry(key) {
                 val vm: PreferencesViewModel = viewModel(
-                    factory = PreferencesViewModel.Companion.Factory(application)
+                    factory = PreferencesViewModel.Companion.Factory(activity.application)
                 )
 
                 LifecycleEventEffect(Lifecycle.Event.ON_RESUME) {

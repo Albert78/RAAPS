@@ -6,7 +6,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.CreationExtras
-import de.dh.raaps.core.RAAPSApplication
+import de.dh.raaps.core.RAAPSRegistry
 import de.dh.raaps.common.model.ID_UNDEFINED
 import de.dh.raaps.common.model.data.Profile
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -25,11 +25,11 @@ class ProfileSettingsViewModel(
     application: Application
 ) : AndroidViewModel(application) {
 
-    private val raapsApp = application as RAAPSApplication
+    private val raapsRegistry = RAAPSRegistry.instance
     private val _uiState = MutableStateFlow(ProfileSettingsUiState())
     val uiState = _uiState.asStateFlow()
 
-    private val therapyRepository = raapsApp.therapyRepository
+    private val therapyRepository = raapsRegistry.therapyRepository
 
     init {
         loadProfiles()

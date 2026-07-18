@@ -5,7 +5,7 @@ import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
-import de.dh.raaps.core.RAAPSApplication
+import de.dh.raaps.core.RAAPSRegistry
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.launchIn
@@ -25,8 +25,8 @@ import kotlinx.coroutines.flow.update
 class PermissionsViewModel(
     application: Application
 ) : AndroidViewModel(application) {
-    private val raapsApp = application as RAAPSApplication
-    private val appStateRepository = raapsApp.appPreferencesRepository
+    private val raapsRegistry = RAAPSRegistry.instance
+    private val appStateRepository = raapsRegistry.appPreferencesRepository
 
     private val _uiState = MutableStateFlow(PermissionsUiModel.loading())
     val uiState = _uiState.asStateFlow()
@@ -52,7 +52,7 @@ class PermissionsViewModel(
      * Updates the internal state of the system permissions with the current system settings for this app.
      */
     fun updateAppPermissions() {
-        val app = raapsApp as Application
+        val app = getApplication<Application>()
         val canPost = canPostNotifications(app)
         val isIgnoring = isIgnoringBatteryOptimizations(app)
         val isAutoRevoke = isAutoRevokePermissions(app)

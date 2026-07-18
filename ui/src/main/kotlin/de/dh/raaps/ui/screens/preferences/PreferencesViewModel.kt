@@ -8,7 +8,7 @@ import androidx.lifecycle.viewModelScope
 import de.dh.raaps.common.ui.ThemeMode
 import de.dh.raaps.common.ui.setThemeMode
 import de.dh.raaps.common.ui.themeMode
-import de.dh.raaps.core.RAAPSApplication
+import de.dh.raaps.core.RAAPSRegistry
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -27,8 +27,8 @@ data class PreferencesUiState(
 class PreferencesViewModel(
     application: Application
 ) : ViewModel() {
-    private val raapsApp = application as RAAPSApplication
-    private val appPreferencesRepository = raapsApp.appPreferencesRepository
+    private val raapsRegistry = RAAPSRegistry.instance
+    private val appPreferencesRepository = raapsRegistry.appPreferencesRepository
     private val _uiState = MutableStateFlow(PreferencesUiState(isLoading = true, isError = false))
     val uiState: StateFlow<PreferencesUiState> = _uiState.asStateFlow()
 

@@ -10,7 +10,17 @@ import de.dh.raaps.core.repository.FoodRepository
 import de.dh.raaps.core.repository.GlucoseRepository
 import de.dh.raaps.core.repository.TherapyRepository
 import de.dh.raaps.core.repository.TreatmentRepository
-import kotlinx.coroutines.flow.StateFlow
+
+/**
+ * Functional interface for handling permission change events.
+ */
+fun interface PermissionsChangedHandler {
+    /**
+     * Called when the application permissions have changed and dependent services
+     * need to be updated.
+     */
+    fun onPermissionsChanged()
+}
 
 /**
  * Central registry for all core services, repositories, and coordinators.
@@ -35,4 +45,27 @@ interface RAAPSRegistry {
      * Note that this might be null if no pump is configured or connected.
      */
     val pumpCoordinator: PumpCoordinator?
+
+    /**
+     * Handler for permission change events.
+     */
+    val permissionsChangedHandler: PermissionsChangedHandler
+
+    companion object {
+        private var _instance: RAAPSRegistry? = null
+
+        /**
+         * Global access to the registry instance.
+         * Must be initialized via [setInstance] before use.
+         */
+        val instance: RAAPSRegistry
+            get() = _instance ?: throw IllegalStateException("RAAPSRegistry not initialized")
+
+        /**
+         * Sets the global registry instance.
+         */
+        fun setInstance(registry: RAAPSRegistry) {
+            _instance = registry
+        }
+    }
 }

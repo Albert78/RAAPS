@@ -9,7 +9,7 @@ import androidx.navigation3.runtime.NavEntry
 import androidx.navigation3.runtime.NavKey
 import de.dh.raaps.common.navigation.FeatureNavGraph
 import de.dh.raaps.common.navigation.NavigationViewModel
-import de.dh.raaps.core.RAAPSApplication
+import de.dh.raaps.core.RAAPSRegistry
 import de.dh.raaps.plugin.simbody.BodyModel
 import de.dh.raaps.plugin.simbody.ui.components.SimBodyDashboardCard
 import de.dh.raaps.plugin.simbody.ui.screens.SimBodyDetailScreen
@@ -43,7 +43,7 @@ class SimBodyNavGraph(
         if (bodyModel == null) return
 
         val context = LocalContext.current
-        val raapsApp = context.applicationContext as? RAAPSApplication
+        val raapsRegistry = RAAPSRegistry.instance
         val app = context.applicationContext as android.app.Application
 
         var therapyProfileName: String? = null
@@ -52,7 +52,7 @@ class SimBodyNavGraph(
         var therapyIc: String? = null
         var therapyTarget: String? = null
 
-        if (raapsApp != null) {
+        if (raapsRegistry != null) {
             val therapyVM: CurrentTherapyViewModel = viewModel(factory = CurrentTherapyViewModel.Companion.Factory(app))
             val therapyState by therapyVM.uiState.collectAsState()
 

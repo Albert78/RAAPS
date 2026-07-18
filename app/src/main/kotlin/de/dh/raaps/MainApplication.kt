@@ -4,20 +4,8 @@ import android.app.Application
 import android.app.ForegroundServiceStartNotAllowedException
 import android.content.Intent
 import androidx.core.content.ContextCompat
-import de.dh.raaps.common.model.PluginManager
-import de.dh.raaps.common.model.data.Minutes
-import de.dh.raaps.core.RAAPSApplication
-import de.dh.raaps.core.aps.APS
-import de.dh.raaps.core.aps.Core
-import de.dh.raaps.core.aps.TherapyManager
-import de.dh.raaps.core.pump.PumpCoordinator
-import de.dh.raaps.core.repository.DatabaseInitializer
-import de.dh.raaps.core.repository.DeviceManagementRepository
-import de.dh.raaps.core.repository.FoodRepository
-import de.dh.raaps.core.repository.GlucoseRepository
-import de.dh.raaps.core.repository.TherapyRepository
-import de.dh.raaps.core.repository.TreatmentRepository
-import de.dh.raaps.core.repository.db.AppDatabase
+import de.dh.raaps.core.RAAPSRegistry
+import de.dh.raaps.core.RAAPSRegistryImpl
 import de.dh.raaps.notifications.ApsNotificationData
 import de.dh.raaps.notifications.ApsNotificationManager
 import de.dh.raaps.pluginmanager.PluginManagerImpl
@@ -30,37 +18,14 @@ import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.runBlocking
 
 /**
  * Main application class for RAAPS.
- * Implements [RAAPSApplication] to provide a central registry for all core components.
+ * Responsibility is limited to system entry points and lifecycle management.
  */
-class MainApplication : Application(), RAAPSApplication {
+class MainApplication : Application() {
     lateinit var notificationManager: ApsNotificationManager
         private set
-
-    override lateinit var appPreferencesRepository: AppPreferencesRepository
-        private set
-    override lateinit var pluginManager: PluginManager
-        private set
-    override lateinit var glucoseRepository: GlucoseRepository
-        private set
-    override lateinit var therapyRepository: TherapyRepository
-        private set
-    override lateinit var treatmentRepository: TreatmentRepository
-        private set
-    override lateinit var foodRepository: FoodRepository
-        private set
-    override lateinit var deviceManagementRepository: DeviceManagementRepository
-        private set
-    override lateinit var therapyManager: TherapyManager
-        private set
-    override lateinit var aps: APS
-        private set
-
-    override val pumpCoordinator: PumpCoordinator?
-        get() = if (::aps.isInitialized) aps.pumpCoordinator else null
 
     val applicationScope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
 
@@ -72,43 +37,20 @@ class MainApplication : Application(), RAAPSApplication {
         instance = this
 
         notificationManager = ApsNotificationManager(this)
-        appPreferencesRepository = AppPreferencesRepository(context = this, scope = applicationScope)
         
-        val appDatabase = AppDatabase.getInstance(this)
-
-        // Initialize repositories
-        glucoseRepository = GlucoseRepository(appDatabase)
-        therapyRepository = TherapyRepository(appDatabase)
-        treatmentRepository = TreatmentRepository(
-            historySize = Minutes.ofHours(Core.METABOLIC_EVENTS_HISTORY_HOURS),
-            appDatabase = appDatabase
+        val pluginManager = PluginManagerImpl(this)
+        
+        val registry = RAAPSRegistryImpl.create(
+            application = this,
+            scope = applicationScope,
+            pluginManager = pluginManager,
+            onPermissionsChanged = { startApsService() }
         )
-        foodRepository = FoodRepository(appDatabase)
-        deviceManagementRepository = DeviceManagementRepository(appDatabase)
-
-        // Initialize Managers
-        therapyManager = TherapyManager(therapyRepository, appPreferencesRepository)
-
-        runBlocking {
-            treatmentRepository.load()
-            DatabaseInitializer.initialize(this@MainApplication, treatmentRepository, therapyRepository)
-        }
+        RAAPSRegistry.setInstance(registry)
 
         startApsService()
 
-        aps = APS(
-            glucoseRepository = glucoseRepository,
-            therapyRepository = therapyRepository,
-            treatmentRepository = treatmentRepository,
-            appPreferencesRepository = appPreferencesRepository,
-            therapyManager = therapyManager,
-            context = this
-        )
-        aps.startInitialization()
-
-        pluginManager = PluginManagerImpl(this)
-
-        setupSystem(aps, pluginManager, this)
+        setupSystem(registry.aps, pluginManager, this)
 
         installNotificationUpdater()
 
@@ -116,14 +58,9 @@ class MainApplication : Application(), RAAPSApplication {
     }
 
     override fun onTerminate() {
-        aps.stop()
+        RAAPSRegistry.instance.aps.stop()
         applicationScope.cancel()
         super.onTerminate()
-    }
-
-    override fun triggerUpdatesAfterPermissionsChange() {
-        pluginManager.triggerUpdatesAfterPermissionsChange()
-        startApsService()
     }
 
     fun startApsService() {
@@ -141,8 +78,8 @@ class MainApplication : Application(), RAAPSApplication {
 
     fun installNotificationUpdater() {
         applicationScope.launch {
-            aps.lastDataTime.collect { _ ->
-                val notificationData = ApsNotificationData.create(aps)
+            RAAPSRegistry.instance.aps.lastDataTime.collect { _ ->
+                val notificationData = ApsNotificationData.create(RAAPSRegistry.instance.aps)
                 notificationManager.updateNotification(notificationData)
             }
         }

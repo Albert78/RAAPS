@@ -14,7 +14,7 @@ import de.dh.raaps.common.model.data.BgSampleKind
 import de.dh.raaps.common.model.data.BgValue
 import de.dh.raaps.common.model.data.GlucoseUnit
 import de.dh.raaps.common.model.data.Timestamp
-import de.dh.raaps.core.RAAPSApplication
+import de.dh.raaps.core.RAAPSRegistry
 import de.dh.raaps.core.aps.APS
 import de.dh.raaps.core.aps.CoreState
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -90,7 +90,7 @@ data class HistoryUiState(
 class HistoryViewModel(
     application: Application
 ) : AndroidViewModel(application) {
-    private val raapsApp = application as RAAPSApplication
+    private val raapsRegistry = RAAPSRegistry.instance
     private val _currentBgUiState = MutableStateFlow(CurrentBgUiState(
         isLoading = true,
         isError = false
@@ -100,8 +100,8 @@ class HistoryViewModel(
     private val _historyUiState = MutableStateFlow(HistoryUiState(isLoading = true, isError = false))
     val historyUiState = _historyUiState.asStateFlow()
 
-    private val aps: APS = raapsApp.aps
-    private val glucoseRepository = raapsApp.glucoseRepository
+    private val aps: APS = raapsRegistry.aps
+    private val glucoseRepository = raapsRegistry.glucoseRepository
 
     init {
         viewModelScope.launch {
