@@ -1,5 +1,6 @@
 package de.dh.raaps.ui.controls.history
 
+import android.content.res.Configuration
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectDragGestures
@@ -11,7 +12,6 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.Stable
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
@@ -30,6 +30,7 @@ import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.drawscope.translate
 import androidx.compose.ui.graphics.withSave
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.LocalInspectionMode
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.patrykandpatrick.vico.compose.cartesian.CartesianChartHost
@@ -219,10 +220,9 @@ fun BgHistoryChart(
     val state = controlledState ?: rememberBgHistoryChartState()
     val modelProducer = remember { CartesianChartModelProducer() }
 
-    SideEffect {
-        state.minX = diagramData.minX
-        state.maxX = diagramData.maxX
-    }
+    // Update state bounds immediately to avoid "one frame late" issues in derived states
+    state.minX = diagramData.minX
+    state.maxX = diagramData.maxX
 
     var initialScrollToEndDone by remember(diagramData.dataSignature) { mutableStateOf(false) }
 
@@ -237,13 +237,13 @@ fun BgHistoryChart(
         }
     }
 
-    val rangeProvider = remember(state) {
+    val rangeProvider = remember(diagramData.minX, diagramData.maxX) {
         object : CartesianLayerRangeProvider {
             override fun getMinY(minY: Double, maxY: Double, extraStore: ExtraStore) = 40.0
             override fun getMaxY(minY: Double, maxY: Double, extraStore: ExtraStore) =
                 (maxY.coerceAtLeast(200.0) + 10.0).coerceAtMost(410.0)
-            override fun getMinX(minX: Double, maxX: Double, extraStore: ExtraStore) = state.minX
-            override fun getMaxX(minX: Double, maxX: Double, extraStore: ExtraStore) = state.maxX
+            override fun getMinX(minX: Double, maxX: Double, extraStore: ExtraStore) = diagramData.minX
+            override fun getMaxX(minX: Double, maxX: Double, extraStore: ExtraStore) = diagramData.maxX
         }
     }
 
@@ -446,7 +446,8 @@ fun BgHistoryChartOrDefault(
     onChartClick: (() -> Unit)? = null,
     state: BgHistoryChartState? = null
 ) {
-    BgHistoryChart(diagramData ?: DiagramData.empty(), modifier, lowBgThreshold, highBgThreshold, showMarkers = showMarkers, onChartClick = onChartClick, controlledState = state)
+    val data = diagramData ?: remember { DiagramData.empty() }
+    BgHistoryChart(data, modifier, lowBgThreshold, highBgThreshold, showMarkers = showMarkers, onChartClick = onChartClick, controlledState = state)
 }
 
 @Composable
@@ -652,22 +653,22 @@ fun createSampleDiagramData(size: Int, minsInterval: Short): DiagramData {
     return DiagramData.fromReadings(readings)!!
 }
 
-@Preview(showBackground = true)
+@Preview(showBackground = true, uiMode = Configuration.UI_MODE_NIGHT_YES)
 @Composable
 fun HistoryChart5Preview() {
-    val diagramData = createSampleDiagramData(120, 5)
-    AppTheme { BgHistoryChart(diagramData) }
+    val diagramData = remember { createSampleDiagramData(120, 5) }
+    AppTheme { BgHistoryChart(diagramData, modifier = Modifier.height(300.dp)) }
 }
 
 @Preview(showBackground = true)
 @Composable
 fun HistoryChart1Preview() {
-    val diagramData = createSampleDiagramData(600, 1)
-    AppTheme { BgHistoryChart(diagramData) }
+    val diagramData = remember { createSampleDiagramData(600, 1) }
+    AppTheme { BgHistoryChart(diagramData, modifier = Modifier.height(300.dp)) }
 }
 
 @Preview(showBackground = true)
 @Composable
 fun HistoryChartDefaultPreview() {
-    AppTheme { BgHistoryChartOrDefault(diagramData = null) }
+    AppTheme { BgHistoryChartOrDefault(diagramData = null, modifier = Modifier.height(300.dp)) }
 }
