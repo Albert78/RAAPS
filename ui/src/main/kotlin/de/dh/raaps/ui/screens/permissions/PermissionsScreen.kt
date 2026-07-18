@@ -30,6 +30,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
@@ -279,11 +280,11 @@ fun PermissionItem(
 fun PermissionsScreenPreview() {
     AppTheme {
         PermissionsScreenContent(
-            uiModel = PermissionsUiModel.Companion.create(
-                notificationPermissionStatus = PermissionStatus.Companion.create(isGranted = false, isNeeded = true),
-                ignoreBatteryOptimizationPermissionStatus = PermissionStatus.Companion.create(isGranted = true, isNeeded = true),
-                autoRevokePermissionsPermissionStatus = PermissionStatus.Companion.create(isGranted = true, isNeeded = true),
-                context = LocalContext.current
+            uiModel = PermissionsUiModel.create(
+                notificationPermissionStatus = PermissionStatus.create(isGranted = false, isNeeded = true),
+                ignoreBatteryOptimizationPermissionStatus = PermissionStatus.create(isGranted = true, isNeeded = true),
+                autoRevokePermissionsPermissionStatus = PermissionStatus.create(isGranted = true, isNeeded = true),
+                resources = LocalResources.current
             ),
             onNavigateUp = {},
             onOpenNotificationSettings = {},

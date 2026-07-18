@@ -1,7 +1,5 @@
 package de.dh.raaps.ui.screens.dashboard
 
-import android.app.Application
-import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
@@ -22,10 +20,12 @@ data class DashboardUiState(
     val apsMode: ApsMode = ApsMode.Manual
 )
 
+/**
+ * ViewModel for the main dashboard screen.
+ */
 class DashboardViewModel(
-    application: Application
-) : AndroidViewModel(application) {
-    private val raapsRegistry = RAAPSRegistry.instance
+    private val raapsRegistry: RAAPSRegistry
+) : ViewModel() {
     private val aps = raapsRegistry.aps
     private val _uiState = MutableStateFlow(DashboardUiState())
 
@@ -37,7 +37,7 @@ class DashboardViewModel(
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), DashboardUiState())
 
     private val glucoseRepository = raapsRegistry.glucoseRepository
-    private val treatmentRepository = raapsApp.treatmentRepository
+    private val treatmentRepository = raapsRegistry.treatmentRepository
 
     init {
         reload()
@@ -68,10 +68,10 @@ class DashboardViewModel(
     }
 
     companion object {
-        class Factory(private val application: Application) : ViewModelProvider.Factory {
+        class Factory(private val registry: RAAPSRegistry) : ViewModelProvider.Factory {
             @Suppress("UNCHECKED_CAST")
             override fun <T : ViewModel> create(modelClass: Class<T>, extras: CreationExtras): T {
-                return DashboardViewModel(application) as T
+                return DashboardViewModel(registry) as T
             }
         }
     }

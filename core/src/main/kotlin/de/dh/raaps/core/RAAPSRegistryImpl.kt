@@ -1,6 +1,7 @@
 package de.dh.raaps.core
 
 import android.app.Application
+import android.content.Context
 import de.dh.raaps.AppPreferencesRepository
 import de.dh.raaps.common.model.PluginManager
 import de.dh.raaps.common.model.data.Minutes
@@ -23,6 +24,7 @@ import kotlinx.coroutines.runBlocking
  * Manages the lifecycle and dependencies of all core components.
  */
 class RAAPSRegistryImpl(
+    override val appContext: Context,
     override val glucoseRepository: GlucoseRepository,
     override val therapyRepository: TherapyRepository,
     override val treatmentRepository: TreatmentRepository,
@@ -86,6 +88,7 @@ class RAAPSRegistryImpl(
             }
 
             return RAAPSRegistryImpl(
+                appContext = application,
                 glucoseRepository = glucoseRepository,
                 therapyRepository = therapyRepository,
                 treatmentRepository = treatmentRepository,

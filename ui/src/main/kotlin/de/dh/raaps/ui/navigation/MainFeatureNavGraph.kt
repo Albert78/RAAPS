@@ -43,21 +43,22 @@ import kotlinx.coroutines.launch
 class MainFeatureNavGraph(
     private val activity: ComponentActivity,
     private val navViewModel: NavigationViewModel,
+    private val registry: RAAPSRegistry,
     private val extraDashboardContent: @Composable () -> Unit = {}
 ) : FeatureNavGraph {
     override fun getEntry(key: NavKey): NavEntry<NavKey>? {
-        val raapsRegistry = RAAPSRegistry.instance
+        val application = activity.application
 
         return when (key) {
             is DashboardRoute -> NavEntry(key) {
                 val vm: DashboardViewModel =
-                    viewModel(factory = DashboardViewModel.Companion.Factory(activity.application))
+                    viewModel(factory = DashboardViewModel.Companion.Factory(registry))
                 val historyVM: HistoryViewModel =
-                    viewModel(factory = HistoryViewModel.Companion.Factory(activity.application))
+                    viewModel(factory = HistoryViewModel.Companion.Factory(registry))
                 val currentTherapyVM: CurrentTherapyViewModel =
-                    viewModel(factory = CurrentTherapyViewModel.Companion.Factory(activity.application))
+                    viewModel(factory = CurrentTherapyViewModel.Companion.Factory(registry))
                 val permissionsViewModel: PermissionsViewModel =
-                    viewModel(factory = PermissionsViewModel.Companion.Factory(activity.application))
+                    viewModel(factory = PermissionsViewModel.Companion.Factory(registry))
 
                 LifecycleEventEffect(Lifecycle.Event.ON_RESUME) {
                     vm.reload()
@@ -80,7 +81,7 @@ class MainFeatureNavGraph(
 
             is ProfileEditorRoute -> NavEntry(key) {
                 val vm: ProfileSettingsViewModel = viewModel(
-                    factory = ProfileSettingsViewModel.Companion.Factory(activity.application)
+                    factory = ProfileSettingsViewModel.Companion.Factory(registry)
                 )
 
                 ProfileEditorScreen(
@@ -91,7 +92,7 @@ class MainFeatureNavGraph(
 
             is HistoryRoute -> NavEntry(key) {
                 val historyVM: HistoryViewModel =
-                    viewModel(factory = HistoryViewModel.Companion.Factory(activity.application))
+                    viewModel(factory = HistoryViewModel.Companion.Factory(registry))
 
                 HistoryScreen(
                     historyViewModel = historyVM
@@ -100,7 +101,7 @@ class MainFeatureNavGraph(
 
             is PermissionsRoute -> NavEntry(key) {
                 val permissionsViewModel: PermissionsViewModel =
-                    viewModel(factory = PermissionsViewModel.Companion.Factory(activity.application))
+                    viewModel(factory = PermissionsViewModel.Companion.Factory(registry))
 
                 permissionsViewModel.updateAppPermissions()
 
@@ -108,7 +109,7 @@ class MainFeatureNavGraph(
                     permissionsViewModel.updateAppPermissions()
 
                     activity.lifecycleScope.launch(Dispatchers.IO) {
-                        raapsRegistry.permissionsChangedHandler.onPermissionsChanged()
+                        registry.permissionsChangedHandler.onPermissionsChanged()
                     }
                 }
 
@@ -116,8 +117,8 @@ class MainFeatureNavGraph(
                     onDispose {
                         activity.lifecycleScope.launch(Dispatchers.IO) {
                             val userDeclinedPermissions = isPermissionsMissing(activity)
-                            raapsRegistry.appPreferencesRepository.setUserDeclinedPermissions(userDeclinedPermissions)
-                            raapsRegistry.permissionsChangedHandler.onPermissionsChanged()
+                            registry.appPreferencesRepository.setUserDeclinedPermissions(userDeclinedPermissions)
+                            registry.permissionsChangedHandler.onPermissionsChanged()
                         }
                     }
                 }
@@ -145,7 +146,7 @@ class MainFeatureNavGraph(
 
             is PreferencesMainRoute -> NavEntry(key) {
                 val vm: PreferencesViewModel = viewModel(
-                    factory = PreferencesViewModel.Companion.Factory(activity.application)
+                    factory = PreferencesViewModel.Companion.Factory(registry)
                 )
 
                 LifecycleEventEffect(Lifecycle.Event.ON_RESUME) {

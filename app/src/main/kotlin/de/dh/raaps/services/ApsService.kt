@@ -22,7 +22,7 @@ class ApsService : Service() {
     private val serviceScope = CoroutineScope(Dispatchers.Main + SupervisorJob())
     private val notificationManager: ApsNotificationManager = MainApplication.instance.notificationManager
 
-    val aps : APS = MainApplication.instance.aps
+    val aps : APS = MainApplication.instance.registry.aps
 
     override fun onCreate() {
         super.onCreate()

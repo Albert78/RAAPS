@@ -1,10 +1,10 @@
 package de.dh.raaps.ui.screens.preferences
 
-import android.app.Application
 import androidx.datastore.preferences.core.Preferences
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
+import androidx.lifecycle.viewmodel.CreationExtras
 import de.dh.raaps.common.ui.ThemeMode
 import de.dh.raaps.common.ui.setThemeMode
 import de.dh.raaps.common.ui.themeMode
@@ -24,10 +24,12 @@ data class PreferencesUiState(
     val themeMode: ThemeMode = ThemeMode.SYSTEM,
 )
 
+/**
+ * ViewModel for application-wide preferences.
+ */
 class PreferencesViewModel(
-    application: Application
+    private val raapsRegistry: RAAPSRegistry
 ) : ViewModel() {
-    private val raapsRegistry = RAAPSRegistry.instance
     private val appPreferencesRepository = raapsRegistry.appPreferencesRepository
     private val _uiState = MutableStateFlow(PreferencesUiState(isLoading = true, isError = false))
     val uiState: StateFlow<PreferencesUiState> = _uiState.asStateFlow()
@@ -74,11 +76,11 @@ class PreferencesViewModel(
 
     companion object {
         class Factory(
-            private val application: Application
+            private val registry: RAAPSRegistry
         ) : ViewModelProvider.Factory {
             @Suppress("UNCHECKED_CAST")
-            override fun <T : ViewModel> create(modelClass: Class<T>): T {
-                return PreferencesViewModel(application) as T
+            override fun <T : ViewModel> create(modelClass: Class<T>, extras: CreationExtras): T {
+                return PreferencesViewModel(registry) as T
             }
         }
     }

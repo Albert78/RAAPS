@@ -1,8 +1,6 @@
 package de.dh.raaps.ui.controls.profile
 
-import android.app.Application
 import android.util.Range
-import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
@@ -33,11 +31,13 @@ data class CurrentTherapyUiState(
     val availableProfiles: List<Profile> = emptyList()
 )
 
+/**
+ * ViewModel for viewing and selecting the current therapy settings.
+ */
 class CurrentTherapyViewModel(
-    application: Application
-) : AndroidViewModel(application) {
+    private val raapsRegistry: RAAPSRegistry
+) : ViewModel() {
 
-    private val raapsRegistry = RAAPSRegistry.instance
     private val _uiState = MutableStateFlow(CurrentTherapyUiState())
     val uiState: StateFlow<CurrentTherapyUiState> = _uiState
 
@@ -85,10 +85,10 @@ class CurrentTherapyViewModel(
     }
 
     companion object {
-        class Factory(private val application: Application) : ViewModelProvider.Factory {
+        class Factory(private val registry: RAAPSRegistry) : ViewModelProvider.Factory {
             @Suppress("UNCHECKED_CAST")
             override fun <T : ViewModel> create(modelClass: Class<T>, extras: CreationExtras): T {
-                return CurrentTherapyViewModel(application) as T
+                return CurrentTherapyViewModel(registry) as T
             }
         }
     }

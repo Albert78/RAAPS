@@ -45,7 +45,7 @@ class MainActivity : ComponentActivity() {
         val application = application as MainApplication
 
         setContent {
-            val useDarkTheme = rememberUseDarkTheme(application.appPreferencesRepository)
+            val useDarkTheme = rememberUseDarkTheme(application.registry.appPreferencesRepository)
             EdgeToEdgeHandler(useDarkTheme)
             AppTheme(darkTheme = useDarkTheme) {
                 Surface(
@@ -76,15 +76,17 @@ class MainActivity : ComponentActivity() {
 
     @Composable
     fun MainApp() {
+        val application = application as MainApplication
+        val registry = application.registry
         val backStack by navViewModel.backstack.collectAsState()
 
-        val extraGraphs = getExtraNavGraphs(this, navViewModel)
+        val extraGraphs = getExtraNavGraphs(this, navViewModel, registry)
 
         val extraDashboardContent = @Composable {
             extraGraphs.forEach { it.DashboardExtension() }
         }
 
-        val mainGraph = MainFeatureNavGraph(this, navViewModel, extraDashboardContent)
+        val mainGraph = MainFeatureNavGraph(this, navViewModel, registry, extraDashboardContent)
         val allGraphs = listOf(mainGraph) + extraGraphs
 
         val combinedProvider = combineEntryProviders(*allGraphs.toTypedArray())

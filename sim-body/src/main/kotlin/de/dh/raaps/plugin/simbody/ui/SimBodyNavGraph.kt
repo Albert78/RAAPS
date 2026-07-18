@@ -3,7 +3,6 @@ package de.dh.raaps.plugin.simbody.ui
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation3.runtime.NavEntry
 import androidx.navigation3.runtime.NavKey
@@ -16,8 +15,12 @@ import de.dh.raaps.plugin.simbody.ui.screens.SimBodyDetailScreen
 import de.dh.raaps.plugin.simbody.ui.screens.SimBodyImpactsScreen
 import de.dh.raaps.ui.controls.profile.CurrentTherapyViewModel
 
+/**
+ * Navigation graph for the Sim-Body plugin.
+ */
 class SimBodyNavGraph(
     private val navViewModel: NavigationViewModel,
+    private val raapsRegistry: RAAPSRegistry,
     private val bodyModel: BodyModel?
 ) : FeatureNavGraph {
     override fun getEntry(key: NavKey): NavEntry<NavKey>? {
@@ -42,26 +45,22 @@ class SimBodyNavGraph(
     override fun DashboardExtension() {
         if (bodyModel == null) return
 
-        val context = LocalContext.current
-        val raapsRegistry = RAAPSRegistry.instance
-        val app = context.applicationContext as android.app.Application
-
         var therapyProfileName: String? = null
         var therapyBasal: String? = null
         var therapyIsf: String? = null
         var therapyIc: String? = null
         var therapyTarget: String? = null
 
-        if (raapsRegistry != null) {
-            val therapyVM: CurrentTherapyViewModel = viewModel(factory = CurrentTherapyViewModel.Companion.Factory(app))
-            val therapyState by therapyVM.uiState.collectAsState()
+        val therapyVM: CurrentTherapyViewModel = viewModel(
+            factory = CurrentTherapyViewModel.Companion.Factory(raapsRegistry)
+        )
+        val therapyState by therapyVM.uiState.collectAsState()
 
-            therapyProfileName = therapyState.profileName
-            therapyBasal = therapyState.currentBasal?.let { "$it U/h" }
-            therapyIsf = therapyState.currentIsf?.let { "${it.mgdl} mg/dL/U" }
-            therapyIc = therapyState.currentIc?.let { "$it g/U" }
-            therapyTarget = therapyState.currentTarget?.let { "${it.lower.mgdl} - ${it.upper.mgdl} mg/dL" }
-        }
+        therapyProfileName = therapyState.profileName
+        therapyBasal = therapyState.currentBasal?.let { "$it U/h" }
+        therapyIsf = therapyState.currentIsf?.let { "${it.mgdl} mg/dL/U" }
+        therapyIc = therapyState.currentIc?.let { "$it g/U" }
+        therapyTarget = therapyState.currentTarget?.let { "${it.lower.mgdl} - ${it.upper.mgdl} mg/dL" }
 
         SimBodyDashboardCard(
             bodyModel = bodyModel,

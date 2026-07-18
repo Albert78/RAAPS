@@ -1,8 +1,6 @@
 package de.dh.raaps.ui.controls.history
 
-import android.app.Application
 import android.util.Log
-import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
@@ -87,10 +85,12 @@ data class HistoryUiState(
     val readings: List<BgReading> = listOf()
 )
 
+/**
+ * ViewModel for blood glucose history and current status.
+ */
 class HistoryViewModel(
-    application: Application
-) : AndroidViewModel(application) {
-    private val raapsRegistry = RAAPSRegistry.instance
+    private val raapsRegistry: RAAPSRegistry
+) : ViewModel() {
     private val _currentBgUiState = MutableStateFlow(CurrentBgUiState(
         isLoading = true,
         isError = false
@@ -105,7 +105,6 @@ class HistoryViewModel(
 
     init {
         viewModelScope.launch {
-            // This will block the thread until the core is initialized and data are loaded.
             aps.coreState.first { it != CoreState.Uninitialized && it != CoreState.Initializing }
             reload_suspend()
             aps.lastDataTime.collect {
@@ -121,14 +120,12 @@ class HistoryViewModel(
     }
 
     private suspend fun reload_suspend() {
-        // Load history for the last 25 hours
         val historyLimit = Timestamp.now().minusHours(25)
         val readings = glucoseRepository.loadBgReadings(from = historyLimit)
         updateUiModel(readings)
     }
 
     private fun updateUiModel(readings: List<BgReading>) {
-        // TODO: Read from preferences
         ToDo.toBeImplemented("Read glucose unit from preferences")
         val glucoseUnit = GlucoseUnit.MG_DL
 
@@ -139,12 +136,10 @@ class HistoryViewModel(
             it.sampleKind == BgSampleKind.Value && it.timestamp.ms >= limitMs
         }
 
-        // Prefer the absolute current value from the core, if it's fresh enough
         val currentBg = aps.getCurrentBg()
         val latest = if (currentBg != null && currentBg.timestamp.ms >= limitMs) {
             currentBg
         } else {
-            // Fallback to history if current core value is missing or too old
             recentReadings.lastOrNull()
         }
 
@@ -155,10 +150,8 @@ class HistoryViewModel(
                     .lastOrNull { it.sampleKind == BgSampleKind.Value && it.timestamp.ms > limit2HoursMs }
 
                 if (olderReading == null) {
-                    // Invalid value
                     CurrentBgUiState(isLoading = false, isError = false, currentBgValue = CurrentBgData.invalid())
                 } else {
-                    // Old value
                     CurrentBgUiState(
                         isLoading = false,
                         isError = false,
@@ -171,7 +164,6 @@ class HistoryViewModel(
             } else {
                 val bgValue = latest.value
 
-                // Calculate trend using linear regression over the points in the window
                 val n = recentReadings.size
                 val regressionDelta5m: Double? = if (n >= 2) {
                     val firstTs = recentReadings.first().timestamp.ms
@@ -190,7 +182,7 @@ class HistoryViewModel(
                     val denominator = n * sumXX - sumX * sumX
                     if (denominator != 0.0) {
                         val slopePerMin = (n * sumXY - sumX * sumY) / denominator
-                        slopePerMin * 5.0 // Normalize to a 5-minute interval
+                        slopePerMin * 5.0
                     } else 0.0
                 } else {
                     null
@@ -206,10 +198,6 @@ class HistoryViewModel(
                     else -> BgTrend.Flat
                 }
 
-                // TODO: Mark a BG value as "old" if the last known trend was rising or falling and
-                // the last known BG value is some time ago
-
-                // Valid value
                 CurrentBgUiState(
                     isLoading = false,
                     isError = false,
@@ -234,16 +222,15 @@ class HistoryViewModel(
         }
     }
 
-
     companion object {
         val TAG = HistoryViewModel::class.simpleName
 
         class Factory(
-            private val application: Application,
+            private val registry: RAAPSRegistry,
         ) : ViewModelProvider.Factory {
             @Suppress("UNCHECKED_CAST")
             override fun <T : ViewModel> create(modelClass: Class<T>, extras: CreationExtras): T {
-                return HistoryViewModel(application) as T
+                return HistoryViewModel(registry) as T
             }
         }
     }

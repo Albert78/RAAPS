@@ -26,6 +26,9 @@ import kotlinx.coroutines.launch
 class MainApplication : Application() {
     lateinit var notificationManager: ApsNotificationManager
         private set
+    
+    lateinit var registry: RAAPSRegistry
+        private set
 
     val applicationScope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
 
@@ -40,13 +43,12 @@ class MainApplication : Application() {
         
         val pluginManager = PluginManagerImpl(this)
         
-        val registry = RAAPSRegistryImpl.create(
+        registry = RAAPSRegistryImpl.create(
             application = this,
             scope = applicationScope,
             pluginManager = pluginManager,
             onPermissionsChanged = { startApsService() }
         )
-        RAAPSRegistry.setInstance(registry)
 
         startApsService()
 
@@ -58,7 +60,9 @@ class MainApplication : Application() {
     }
 
     override fun onTerminate() {
-        RAAPSRegistry.instance.aps.stop()
+        if (::registry.isInitialized) {
+            registry.aps.stop()
+        }
         applicationScope.cancel()
         super.onTerminate()
     }
@@ -78,8 +82,8 @@ class MainApplication : Application() {
 
     fun installNotificationUpdater() {
         applicationScope.launch {
-            RAAPSRegistry.instance.aps.lastDataTime.collect { _ ->
-                val notificationData = ApsNotificationData.create(RAAPSRegistry.instance.aps)
+            registry.aps.lastDataTime.collect { _ ->
+                val notificationData = ApsNotificationData.create(registry.aps)
                 notificationManager.updateNotification(notificationData)
             }
         }

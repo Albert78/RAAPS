@@ -1,7 +1,5 @@
 package de.dh.raaps.ui.controls.profile
 
-import android.app.Application
-import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
@@ -21,11 +19,13 @@ data class ProfileSettingsUiState(
     val showDeleteConfirmation: Profile? = null
 )
 
+/**
+ * ViewModel for managing therapy profiles (CRUD operations).
+ */
 class ProfileSettingsViewModel(
-    application: Application
-) : AndroidViewModel(application) {
+    private val raapsRegistry: RAAPSRegistry
+) : ViewModel() {
 
-    private val raapsRegistry = RAAPSRegistry.instance
     private val _uiState = MutableStateFlow(ProfileSettingsUiState())
     val uiState = _uiState.asStateFlow()
 
@@ -87,10 +87,10 @@ class ProfileSettingsViewModel(
     }
 
     companion object {
-        class Factory(private val application: Application) : ViewModelProvider.Factory {
+        class Factory(private val registry: RAAPSRegistry) : ViewModelProvider.Factory {
             @Suppress("UNCHECKED_CAST")
             override fun <T : ViewModel> create(modelClass: Class<T>, extras: CreationExtras): T {
-                return ProfileSettingsViewModel(application) as T
+                return ProfileSettingsViewModel(registry) as T
             }
         }
     }

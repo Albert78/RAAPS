@@ -53,7 +53,7 @@ data class PermissionsUiModel(
             notificationPermissionStatus: PermissionStatus,
             ignoreBatteryOptimizationPermissionStatus: PermissionStatus,
             autoRevokePermissionsPermissionStatus: PermissionStatus,
-            context: Context
+            resources: Resources
         ): PermissionsUiModel {
             val numMissing = getNumPermissionsMissing(
                 notificationPermissionStatus,
@@ -61,9 +61,8 @@ data class PermissionsUiModel(
                 autoRevokePermissionsPermissionStatus
             )
 
-            val res: Resources = context.resources
             val permissionsText = DisplayTextUtils.getQuantityStringZero(
-                res,
+                resources,
                 R.plurals.permissions_activity_start_permissions_missing,
                 R.string.permissions_activity_start_all_permissions_granted,
                 numMissing,
@@ -91,21 +90,25 @@ data class PermissionsUiModel(
             )
         }
 
-        fun allMissing(context: Context): PermissionsUiModel {
+        fun allMissing(
+            resources: Resources
+        ): PermissionsUiModel {
             return create(
                 notificationPermissionStatus = PermissionStatus.Denied,
                 ignoreBatteryOptimizationPermissionStatus = PermissionStatus.Denied,
                 autoRevokePermissionsPermissionStatus = PermissionStatus.Denied,
-                context = context
+                resources = resources
             )
         }
 
-        fun allGranted(context: Context): PermissionsUiModel {
+        fun allGranted(
+            resources: Resources
+        ): PermissionsUiModel {
             return create(
                 notificationPermissionStatus = PermissionStatus.Granted,
                 ignoreBatteryOptimizationPermissionStatus = PermissionStatus.Granted,
                 autoRevokePermissionsPermissionStatus = PermissionStatus.Granted,
-                context = context
+                resources = resources
             )
         }
 

@@ -5,6 +5,7 @@ import androidx.activity.ComponentActivity
 import de.dh.raaps.common.model.PluginManager
 import de.dh.raaps.common.navigation.FeatureNavGraph
 import de.dh.raaps.common.navigation.NavigationViewModel
+import de.dh.raaps.core.RAAPSRegistry
 import de.dh.raaps.core.aps.APS
 import de.dh.raaps.plugin.simbody.SimBodyPlugin
 import de.dh.raaps.plugin.simbody.ui.SimBodyNavGraph
@@ -29,8 +30,9 @@ fun setupSystem(aps: APS, pluginManager: PluginManager, application: Application
 
 fun getExtraNavGraphs(
     activity: ComponentActivity,
-    navViewModel: NavigationViewModel
+    navViewModel: NavigationViewModel,
+    registry: RAAPSRegistry
 ): List<FeatureNavGraph> {
     val bodyModel = simBodyPlugin?.bodyModel
-    return listOf(SimBodyNavGraph(navViewModel, bodyModel))
+    return listOf(SimBodyNavGraph(navViewModel, registry, bodyModel))
 }
