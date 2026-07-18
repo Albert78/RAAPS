@@ -16,7 +16,7 @@ import kotlin.time.Duration.Companion.minutes
 class SimBodyCgmSource(
     private val bodyModel: BodyModel,
     private val device: SimBodyPumpDevice,
-    val application: Application
+    private val heartbeat: SimBodyHeartbeat
 ): GlucoseSource {
     override val name: String = "Sim Body CGM Plugin"
 
@@ -30,11 +30,11 @@ class SimBodyCgmSource(
     override fun getSensorTypeName() = "Sim Body Dexcom G6 Plugin"
 
     override fun start() {
-        SimBodyHeartbeat.start(application, bodyModel, device)
+        heartbeat.start()
     }
 
     override fun stop() {
-        SimBodyHeartbeat.stop(application)
+        heartbeat.stop()
     }
 
     fun getRawGlucoseReadings(): Flow<RawBg> = flow {
@@ -42,7 +42,7 @@ class SimBodyCgmSource(
         emit(RawBg(bodyModel.bloodGlucose, Timestamp.now()))
 
         // Wait for heartbeat ticks
-        SimBodyHeartbeat.ticks.collect { timestamp ->
+        heartbeat.ticks.collect { timestamp ->
             val reading = RawBg(
                 value = bodyModel.bloodGlucose,
                 timestamp = timestamp,

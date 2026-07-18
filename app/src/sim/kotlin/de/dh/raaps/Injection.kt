@@ -19,7 +19,7 @@ private var simBodyPlugin: SimBodyPlugin? = null
  * of the app in simulated, "real" situations.
  */
 fun setupSystem(aps: APS, pluginManager: PluginManager, application: Application) {
-    val plugin = SimBodyPlugin(application)
+    val plugin = SimBodyPlugin(application, aps.wakeService)
     simBodyPlugin = plugin
     pluginManager.addPlugin(plugin)
     val glucoseSource = plugin.getGlucoseSource()

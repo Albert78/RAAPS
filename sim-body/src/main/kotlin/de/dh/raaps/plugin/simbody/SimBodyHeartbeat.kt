@@ -1,83 +1,92 @@
 package de.dh.raaps.plugin.simbody
 
-import android.app.AlarmManager
-import android.app.PendingIntent
-import android.content.Context
 import android.content.Intent
-import android.os.SystemClock
 import android.util.Log
 import de.dh.raaps.common.model.data.Timestamp
+import de.dh.raaps.core.system.SystemWakeService
+import de.dh.raaps.core.system.WakeupHandler
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.asSharedFlow
 
 /**
- * Handles the periodic wakeup of the SimBody simulation.
- * Decouples the simulation triggers from the CGM source flow.
+ * Handles the periodic wakeup of the SimBody simulation using the central [SystemWakeService].
+ * This ensures the simulation progresses even if the app is in the background or the device is sleeping.
  */
-object SimBodyHeartbeat {
-    private const val TAG = "SimBodyHeartbeat"
-    const val ACTION_TICK = "de.dh.raaps.plugin.simbody.ACTION_TICK"
-    private const val REQUEST_CODE = 555
+class SimBodyHeartbeat(
+    private val wakeService: SystemWakeService,
+    private val bodyModel: BodyModel,
+    private val pumpDevice: SimBodyPumpDevice
+) : WakeupHandler {
 
     private val _ticks = MutableSharedFlow<Timestamp>(extraBufferCapacity = 1)
+    /**
+     * Flow of timestamps when a simulation tick occurred.
+     */
     val ticks: SharedFlow<Timestamp> = _ticks.asSharedFlow()
 
-    private var activeBodyModel: BodyModel? = null
-    private var activePumpDevice: SimBodyPumpDevice? = null
+    private var started = false
 
-    fun start(context: Context, bodyModel: BodyModel, pumpDevice: SimBodyPumpDevice) {
-        activeBodyModel = bodyModel
-        activePumpDevice = pumpDevice
-
-        val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
-        val intent = Intent(context, SimBodyWakeupReceiver::class.java).apply {
-            action = ACTION_TICK
-        }
-        val pendingIntent = PendingIntent.getBroadcast(
-            context,
-            REQUEST_CODE,
-            intent,
-            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
-        )
-
-        val intervalMs = 5 * 60 * 1000L
-        // We use setRepeating here. Note: On Android 4.4+, this is inexact.
-        // For simulation purposes, this is usually acceptable and better for battery.
-        alarmManager.setRepeating(
-            AlarmManager.ELAPSED_REALTIME_WAKEUP,
-            SystemClock.elapsedRealtime() + intervalMs,
-            intervalMs,
-            pendingIntent
-        )
-        
-        Log.d(TAG, "SimBody Heartbeat started (5 min interval)")
+    init {
+        wakeService.registerHandler(WAKE_TAG, this)
     }
 
-    fun stop(context: Context) {
-        val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
-        val intent = Intent(context, SimBodyWakeupReceiver::class.java).apply {
-            action = ACTION_TICK
-        }
-        val pendingIntent = PendingIntent.getBroadcast(
-            context,
-            REQUEST_CODE,
-            intent,
-            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
-        )
-        alarmManager.cancel(pendingIntent)
-        activeBodyModel = null
-        activePumpDevice = null
+    /**
+     * Starts the heartbeat. If already started, this does nothing.
+     */
+    fun start() {
+        if (started) return
+        started = true
+        Log.d(TAG, "SimBody Heartbeat started")
+        scheduleNext()
+    }
+
+    /**
+     * Stops the heartbeat.
+     */
+    fun stop() {
+        started = false
         Log.d(TAG, "SimBody Heartbeat stopped")
     }
 
-    fun onAlarmReceived() {
+    override fun onWakeup(wakeupId: Int, intent: Intent?) {
+        if (!started) return
+        if (wakeupId == WAKEUP_ID_TICK) {
+            performTick()
+            scheduleNext()
+        }
+    }
+
+    private fun performTick() {
         val now = Timestamp.now()
-        // Perform the simulation tick
-        activePumpDevice?.advanceToTick(now)
-        activeBodyModel?.advanceToTick(now)
+        Log.d(TAG, "SimBody Tick at $now")
         
-        // Notify observers (like SimBodyCgmSource)
-        _ticks.tryEmit(now)
+        // Ensure the system stays awake during simulation calculations
+        wakeService.acquireBusyState(WAKE_TAG)
+        try {
+            pumpDevice.advanceToTick(now)
+            bodyModel.advanceToTick(now)
+            _ticks.tryEmit(now)
+        } finally {
+            wakeService.releaseBusyState(WAKE_TAG)
+        }
+    }
+
+    private fun scheduleNext() {
+        if (!started) return
+        val nextTick = Timestamp.now().plusMinutes(TICK_INTERVAL_MINUTES)
+        wakeService.scheduleWakeup(WAKE_TAG, WAKEUP_ID_TICK, nextTick)
+    }
+
+    companion object {
+        private const val TAG = "SimBodyHeartbeat"
+        
+        /**
+         * Tag for the [SystemWakeService] to identify SimBody wakeups.
+         */
+        const val WAKE_TAG = "SIM_BODY"
+        
+        private const val WAKEUP_ID_TICK = 1
+        private const val TICK_INTERVAL_MINUTES = 5
     }
 }

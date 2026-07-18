@@ -23,7 +23,7 @@ import kotlinx.coroutines.launch
 
 class SimBodyInsulinPump(
     private val device: SimBodyPumpDevice,
-    val application: Application,
+    private val heartbeat: SimBodyHeartbeat,
     private val scope: CoroutineScope = CoroutineScope(SupervisorJob() + Dispatchers.Default),
 ): InsulinPump {
     override val hardwareInformation: StateFlow<HardwareInformation?> = MutableStateFlow(
