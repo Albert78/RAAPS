@@ -168,7 +168,7 @@ class SampledInsulinCalculationCache(
         if (intervalsSinceApplication >= samples.size - 1) return 0.0
         val remainingFractionAtIntervalStart = samples[intervalsSinceApplication]
         val remainingFractionAtIntervalEnd = samples[intervalsSinceApplication + 1]
-        return amount * (remainingFractionAtIntervalEnd - remainingFractionAtIntervalStart)
+        return amount * (remainingFractionAtIntervalStart - remainingFractionAtIntervalEnd)
     }
 
     /**
@@ -180,12 +180,10 @@ class SampledInsulinCalculationCache(
         insulinType: InsulinType,
         intervalsSinceApplication: Int
     ): Double {
-        if (intervalsSinceApplication <= 0.0) return 0.0
+        if (intervalsSinceApplication < 0) return 0.0
         val samples = getOrCreateSampledInsulinRemainingFraction(insulinType)
-        if (intervalsSinceApplication >= samples.size - 1) return 0.0
-        val remainingFractionAtIntervalStart = samples[intervalsSinceApplication]
-        val remainingFractionAtIntervalEnd = samples[intervalsSinceApplication + 1]
-        return amount * (remainingFractionAtIntervalEnd + remainingFractionAtIntervalStart) / 2.0
+        if (intervalsSinceApplication >= samples.size) return 0.0
+        return amount * samples[intervalsSinceApplication]
     }
 
     fun spentInsulin(

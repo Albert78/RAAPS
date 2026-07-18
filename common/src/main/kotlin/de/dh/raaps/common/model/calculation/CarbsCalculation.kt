@@ -160,7 +160,7 @@ class SampledCarbsCalculationCache(
         mealType: MealType,
         intervalsSinceMeal: Int
     ): Double {
-        if (intervalsSinceMeal <= 0.0) return 0.0
+        if (intervalsSinceMeal < 0) return 0.0
 
         val samples = getOrCreateSampledCarbsAbsorbedFraction(mealType)
         if (intervalsSinceMeal >= samples.size - 1) return 0.0
@@ -178,12 +178,11 @@ class SampledCarbsCalculationCache(
         mealType: MealType,
         intervalsSinceMeal: Int
     ): Double {
-        if (intervalsSinceMeal <= 0.0) return 0.0
+        if (intervalsSinceMeal < 0) return 0.0
 
         val samples = getOrCreateSampledCarbsAbsorbedFraction(mealType)
-        if (intervalsSinceMeal >= samples.size - 1) return 0.0
+        if (intervalsSinceMeal >= samples.size) return 0.0
         val absorbedFractionAtIntervalStart = samples[intervalsSinceMeal]
-        val absorbedFractionAtIntervalEnd = samples[intervalsSinceMeal + 1]
-        return carbGrams * (absorbedFractionAtIntervalStart + absorbedFractionAtIntervalEnd) / 2.0
+        return carbGrams * (1.0 - absorbedFractionAtIntervalStart)
     }
 }

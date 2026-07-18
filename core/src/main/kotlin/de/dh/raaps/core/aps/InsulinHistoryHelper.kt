@@ -12,6 +12,7 @@ import de.dh.raaps.common.model.data.TherapyData
 import de.dh.raaps.common.model.data.Timestamp
 import de.dh.raaps.common.model.data.getAmountForMinute
 import de.dh.raaps.core.repository.TreatmentRepository
+import kotlin.math.abs
 
 
 class InsulinHistoryHelper {
@@ -151,14 +152,18 @@ class InsulinHistoryHelper {
         suspend fun calculateBolusesAndBasalDeviations(treatmentRepository: TreatmentRepository): List<InsulinApplication> {
             val boluses = treatmentRepository.getBoluses()
             val basalDeviations = treatmentRepository.getBasalHistory()
-                .map { historyEntry -> InsulinApplication(
-                    ID_UNDEFINED,
-                    treatmentRepository.startOfTick(historyEntry.startTick),
-                    historyEntry.scheduledRate - historyEntry.actualRate,
-                    historyEntry.insulinType,
-                    InsulinOrigin.Pump
-                ) }
-                .filter { it.amount > INSULIN_EPSILON }
+                .map { historyEntry ->
+                    val deviationUph = historyEntry.actualRate - historyEntry.scheduledRate
+                    val amount = deviationUph / TreatmentRepository.BASAL_TICKS_PER_HOUR
+                    InsulinApplication(
+                        ID_UNDEFINED,
+                        treatmentRepository.startOfTick(historyEntry.startTick),
+                        amount,
+                        historyEntry.insulinType,
+                        InsulinOrigin.Pump
+                    )
+                }
+                .filter { abs(it.amount) > INSULIN_EPSILON }
             return boluses + basalDeviations
         }
     }

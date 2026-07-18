@@ -106,7 +106,7 @@ class SimBodyPumpDevice(
         }
 
         _reservoirLevel.value = (reservoirLevel.value - units).coerceAtLeast(0.0)
-        bodyModel.bolus(units) // Basal is just small boluses in this simplified model
+        bodyModel.bolus(units) // Basal is just small boluses
     }
 
     /**

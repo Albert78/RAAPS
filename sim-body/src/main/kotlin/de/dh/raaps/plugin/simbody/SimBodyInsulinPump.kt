@@ -1,6 +1,5 @@
 package de.dh.raaps.plugin.simbody
 
-import android.app.Application
 import de.dh.raaps.common.model.BasalHistoryPoint
 import de.dh.raaps.common.model.BasalStatus
 import de.dh.raaps.common.model.BolusHistoryPoint
@@ -109,7 +108,7 @@ class SimBodyInsulinPump(
 
     override suspend fun bolus(amount: Double) {
         if (!_isConnected.value) throw Exception("Pump not connected to App")
-        
+
         if (device.deliverBolus(amount)) {
             // Success - device level handled reporting to body and history
             refreshStatus()
@@ -132,16 +131,16 @@ class SimBodyInsulinPump(
 
     override suspend fun tempBasal(percent: Int, durationHours: Int) {
         if (!_isConnected.value) throw Exception("Pump not connected to App")
-        
+
         if (device.isBroken.value || device.hasHardwareError.value) {
             throw Exception("Pump hardware error - cannot set temp basal")
         }
 
-        val normalRate = device.getProfileBasalRate() 
+        val normalRate = device.getProfileBasalRate()
         val newRate = normalRate * (percent / 100.0)
-        
+
         device.updateBasalRate(newRate)
-        
+
         _basalStatus.value = BasalStatus(
             activeRate = newRate,
             isTempBasal = true,
