@@ -41,7 +41,7 @@ fun DialogOkDismissButtons(
         ) {
             Text(cancelButtonText)
         }
-        Spacer(modifier = Modifier.Companion.padding(start = 8.dp))
+        Spacer(modifier = Modifier.padding(start = 8.dp))
         TextButton(
             onClick = onConfirm,
             colors = ButtonDefaults.textButtonColors(

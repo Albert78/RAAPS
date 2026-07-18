@@ -312,17 +312,17 @@ fun PermissionsItemPreview(status: PermissionStatus) {
 @Preview(showBackground = true)
 @Composable
 fun PermissionsItemGrantedPreview() {
-    PermissionsItemPreview(PermissionStatus.Companion.create(isGranted = true, isNeeded = true))
+    PermissionsItemPreview(PermissionStatus.create(isGranted = true, isNeeded = true))
 }
 
 @Preview(showBackground = true)
 @Composable
 fun PermissionsItemNotGrantedPreview() {
-    PermissionsItemPreview(PermissionStatus.Companion.create(isGranted = false, isNeeded = true))
+    PermissionsItemPreview(PermissionStatus.create(isGranted = false, isNeeded = true))
 }
 
 @Preview(showBackground = true)
 @Composable
 fun PermissionsItemNotNeededPreview() {
-    PermissionsItemPreview(PermissionStatus.Companion.create(isGranted = false, isNeeded = false))
+    PermissionsItemPreview(PermissionStatus.create(isGranted = false, isNeeded = false))
 }

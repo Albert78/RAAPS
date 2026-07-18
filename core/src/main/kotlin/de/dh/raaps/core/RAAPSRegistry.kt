@@ -5,13 +5,13 @@ import de.dh.raaps.AppPreferencesRepository
 import de.dh.raaps.common.model.PluginManager
 import de.dh.raaps.core.aps.APS
 import de.dh.raaps.core.aps.TherapyManager
-import de.dh.raaps.core.system.SystemWakeService
 import de.dh.raaps.core.pump.PumpCoordinator
 import de.dh.raaps.core.repository.DeviceManagementRepository
 import de.dh.raaps.core.repository.FoodRepository
 import de.dh.raaps.core.repository.GlucoseRepository
 import de.dh.raaps.core.repository.TherapyRepository
 import de.dh.raaps.core.repository.TreatmentRepository
+import de.dh.raaps.core.system.SystemWakeService
 
 /**
  * Functional interface for handling permission change events.
@@ -44,7 +44,7 @@ interface RAAPSRegistry {
     val aps: APS
     val pluginManager: PluginManager
     val wakeService: SystemWakeService
-    
+
     /**
      * Provides access to the current pump coordinator.
      * Note that this might be null if no pump is configured or connected.
