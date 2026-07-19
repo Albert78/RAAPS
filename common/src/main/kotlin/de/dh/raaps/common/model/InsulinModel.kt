@@ -78,3 +78,26 @@ data class InsulinApplication(
     val origin: InsulinOrigin,
     val reason: String
 )
+
+/**
+ * Snapshot of an insulin delivery point.
+ */
+interface InsulinHistoryPoint {
+    val timestamp: Long
+    val amount: Double
+    /**
+     * If this is a basal rate delivery, this value is the rate in Units per Hour (U/h).
+     * If it is a bolus, this is the absolute amount in Units (IU).
+     */
+    val value: Double
+    val reason: String
+}
+
+/**
+ * Compound object representing a snapshot of the pump's insulin delivery history.
+ */
+data class InsulinHistory(
+    val from: Long,
+    val to: Long,
+    val points: List<InsulinHistoryPoint>
+)

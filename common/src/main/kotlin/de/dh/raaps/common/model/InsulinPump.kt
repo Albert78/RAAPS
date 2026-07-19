@@ -77,22 +77,6 @@ data class BasalStatus(
 )
 
 /**
- * Snapshot of a basal rate at a specific point in time.
- */
-interface BasalHistoryPoint {
-    val timestamp: Long
-    val unitsPerHour: Double
-}
-
-/**
- * Snapshot of a delivered bolus.
- */
-interface BolusHistoryPoint {
-    val timestamp: Long
-    val amount: Double
-}
-
-/**
  * Generic interface for an insulin pump.
  */
 interface InsulinPump {
@@ -126,14 +110,9 @@ interface InsulinPump {
     val basalStatus: StateFlow<BasalStatus>
 
     /**
-     * History of basal insulin delivery for the last 24 hours.
+     * History of insulin deliveries (Basal and Bolus) from the pump.
      */
-    val basalHistory: StateFlow<List<BasalHistoryPoint>>
-
-    /**
-     * History of bolus deliveries for the last 24 hours.
-     */
-    val bolusHistory: StateFlow<List<BolusHistoryPoint>>
+    val history: StateFlow<InsulinHistory?>
 
     /**
      * Initiates a bolus delivery.

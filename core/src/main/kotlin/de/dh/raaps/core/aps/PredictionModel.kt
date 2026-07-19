@@ -50,7 +50,7 @@ class PredictionModel(
         carbsInsulinCalculationModel: CarbsInsulinCalculationModel
     ) {
         val meals = treatmentRepository.getMeals()
-        val insulinApplications = InsulinHistoryHelper.getAllInsulinApplications(treatmentRepository)
+        val insulinApplications = treatmentRepository.getInsulinApplications()
         forEach { tick, tickState ->
             tickState.initializeToTick(tick)
             // We only need to initialize insulin and carbs, since they only depend on the treatments.

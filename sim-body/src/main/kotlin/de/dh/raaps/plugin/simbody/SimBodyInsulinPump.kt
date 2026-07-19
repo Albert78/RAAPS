@@ -1,9 +1,8 @@
 package de.dh.raaps.plugin.simbody
 
-import de.dh.raaps.common.model.BasalHistoryPoint
 import de.dh.raaps.common.model.BasalStatus
-import de.dh.raaps.common.model.BolusHistoryPoint
 import de.dh.raaps.common.model.HardwareInformation
+import de.dh.raaps.common.model.InsulinHistory
 import de.dh.raaps.common.model.InsulinPump
 import de.dh.raaps.common.model.InsulinPumpStatus
 import de.dh.raaps.common.model.PumpAlerts
@@ -100,11 +99,8 @@ class SimBodyInsulinPump(
     private val _basalStatus = MutableStateFlow(BasalStatus(activeRate = 1.0))
     override val basalStatus: StateFlow<BasalStatus> = _basalStatus
 
-    private val _basalHistory = MutableStateFlow<List<BasalHistoryPoint>>(emptyList())
-    override val basalHistory: StateFlow<List<BasalHistoryPoint>> = _basalHistory
-
-    private val _bolusHistory = MutableStateFlow<List<BolusHistoryPoint>>(emptyList())
-    override val bolusHistory: StateFlow<List<BolusHistoryPoint>> = _bolusHistory
+    private val _history = MutableStateFlow<InsulinHistory?>(null)
+    override val history: StateFlow<InsulinHistory?> = _history
 
     override suspend fun bolus(amount: Double) {
         if (!_isConnected.value) throw Exception("Pump not connected to App")
@@ -164,8 +160,14 @@ class SimBodyInsulinPump(
 
     override suspend fun syncHistory() {
         if (!_isConnected.value) return
-        _bolusHistory.value = device.getBolusHistory()
-        _basalHistory.value = device.getBasalHistory()
+        val points = device.getHistory()
+        if (points.isNotEmpty()) {
+            _history.value = InsulinHistory(
+                from = points.minOf { it.timestamp },
+                to = points.maxOf { it.timestamp },
+                points = points
+            )
+        }
     }
 
     override suspend fun refreshStatus() {

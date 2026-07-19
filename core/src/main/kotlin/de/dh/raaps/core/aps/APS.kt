@@ -154,10 +154,9 @@ class APS(
                         }
                         // Sync history
                         launch {
-                            pc.pump.bolusHistory.collect { core.updatePumpBolusHistory(it) }
-                        }
-                        launch {
-                            pc.pump.basalHistory.collect { core.updatePumpActualBasalHistory(it) }
+                            pc.pump.history.collect { history ->
+                                history?.let { core.updatePumpHistory(it) }
+                            }
                         }
                     }
                     pc

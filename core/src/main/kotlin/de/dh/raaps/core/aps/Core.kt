@@ -2,11 +2,10 @@ package de.dh.raaps.core.aps
 
 import android.util.Log
 import de.dh.raaps.AppPreferencesRepository
-import de.dh.raaps.common.model.BasalHistoryPoint
-import de.dh.raaps.common.model.BolusHistoryPoint
 import de.dh.raaps.common.model.DataProvider
 import de.dh.raaps.common.model.GlucoseSource
 import de.dh.raaps.common.model.InsulinAmount
+import de.dh.raaps.common.model.InsulinHistory
 import de.dh.raaps.common.model.data.BgReading
 import de.dh.raaps.common.model.data.BgSampleKind
 import de.dh.raaps.common.model.data.CurrentTherapySettings
@@ -274,25 +273,13 @@ class Core(
     }
 
     /**
-     * Triggered when the history of actual basal values was updated.
+     * Triggered when the history of actual bolus and basal values was updated.
      */
-    suspend fun updatePumpActualBasalHistory(basalHistory: List<BasalHistoryPoint>) {
+    suspend fun updatePumpHistory(history: InsulinHistory) {
         busyWork {
             atomic {
                 val cts = currentTherapySettings ?: return@atomic
-                InsulinHistoryHelper.updateHistoricalBasal(basalHistory, cts.insulinType, treatmentRepository)
-            }
-        }
-    }
-
-    /**
-     * Triggered when the history of actual bolus values was updated.
-     */
-    suspend fun updatePumpBolusHistory(bolusHistory: List<BolusHistoryPoint>) {
-        busyWork {
-            atomic {
-                val cts = currentTherapySettings ?: return@atomic
-                InsulinHistoryHelper.updatePumpBolusHistory(bolusHistory, cts.insulinType, treatmentRepository)
+                treatmentRepository.mergeInsulinHistory(history, cts.insulinType)
             }
         }
     }

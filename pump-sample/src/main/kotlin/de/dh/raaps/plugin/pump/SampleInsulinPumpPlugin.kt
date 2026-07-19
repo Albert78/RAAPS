@@ -1,9 +1,8 @@
 package de.dh.raaps.plugin.pump
 
-import de.dh.raaps.common.model.BasalHistoryPoint
 import de.dh.raaps.common.model.BasalStatus
-import de.dh.raaps.common.model.BolusHistoryPoint
 import de.dh.raaps.common.model.HardwareInformation
+import de.dh.raaps.common.model.InsulinHistory
 import de.dh.raaps.common.model.InsulinPump
 import de.dh.raaps.common.model.InsulinPumpStatus
 import de.dh.raaps.common.model.Plugin
@@ -55,8 +54,7 @@ class SampleInsulinPumpPlugin : InsulinPump, Plugin {
     )
     override val alerts: StateFlow<PumpAlerts> = MutableStateFlow(PumpAlerts())
     override val basalStatus: StateFlow<BasalStatus> = MutableStateFlow(BasalStatus(activeRate = 0.5))
-    override val basalHistory: StateFlow<List<BasalHistoryPoint>> = MutableStateFlow(emptyList())
-    override val bolusHistory: StateFlow<List<BolusHistoryPoint>> = MutableStateFlow(emptyList())
+    override val history: StateFlow<InsulinHistory?> = MutableStateFlow(null)
 
     override suspend fun bolus(amount: Double) {
         // TODO: Implement bolus delivery

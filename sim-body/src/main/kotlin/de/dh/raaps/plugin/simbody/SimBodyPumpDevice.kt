@@ -1,7 +1,6 @@
 package de.dh.raaps.plugin.simbody
 
-import de.dh.raaps.common.model.BasalHistoryPoint
-import de.dh.raaps.common.model.BolusHistoryPoint
+import de.dh.raaps.common.model.InsulinHistoryPoint
 import de.dh.raaps.common.model.data.TherapyData
 import de.dh.raaps.common.model.data.Timestamp
 import de.dh.raaps.common.model.data.getAmountForMinute
@@ -43,8 +42,7 @@ class SimBodyPumpDevice(
     val activeProfile: StateFlow<TherapyData> = _activeProfile.asStateFlow()
 
     // Internal history storage
-    private val _bolusHistory = CopyOnWriteArrayList<BolusHistoryEntry>()
-    private val _basalHistory = CopyOnWriteArrayList<BasalHistoryEntry>()
+    private val _history = CopyOnWriteArrayList<HistoryEntry>()
 
     private var tempBasalRate: Double? = null
     private var lastBasalDeliveryTimestamp: Long = System.currentTimeMillis()
@@ -127,7 +125,12 @@ class SimBodyPumpDevice(
         bodyModel.bolus(units)
 
         // Record in history
-        _bolusHistory.add(BolusHistoryEntry(System.currentTimeMillis(), units))
+        _history.add(HistoryEntry(
+            timestamp = System.currentTimeMillis(),
+            amount = units,
+            value = units,
+            reason = "Meal-Bolus"
+        ))
         cleanupHistory()
 
         return true
@@ -135,18 +138,22 @@ class SimBodyPumpDevice(
 
     fun updateBasalRate(unitsPerHour: Double?) {
         tempBasalRate = unitsPerHour
+        val rate = unitsPerHour ?: getProfileBasalRate()
 
-        _basalHistory.add(BasalHistoryEntry(System.currentTimeMillis(), unitsPerHour ?: getProfileBasalRate()))
+        _history.add(HistoryEntry(
+            timestamp = System.currentTimeMillis(),
+            amount = 0.0, // Amount is calculated via integration in helper, or zero here
+            value = rate,
+            reason = "Basal"
+        ))
         cleanupHistory()
     }
 
-    fun getBolusHistory(): List<BolusHistoryPoint> = _bolusHistory.toList()
-    fun getBasalHistory(): List<BasalHistoryPoint> = _basalHistory.toList()
+    fun getHistory(): List<InsulinHistoryPoint> = _history.toList()
 
     private fun cleanupHistory() {
         val threeDaysAgo = System.currentTimeMillis() - (3 * 24 * 60 * 60 * 1000L)
-        _bolusHistory.removeIf { it.timestamp < threeDaysAgo }
-        _basalHistory.removeIf { it.timestamp < threeDaysAgo }
+        _history.removeIf { it.timestamp < threeDaysAgo }
     }
 
     /**
@@ -167,13 +174,10 @@ class SimBodyPumpDevice(
         }
     }
 
-    private data class BolusHistoryEntry(
+    private data class HistoryEntry(
         override val timestamp: Long,
-        override val amount: Double
-    ) : BolusHistoryPoint
-
-    private data class BasalHistoryEntry(
-        override val timestamp: Long,
-        override val unitsPerHour: Double
-    ) : BasalHistoryPoint
+        override val amount: Double,
+        override val value: Double,
+        override val reason: String
+    ) : InsulinHistoryPoint
 }
