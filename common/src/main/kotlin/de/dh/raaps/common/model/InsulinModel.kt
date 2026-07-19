@@ -75,8 +75,7 @@ data class InsulinApplication(
     val timestamp: Timestamp,
     val amount: Double,
     val insulinType: InsulinType,
-    val origin: InsulinOrigin,
-    val reason: String
+    val origin: InsulinOrigin
 )
 
 /**
@@ -85,12 +84,6 @@ data class InsulinApplication(
 interface InsulinHistoryPoint {
     val timestamp: Long
     val amount: Double
-    /**
-     * If this is a basal rate delivery, this value is the rate in Units per Hour (U/h).
-     * If it is a bolus, this is the absolute amount in Units (IU).
-     */
-    val value: Double
-    val reason: String
 }
 
 /**

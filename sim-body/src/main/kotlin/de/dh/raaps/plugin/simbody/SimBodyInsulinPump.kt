@@ -102,10 +102,10 @@ class SimBodyInsulinPump(
     private val _history = MutableStateFlow<InsulinHistory?>(null)
     override val history: StateFlow<InsulinHistory?> = _history
 
-    override suspend fun bolus(amount: Double, reason: String) {
+    override suspend fun bolus(amount: Double) {
         if (!_isConnected.value) throw Exception("Pump not connected to App")
 
-        if (device.deliverBolus(amount, reason)) {
+        if (device.deliverBolus(amount)) {
             // Success - device level handled reporting to body and history
             refreshStatus()
         } else {

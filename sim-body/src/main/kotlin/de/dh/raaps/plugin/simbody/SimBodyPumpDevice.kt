@@ -45,7 +45,7 @@ class SimBodyPumpDevice(
     private val _history = CopyOnWriteArrayList<HistoryEntry>()
 
     private var tempBasalRate: Double? = null
-    private var lastBasalDeliveryTimestamp: Long = System.currentTimeMillis()
+    private var lastBasalDeliveryTimestamp: Long = 0L // Initialize on first tick
 
     fun setBatteryLevel(level: Double) {
         _batteryLevel.value = level.coerceIn(0.0, 1.0)
@@ -75,26 +75,36 @@ class SimBodyPumpDevice(
         _activeProfile.value = profile
     }
 
-    fun getProfileBasalRate(): Double {
+    fun getProfileBasalRate(timestamp: Timestamp = Timestamp.now()): Double {
         val profile = _activeProfile.value
-        return profile.basalBlocks.getAmountForMinute(Timestamp.now().minutesSinceMidnight())
+        return profile.basalBlocks.getAmountForMinute(timestamp.minutesSinceMidnight())
     }
 
     /**
      * Advances the internal device state.
      * Implements active basal control: delivers 1/3 of the basal rate every 20 minutes.
+     * These deliveries are recorded as insulin history points.
      */
     fun advanceToTick(currentTimestamp: Timestamp) {
         val twentyMinutesMs = 20 * 60 * 1000L
-        if (currentTimestamp.ms - lastBasalDeliveryTimestamp >= twentyMinutesMs) {
-            val rate = tempBasalRate ?: getProfileBasalRate()
-            val basalToDeliver = rate / 3.0
-            deliverInternalBasal(basalToDeliver)
+
+        // Initialize if first tick to prevent retroactive deliveries
+        if (lastBasalDeliveryTimestamp == 0L) {
             lastBasalDeliveryTimestamp = currentTimestamp.ms
+            return
+        }
+
+        while (currentTimestamp.ms - lastBasalDeliveryTimestamp >= twentyMinutesMs) {
+            val deliveryTimestamp = Timestamp(lastBasalDeliveryTimestamp + twentyMinutesMs)
+            val rate = tempBasalRate ?: getProfileBasalRate(deliveryTimestamp)
+            val basalToDeliver = rate / 3.0
+
+            deliverInternalBasal(basalToDeliver, deliveryTimestamp)
+            lastBasalDeliveryTimestamp = deliveryTimestamp.ms
         }
     }
 
-    private fun deliverInternalBasal(units: Double) {
+    private fun deliverInternalBasal(units: Double, timestamp: Timestamp) {
         // Active delivery only works if hardware is OK
         if (isBroken.value || hasHardwareError.value || isOccluded.value || !isPrimed.value) {
             return
@@ -104,7 +114,16 @@ class SimBodyPumpDevice(
         }
 
         _reservoirLevel.value = (reservoirLevel.value - units).coerceAtLeast(0.0)
-        bodyModel.bolus(units) // Basal is just small boluses
+
+        // Report to body as a small bolus
+        bodyModel.bolus(units, timestamp = timestamp)
+
+        // Record in history as an insulin delivery
+        _history.add(HistoryEntry(
+            timestamp = timestamp.ms,
+            amount = units
+        ))
+        cleanupHistory()
     }
 
     /**
@@ -127,9 +146,7 @@ class SimBodyPumpDevice(
         // Record in history
         _history.add(HistoryEntry(
             timestamp = System.currentTimeMillis(),
-            amount = units,
-            value = units,
-            reason = "Meal-Bolus"
+            amount = units
         ))
         cleanupHistory()
 
@@ -138,15 +155,6 @@ class SimBodyPumpDevice(
 
     fun updateBasalRate(unitsPerHour: Double?) {
         tempBasalRate = unitsPerHour
-        val rate = unitsPerHour ?: getProfileBasalRate()
-
-        _history.add(HistoryEntry(
-            timestamp = System.currentTimeMillis(),
-            amount = 0.0, // Amount is calculated via integration in helper, or zero here
-            value = rate,
-            reason = "Basal"
-        ))
-        cleanupHistory()
     }
 
     fun getHistory(): List<InsulinHistoryPoint> = _history.toList()
@@ -176,8 +184,6 @@ class SimBodyPumpDevice(
 
     private data class HistoryEntry(
         override val timestamp: Long,
-        override val amount: Double,
-        override val value: Double,
-        override val reason: String
+        override val amount: Double
     ) : InsulinHistoryPoint
 }

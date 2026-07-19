@@ -68,6 +68,5 @@ data class InsulinEntity(
     val insulin_type_id: String,
     val timestamp: Timestamp,
     val amount: Double,
-    val origin: InsulinOrigin,
-    val reason: String
+    val origin: InsulinOrigin
 )

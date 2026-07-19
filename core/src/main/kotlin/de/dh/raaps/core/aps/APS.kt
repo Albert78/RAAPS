@@ -2,7 +2,6 @@ package de.dh.raaps.core.aps
 
 import android.content.Context
 import android.content.Intent
-import android.util.Log
 import de.dh.raaps.AppPreferencesRepository
 import de.dh.raaps.common.model.ApsMode
 import de.dh.raaps.common.model.GlucoseSource
@@ -32,7 +31,6 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.drop
 import kotlinx.coroutines.launch
 import java.util.concurrent.Executors
-import java.util.concurrent.atomic.AtomicInteger
 import kotlin.time.Duration.Companion.seconds
 
 enum class ApsIssue {
@@ -315,7 +313,7 @@ class APS(
                 core.activate()
             }
         }
-        
+
         // Persist mode
         val currentSettings = therapyManager.getActiveTherapySettings()
         if (currentSettings != null) {

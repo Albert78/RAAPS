@@ -2,7 +2,7 @@
   "formatVersion": 1,
   "database": {
     "version": 1,
-    "identityHash": "a76debaa0654e60e3896fed0219e8e5b",
+    "identityHash": "9ad34958b05bc2861027c08f4576393b",
     "entities": [
       {
         "tableName": "sensor_type",
@@ -439,8 +439,8 @@
         }
       },
       {
-        "tableName": "bolus",
-        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `insulin_type_id` TEXT NOT NULL, `timestamp` INTEGER NOT NULL, `origin` TEXT NOT NULL, `amount` REAL NOT NULL, FOREIGN KEY(`insulin_type_id`) REFERENCES `insulin_type`(`id`) ON UPDATE NO ACTION ON DELETE RESTRICT )",
+        "tableName": "insulin",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `insulin_type_id` TEXT NOT NULL, `timestamp` INTEGER NOT NULL, `amount` REAL NOT NULL, `origin` TEXT NOT NULL, FOREIGN KEY(`insulin_type_id`) REFERENCES `insulin_type`(`id`) ON UPDATE NO ACTION ON DELETE RESTRICT )",
         "fields": [
           {
             "fieldPath": "id",
@@ -461,15 +461,15 @@
             "notNull": true
           },
           {
-            "fieldPath": "origin",
-            "columnName": "origin",
-            "affinity": "TEXT",
-            "notNull": true
-          },
-          {
             "fieldPath": "amount",
             "columnName": "amount",
             "affinity": "REAL",
+            "notNull": true
+          },
+          {
+            "fieldPath": "origin",
+            "columnName": "origin",
+            "affinity": "TEXT",
             "notNull": true
           }
         ],
@@ -479,6 +479,17 @@
             "id"
           ]
         },
+        "indices": [
+          {
+            "name": "index_insulin_timestamp",
+            "unique": false,
+            "columnNames": [
+              "timestamp"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_insulin_timestamp` ON `${TABLE_NAME}` (`timestamp`)"
+          }
+        ],
         "foreignKeys": [
           {
             "table": "insulin_type",
@@ -492,58 +503,11 @@
             ]
           }
         ]
-      },
-      {
-        "tableName": "basal_history",
-        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`startTick` INTEGER NOT NULL, `scheduledRate` REAL NOT NULL, `actualRate` REAL NOT NULL, `insulin_type_id` TEXT NOT NULL, PRIMARY KEY(`startTick`))",
-        "fields": [
-          {
-            "fieldPath": "startTick",
-            "columnName": "startTick",
-            "affinity": "INTEGER",
-            "notNull": true
-          },
-          {
-            "fieldPath": "scheduledRate",
-            "columnName": "scheduledRate",
-            "affinity": "REAL",
-            "notNull": true
-          },
-          {
-            "fieldPath": "actualRate",
-            "columnName": "actualRate",
-            "affinity": "REAL",
-            "notNull": true
-          },
-          {
-            "fieldPath": "insulin_type_id",
-            "columnName": "insulin_type_id",
-            "affinity": "TEXT",
-            "notNull": true
-          }
-        ],
-        "primaryKey": {
-          "autoGenerate": false,
-          "columnNames": [
-            "startTick"
-          ]
-        },
-        "indices": [
-          {
-            "name": "index_basal_history_startTick",
-            "unique": false,
-            "columnNames": [
-              "startTick"
-            ],
-            "orders": [],
-            "createSql": "CREATE INDEX IF NOT EXISTS `index_basal_history_startTick` ON `${TABLE_NAME}` (`startTick`)"
-          }
-        ]
       }
     ],
     "setupQueries": [
       "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
-      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, 'a76debaa0654e60e3896fed0219e8e5b')"
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '9ad34958b05bc2861027c08f4576393b')"
     ]
   }
 }

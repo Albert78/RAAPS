@@ -112,8 +112,7 @@ class TreatmentRepository(
                 timestamp = Timestamp(point.timestamp),
                 amount = point.amount,
                 insulinType = insulinType,
-                origin = InsulinOrigin.Pump,
-                reason = point.reason
+                origin = InsulinOrigin.Pump
             )
         }.filter { it.amount > INSULIN_EPSILON && it.timestamp >= from && it.timestamp <= to }
 
@@ -159,16 +158,20 @@ class TreatmentRepository(
 
     /**
      * Adds a new insulin application to the cache and database.
-     * Overwrites if timestamp and reason are the same.
+     * Overwrites if timestamp and origin are the same.
      */
     suspend fun addInsulinApplication(insulinApplication: InsulinApplication) {
         val historyStart = historyStart()
         if (insulinApplication.timestamp >= historyStart) {
-            insulinHistory.removeIf { it.timestamp == insulinApplication.timestamp && it.reason == insulinApplication.reason }
+            insulinHistory.removeIf { it.timestamp == insulinApplication.timestamp && it.origin == insulinApplication.origin }
             insulinHistory.add(insulinApplication)
             insulinHistory.sortBy { it.timestamp }
         }
-        metabolicEventsDao.deleteInsulinApplicationByUniqueKey(insulinApplication.timestamp.ms, insulinApplication.reason, insulinApplication.origin)
+        metabolicEventsDao.deleteInsulinApplicationsInRange(
+            insulinApplication.timestamp.ms,
+            insulinApplication.timestamp.ms,
+            insulinApplication.origin
+        )
         val id = metabolicEventsDao.insertInsulinApplication(insulinApplication.toEntity())
         if (id != -1L) {
             insulinApplication.id = id
@@ -181,28 +184,6 @@ class TreatmentRepository(
     suspend fun removeInsulinApplication(insulinApplication: InsulinApplication) {
         insulinHistory.remove(insulinApplication)
         metabolicEventsDao.deleteInsulinApplication(insulinApplication.id)
-    }
-
-    /**
-     * Deletes all insulin applications with the specified origin from the cache and database.
-     */
-    suspend fun clearInsulinApplicationsByOrigin(origin: InsulinOrigin) {
-        // Clear from cache
-        insulinHistory.removeIf { it.origin == origin }
-
-        // Clear from database
-        metabolicEventsDao.deleteInsulinApplicationsByOrigin(origin)
-    }
-
-    /**
-     * Deletes all bolus insulin applications with the specified origin from the cache and database.
-     */
-    suspend fun clearBolusesByOrigin(origin: InsulinOrigin) {
-        // Clear from cache
-        insulinHistory.removeIf { it.origin == origin && it.reason != "Basal" }
-
-        // Clear from database
-        metabolicEventsDao.deleteBolusApplicationsByOrigin(origin)
     }
 
     /**

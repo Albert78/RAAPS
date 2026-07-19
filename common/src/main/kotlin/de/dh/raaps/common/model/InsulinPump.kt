@@ -119,7 +119,7 @@ interface InsulinPump {
      *
      * @throws Exception if the command cannot be sent or the pump connection fails.
      */
-    suspend fun bolus(amount: Double, reason: String)
+    suspend fun bolus(amount: Double)
 
     /**
      * Immediately stops any currently running bolus delivery.
