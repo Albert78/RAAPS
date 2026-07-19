@@ -269,12 +269,13 @@ class BodyModel(
     /**
      * Simulates an insulin bolus.
      */
-    fun bolus(amount: Double, type: InsulinType? = null) {
+    fun bolus(amount: Double, type: InsulinType? = null, reason: String = "Meal-Bolus") {
         val entry = InsulinApplication(
             timestamp = Timestamp.now(),
             amount = amount,
             insulinType = type ?: defaultInsulinType,
-            origin = InsulinOrigin.Pump
+            origin = InsulinOrigin.Pump,
+            reason = reason
         )
         insulinApplications.add(entry)
 

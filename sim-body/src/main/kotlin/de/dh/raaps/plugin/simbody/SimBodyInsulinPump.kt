@@ -102,14 +102,14 @@ class SimBodyInsulinPump(
     private val _history = MutableStateFlow<InsulinHistory?>(null)
     override val history: StateFlow<InsulinHistory?> = _history
 
-    override suspend fun bolus(amount: Double) {
+    override suspend fun bolus(amount: Double, reason: String) {
         if (!_isConnected.value) throw Exception("Pump not connected to App")
 
-        if (device.deliverBolus(amount)) {
+        if (device.deliverBolus(amount, reason)) {
             // Success - device level handled reporting to body and history
             refreshStatus()
         } else {
-            val reason = when {
+            val errorReason = when {
                 device.isBroken.value -> "Hardware broken"
                 device.hasHardwareError.value -> "Hardware error"
                 device.isOccluded.value -> "Occlusion detected"
@@ -117,7 +117,7 @@ class SimBodyInsulinPump(
                 device.reservoirLevel.value < amount -> "Insulin reservoir empty"
                 else -> "Unknown hardware failure"
             }
-            throw Exception("Bolus failed: $reason")
+            throw Exception("Bolus failed: $errorReason")
         }
     }
 

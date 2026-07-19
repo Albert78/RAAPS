@@ -30,7 +30,7 @@ sealed class PumpCommand {
     data class SetProfile(val profile: TherapyData) : PumpCommand()
     data class SetTempBasal(val percent: Int, val durationHours: Int) : PumpCommand()
     object CancelTempBasal : PumpCommand()
-    data class DeliverBolus(val amount: InsulinAmount) : PumpCommand()
+    data class DeliverBolus(val amount: InsulinAmount, val reason: String) : PumpCommand()
     object CancelBolus : PumpCommand()
 }
 
@@ -252,7 +252,7 @@ class PumpCoordinator(
 
     private suspend fun executeOnPump(command: PumpCommand) {
         when (command) {
-            is PumpCommand.DeliverBolus -> pump.bolus(command.amount.iu)
+            is PumpCommand.DeliverBolus -> pump.bolus(command.amount.iu, command.reason)
             is PumpCommand.SetTempBasal -> {
                 pump.tempBasal(command.percent, command.durationHours)
             }
