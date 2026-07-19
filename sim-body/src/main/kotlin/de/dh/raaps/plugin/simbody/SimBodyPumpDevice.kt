@@ -1,6 +1,7 @@
 package de.dh.raaps.plugin.simbody
 
 import de.dh.raaps.common.model.InsulinHistoryPoint
+import de.dh.raaps.common.model.MS_PER_DAY
 import de.dh.raaps.common.model.data.TherapyData
 import de.dh.raaps.common.model.data.Timestamp
 import de.dh.raaps.common.model.data.getAmountForMinute
@@ -44,7 +45,12 @@ class SimBodyPumpDevice(
     // Internal history storage
     private val _history = CopyOnWriteArrayList<HistoryEntry>()
 
-    private var tempBasalRate: Double? = null
+    private val _tempBasalRate = MutableStateFlow<Double?>(null)
+    val tempBasalRate: StateFlow<Double?> = _tempBasalRate.asStateFlow()
+
+    private val _tempBasalPercent = MutableStateFlow<Int?>(null)
+    val tempBasalPercent: StateFlow<Int?> = _tempBasalPercent.asStateFlow()
+
     private var lastBasalDeliveryTimestamp: Long = 0L // Initialize on first tick
 
     fun setBatteryLevel(level: Double) {
@@ -96,7 +102,7 @@ class SimBodyPumpDevice(
 
         while (currentTimestamp.ms - lastBasalDeliveryTimestamp >= twentyMinutesMs) {
             val deliveryTimestamp = Timestamp(lastBasalDeliveryTimestamp + twentyMinutesMs)
-            val rate = tempBasalRate ?: getProfileBasalRate(deliveryTimestamp)
+            val rate = _tempBasalRate.value ?: getProfileBasalRate(deliveryTimestamp)
             val basalToDeliver = rate / 3.0
 
             deliverInternalBasal(basalToDeliver, deliveryTimestamp)
@@ -153,14 +159,15 @@ class SimBodyPumpDevice(
         return true
     }
 
-    fun updateBasalRate(unitsPerHour: Double?) {
-        tempBasalRate = unitsPerHour
+    fun updateBasalRate(unitsPerHour: Double?, percent: Int? = null) {
+        _tempBasalRate.value = unitsPerHour
+        _tempBasalPercent.value = percent
     }
 
     fun getHistory(): List<InsulinHistoryPoint> = _history.toList()
 
     private fun cleanupHistory() {
-        val threeDaysAgo = System.currentTimeMillis() - (3 * 24 * 60 * 60 * 1000L)
+        val threeDaysAgo = System.currentTimeMillis() - (3 * MS_PER_DAY)
         _history.removeIf { it.timestamp < threeDaysAgo }
     }
 
@@ -175,11 +182,13 @@ class SimBodyPumpDevice(
     /**
      * Performs priming of the catheter.
      */
-    fun primeCatheter() {
-        if (reservoirLevel.value >= 1.0) {
-            _reservoirLevel.value -= 1.0 // Priming uses some insulin
+    fun primeCatheter(): Boolean {
+        if (reservoirLevel.value >= 10.0) {
+            _reservoirLevel.value -= 10.0 // Priming uses some insulin
             _isPrimed.value = true
+            return true
         }
+        return false
     }
 
     private data class HistoryEntry(

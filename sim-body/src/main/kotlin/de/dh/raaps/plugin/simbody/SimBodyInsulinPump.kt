@@ -8,6 +8,8 @@ import de.dh.raaps.common.model.InsulinPumpStatus
 import de.dh.raaps.common.model.PumpAlerts
 import de.dh.raaps.common.model.PumpCapabilities
 import de.dh.raaps.common.model.data.TherapyData
+import de.dh.raaps.common.model.data.Timestamp
+import de.dh.raaps.common.model.data.getAmountForMinute
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -87,8 +89,7 @@ class SimBodyInsulinPump(
         device.isOccluded,
         device.hasHardwareError,
         combine(device.isBroken, device.isPrimed) { broken, primed -> broken to primed }
-    ) { battery, reservoir, occluded, hwError, brokenPrimed ->
-        val (broken, primed) = brokenPrimed
+    ) { battery, reservoir, occluded, hwError, (broken, primed) ->
         PumpAlerts(
             batteryLow = battery < 0.1,
             reservoirLow = reservoir < 20.0,
@@ -96,8 +97,20 @@ class SimBodyInsulinPump(
         )
     }.stateIn(scope, SharingStarted.Eagerly, PumpAlerts())
 
-    private val _basalStatus = MutableStateFlow(BasalStatus(activeRate = 1.0))
-    override val basalStatus: StateFlow<BasalStatus> = _basalStatus
+    override val basalStatus: StateFlow<BasalStatus> = combine(
+        device.tempBasalRate,
+        device.tempBasalPercent,
+        device.activeProfile,
+        combine(device.isBroken, device.hasHardwareError, device.isOccluded) { b, h, o -> b || h || o }
+    ) { tempRate, tempPercent, profile, isSuspended ->
+        val normalRate = profile.basalBlocks.getAmountForMinute(Timestamp.now().minutesSinceMidnight())
+        BasalStatus(
+            activeRate = if (isSuspended) 0.0 else (tempRate ?: normalRate),
+            isTempBasal = tempRate != null,
+            tempBasalPercent = tempPercent,
+            isSuspended = isSuspended
+        )
+    }.stateIn(scope, SharingStarted.Eagerly, BasalStatus())
 
     private val _history = MutableStateFlow<InsulinHistory?>(null)
     override val history: StateFlow<InsulinHistory?> = _history
@@ -135,21 +148,13 @@ class SimBodyInsulinPump(
         val normalRate = device.getProfileBasalRate()
         val newRate = normalRate * (percent / 100.0)
 
-        device.updateBasalRate(newRate)
-
-        _basalStatus.value = BasalStatus(
-            activeRate = newRate,
-            isTempBasal = true,
-            tempBasalPercent = percent
-        )
+        device.updateBasalRate(newRate, percent)
         refreshStatus()
     }
 
     override suspend fun cancelTempBasal() {
         if (!_isConnected.value) throw Exception("Pump not connected to App")
-        device.updateBasalRate(null) // Clear temp basal override
-        val normalRate = device.getProfileBasalRate()
-        _basalStatus.value = BasalStatus(activeRate = normalRate)
+        device.updateBasalRate(null, null) // Clear temp basal override
         refreshStatus()
     }
 
