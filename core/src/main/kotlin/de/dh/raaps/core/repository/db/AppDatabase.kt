@@ -177,11 +177,11 @@ interface MetabolicEventsDao {
     @Query("DELETE FROM insulin WHERE origin = :origin")
     suspend fun deleteInsulinApplicationsByOrigin(origin: InsulinOrigin)
 
-    @Query("SELECT * FROM insulin WHERE timestamp = :timestamp AND reason = 'Basal' LIMIT 1")
-    suspend fun getBasalHistoryEntry(timestamp: Long): InsulinEntity?
+    @Query("DELETE FROM insulin WHERE origin = :origin AND reason != 'Basal'")
+    suspend fun deleteBolusApplicationsByOrigin(origin: InsulinOrigin)
 
-    @Query("SELECT * FROM insulin WHERE reason = 'Basal' ORDER BY timestamp DESC LIMIT 1")
-    suspend fun getLastBasalHistoryEntry(): InsulinEntity?
+    @Query("DELETE FROM insulin WHERE timestamp = :timestamp AND reason = :reason AND origin = :origin")
+    suspend fun deleteInsulinApplicationByUniqueKey(timestamp: Long, reason: String, origin: InsulinOrigin)
 }
 
 @Database(entities = [

@@ -258,13 +258,6 @@ class Core(
                 if (newData == null) {
                     return@atomic
                 }
-                val oldTherapySettings = currentTherapySettings ?: newData
-                InsulinHistoryHelper.updateScheduledBasal(
-                    oldTherapySettings.profile.therapyData,
-                    newData.profile.therapyData,
-                    oldTherapySettings.insulinType,
-                    treatmentRepository
-                )
                 currentTherapySettings = newData
             }
         }
@@ -286,8 +279,8 @@ class Core(
     suspend fun updatePumpActualBasalHistory(basalHistory: List<BasalHistoryPoint>) {
         busyWork {
             atomic {
-                val therapyData = currentTherapySettings?.profile?.therapyData ?: return@atomic
-                InsulinHistoryHelper.updateHistoricalBasal(basalHistory, therapyData, currentTherapySettings!!.insulinType, treatmentRepository)
+                val cts = currentTherapySettings ?: return@atomic
+                InsulinHistoryHelper.updateHistoricalBasal(basalHistory, cts.insulinType, treatmentRepository)
             }
         }
     }

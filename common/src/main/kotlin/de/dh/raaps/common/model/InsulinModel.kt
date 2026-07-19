@@ -74,7 +74,6 @@ data class InsulinApplication(
     var id: Long = ID_UNDEFINED,
     val timestamp: Timestamp,
     val amount: Double,
-    val scheduledAmount: Double = amount,
     val insulinType: InsulinType,
     val origin: InsulinOrigin,
     val reason: String

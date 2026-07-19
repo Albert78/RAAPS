@@ -50,7 +50,7 @@ class PredictionModel(
         carbsInsulinCalculationModel: CarbsInsulinCalculationModel
     ) {
         val meals = treatmentRepository.getMeals()
-        val insulinApplications = InsulinHistoryHelper.calculateBolusesAndBasalDeviations(treatmentRepository)
+        val insulinApplications = InsulinHistoryHelper.getAllInsulinApplications(treatmentRepository)
         forEach { tick, tickState ->
             tickState.initializeToTick(tick)
             // We only need to initialize insulin and carbs, since they only depend on the treatments.
@@ -93,7 +93,10 @@ class PredictionModel(
                 state.basalRateUph = basalPerHour
 
                 val insulinEquivalentOfCarbs = state.effectiveCarbs / ic
-                val bgi = (insulinEquivalentOfCarbs - state.effectiveInsulin) * isf
+                // Absolute BGI: Carbs - Insulin + Basal Requirement
+                // Basal rate is converted to units per tick.
+                val basalUnitsPerTick = state.basalRateUph / (60.0 / timeline.tickDuration.value)
+                val bgi = (insulinEquivalentOfCarbs - state.effectiveInsulin + basalUnitsPerTick) * isf
 
                 state.bgi = bgi
 

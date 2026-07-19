@@ -136,7 +136,6 @@ fun InsulinApplication.toEntity() = InsulinEntity(
     id = this.id,
     timestamp = this.timestamp,
     amount = this.amount,
-    scheduledAmount = this.scheduledAmount,
     insulin_type_id = this.insulinType.id,
     origin = this.origin,
     reason = this.reason
@@ -146,11 +145,11 @@ fun InsulinEntity.toModel(type: InsulinType) = InsulinApplication(
     id = this.id,
     timestamp = this.timestamp,
     amount = this.amount,
-    scheduledAmount = this.scheduledAmount,
     insulinType = type,
     origin = this.origin,
     reason = this.reason
 )
+
 
 // Therapy Converters
 fun Block.toDb() = DBBlock(

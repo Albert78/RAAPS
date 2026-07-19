@@ -19,20 +19,19 @@ class PredictionTickState {
     // Stage 2: ISF and IC. Might be adapted by user, so need to be checked each tick.
     var isf: BgDelta = BgDelta(0) // ISF at the time of this tick, from profile
     var ic: Double = 0.0 // IC at the time of this tick, from profile
-    var basalRateUph: Double = 0.0 // Normal basal rate in units per hour for this tick, from profile; will be offset by basalDerivationPerHour
+    var basalRateUph: Double = 0.0 // Normal basal rate in units per hour for this tick, from profile
 
-    // Stage 3: BGI values depend on stages 1 and 2. Basal rate effect (even low/zero temp)
-    // is not included in BGI.
-    var bgi: BgDelta = BgDelta(0) // For all predictions, calculated from effectiveCarbs, effectiveInsulin, isf and ic
+    // Stage 3: BGI values depend on stages 1 and 2.
+    // Includes Carb Impact, Insulin Impact and Basal Requirement (from profile).
+    var bgi: BgDelta = BgDelta(0)
 
-    // Stage 4: Predicted BG depends on stages 1, 2 and 3. Basal rate effect (even low/zero temp)
-    // is not included in predicted BG.
+    // Stage 4: Predicted BG depends on stages 1, 2 and 3.
     var predictedBg1: BgValue = BgValue.INVALID // Calculated from a starting BG, applying BGIs of previous ticks
 
-    // Stage 5: Final calculated decision for basal low temp depends on stages 1-4.
+    // Stage 5: Final calculated decision for temp basal depends on stages 1-4.
     var basalRateDeviationPh: Double = 0.0 // Remember temp basal deviation decisions (in units per hour)
 
-    // Stage 6: Predicted BG from stage 4, including basal derivation from stage 5.
+    // Stage 6: Predicted BG from stage 4, including basal deviation from stage 5.
     var predictedBg2: BgValue = BgValue.INVALID
 
     fun initializeToTick(tick: Tick) {
@@ -44,5 +43,6 @@ class PredictionTickState {
         bgi = BgDelta(0)
         basalRateDeviationPh = 0.0
         predictedBg1 = BgValue.INVALID
+        predictedBg2 = BgValue.INVALID
     }
 }
