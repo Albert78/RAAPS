@@ -1,6 +1,5 @@
 package de.dh.raaps.core.repository
 
-import de.dh.raaps.common.model.BasalHistoryEntry
 import de.dh.raaps.common.model.InsulinApplication
 import de.dh.raaps.common.model.InsulinOrigin
 import de.dh.raaps.common.model.InsulinType
@@ -11,7 +10,6 @@ import de.dh.raaps.common.model.data.Timestamp
 import de.dh.raaps.core.repository.db.AppDatabase
 import de.dh.raaps.core.repository.db.MetabolicEventsDao
 import de.dh.raaps.core.repository.db.toEntity
-import de.dh.raaps.core.repository.db.toBolusEntity
 import de.dh.raaps.core.repository.db.toModel
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
@@ -33,8 +31,7 @@ class TreatmentRepository(
     private val metabolicEventsDao: MetabolicEventsDao = appDatabase.metabolicEventsDao()
 
     var mealsHistory: NavigableMap<Timestamp, MutableList<MealEntry>> = TreeMap()
-    var bolusHistory: NavigableMap<Timestamp, MutableList<InsulinApplication>> = TreeMap()
-    var basalHistory: NavigableMap<Int, BasalHistoryEntry> = TreeMap()
+    var insulinHistory: NavigableMap<Timestamp, MutableList<InsulinApplication>> = TreeMap()
     var mealTypes: List<MealType> = emptyList()
     var insulinTypes: List<InsulinType> = emptyList()
 
@@ -47,20 +44,11 @@ class TreatmentRepository(
             }
         }
 
-    fun observeBoluses(): Flow<List<InsulinApplication>> = metabolicEventsDao.observeAllBoluses()
+    fun observeInsulinApplications(): Flow<List<InsulinApplication>> = metabolicEventsDao.observeAllInsulinApplications()
         .map { entities ->
             val insulinTypesMap = metabolicEventsDao.getAllInsulinTypes().associateBy { it.id }
             entities.mapNotNull { entity ->
                 val type = insulinTypesMap[entity.insulin_type_id]?.toModel()
-                type?.let { entity.toModel(it) }
-            }
-        }
-
-    fun observeBasalHistory(): Flow<List<BasalHistoryEntry>> = metabolicEventsDao.observeAllBasalHistoryEntries()
-        .map { entities ->
-            val insulinTypesMap = getAllInsulinTypes().associateBy { it.id }
-            entities.mapNotNull { entity ->
-                val type = insulinTypesMap[entity.insulin_type_id]
                 type?.let { entity.toModel(it) }
             }
         }
@@ -105,22 +93,12 @@ class TreatmentRepository(
         insulinTypes = metabolicEventsDao.getAllInsulinTypes().map { it.toModel() }
         val insulinTypesMap = insulinTypes.associateBy { it.id }
 
-        // Load Bolus
-        val bolusEntities = metabolicEventsDao.getBolusesSince(historyStart.ms)
-        bolusHistory = bolusEntities.mapNotNull { entity ->
+        // Load Insulin
+        val insulinEntities = metabolicEventsDao.getInsulinApplicationsSince(historyStart.ms)
+        insulinHistory = insulinEntities.mapNotNull { entity ->
             val type = insulinTypesMap[entity.insulin_type_id]
             type?.let { entity.toModel(it) }
         }.groupByTo(TreeMap()) { it.timestamp }
-
-        // Load Basal History
-        val basalEntities = metabolicEventsDao.getBasalHistoryEntriesSince(startTick)
-        basalHistory = TreeMap()
-        basalEntities.forEach { entity ->
-            val type = insulinTypesMap[entity.insulin_type_id]
-            type?.let {
-                basalHistory[entity.startTick] = entity.toModel(it)
-            }
-        }
     }
 
     /**
@@ -131,32 +109,34 @@ class TreatmentRepository(
         if (mealsHistory.isNotEmpty() && mealsHistory.firstKey() < historyStart) {
             mealsHistory.headMap(historyStart, false).clear()
         }
-        if (bolusHistory.isNotEmpty() && bolusHistory.firstKey() < historyStart) {
-            bolusHistory.headMap(historyStart, false).clear()
-        }
-        val startTick = tickForTimestamp(historyStart)
-        if (basalHistory.isNotEmpty() && basalHistory.firstKey() < startTick) {
-            basalHistory.headMap(startTick, false).clear()
+        if (insulinHistory.isNotEmpty() && insulinHistory.firstKey() < historyStart) {
+            insulinHistory.headMap(historyStart, false).clear()
         }
     }
 
     /**
-     * Persists or updates a basal history entry in the cache and database.
+     * Persists or updates an insulin application in the cache and database.
      */
-    suspend fun updateBasalHistoryEntry(entry: BasalHistoryEntry) {
-        basalHistory[entry.startTick] = entry
-        metabolicEventsDao.insertBasalHistoryEntry(entry.toEntity())
+    suspend fun updateInsulinApplication(insulinApplication: InsulinApplication) {
+        val historyStart = historyStart()
+        if (insulinApplication.timestamp >= historyStart) {
+            val list = insulinHistory.computeIfAbsent(insulinApplication.timestamp) { mutableListOf() }
+            list.removeIf { it.id == insulinApplication.id || (it.reason == "Basal" && insulinApplication.reason == "Basal") }
+            list.add(insulinApplication)
+        }
+        metabolicEventsDao.insertInsulinApplication(insulinApplication.toEntity())
     }
 
     /**
      * Returns a specific basal history entry by its tick index.
      * Checks the cache first, then falls back to the database.
      */
-    suspend fun getBasalHistoryEntry(tick: Int): BasalHistoryEntry? {
-        val cacheEntry = basalHistory[tick]
+    suspend fun getBasalHistoryEntry(tick: Int): InsulinApplication? {
+        val timestamp = startOfTick(tick)
+        val cacheEntry = insulinHistory[timestamp]?.find { it.reason == "Basal" }
         if (cacheEntry != null) return cacheEntry
 
-        val entity = metabolicEventsDao.getBasalHistoryEntry(tick) ?: return null
+        val entity = metabolicEventsDao.getBasalHistoryEntry(timestamp.ms) ?: return null
         val type = getAllInsulinTypes().find { it.id == entity.insulin_type_id } ?: return null
         return entity.toModel(type)
     }
@@ -164,8 +144,8 @@ class TreatmentRepository(
     /**
      * Returns the most recent basal history entry from the cache or database.
      */
-    suspend fun getLastBasalHistoryEntry(): BasalHistoryEntry? {
-        val cacheEntry = basalHistory.lastEntry()?.value
+    suspend fun getLastBasalHistoryEntry(): InsulinApplication? {
+        val cacheEntry = insulinHistory.values.flatten().filter { it.reason == "Basal" }.maxByOrNull { it.timestamp }
         if (cacheEntry != null) return cacheEntry
 
         val entity = metabolicEventsDao.getLastBasalHistoryEntry() ?: return null
@@ -176,15 +156,18 @@ class TreatmentRepository(
     /**
      * Returns a list of basal history entries within the given tick range from the cache.
      */
-    fun getBasalHistory(fromTick: Int? = null, toTick: Int? = null): List<BasalHistoryEntry> {
-        val map = if (fromTick == null && toTick == null) {
-            basalHistory
-        } else if (toTick == null) {
-            basalHistory.tailMap(fromTick)
+    fun getBasalHistory(fromTick: Int? = null, toTick: Int? = null): List<InsulinApplication> {
+        val from = fromTick?.let { startOfTick(it) }
+        val to = toTick?.let { startOfTick(it) }
+
+        val map = if (from == null && to == null) {
+            insulinHistory
+        } else if (to == null) {
+            insulinHistory.tailMap(from)
         } else {
-            basalHistory.subMap(fromTick, toTick)
+            insulinHistory.subMap(from, to)
         }
-        return map.values.toList()
+        return map.values.flatten().filter { it.reason == "Basal" }
     }
 
     /**
@@ -213,42 +196,42 @@ class TreatmentRepository(
     }
 
     /**
-     * Adds a new bolus entry to the cache and database.
+     * Adds a new insulin application to the cache and database.
      */
-    suspend fun addBolus(insulinApplication: InsulinApplication) {
+    suspend fun addInsulinApplication(insulinApplication: InsulinApplication) {
         val historyStart = historyStart()
         if (insulinApplication.timestamp >= historyStart) {
-            bolusHistory
-                .computeIfAbsent(insulinApplication.timestamp, { _ -> mutableListOf() })
+            insulinHistory
+                .computeIfAbsent(insulinApplication.timestamp) { mutableListOf() }
                 .add(insulinApplication)
         }
 
-        val id = metabolicEventsDao.insertBolus(insulinApplication.toBolusEntity())
+        val id = metabolicEventsDao.insertInsulinApplication(insulinApplication.toEntity())
         if (id != -1L) {
             insulinApplication.id = id
         }
     }
 
     /**
-     * Deletes a bolus entry from the cache and database.
+     * Deletes an insulin application from the cache and database.
      */
-    suspend fun removeBolus(insulinApplication: InsulinApplication) {
-        bolusHistory[insulinApplication.timestamp]?.remove(insulinApplication)
-        metabolicEventsDao.deleteBolus(insulinApplication.id)
+    suspend fun removeInsulinApplication(insulinApplication: InsulinApplication) {
+        insulinHistory[insulinApplication.timestamp]?.remove(insulinApplication)
+        metabolicEventsDao.deleteInsulinApplication(insulinApplication.id)
     }
 
     /**
-     * Deletes all bolus entries with the specified origin from the cache and database.
+     * Deletes all insulin applications with the specified origin from the cache and database.
      */
-    suspend fun clearBolusesByOrigin(origin: InsulinOrigin) {
+    suspend fun clearInsulinApplicationsByOrigin(origin: InsulinOrigin) {
         // Clear from cache
-        bolusHistory.values.forEach { list ->
+        insulinHistory.values.forEach { list ->
             list.removeAll { it.origin == origin }
         }
-        bolusHistory.entries.removeIf { it.value.isEmpty() }
+        insulinHistory.entries.removeIf { it.value.isEmpty() }
 
         // Clear from database
-        metabolicEventsDao.deleteBolusesByOrigin(origin)
+        metabolicEventsDao.deleteInsulinApplicationsByOrigin(origin)
     }
 
     /**
@@ -266,15 +249,15 @@ class TreatmentRepository(
     }
 
     /**
-     * Returns a flattened list of bolus entries within the optional timestamp range from the cache.
+     * Returns a flattened list of insulin applications within the optional timestamp range from the cache.
      */
-    fun getBoluses(from: Timestamp? = null, to: Timestamp? = null): List<InsulinApplication> {
+    fun getInsulinApplications(from: Timestamp? = null, to: Timestamp? = null): List<InsulinApplication> {
         val map = if (from == null && to == null) {
-            bolusHistory
+            insulinHistory
         } else if (to == null) {
-            bolusHistory.tailMap(from)
+            insulinHistory.tailMap(from)
         } else {
-            bolusHistory.subMap(from, to)
+            insulinHistory.subMap(from, to)
         }
         return map.values.flatten()
     }

@@ -259,12 +259,7 @@ class APS(
                 }
             }
             launch {
-                treatmentRepository.observeBoluses().drop(1).collect { data ->
-                    core.onMetabolicEventsChanged()
-                }
-            }
-            launch {
-                treatmentRepository.observeBasalHistory().drop(1).collect { data ->
+                treatmentRepository.observeInsulinApplications().drop(1).collect { data ->
                     core.onMetabolicEventsChanged()
                 }
             }

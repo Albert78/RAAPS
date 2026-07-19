@@ -1,6 +1,5 @@
 package de.dh.raaps.core.repository.db
 
-import de.dh.raaps.common.model.BasalHistoryEntry
 import de.dh.raaps.common.model.CarbCurveComponentData
 import de.dh.raaps.common.model.DataProvider
 import de.dh.raaps.common.model.InsulinApplication
@@ -17,13 +16,12 @@ import de.dh.raaps.common.model.data.SensorType
 import de.dh.raaps.common.model.data.TargetBlock
 import de.dh.raaps.common.model.data.TherapyData
 import de.dh.raaps.common.model.data.Timestamp
-import de.dh.raaps.core.repository.db.entities.BasalHistoryEntity
-import de.dh.raaps.core.repository.db.entities.BolusEntity
 import de.dh.raaps.core.repository.db.entities.CurrentTherapySettingsEntity
 import de.dh.raaps.core.repository.db.entities.DBBlock
 import de.dh.raaps.core.repository.db.entities.DBTargetBlock
 import de.dh.raaps.core.repository.db.entities.DataProviderEntity
 import de.dh.raaps.core.repository.db.entities.GlucoseReadingEntity
+import de.dh.raaps.core.repository.db.entities.InsulinEntity
 import de.dh.raaps.core.repository.db.entities.InsulinTypeEntity
 import de.dh.raaps.core.repository.db.entities.MealEntity
 import de.dh.raaps.core.repository.db.entities.MealTypeEntity
@@ -134,35 +132,24 @@ fun InsulinTypeEntity.toModel() = InsulinType(
     dia = this.dia
 )
 
-fun InsulinApplication.toBolusEntity() = BolusEntity(
+fun InsulinApplication.toEntity() = InsulinEntity(
     id = this.id,
     timestamp = this.timestamp,
     amount = this.amount,
+    scheduledAmount = this.scheduledAmount,
     insulin_type_id = this.insulinType.id,
-    origin = this.origin
+    origin = this.origin,
+    reason = this.reason
 )
 
-fun BolusEntity.toModel(type: InsulinType) = InsulinApplication(
+fun InsulinEntity.toModel(type: InsulinType) = InsulinApplication(
     id = this.id,
     timestamp = this.timestamp,
     amount = this.amount,
+    scheduledAmount = this.scheduledAmount,
     insulinType = type,
-    origin = this.origin
-)
-
-// Basal History Converters
-fun BasalHistoryEntry.toEntity() = BasalHistoryEntity(
-    startTick = this.startTick,
-    scheduledRate = this.scheduledRate,
-    actualRate = this.actualRate,
-    insulin_type_id = this.insulinType.id
-)
-
-fun BasalHistoryEntity.toModel(type: InsulinType) = BasalHistoryEntry(
-    startTick = this.startTick,
-    scheduledRate = this.scheduledRate,
-    actualRate = this.actualRate,
-    insulinType = type
+    origin = this.origin,
+    reason = this.reason
 )
 
 // Therapy Converters

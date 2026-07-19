@@ -11,11 +11,10 @@ import androidx.room.RoomDatabase
 import androidx.room.TypeConverters
 import androidx.room.Update
 import de.dh.raaps.common.model.InsulinOrigin
-import de.dh.raaps.core.repository.db.entities.BasalHistoryEntity
-import de.dh.raaps.core.repository.db.entities.BolusEntity
 import de.dh.raaps.core.repository.db.entities.CurrentTherapySettingsEntity
 import de.dh.raaps.core.repository.db.entities.DataProviderEntity
 import de.dh.raaps.core.repository.db.entities.GlucoseReadingEntity
+import de.dh.raaps.core.repository.db.entities.InsulinEntity
 import de.dh.raaps.core.repository.db.entities.InsulinTypeEntity
 import de.dh.raaps.core.repository.db.entities.MealEntity
 import de.dh.raaps.core.repository.db.entities.MealTypeEntity
@@ -156,45 +155,33 @@ interface MetabolicEventsDao {
     @Query("DELETE FROM INSULIN_TYPE where id = :insulinTypeId")
     suspend fun deleteInsulinType(insulinTypeId: String)
 
-    // Bolus
-    @Query("SELECT * FROM bolus ORDER BY timestamp ASC")
-    suspend fun getAllBoluses(): List<BolusEntity>
+    // Insulin
+    @Query("SELECT * FROM insulin ORDER BY timestamp ASC")
+    suspend fun getAllInsulinApplications(): List<InsulinEntity>
 
-    @Query("SELECT * FROM bolus ORDER BY timestamp ASC")
-    fun observeAllBoluses(): Flow<List<BolusEntity>>
+    @Query("SELECT * FROM insulin ORDER BY timestamp ASC")
+    fun observeAllInsulinApplications(): Flow<List<InsulinEntity>>
 
-    @Query("SELECT * FROM bolus WHERE timestamp >= :since ORDER BY timestamp ASC")
-    suspend fun getBolusesSince(since: Long): List<BolusEntity>
+    @Query("SELECT * FROM insulin WHERE timestamp >= :since ORDER BY timestamp ASC")
+    suspend fun getInsulinApplicationsSince(since: Long): List<InsulinEntity>
 
     @Insert
-    suspend fun insertBolus(bolus: BolusEntity): Long
+    suspend fun insertInsulinApplication(insulin: InsulinEntity): Long
 
     @Update
-    suspend fun updateBolus(bolus: BolusEntity)
+    suspend fun updateInsulinApplication(insulin: InsulinEntity)
 
-    @Query("DELETE FROM bolus where id = :bolusId")
-    suspend fun deleteBolus(bolusId: Long)
+    @Query("DELETE FROM insulin where id = :id")
+    suspend fun deleteInsulinApplication(id: Long)
 
-    @Query("DELETE FROM bolus WHERE origin = :origin")
-    suspend fun deleteBolusesByOrigin(origin: InsulinOrigin)
+    @Query("DELETE FROM insulin WHERE origin = :origin")
+    suspend fun deleteInsulinApplicationsByOrigin(origin: InsulinOrigin)
 
-    @Query("SELECT * FROM basal_history WHERE startTick = :tick LIMIT 1")
-    suspend fun getBasalHistoryEntry(tick: Int): BasalHistoryEntity?
+    @Query("SELECT * FROM insulin WHERE timestamp = :timestamp AND reason = 'Basal' LIMIT 1")
+    suspend fun getBasalHistoryEntry(timestamp: Long): InsulinEntity?
 
-    @Query("SELECT * FROM basal_history ORDER BY startTick DESC LIMIT 1")
-    suspend fun getLastBasalHistoryEntry(): BasalHistoryEntity?
-
-    @Query("SELECT * FROM basal_history WHERE startTick >= :since ORDER BY startTick ASC")
-    suspend fun getBasalHistoryEntriesSince(since: Int): List<BasalHistoryEntity>
-
-    @Query("SELECT * FROM basal_history ORDER BY startTick ASC")
-    suspend fun getAllBasalHistoryEntries(): List<BasalHistoryEntity>
-
-    @Query("SELECT * FROM basal_history ORDER BY startTick ASC")
-    fun observeAllBasalHistoryEntries(): Flow<List<BasalHistoryEntity>>
-
-    @Insert(onConflict = OnConflictStrategy.REPLACE)
-    suspend fun insertBasalHistoryEntry(basal: BasalHistoryEntity)
+    @Query("SELECT * FROM insulin WHERE reason = 'Basal' ORDER BY timestamp DESC LIMIT 1")
+    suspend fun getLastBasalHistoryEntry(): InsulinEntity?
 }
 
 @Database(entities = [
@@ -212,8 +199,7 @@ interface MetabolicEventsDao {
     MealTypeEntity::class,
     MealEntity::class,
     InsulinTypeEntity::class,
-    BolusEntity::class,
-    BasalHistoryEntity::class
+    InsulinEntity::class
 ], version = 1)
 @TypeConverters(
     DbTypeConverters::class

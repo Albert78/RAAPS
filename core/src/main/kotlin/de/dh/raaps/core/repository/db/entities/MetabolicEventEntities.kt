@@ -51,7 +51,7 @@ data class InsulinTypeEntity(
 )
 
 @Entity(
-    tableName = "bolus",
+    tableName = "insulin",
     foreignKeys = [
         ForeignKey(
             entity = InsulinTypeEntity::class,
@@ -59,25 +59,16 @@ data class InsulinTypeEntity(
             childColumns = ["insulin_type_id"],
             onDelete = ForeignKey.RESTRICT
         )
-    ]
+    ],
+    indices = [Index("timestamp")]
 )
-data class BolusEntity(
+data class InsulinEntity(
     @PrimaryKey(autoGenerate = true)
     var id: Long = ID_UNDEFINED,
     val insulin_type_id: String,
     val timestamp: Timestamp,
+    val amount: Double,
+    val scheduledAmount: Double,
     val origin: InsulinOrigin,
-    val amount: Double
-)
-
-@Entity(
-    tableName = "basal_history",
-    indices = [Index("startTick")]
-)
-data class BasalHistoryEntity(
-    @PrimaryKey
-    val startTick: Int, // Ticks since epoch, e.g. with duration of 20 minutes
-    val scheduledRate: Double,
-    val actualRate: Double,
-    val insulin_type_id: String
+    val reason: String
 )

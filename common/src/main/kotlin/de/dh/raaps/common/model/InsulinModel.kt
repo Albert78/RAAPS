@@ -68,22 +68,14 @@ enum class InsulinOrigin {
 }
 
 /**
- * Historical bolus application.
+ * Historical insulin application (Bolus or Basal).
  */
 data class InsulinApplication(
     var id: Long = ID_UNDEFINED,
     val timestamp: Timestamp,
     val amount: Double,
+    val scheduledAmount: Double = amount,
     val insulinType: InsulinType,
-    val origin: InsulinOrigin
-)
-
-/**
- * Calculated basal rate entry for a specific time interval (tick).
- */
-data class BasalHistoryEntry(
-    val startTick: Int,
-    val scheduledRate: Double,
-    val actualRate: Double,
-    val insulinType: InsulinType
+    val origin: InsulinOrigin,
+    val reason: String
 )

@@ -1,6 +1,5 @@
 package de.dh.raaps.core.aps
 
-import de.dh.raaps.common.model.BasalHistoryEntry
 import de.dh.raaps.common.model.BasalHistoryPoint
 import de.dh.raaps.common.model.BolusHistoryPoint
 import de.dh.raaps.common.model.ID_UNDEFINED
@@ -54,7 +53,16 @@ class InsulinHistoryHelper {
                         newTherapyData.basalBlocks.getAmountForMinute(minutesSinceMidnight)
                     }
                 }
-                treatmentRepository.updateBasalHistoryEntry(BasalHistoryEntry(tick, rate, rate, insulinType))
+                treatmentRepository.updateInsulinApplication(
+                    InsulinApplication(
+                        timestamp = tickTimestamp,
+                        amount = rate,
+                        scheduledAmount = rate,
+                        insulinType = insulinType,
+                        origin = InsulinOrigin.Pump,
+                        reason = "Basal"
+                    )
+                )
             }
         }
 
@@ -94,7 +102,16 @@ class InsulinHistoryHelper {
                 for (tick in fillStartTick until firstHistoryTick) {
                     val tickTimestamp = Timestamp(tick.toLong() * tickDurationMs)
                     val rate = therapyData.basalBlocks.getAmountForMinute(tickTimestamp.minutesSinceMidnight())
-                    treatmentRepository.updateBasalHistoryEntry(BasalHistoryEntry(tick, rate, rate, insulinType))
+                    treatmentRepository.updateInsulinApplication(
+                        InsulinApplication(
+                            timestamp = tickTimestamp,
+                            amount = rate,
+                            scheduledAmount = rate,
+                            insulinType = insulinType,
+                            origin = InsulinOrigin.Pump,
+                            reason = "Basal"
+                        )
+                    )
                 }
             }
 
@@ -123,9 +140,23 @@ class InsulinHistoryHelper {
 
                 val existing = treatmentRepository.getBasalHistoryEntry(tick)
                 if (existing != null) {
-                    treatmentRepository.updateBasalHistoryEntry(existing.copy(scheduledRate = scheduledRate, actualRate = averageActualRate))
+                    treatmentRepository.updateInsulinApplication(
+                        existing.copy(
+                            scheduledAmount = scheduledRate,
+                            amount = averageActualRate
+                        )
+                    )
                 } else {
-                    treatmentRepository.updateBasalHistoryEntry(BasalHistoryEntry(tick, scheduledRate, averageActualRate, insulinType))
+                    treatmentRepository.updateInsulinApplication(
+                        InsulinApplication(
+                            timestamp = tickTimestamp,
+                            amount = averageActualRate,
+                            scheduledAmount = scheduledRate,
+                            insulinType = insulinType,
+                            origin = InsulinOrigin.Pump,
+                            reason = "Basal"
+                        )
+                    )
                 }
             }
         }
@@ -135,32 +166,36 @@ class InsulinHistoryHelper {
             insulinType: InsulinType,
             treatmentRepository: TreatmentRepository
         ) {
-            treatmentRepository.clearBolusesByOrigin(InsulinOrigin.Pump)
+            treatmentRepository.clearInsulinApplicationsByOrigin(InsulinOrigin.Pump)
             bolusHistory.forEach { point ->
-                treatmentRepository.addBolus(
+                treatmentRepository.addInsulinApplication(
                     InsulinApplication(
                         id = ID_UNDEFINED,
                         timestamp = Timestamp(point.timestamp),
                         amount = point.amount,
                         insulinType = insulinType,
-                        origin = InsulinOrigin.Pump
+                        origin = InsulinOrigin.Pump,
+                        reason = "Meal-Bolus"
                     )
                 )
             }
         }
 
         suspend fun calculateBolusesAndBasalDeviations(treatmentRepository: TreatmentRepository): List<InsulinApplication> {
-            val boluses = treatmentRepository.getBoluses()
+            val boluses = treatmentRepository.getInsulinApplications()
+                .filter { it.reason != "Basal" }
             val basalDeviations = treatmentRepository.getBasalHistory()
                 .map { historyEntry ->
-                    val deviationUph = historyEntry.actualRate - historyEntry.scheduledRate
+                    val deviationUph = historyEntry.amount - historyEntry.scheduledAmount
                     val amount = deviationUph / TreatmentRepository.BASAL_TICKS_PER_HOUR
                     InsulinApplication(
-                        ID_UNDEFINED,
-                        treatmentRepository.startOfTick(historyEntry.startTick),
-                        amount,
-                        historyEntry.insulinType,
-                        InsulinOrigin.Pump
+                        id = ID_UNDEFINED,
+                        timestamp = historyEntry.timestamp,
+                        amount = amount,
+                        scheduledAmount = amount,
+                        insulinType = historyEntry.insulinType,
+                        origin = InsulinOrigin.Pump,
+                        reason = "Basal"
                     )
                 }
                 .filter { abs(it.amount) > INSULIN_EPSILON }
