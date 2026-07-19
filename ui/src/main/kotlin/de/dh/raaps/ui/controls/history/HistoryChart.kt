@@ -30,7 +30,6 @@ import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.drawscope.translate
 import androidx.compose.ui.graphics.withSave
 import androidx.compose.ui.input.pointer.pointerInput
-import androidx.compose.ui.platform.LocalInspectionMode
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.patrykandpatrick.vico.compose.cartesian.CartesianChartHost
@@ -65,6 +64,8 @@ import com.patrykandpatrick.vico.compose.common.Fill
 import com.patrykandpatrick.vico.compose.common.Position
 import com.patrykandpatrick.vico.compose.common.component.rememberShapeComponent
 import com.patrykandpatrick.vico.compose.common.data.ExtraStore
+import de.dh.raaps.common.model.MS_PER_HOUR
+import de.dh.raaps.common.model.MS_PER_MINUTE
 import de.dh.raaps.common.model.data.BgReading
 import de.dh.raaps.common.model.data.BgSampleKind
 import de.dh.raaps.common.model.data.BgValue
@@ -80,8 +81,6 @@ import kotlin.math.sin
 import kotlin.random.Random
 
 private const val INITIAL_SHOW_HOURS = 4.0
-private const val MS_PER_HOUR = 60 * 60 * 1000L
-private const val MS_PER_MINUTE = 60 * 1000L
 
 /**
  * State of the BgHistoryChart to observe and control the visible range.
@@ -153,7 +152,7 @@ fun rememberBgHistoryChartState(
     }
 }
 
-data class DiagramData(
+data class HistoryDiagramData(
     val readings: List<BgReading>,
     val baseTimestamp: Long,
     val minX: Double,
@@ -164,7 +163,7 @@ data class DiagramData(
     val dataSignature: Any
 ) {
     companion object {
-        fun fromReadings(readings: List<BgReading>): DiagramData? {
+        fun fromReadings(readings: List<BgReading>): HistoryDiagramData? {
             val validReadings = readings.filter { it.sampleKind == BgSampleKind.Value }
             if (validReadings.isEmpty()) return null
 
@@ -177,7 +176,7 @@ data class DiagramData(
             val endTs = (((lastTs + MS_PER_HOUR / 2) / MS_PER_HOUR) + 1) * MS_PER_HOUR
             val maxX = (endTs - baseTimestamp).toDouble() / MS_PER_MINUTE
 
-            return DiagramData(
+            return HistoryDiagramData(
                 readings = validReadings,
                 baseTimestamp = baseTimestamp,
                 minX = minX,
@@ -188,11 +187,11 @@ data class DiagramData(
             )
         }
 
-        fun empty(): DiagramData {
+        fun empty(): HistoryDiagramData {
             val now = Timestamp.now().ms
             val baseTimestamp = (now / MS_PER_HOUR) * MS_PER_HOUR
             val maxX = INITIAL_SHOW_HOURS * 60.0
-            return DiagramData(
+            return HistoryDiagramData(
                 readings = emptyList(),
                 baseTimestamp = baseTimestamp,
                 minX = 0.0,
@@ -207,7 +206,7 @@ data class DiagramData(
 
 @Composable
 fun BgHistoryChart(
-    diagramData: DiagramData,
+    diagramData: HistoryDiagramData,
     modifier: Modifier = Modifier,
     lowBgThreshold: Double = 70.0,
     highBgThreshold: Double = 170.0,
@@ -438,7 +437,7 @@ fun BgHistoryChart(
 
 @Composable
 fun BgHistoryChartOrDefault(
-    diagramData: DiagramData?,
+    diagramData: HistoryDiagramData?,
     modifier: Modifier = Modifier,
     lowBgThreshold: Double = 70.0,
     highBgThreshold: Double = 170.0,
@@ -446,13 +445,13 @@ fun BgHistoryChartOrDefault(
     onChartClick: (() -> Unit)? = null,
     state: BgHistoryChartState? = null
 ) {
-    val data = diagramData ?: remember { DiagramData.empty() }
+    val data = diagramData ?: remember { HistoryDiagramData.empty() }
     BgHistoryChart(data, modifier, lowBgThreshold, highBgThreshold, showMarkers = showMarkers, onChartClick = onChartClick, controlledState = state)
 }
 
 @Composable
 fun BgOverviewChart(
-    diagramData: DiagramData,
+    diagramData: HistoryDiagramData,
     state: BgHistoryChartState,
     modifier: Modifier = Modifier,
 ) {
@@ -636,21 +635,9 @@ fun BgOverviewChart(
     }
 }
 
-fun generatedBg(minsInterval: Short, index: Int, startTs: Timestamp): BgReading {
-    val base = 170.0
-    val curve = 100.0 * sin(index * minsInterval / 50.0) + 15.0 * sin(index * minsInterval / 60.0)
-    val noise = Random.nextDouble(-5.0, 5.0)
-    return BgReading(value = BgValue.fromMgDl((base + curve + noise).toInt().coerceIn(40, 400)), sampleKind = BgSampleKind.Value, timestamp = startTs.plusMinutes(index * minsInterval))
-}
-
-fun createSampleReadings(size: Int, minsInterval: Short): List<BgReading> {
-    val startTs = Timestamp.now().minusMinutes(minsInterval * size + 10)
-    return List(size) { index -> generatedBg(minsInterval, index, startTs) }
-}
-
-fun createSampleDiagramData(size: Int, minsInterval: Short): DiagramData {
+fun createSampleDiagramData(size: Int, minsInterval: Short): HistoryDiagramData {
     val readings = createSampleReadings(size, minsInterval)
-    return DiagramData.fromReadings(readings)!!
+    return HistoryDiagramData.fromReadings(readings)!!
 }
 
 @Preview(showBackground = true, uiMode = Configuration.UI_MODE_NIGHT_YES)

@@ -55,11 +55,11 @@ import de.dh.raaps.common.ui.theme.AppTheme
 import de.dh.raaps.ui.R
 import de.dh.raaps.ui.controls.history.BgHistoryChartOrDefault
 import de.dh.raaps.ui.controls.history.CurrentBgUiState
-import de.dh.raaps.ui.controls.history.CurrentBgView
-import de.dh.raaps.ui.controls.history.DiagramData
+import de.dh.raaps.ui.controls.state.CurrentBgView
+import de.dh.raaps.ui.controls.history.HistoryDiagramData
 import de.dh.raaps.ui.controls.history.HistoryUiState
 import de.dh.raaps.ui.controls.history.HistoryViewModel
-import de.dh.raaps.ui.controls.history.createSampleGoodBgUiState
+import de.dh.raaps.ui.controls.state.createSampleGoodBgUiState
 import de.dh.raaps.ui.controls.history.rememberBgHistoryChartState
 import de.dh.raaps.ui.controls.profile.CurrentTherapyUiState
 import de.dh.raaps.ui.controls.profile.CurrentTherapyViewModel
@@ -301,7 +301,7 @@ fun DashboardContent(
                     val chartState = rememberBgHistoryChartState()
 
                     BgHistoryChartOrDefault(
-                        diagramData = DiagramData.fromReadings(historyUiState.readings),
+                        diagramData = HistoryDiagramData.fromReadings(historyUiState.readings),
                         state = chartState,
                         onChartClick = onHistoryChartClick
                     )

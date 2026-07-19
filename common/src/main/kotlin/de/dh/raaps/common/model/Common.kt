@@ -2,10 +2,13 @@ package de.dh.raaps.common.model
 
 const val ID_UNDEFINED = 0L
 
+const val SECONDS_PER_MINUTE = 60
 const val MINUTES_PER_HOUR = 60
 const val HOURS_PER_DAY = 24
 const val MINUTES_PER_DAY = MINUTES_PER_HOUR * HOURS_PER_DAY
-const val MS_PER_HOUR = MINUTES_PER_HOUR * 60 * 1000
+
+const val MS_PER_MINUTE = SECONDS_PER_MINUTE * 1000L
+const val MS_PER_HOUR = MINUTES_PER_HOUR * MS_PER_MINUTE
 
 const val ID_INSULIN_ASPART = "9d860e7e-8c88-466d-a7f4-3e91851e3c88"
 const val ID_INSULIN_FIASP = "4e0e9803-0c48-433b-8f7d-2b4f2c96791a"

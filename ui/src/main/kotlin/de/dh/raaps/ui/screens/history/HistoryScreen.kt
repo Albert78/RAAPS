@@ -25,7 +25,7 @@ import de.dh.raaps.common.ui.composables.screenTitle
 import de.dh.raaps.common.ui.theme.AppTheme
 import de.dh.raaps.ui.controls.history.BgHistoryChartOrDefault
 import de.dh.raaps.ui.controls.history.BgOverviewChart
-import de.dh.raaps.ui.controls.history.DiagramData
+import de.dh.raaps.ui.controls.history.HistoryDiagramData
 import de.dh.raaps.ui.controls.history.HistoryUiState
 import de.dh.raaps.ui.controls.history.HistoryViewModel
 import de.dh.raaps.ui.controls.history.createSampleReadings
@@ -69,7 +69,7 @@ fun HistoryContent(
                     modifier = Modifier.align(Alignment.Center)
                 )
             } else {
-                val diagramData = DiagramData.fromReadings(historyUiState.readings)
+                val diagramData = HistoryDiagramData.fromReadings(historyUiState.readings)
                 Column(modifier = Modifier.fillMaxSize()) {
                     BgHistoryChartOrDefault(
                         diagramData = diagramData,
@@ -77,7 +77,7 @@ fun HistoryContent(
                         state = chartState,
                         modifier = Modifier.weight(1f)
                     )
-                    
+
                     if (diagramData != null) {
                         Spacer(modifier = Modifier.height(16.dp))
                         BgOverviewChart(

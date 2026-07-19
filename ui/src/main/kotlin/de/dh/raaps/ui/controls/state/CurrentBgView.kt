@@ -1,4 +1,4 @@
-package de.dh.raaps.ui.controls.history
+package de.dh.raaps.ui.controls.state
 
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.Arrangement
@@ -40,6 +40,9 @@ import de.dh.raaps.common.ui.composables.Red
 import de.dh.raaps.common.ui.composables.Yellow
 import de.dh.raaps.common.ui.shortRelativeTimeAgo
 import de.dh.raaps.common.ui.theme.AppTheme
+import de.dh.raaps.ui.controls.history.BgTrend
+import de.dh.raaps.ui.controls.history.CurrentBgData
+import de.dh.raaps.ui.controls.history.CurrentBgUiState
 import kotlinx.coroutines.delay
 
 @Composable

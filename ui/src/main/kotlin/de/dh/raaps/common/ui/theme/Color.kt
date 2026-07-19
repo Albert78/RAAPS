@@ -73,3 +73,13 @@ val status_dark_overdue = Color(0xFFE57373)
 
 // Custom Semantic Colors Dark
 val semantic_dark_warning = Color(0xFFFFF176)
+
+// TODO: Currently hard coded, rework to have a light and a dark variant
+val ColorBg = Color(0xFF00BCD4)
+val ColorInsulin = Color(0xFFF44336)
+val ColorCarbs = Color(0xFFFFC107)
+
+val SoftRed = Color(0xFFE57373)
+val SoftBlue = Color(0xFF64B5F6)
+val SoftGreen = Color(0xFF81C784)
+val NeutralGrey = Color(0xFF9E9E9E)
