@@ -90,4 +90,12 @@
     <string name="recommendation_text_bolus">Geben Sie %1$.2fU Insulin ab, um einen hohen Blutzucker zu korrigieren.</string>
 
     <string name="insulin_unit_label_format">%1$.1f I.E.</string>
+
+    <string name="aps_mode_suspend">Pumpe Stopp</string>
+    <string name="aps_mode_basal_only">Nur Basal</string>
+    <string name="aps_mode_auto_correction">Auto-Korr.</string>
+    <string name="aps_control_basal_label">Basal: %1$s U/h</string>
+    <string name="aps_control_ic_label">I:C %1$s</string>
+    <string name="aps_control_isf_label">ISF %1$d</string>
+    <string name="aps_control_adjustment_neutral">neutral</string>
 </resources>
