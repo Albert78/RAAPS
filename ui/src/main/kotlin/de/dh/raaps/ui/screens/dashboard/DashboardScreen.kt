@@ -2,11 +2,8 @@ package de.dh.raaps.ui.screens.dashboard
 
 import android.content.res.Configuration
 import android.util.Range
-import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -16,7 +13,6 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.MoreVert
-import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
@@ -24,7 +20,6 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedCard
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
@@ -39,18 +34,14 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import de.dh.raaps.common.model.ApsMode
 import de.dh.raaps.common.model.data.BgDelta
 import de.dh.raaps.common.model.data.BgValue
-import de.dh.raaps.common.model.data.GlucoseUnit
 import de.dh.raaps.common.model.data.Profile
-import de.dh.raaps.common.ui.composables.ProfileSelectionDialog
 import de.dh.raaps.common.ui.composables.WarningBanner
 import de.dh.raaps.common.ui.composables.screenTitle
-import de.dh.raaps.common.ui.targetRange
 import de.dh.raaps.common.ui.theme.AppTheme
 import de.dh.raaps.ui.R
 import de.dh.raaps.ui.controls.history.BgHistoryChartOrDefault
@@ -61,7 +52,7 @@ import de.dh.raaps.ui.controls.history.HistoryViewModel
 import de.dh.raaps.ui.controls.history.rememberBgHistoryChartState
 import de.dh.raaps.ui.controls.profile.CurrentTherapyUiState
 import de.dh.raaps.ui.controls.profile.CurrentTherapyViewModel
-import de.dh.raaps.ui.controls.state.CurrentBgView
+import de.dh.raaps.ui.controls.state.CurrentStateView
 import de.dh.raaps.ui.controls.state.createSampleGoodBgUiState
 import de.dh.raaps.ui.screens.history.createSampleHistoryUiState
 import de.dh.raaps.ui.screens.permissions.PermissionStatus
@@ -123,7 +114,9 @@ fun DashboardContent(
 ) {
     val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
     var menuExpanded by remember { mutableStateOf(false) }
-    var modeMenuExpanded by remember { mutableStateOf(false) }
+
+    var carbsVisible by remember { mutableStateOf(true) }
+    var insulinVisible by remember { mutableStateOf(true) }
 
     Scaffold(
         modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
@@ -183,105 +176,14 @@ fun DashboardContent(
                 )
             }
 
-            Row(
+            CurrentStateView(
+                currentBgUiState = currentBgUiState,
                 modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                CurrentBgView(
-                    currentBgUiState
-                )
-
-                var showProfileDialog by remember { mutableStateOf(false) }
-
-                Column(
-                    modifier = Modifier
-                        .weight(1f)
-                        .padding(vertical = 8.dp)
-                ) {
-                    Box {
-                        OutlinedCard(
-                            onClick = { modeMenuExpanded = true },
-                            modifier = Modifier.padding(bottom = 4.dp),
-                            colors = CardDefaults.outlinedCardColors(
-                                containerColor = when (dashboardUiState.apsMode) {
-                                    ApsMode.Suspend -> MaterialTheme.colorScheme.surfaceVariant
-                                    ApsMode.BasalOnly -> MaterialTheme.colorScheme.primaryContainer
-                                    ApsMode.AutoCorrection -> MaterialTheme.colorScheme.tertiaryContainer
-                                }
-                            ),
-                            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline)
-                        ) {
-                            Text(
-                                text = dashboardUiState.apsMode.name,
-                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
-                                style = MaterialTheme.typography.labelMedium,
-                                fontWeight = FontWeight.Bold
-                            )
-                        }
-
-                        DropdownMenu(
-                            expanded = modeMenuExpanded,
-                            onDismissRequest = { modeMenuExpanded = false }
-                        ) {
-                            ApsMode.entries.forEach { mode ->
-                                DropdownMenuItem(
-                                    text = { Text(mode.name) },
-                                    onClick = {
-                                        onApsModeSelect(mode)
-                                        modeMenuExpanded = false
-                                    }
-                                )
-                            }
-                        }
-                    }
-
-                    OutlinedCard(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .clickable { showProfileDialog = true },
-                        colors = CardDefaults.outlinedCardColors(
-                            containerColor = MaterialTheme.colorScheme.surface
-                        ),
-                        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
-                    ) {
-                        Column(modifier = Modifier.padding(12.dp)) {
-                            Text(
-                                text = currentTherapyUiState.profileName,
-                                style = MaterialTheme.typography.titleMedium,
-                                modifier = Modifier.padding(bottom = 4.dp)
-                            )
-
-                            val targetStr = currentTherapyUiState.currentTarget?.let { targetRange(it, currentTherapyUiState.glucoseUnit) } ?: "-"
-                            val unitStr = when(currentTherapyUiState.glucoseUnit) {
-                                GlucoseUnit.MG_DL -> "mg/dL"
-                                GlucoseUnit.MMOL -> "mmol/l"
-                            }
-
-                            Text(
-                                text = "$targetStr $unitStr",
-                                style = MaterialTheme.typography.bodyMedium,
-                                fontWeight = FontWeight.Bold
-                            )
-                        }
-                    }
-                }
-
-                if (showProfileDialog) {
-                    ProfileSelectionDialog(
-                        profiles = currentTherapyUiState.availableProfiles,
-                        activeProfileId = currentTherapyUiState.activeProfileId,
-                        onProfileSelected = {
-                            onProfileSelect(it)
-                            showProfileDialog = false
-                        },
-                        onDismiss = { showProfileDialog = false },
-                        onEditProfilesClick = {
-                            showProfileDialog = false
-                            onNavigateToProfileEditor()
-                        }
-                    )
-                }
-            }
+                carbsVisible = carbsVisible,
+                onCarbsToggle = { carbsVisible = it },
+                insulinVisible = insulinVisible,
+                onInsulinToggle = { insulinVisible = it }
+            )
 
             Text(
                 text = stringResource(R.string.dashboard_glucose_title),
