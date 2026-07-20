@@ -86,8 +86,8 @@
     <string name="recommendation_notification_channel_name">Behandlungsempfehlungen</string>
     <string name="recommendation_title_carbs">Essensempfehlung</string>
     <string name="recommendation_title_bolus">Insulinempfehlung</string>
-    <string name="recommendation_text_carbs">Essen Sie %1$dg Kohlenhydrate, um eine Hypoglykämie zu vermeiden.</string>
-    <string name="recommendation_text_bolus">Geben Sie %1$.2fU Insulin ab, um einen hohen Blutzucker zu korrigieren.</string>
+    <string name="recommendation_text_carbs">Nimm %1$dg Kohlenhydrate zu dir, um eine Hypoglykämie zu vermeiden.</string>
+    <string name="recommendation_text_bolus">Verabreiche dir %1$.2fU Insulin, um einen hohen Blutzucker zu korrigieren.</string>
 
     <string name="insulin_unit_label_format">%1$.1f I.E.</string>
 

@@ -1,5 +1,6 @@
 package de.dh.raaps.ui.controls.apscontrol
 
+import android.content.res.Configuration
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -40,9 +41,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalLocale
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import de.dh.raaps.common.model.ApsMode
 import de.dh.raaps.common.ui.composables.AppColorBlue
+import de.dh.raaps.common.ui.theme.AppTheme
 import de.dh.raaps.common.ui.theme.SoftBlue
 import de.dh.raaps.common.ui.theme.SoftGreen
 import de.dh.raaps.common.ui.theme.SoftRed
@@ -263,3 +266,27 @@ private fun ApsMode.toDisplayString(): String = stringResource(id = when (this) 
     ApsMode.BasalOnly -> R.string.aps_mode_basal_only
     ApsMode.AutoCorrection -> R.string.aps_mode_auto_correction
 })
+
+@Preview(name = "Light", showBackground = true)
+@Preview(name = "Dark", showBackground = true, uiMode = Configuration.UI_MODE_NIGHT_YES)
+@Composable
+private fun PreviewApsControlCardLight() {
+    AppTheme {
+        Surface {
+            ApsControlCard(
+                modifier = Modifier.padding(16.dp),
+                profileName = "Standard",
+                targetBg = 100,
+                lowBgThreshold = 70,
+                basal = 0.8,
+                ic = 12.0,
+                isf = 50,
+                selectedMode = ApsMode.AutoCorrection,
+                modes = ApsMode.entries,
+                onModeChange = {},
+                modificationValue = 0,
+                onModificationClick = {}
+            )
+        }
+    }
+}
