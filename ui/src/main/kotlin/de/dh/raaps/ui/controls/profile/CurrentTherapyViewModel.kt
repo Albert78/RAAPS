@@ -19,14 +19,18 @@ import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
+data class ProfileUiState(
+    val name: String,
+    val activeProfileId: Long?,
+    val isf: BgDelta,
+    val ic: Double,
+    val basal: Double,
+    val target: Range<BgValue>
+)
+
 data class CurrentTherapyUiState(
     val isLoading: Boolean = false,
-    val profileName: String = "",
-    val activeProfileId: Long? = null,
-    val currentIsf: BgDelta? = null,
-    val currentIc: Double? = null,
-    val currentBasal: Double? = null,
-    val currentTarget: Range<BgValue>? = null,
+    val activeProfile: ProfileUiState? = null,
     val glucoseUnit: GlucoseUnit = GlucoseUnit.MG_DL,
     val availableProfiles: List<Profile> = emptyList()
 )
@@ -60,19 +64,24 @@ class CurrentTherapyViewModel(
         val basal = therapyManager.getBasalPerHour(now)
         val target = therapyManager.getTarget()
 
-        val activeProfileName = currentSettings?.profile?.id?.let { pid ->
-            profiles.find { it.id == pid }?.name
-        } ?: "Manual Override"
+        val profileUiState = if (currentSettings != null) {
+            val activeProfileName = currentSettings.profile.id.let { pid ->
+                profiles.find { it.id == pid }?.name
+            } ?: "Manual Override"
+            ProfileUiState(
+                name = activeProfileName,
+                activeProfileId = currentSettings.profile.id,
+                isf = isf,
+                ic = ic,
+                basal = basal,
+                target = target
+            )
+        } else null
 
         _uiState.update {
             it.copy(
                 isLoading = false,
-                profileName = activeProfileName,
-                activeProfileId = currentSettings?.profile?.id,
-                currentIsf = isf,
-                currentIc = ic,
-                currentBasal = basal,
-                currentTarget = target,
+                activeProfile = profileUiState,
                 availableProfiles = profiles
             )
         }

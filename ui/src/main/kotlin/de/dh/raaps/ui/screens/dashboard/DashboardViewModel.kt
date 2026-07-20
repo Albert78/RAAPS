@@ -17,7 +17,9 @@ import kotlinx.coroutines.launch
 data class DashboardUiState(
     val isLoading: Boolean = false,
     val isError: Boolean = false,
-    val apsMode: ApsMode = ApsMode.Suspend
+    val apsMode: ApsMode = ApsMode.Suspend,
+    // TODO: Get selectable modes from core
+    val availableApsModes: List<ApsMode> = ApsMode.entries
 )
 
 /**

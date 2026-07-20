@@ -61,7 +61,7 @@ fun ApsControlCard(
     ic: Double,
     isf: Int,
     selectedMode: ApsMode,
-    modes: List<ApsMode>,
+    availableModes: List<ApsMode>,
     onModeChange: (ApsMode) -> Unit,
     modificationValue: Int,
     onModificationClick: () -> Unit
@@ -210,7 +210,7 @@ fun ApsControlCard(
                         expanded = showModeMenu,
                         onDismissRequest = { showModeMenu = false }
                     ) {
-                        modes.forEach { mode ->
+                        availableModes.forEach { mode ->
                             DropdownMenuItem(
                                 text = { Text(mode.toDisplayString()) },
                                 onClick = {
@@ -282,7 +282,7 @@ private fun PreviewApsControlCardLight() {
                 ic = 12.0,
                 isf = 50,
                 selectedMode = ApsMode.AutoCorrection,
-                modes = ApsMode.entries,
+                availableModes = ApsMode.entries,
                 onModeChange = {},
                 modificationValue = 0,
                 onModificationClick = {}
