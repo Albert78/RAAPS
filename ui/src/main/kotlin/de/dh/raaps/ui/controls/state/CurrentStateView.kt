@@ -122,7 +122,7 @@ fun CurrentStateView(
             ) {
                 Text(
                     text = bgText,
-                    style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold),
+                    style = MaterialTheme.typography.headlineLarge.copy(fontWeight = FontWeight.Bold),
                     color = textColor
                 )
                 Text(
