@@ -25,7 +25,8 @@ data class ProfileUiState(
     val isf: BgDelta,
     val ic: Double,
     val basal: Double,
-    val target: Range<BgValue>
+    val target: BgValue,
+    val lowThreshold: BgValue
 )
 
 data class CurrentTherapyUiState(
@@ -62,7 +63,7 @@ class CurrentTherapyViewModel(
         val isf = therapyManager.getIsfFactor(now)
         val ic = therapyManager.getIcFactor(now)
         val basal = therapyManager.getBasalPerHour(now)
-        val target = therapyManager.getTarget()
+        val bgSettings = therapyManager.getBgSettings()
 
         val profileUiState = if (currentSettings != null) {
             val activeProfileName = currentSettings.profile.id.let { pid ->
@@ -74,7 +75,8 @@ class CurrentTherapyViewModel(
                 isf = isf,
                 ic = ic,
                 basal = basal,
-                target = target
+                target = bgSettings.first,
+                lowThreshold = bgSettings.second
             )
         } else null
 

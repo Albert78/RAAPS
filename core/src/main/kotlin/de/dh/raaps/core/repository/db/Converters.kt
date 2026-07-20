@@ -13,12 +13,12 @@ import de.dh.raaps.common.model.data.CurrentTherapySettings
 import de.dh.raaps.common.model.data.Minutes
 import de.dh.raaps.common.model.data.Profile
 import de.dh.raaps.common.model.data.SensorType
-import de.dh.raaps.common.model.data.TargetBlock
+import de.dh.raaps.common.model.data.BgBlock
 import de.dh.raaps.common.model.data.TherapyData
 import de.dh.raaps.common.model.data.Timestamp
 import de.dh.raaps.core.repository.db.entities.CurrentTherapySettingsEntity
 import de.dh.raaps.core.repository.db.entities.DBBlock
-import de.dh.raaps.core.repository.db.entities.DBTargetBlock
+import de.dh.raaps.core.repository.db.entities.DBBgBlock
 import de.dh.raaps.core.repository.db.entities.DataProviderEntity
 import de.dh.raaps.core.repository.db.entities.GlucoseReadingEntity
 import de.dh.raaps.core.repository.db.entities.InsulinEntity
@@ -160,16 +160,16 @@ fun DBBlock.toModel() = Block(
     amount = this.amount
 )
 
-fun TargetBlock.toDb() = DBTargetBlock(
+fun BgBlock.toDb() = DBBgBlock(
     duration = this.duration.value,
-    lowTarget = this.lowTarget.mgdl,
-    highTarget = this.highTarget.mgdl
+    target = this.target.mgdl,
+    lowThreshold = this.lowThreshold.mgdl
 )
 
-fun DBTargetBlock.toModel() = TargetBlock(
+fun DBBgBlock.toModel() = BgBlock(
     duration = Minutes(this.duration),
-    lowTarget = BgValue.fromMgDl(this.lowTarget),
-    highTarget = BgValue.fromMgDl(this.highTarget)
+    target = BgValue.fromMgDl(this.target),
+    lowThreshold = BgValue.fromMgDl(this.lowThreshold)
 )
 
 fun TherapyData.toEntity() = TherapyDataEntity(
@@ -177,7 +177,7 @@ fun TherapyData.toEntity() = TherapyDataEntity(
     basal_blocks = this.basalBlocks.map { it.toDb() },
     isf_blocks = this.isfBlocks.map { it.toDb() },
     ic_blocks = this.icBlocks.map { it.toDb() },
-    target_blocks = this.targetBlocks.map { it.toDb() }
+    bg_blocks = this.bgBlocks.map { it.toDb() }
 )
 
 fun TherapyDataEntity.toModel() = TherapyData(
@@ -185,7 +185,7 @@ fun TherapyDataEntity.toModel() = TherapyData(
     basalBlocks = this.basal_blocks.map { it.toModel() },
     isfBlocks = this.isf_blocks.map { it.toModel() },
     icBlocks = this.ic_blocks.map { it.toModel() },
-    targetBlocks = this.target_blocks.map { it.toModel() }
+    bgBlocks = this.bg_blocks.map { it.toModel() }
 )
 
 fun Profile.toEntity() = ProfileEntity(

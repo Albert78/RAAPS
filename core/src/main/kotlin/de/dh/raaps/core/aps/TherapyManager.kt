@@ -5,8 +5,8 @@ import de.dh.raaps.AppPreferencesRepository
 import de.dh.raaps.common.model.DEFAULT_BASAL_UNITS_PER_HOUR
 import de.dh.raaps.common.model.DEFAULT_IC_GRAM_PER_UNIT
 import de.dh.raaps.common.model.DEFAULT_ISF_MGDL_PER_UNIT
-import de.dh.raaps.common.model.DEFAULT_TARGET_HIGH_MGDL
-import de.dh.raaps.common.model.DEFAULT_TARGET_LOW_MGDL
+import de.dh.raaps.common.model.DEFAULT_BG_TARGET_MGDL
+import de.dh.raaps.common.model.DEFAULT_BG_LOW_THRESHOLD_MGDL
 import de.dh.raaps.common.model.ID_UNDEFINED
 import de.dh.raaps.common.model.InsulinType
 import de.dh.raaps.common.model.data.BgDelta
@@ -15,7 +15,7 @@ import de.dh.raaps.common.model.data.CurrentTherapySettings
 import de.dh.raaps.common.model.data.Profile
 import de.dh.raaps.common.model.data.Timestamp
 import de.dh.raaps.common.model.data.getAmountForMinute
-import de.dh.raaps.common.model.data.getTargetForMinute
+import de.dh.raaps.common.model.data.getBgForMinute
 import de.dh.raaps.core.repository.TherapyRepository
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.sync.Mutex
@@ -64,15 +64,14 @@ class TherapyManager(
         return BgDelta.fromMgDl(amount.toInt())
     }
 
-    suspend fun getTarget(): Range<BgValue> {
+    suspend fun getBgSettings(): Pair<BgValue, BgValue> {
         val data = getActiveTherapySettings()?.profile?.therapyData
-            ?: return Range(
-                BgValue.fromMgDl(DEFAULT_TARGET_LOW_MGDL),
-                BgValue.fromMgDl(DEFAULT_TARGET_HIGH_MGDL)
+            ?: return Pair(
+                BgValue.fromMgDl(DEFAULT_BG_TARGET_MGDL),
+                BgValue.fromMgDl(DEFAULT_BG_LOW_THRESHOLD_MGDL)
             )
 
-        val target = data.targetBlocks.getTargetForMinute(Timestamp.now().minutesSinceMidnight())
-        return Range(target.first, target.second)
+        return data.bgBlocks.getBgForMinute(Timestamp.now().minutesSinceMidnight())
     }
 
     suspend fun getPumpInsulinType(): InsulinType {

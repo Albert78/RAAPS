@@ -5,7 +5,7 @@ import de.dh.raaps.common.model.ApsMode
 import de.dh.raaps.common.model.data.Minutes
 import de.dh.raaps.common.model.data.Timestamp
 import de.dh.raaps.core.repository.db.entities.DBBlock
-import de.dh.raaps.core.repository.db.entities.DBTargetBlock
+import de.dh.raaps.core.repository.db.entities.DBBgBlock
 import org.json.JSONArray
 import org.json.JSONObject
 
@@ -60,31 +60,31 @@ class DbTypeConverters {
     }
 
     @TypeConverter
-    fun fromListOfTargetBlocks(blocks: List<DBTargetBlock>?): String? {
+    fun fromListOfBgBlocks(blocks: List<DBBgBlock>?): String? {
         if (blocks == null) return null
         val jsonArray = JSONArray()
         blocks.forEach {
             val jsonObject = JSONObject()
             jsonObject.put("duration", it.duration)
-            jsonObject.put("lowTarget", it.lowTarget)
-            jsonObject.put("highTarget", it.highTarget)
+            jsonObject.put("target", it.target)
+            jsonObject.put("lowThreshold", it.lowThreshold)
             jsonArray.put(jsonObject)
         }
         return jsonArray.toString()
     }
 
     @TypeConverter
-    fun toListOfTargetBlocks(jsonString: String?): List<DBTargetBlock>? {
+    fun toListOfBgBlocks(jsonString: String?): List<DBBgBlock>? {
         if (jsonString == null) return null
         val jsonArray = JSONArray(jsonString)
-        val list = mutableListOf<DBTargetBlock>()
+        val list = mutableListOf<DBBgBlock>()
         for (i in 0 until jsonArray.length()) {
             val jsonObject = jsonArray.getJSONObject(i)
             list.add(
-                DBTargetBlock(
+                DBBgBlock(
                     jsonObject.getInt("duration").toShort(),
-                    jsonObject.getInt("lowTarget").toShort(),
-                    jsonObject.getInt("highTarget").toShort()
+                    jsonObject.getInt("target").toShort(),
+                    jsonObject.getInt("lowThreshold").toShort()
                 )
             )
         }

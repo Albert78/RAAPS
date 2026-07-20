@@ -7,5 +7,5 @@ data class TherapyData(
     val basalBlocks: List<Block>,
     val isfBlocks: List<Block>,
     val icBlocks: List<Block>,
-    val targetBlocks: List<TargetBlock>
+    val bgBlocks: List<BgBlock>
 )

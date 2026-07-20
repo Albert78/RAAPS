@@ -6,8 +6,8 @@ import de.dh.raaps.common.model.CarbCurveComponentData
 import de.dh.raaps.common.model.DEFAULT_BASAL_UNITS_PER_HOUR
 import de.dh.raaps.common.model.DEFAULT_IC_GRAM_PER_UNIT
 import de.dh.raaps.common.model.DEFAULT_ISF_MGDL_PER_UNIT
-import de.dh.raaps.common.model.DEFAULT_TARGET_HIGH_MGDL
-import de.dh.raaps.common.model.DEFAULT_TARGET_LOW_MGDL
+import de.dh.raaps.common.model.DEFAULT_BG_TARGET_MGDL
+import de.dh.raaps.common.model.DEFAULT_BG_LOW_THRESHOLD_MGDL
 import de.dh.raaps.common.model.ID_INSULIN_ASPART
 import de.dh.raaps.common.model.ID_INSULIN_FIASP
 import de.dh.raaps.common.model.ID_MEAL_FAST
@@ -22,7 +22,7 @@ import de.dh.raaps.common.model.data.Block
 import de.dh.raaps.common.model.data.CurrentTherapySettings
 import de.dh.raaps.common.model.data.Minutes
 import de.dh.raaps.common.model.data.Profile
-import de.dh.raaps.common.model.data.TargetBlock
+import de.dh.raaps.common.model.data.BgBlock
 import de.dh.raaps.common.model.data.TherapyData
 
 object DatabaseInitializer {
@@ -115,10 +115,10 @@ object DatabaseInitializer {
                     )),
                     isfBlocks = listOf(Block(Minutes.ofHours(24), DEFAULT_ISF_MGDL_PER_UNIT)),
                     icBlocks = listOf(Block(Minutes.ofHours(24), DEFAULT_IC_GRAM_PER_UNIT)),
-                    targetBlocks = listOf(TargetBlock(
+                    bgBlocks = listOf(BgBlock(
                         Minutes.ofHours(24),
-                        BgValue(DEFAULT_TARGET_LOW_MGDL),
-                        BgValue(DEFAULT_TARGET_HIGH_MGDL)))
+                        BgValue(DEFAULT_BG_TARGET_MGDL),
+                        BgValue(DEFAULT_BG_LOW_THRESHOLD_MGDL)))
                 )
             )
             repository.insertProfile(normalProfile)

@@ -124,20 +124,23 @@ class ApsAlgorithmImpl(
         onCancelInsulinJobs()
         predictionModel.clearTempBasalsStage_5()
 
-        val targetBgRange = therapyManager.getTarget()
+        val bgSettings = therapyManager.getBgSettings()
+        val targetBg = bgSettings.first
+        val lowThreshold = bgSettings.second
+
         val pumpInsulinType = therapyManager.getPumpInsulinType()
         val insulinPeakTicks = timeline.inTicks(pumpInsulinType.peak)
 
         // Goal 1: Get out of a current or impending low by lowering your basal rate early
         // Find the next occurrence where the value falls below the minimum; find the minimum with time
         predictionModel.findNext(startAt = now) {
-            it.predictedBg1 < targetBgRange.lower
+            it.predictedBg1 < lowThreshold
         }?.let { firstLowPoint ->
             val basalRate = therapyManager.getBasalPerHour(firstLowPoint.tick.timestamp)
             val isf = therapyManager.getIsfFactor(firstLowPoint.tick.timestamp)
             val zeroTempDeltaBgPerHour = (basalRate * isf).mgdl.toDouble()
             val nextMin = predictionModel.findNextBgMin(startAt = firstLowPoint.tick, returnLatestIfFalling = true) ?: return@let
-            val bgError = targetBgRange.lower - nextMin.predictedBg1 + MIN_BG_SAFETY_MARGIN
+            val bgError = lowThreshold - nextMin.predictedBg1 + MIN_BG_SAFETY_MARGIN
             // TODO: Check if zero temp is available. If not, issue carbs hint.
             // Also issue carbs hint if zero temp isn't sufficient.
             val startZeroTemp = maxOf(
@@ -165,10 +168,9 @@ class ApsAlgorithmImpl(
         // Goal 2: Correct the next upcoming high by administering insulin early, without subsequently dropping into a low
         // Find the next high along with the time, then find the next low along with the time
         predictionModel.findNext(startAt = now) {
-            it.predictedBg2 > targetBgRange.upper
+            it.predictedBg2 > targetBg
         }?.let { firstHighPoint ->
             val nextMax = predictionModel.findNextBgMax(startAt = firstHighPoint.tick, returnLatestIfRising = true) ?: return@let
-            val targetBg = (targetBgRange.lower + targetBgRange.upper) / 2.0
             val bgError = nextMax.predictedBg2 - targetBg
             if (bgError > BgDelta(0)) {
                 // Try to reduce BG by bgError
@@ -181,7 +183,7 @@ class ApsAlgorithmImpl(
 
                 // Insulin correction amount: Try correction based on bgError, but limited by lowBuffer so
                 // that we don't become low due to our IOB
-                val lowBuffer = minAfterMax?.let { it.predictedBg2 - targetBgRange.lower } // We have that much leeway for the correction
+                val lowBuffer = minAfterMax?.let { it.predictedBg2 - lowThreshold } // We have that much leeway for the correction
                 val maxCorrection = if (lowBuffer == null)
                     bgError
                 else
@@ -230,7 +232,7 @@ class ApsAlgorithmImpl(
                     )
                     val bgDeltaFromTestInsulin = spentInsulin * state.isf
                     val resultBG = state.predictedBg2 - bgDeltaFromTestInsulin
-                    val bgError = targetBgRange.lower - resultBG
+                    val bgError = lowThreshold - resultBG
                     if (bgError > BgDelta(0)) {
                         // We would drop too low, reduce insulin
                         bolusAmount -= bgError / state.isf

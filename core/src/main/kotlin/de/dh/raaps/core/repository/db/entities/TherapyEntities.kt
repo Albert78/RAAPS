@@ -21,7 +21,7 @@ data class TherapyDataEntity(
     val basal_blocks: List<DBBlock>,
     val isf_blocks: List<DBBlock>,
     val ic_blocks: List<DBBlock>,
-    val target_blocks: List<DBTargetBlock>
+    val bg_blocks: List<DBBgBlock>
 )
 
 /**
