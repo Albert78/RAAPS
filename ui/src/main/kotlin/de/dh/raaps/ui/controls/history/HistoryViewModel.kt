@@ -5,6 +5,8 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.CreationExtras
+import de.dh.raaps.common.model.InsulinApplication
+import de.dh.raaps.common.model.MealEntry
 import de.dh.raaps.common.model.ToDo
 import de.dh.raaps.common.model.data.BgDelta
 import de.dh.raaps.common.model.data.BgReading
@@ -17,6 +19,7 @@ import de.dh.raaps.core.aps.APS
 import de.dh.raaps.core.aps.CoreState
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
@@ -82,7 +85,9 @@ data class CurrentBgUiState(
 data class HistoryUiState(
     val isLoading: Boolean,
     val isError: Boolean,
-    val readings: List<BgReading> = listOf()
+    val readings: List<BgReading> = listOf(),
+    val insulinApplications: List<InsulinApplication> = listOf(),
+    val meals: List<MealEntry> = listOf()
 )
 
 /**
@@ -100,32 +105,33 @@ class HistoryViewModel(
     private val _historyUiState = MutableStateFlow(HistoryUiState(isLoading = true, isError = false))
     val historyUiState = _historyUiState.asStateFlow()
 
-    private val aps: APS = raapsRegistry.aps
     private val glucoseRepository = raapsRegistry.glucoseRepository
+    private val treatmentRepository = raapsRegistry.treatmentRepository
 
     init {
         viewModelScope.launch {
-            aps.coreState.first { it != CoreState.Uninitialized && it != CoreState.Initializing }
-            reload_suspend()
-            aps.lastDataTime.collect {
-                reload_suspend()
+            combine(
+                glucoseRepository.observeBgReadings(),
+                treatmentRepository.observeInsulinApplications(),
+                treatmentRepository.observeMeals()
+            ) { readings, insulin, meals ->
+                val historyLimit = Timestamp.now().minusHours(25)
+                Triple(
+                    readings.filter { it.timestamp >= historyLimit },
+                    insulin.filter { it.timestamp >= historyLimit },
+                    meals.filter { it.timestamp >= historyLimit }
+                )
+            }.collect { (readings, insulin, meals) ->
+                updateUiModel(readings, insulin, meals)
             }
         }
     }
 
-    fun reload() {
-        viewModelScope.launch {
-            reload_suspend()
-        }
-    }
-
-    private suspend fun reload_suspend() {
-        val historyLimit = Timestamp.now().minusHours(25)
-        val readings = glucoseRepository.loadBgReadings(from = historyLimit)
-        updateUiModel(readings)
-    }
-
-    private fun updateUiModel(readings: List<BgReading>) {
+    private fun updateUiModel(
+        readings: List<BgReading>,
+        insulin: List<InsulinApplication>,
+        meals: List<MealEntry>
+    ) {
         ToDo.toBeImplemented("Read glucose unit from preferences")
         val glucoseUnit = GlucoseUnit.MG_DL
 
@@ -136,12 +142,7 @@ class HistoryViewModel(
             it.sampleKind == BgSampleKind.Value && it.timestamp.ms >= limitMs
         }
 
-        val currentBg = aps.getCurrentBg()
-        val latest = if (currentBg != null && currentBg.timestamp.ms >= limitMs) {
-            currentBg
-        } else {
-            recentReadings.lastOrNull()
-        }
+        val latest = recentReadings.lastOrNull()
 
         _currentBgUiState.update {
             if (latest == null) {
@@ -212,12 +213,14 @@ class HistoryViewModel(
             }
         }
 
-        Log.d(TAG, "Updating history data with ${readings.size} readings")
+        Log.d(TAG, "Updating history data with ${readings.size} readings, ${insulin.size} insulin apps, ${meals.size} meals")
         _historyUiState.update {
             HistoryUiState(
                 isLoading = false,
                 isError = false,
-                readings = readings
+                readings = readings,
+                insulinApplications = insulin,
+                meals = meals
             )
         }
     }

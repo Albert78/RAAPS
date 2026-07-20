@@ -10,12 +10,17 @@ import de.dh.raaps.core.repository.db.entities.DataProviderEntity
 import de.dh.raaps.core.repository.db.entities.SensorTypeEntity
 import de.dh.raaps.core.repository.db.toEntity
 import de.dh.raaps.core.repository.db.toModel
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.map
 
 /**
  * Repository for glucose related data, including sensor types and data providers.
  */
 class GlucoseRepository(appDatabase: AppDatabase) {
     private val providerDao: ProviderDao = appDatabase.providerDao()
+
+    fun observeBgReadings(): Flow<List<BgReading>> = providerDao.observeAllReadings()
+        .map { entities -> entities.map { it.toModel() } }
 
     suspend fun getOrCreateSensorTypeByName(name: String): SensorType {
         var entity = providerDao.getSensorTypeByName(name)

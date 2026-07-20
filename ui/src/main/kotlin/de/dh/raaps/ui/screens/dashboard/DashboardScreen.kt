@@ -203,7 +203,11 @@ fun DashboardContent(
                     val chartState = rememberBgHistoryChartState()
 
                     HistoryAndImpactChartOrDefault(
-                        diagramData = HistoryAndImpactDiagramData.create(historyUiState.readings),
+                        diagramData = HistoryAndImpactDiagramData.create(
+                            readings = historyUiState.readings,
+                            insulinApplications = historyUiState.insulinApplications,
+                            meals = historyUiState.meals
+                        ),
                         state = chartState,
                         onChartClick = onHistoryChartClick,
                         showCarbs = carbsVisible,

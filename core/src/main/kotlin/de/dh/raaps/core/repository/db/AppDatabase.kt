@@ -47,6 +47,9 @@ interface ProviderDao {
     @Query("SELECT * FROM glucose_reading where timestamp_ms > :timestampMs ORDER BY timestamp_ms ASC")
     suspend fun getReadingsFromTime(timestampMs: Long): List<GlucoseReadingEntity>
 
+    @Query("SELECT * FROM glucose_reading ORDER BY timestamp_ms ASC")
+    fun observeAllReadings(): Flow<List<GlucoseReadingEntity>>
+
     @Insert
     suspend fun insertGlucoseReading(reading: GlucoseReadingEntity): Long
 }
