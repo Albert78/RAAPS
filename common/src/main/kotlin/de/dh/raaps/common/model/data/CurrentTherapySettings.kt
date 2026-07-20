@@ -12,5 +12,5 @@ data class CurrentTherapySettings(
     var id: Long = ID_UNDEFINED,
     val profile: Profile,
     val insulinType: InsulinType,
-    val apsMode: ApsMode = ApsMode.Manual
+    val apsMode: ApsMode = ApsMode.Suspend
 )

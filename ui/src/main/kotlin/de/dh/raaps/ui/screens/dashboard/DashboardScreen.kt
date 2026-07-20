@@ -55,14 +55,14 @@ import de.dh.raaps.common.ui.theme.AppTheme
 import de.dh.raaps.ui.R
 import de.dh.raaps.ui.controls.history.BgHistoryChartOrDefault
 import de.dh.raaps.ui.controls.history.CurrentBgUiState
-import de.dh.raaps.ui.controls.state.CurrentBgView
 import de.dh.raaps.ui.controls.history.HistoryDiagramData
 import de.dh.raaps.ui.controls.history.HistoryUiState
 import de.dh.raaps.ui.controls.history.HistoryViewModel
-import de.dh.raaps.ui.controls.state.createSampleGoodBgUiState
 import de.dh.raaps.ui.controls.history.rememberBgHistoryChartState
 import de.dh.raaps.ui.controls.profile.CurrentTherapyUiState
 import de.dh.raaps.ui.controls.profile.CurrentTherapyViewModel
+import de.dh.raaps.ui.controls.state.CurrentBgView
+import de.dh.raaps.ui.controls.state.createSampleGoodBgUiState
 import de.dh.raaps.ui.screens.history.createSampleHistoryUiState
 import de.dh.raaps.ui.screens.permissions.PermissionStatus
 import de.dh.raaps.ui.screens.permissions.PermissionsUiModel
@@ -204,9 +204,9 @@ fun DashboardContent(
                             modifier = Modifier.padding(bottom = 4.dp),
                             colors = CardDefaults.outlinedCardColors(
                                 containerColor = when (dashboardUiState.apsMode) {
-                                    ApsMode.Manual -> MaterialTheme.colorScheme.surfaceVariant
-                                    ApsMode.OpenLoop -> MaterialTheme.colorScheme.primaryContainer
-                                    ApsMode.ClosedLoop -> MaterialTheme.colorScheme.tertiaryContainer
+                                    ApsMode.Suspend -> MaterialTheme.colorScheme.surfaceVariant
+                                    ApsMode.BasalOnly -> MaterialTheme.colorScheme.primaryContainer
+                                    ApsMode.AutoCorrection -> MaterialTheme.colorScheme.tertiaryContainer
                                 }
                             ),
                             border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline)

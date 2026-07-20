@@ -176,7 +176,7 @@ class APS(
      */
     val coreState: StateFlow<CoreState> = _coreState.asStateFlow()
 
-    private val _apsMode = MutableStateFlow<ApsMode>(ApsMode.Manual)
+    private val _apsMode = MutableStateFlow<ApsMode>(ApsMode.Suspend)
     val apsMode: StateFlow<ApsMode> = _apsMode.asStateFlow()
 
     private val _apsIssues = MutableStateFlow<Set<ApsIssue>>(emptySet())
@@ -262,9 +262,9 @@ class APS(
             }
 
             val initialSettings = therapyManager.getActiveTherapySettings()
-            val initialMode = initialSettings?.apsMode ?: ApsMode.Manual
+            val initialMode = initialSettings?.apsMode ?: ApsMode.Suspend
             _apsMode.value = initialMode
-            if (initialMode != ApsMode.Manual) {
+            if (initialMode != ApsMode.Suspend) {
                 core.activate()
             }
         }
@@ -306,7 +306,7 @@ class APS(
     fun setApsMode(mode: ApsMode) = inAPSThread {
         _apsMode.value = mode
         when {
-            mode == ApsMode.Manual -> {
+            mode == ApsMode.Suspend -> {
                 core.suspend()
             }
             else -> {
@@ -323,9 +323,9 @@ class APS(
 
     fun coreCancelInsulinJobs() {
         when (apsMode.value) {
-            ApsMode.Manual -> return
-            ApsMode.OpenLoop -> return
-            ApsMode.ClosedLoop -> {
+            ApsMode.Suspend -> return
+            ApsMode.BasalOnly -> return
+            ApsMode.AutoCorrection -> {
                 pumpCoordinator?.cancelJobs { it.isCancelableAPSCommand }
             }
         }
@@ -333,9 +333,9 @@ class APS(
 
     fun deliverBolus(amount: InsulinAmount) {
         when (apsMode.value) {
-            ApsMode.Manual -> return
-            ApsMode.OpenLoop -> issueBolusHint(amount)
-            ApsMode.ClosedLoop -> {
+            ApsMode.Suspend -> return
+            ApsMode.BasalOnly -> issueBolusHint(amount)
+            ApsMode.AutoCorrection -> {
                 pumpCoordinator?.issueCommand(
                     PumpCommand.DeliverBolus(amount),
                     isCancelableAPSCommand = true
@@ -346,17 +346,17 @@ class APS(
 
     fun canIssueZeroTemp(): Boolean {
         return when (apsMode.value) {
-            ApsMode.Manual -> false
-            ApsMode.OpenLoop -> false
-            ApsMode.ClosedLoop -> true // TODO: Check if pump supports zero temp
+            ApsMode.Suspend -> false
+            ApsMode.BasalOnly -> false
+            ApsMode.AutoCorrection -> true // TODO: Check if pump supports zero temp
         }
     }
 
     fun issueZeroTemp(durationInHours: Int) {
         when (apsMode.value) {
-            ApsMode.Manual -> return
-            ApsMode.OpenLoop -> return
-            ApsMode.ClosedLoop -> {
+            ApsMode.Suspend -> return
+            ApsMode.BasalOnly -> return
+            ApsMode.AutoCorrection -> {
                 pumpCoordinator?.issueCommand(
                     PumpCommand.SetTempBasal(
                         percent = 0,
@@ -383,7 +383,7 @@ class APS(
             pc.waitForIdle()
             delay(10.seconds)
         }
-        if (apsMode.value == ApsMode.ClosedLoop) {
+        if (apsMode.value == ApsMode.AutoCorrection) {
             if (pc.hasPendingJobs()) {
                 addIssue(ApsIssue.PumpConnectionMissing)
                 pc.cancelJobs({ it.isCancelableAPSCommand })

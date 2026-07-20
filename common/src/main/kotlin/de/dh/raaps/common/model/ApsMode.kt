@@ -2,19 +2,17 @@ package de.dh.raaps.common.model
 
 enum class ApsMode {
     /**
-     * The system is controlled manually by the user and doesn't show
-     * treatment hints.
+     * The system is suspended, only manual interaction with the pump is possible.
      */
-    Manual,
+    Suspend,
 
     /**
-     * The APS is working and producing treatment hints but doesn't
-     * issue the commands to the pump. Instead, the user gets treatment hints.
+     * The APS only delivers default basal, no other treatments are issued.
      */
-    OpenLoop,
+    BasalOnly,
 
     /**
      * The APS completely controls the pump.
      */
-    ClosedLoop
+    AutoCorrection
 }
