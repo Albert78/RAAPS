@@ -340,6 +340,26 @@ fun createSampleImpactDiagramData(): HistoryAndImpactDiagramData {
     )!!.let { it.copy(dataSignature = "impact_${it.dataSignature}") }
 }
 
+@Composable
+fun HistoryAndImpactChartOrDefault(
+    diagramData: HistoryAndImpactDiagramData?,
+    modifier: Modifier = Modifier,
+    onChartClick: (() -> Unit)? = null,
+    state: BgHistoryChartState? = null,
+    showInsulin: Boolean = true,
+    showCarbs: Boolean = true
+) {
+    val data = diagramData ?: remember { HistoryAndImpactDiagramData.empty() }
+    HistoryAndImpactChart(
+        diagramData = data,
+        modifier = modifier,
+        onChartClick = onChartClick,
+        controlledState = state,
+        showInsulin = showInsulin,
+        showCarbs = showCarbs
+    )
+}
+
 @Preview(showBackground = true, uiMode = Configuration.UI_MODE_NIGHT_YES)
 @Composable
 fun HistoryAndImpactChartPreview() {
@@ -347,6 +367,17 @@ fun HistoryAndImpactChartPreview() {
     AppTheme {
         HistoryAndImpactChart(
             diagramData = diagramData,
+            modifier = Modifier.height(300.dp)
+        )
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+fun HistoryAndImpactChartDefaultPreview() {
+    AppTheme {
+        HistoryAndImpactChartOrDefault(
+            diagramData = null,
             modifier = Modifier.height(300.dp)
         )
     }

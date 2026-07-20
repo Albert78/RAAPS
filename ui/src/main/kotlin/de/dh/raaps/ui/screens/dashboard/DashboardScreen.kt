@@ -44,9 +44,9 @@ import de.dh.raaps.common.ui.composables.WarningBanner
 import de.dh.raaps.common.ui.composables.screenTitle
 import de.dh.raaps.common.ui.theme.AppTheme
 import de.dh.raaps.ui.R
-import de.dh.raaps.ui.controls.history.BgHistoryChartOrDefault
 import de.dh.raaps.ui.controls.history.CurrentBgUiState
-import de.dh.raaps.ui.controls.history.HistoryDiagramData
+import de.dh.raaps.ui.controls.history.HistoryAndImpactChartOrDefault
+import de.dh.raaps.ui.controls.history.HistoryAndImpactDiagramData
 import de.dh.raaps.ui.controls.history.HistoryUiState
 import de.dh.raaps.ui.controls.history.HistoryViewModel
 import de.dh.raaps.ui.controls.history.rememberBgHistoryChartState
@@ -185,12 +185,12 @@ fun DashboardContent(
                 onInsulinToggle = { insulinVisible = it }
             )
 
+            Spacer(modifier = Modifier.padding(top = 15.dp))
+
             Text(
-                text = stringResource(R.string.dashboard_glucose_title),
+                text = stringResource(R.string.dashboard_history_title),
                 style = MaterialTheme.typography.bodyLarge
             )
-
-            Spacer(modifier = Modifier.padding(top = 15.dp))
 
             Box(
                 modifier = Modifier.height(300.dp)
@@ -202,10 +202,12 @@ fun DashboardContent(
                 } else {
                     val chartState = rememberBgHistoryChartState()
 
-                    BgHistoryChartOrDefault(
-                        diagramData = HistoryDiagramData.fromReadings(historyUiState.readings),
+                    HistoryAndImpactChartOrDefault(
+                        diagramData = HistoryAndImpactDiagramData.create(historyUiState.readings),
                         state = chartState,
-                        onChartClick = onHistoryChartClick
+                        onChartClick = onHistoryChartClick,
+                        showCarbs = carbsVisible,
+                        showInsulin = insulinVisible
                     )
                 }
             }
