@@ -14,7 +14,13 @@ class DbTypeConverters {
     fun fromApsMode(mode: ApsMode): String = mode.name
 
     @TypeConverter
-    fun toApsMode(value: String): ApsMode = ApsMode.valueOf(value)
+    fun toApsMode(value: String): ApsMode {
+        try {
+            return ApsMode.valueOf(value)
+        } catch (_: Exception) {
+            return ApsMode.BasalOnly
+        }
+    }
 
     @TypeConverter
     fun fromMinutes(minutes: Minutes?): Short? = minutes?.value

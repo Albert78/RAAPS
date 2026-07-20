@@ -10,6 +10,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.patrykandpatrick.vico.compose.cartesian.CartesianChartHost
@@ -31,18 +32,25 @@ import com.patrykandpatrick.vico.compose.common.Fill
 import com.patrykandpatrick.vico.compose.common.Position
 import com.patrykandpatrick.vico.compose.common.component.rememberShapeComponent
 import com.patrykandpatrick.vico.compose.common.data.ExtraStore
+import de.dh.raaps.common.model.InsulinApplication
+import de.dh.raaps.common.model.InsulinOrigin
+import de.dh.raaps.common.model.InsulinType
 import de.dh.raaps.common.model.MS_PER_HOUR
 import de.dh.raaps.common.model.MS_PER_MINUTE
+import de.dh.raaps.common.model.MealEntry
+import de.dh.raaps.common.model.MealType
+import de.dh.raaps.common.model.calculation.CarbsInsulinCalculationModel
 import de.dh.raaps.common.model.data.BgReading
 import de.dh.raaps.common.model.data.BgSampleKind
+import de.dh.raaps.common.model.data.Minutes
 import de.dh.raaps.common.model.data.Timestamp
 import de.dh.raaps.common.ui.theme.AppTheme
 import de.dh.raaps.common.ui.theme.ColorBg
 import de.dh.raaps.common.ui.theme.ColorCarbs
 import de.dh.raaps.common.ui.theme.ColorInsulin
+import de.dh.raaps.ui.R
 import java.util.Calendar
 import java.util.Locale
-import kotlin.math.exp
 
 private const val INITIAL_SHOW_HOURS = 4.0
 
@@ -62,10 +70,8 @@ data class HistoryAndImpactDiagramData(
     companion object {
         fun create(
             readings: List<BgReading>,
-            insulinXValues: List<Double> = emptyList(),
-            insulinYValues: List<Double> = emptyList(),
-            carbXValues: List<Double> = emptyList(),
-            carbYValues: List<Double> = emptyList(),
+            insulinApplications: List<InsulinApplication> = emptyList(),
+            meals: List<MealEntry> = emptyList(),
         ): HistoryAndImpactDiagramData? {
             val validReadings = readings.filter { it.sampleKind == BgSampleKind.Value }
             if (validReadings.isEmpty()) return null
@@ -79,17 +85,37 @@ data class HistoryAndImpactDiagramData(
             val endTs = (((lastTs + MS_PER_HOUR / 2) / MS_PER_HOUR) + 1) * MS_PER_HOUR
             val maxX = (endTs - baseTimestamp).toDouble() / MS_PER_MINUTE
 
+            val calcModel = CarbsInsulinCalculationModel(Minutes(5))
+
+            val insulinX = mutableListOf<Double>()
+            val insulinY = mutableListOf<Double>()
+            val carbX = mutableListOf<Double>()
+            val carbY = mutableListOf<Double>()
+
+            for (i in 0..maxX.toInt() step 5) {
+                val x = i.toDouble()
+                val timestamp = Timestamp(baseTimestamp + (x * MS_PER_MINUTE).toLong())
+
+                insulinX.add(x)
+                // Scaled so 10 units (standard insulin) peak at ~100 mg/dL
+                insulinY.add(calcModel.effectiveInsulin(insulinApplications, timestamp) * 222.2)
+
+                carbX.add(x)
+                // Scaled so 100g (standard meal) peak at ~55 mg/dL
+                carbY.add(calcModel.carbAbsorption(meals, timestamp) * 12.2)
+            }
+
             return HistoryAndImpactDiagramData(
                 baseTimestamp = baseTimestamp,
                 minX = minX,
                 maxX = maxX,
                 bgXValues = validReadings.map { ((it.timestamp.ms - baseTimestamp).toDouble() / MS_PER_MINUTE * 10000).toLong() / 10000.0 },
                 bgYValues = validReadings.map { it.value.mgdl.toDouble() },
-                insulinXValues = insulinXValues,
-                insulinYValues = insulinYValues,
-                carbXValues = carbXValues,
-                carbYValues = carbYValues,
-                dataSignature = "${validReadings.size}_${validReadings.first().timestamp.ms}_${validReadings.last().timestamp.ms}"
+                insulinXValues = insulinX,
+                insulinYValues = insulinY,
+                carbXValues = carbX,
+                carbYValues = carbY,
+                dataSignature = "${validReadings.size}_${validReadings.first().timestamp.ms}_${validReadings.last().timestamp.ms}_${insulinApplications.size}_${meals.size}"
             )
         }
 
@@ -124,6 +150,7 @@ fun HistoryAndImpactChart(
 ) {
     val state = controlledState ?: rememberBgHistoryChartState()
     val modelProducer = remember { CartesianChartModelProducer() }
+    val insulinFormat = stringResource(R.string.insulin_unit_label_format)
 
     LaunchedEffect(diagramData.minX, diagramData.maxX) {
         state.minX = diagramData.minX
@@ -250,6 +277,31 @@ fun HistoryAndImpactChart(
         pointProvider = null
     )
 
+    val verticalAxisItemPlacer = remember {
+        object : VerticalAxis.ItemPlacer {
+            override fun getLabelValues(context: CartesianDrawingContext, axisHeight: Float, maxLabelHeight: Float, position: Axis.Position.Vertical) =
+                getValues(context.ranges.getYRange(position).maxY)
+            override fun getWidthMeasurementLabelValues(context: CartesianMeasuringContext, axisHeight: Float, maxLabelHeight: Float, position: Axis.Position.Vertical) =
+                getValues(300.0)
+            override fun getHeightMeasurementLabelValues(context: CartesianMeasuringContext, position: Axis.Position.Vertical) =
+                getValues(300.0)
+            private fun getValues(maxY: Double): List<Double> {
+                val v = mutableListOf<Double>()
+                var c = 0.0
+                while (c <= maxY) { v.add(c); c += 50.0 }
+                return v
+            }
+            override fun getTopLayerMargin(context: CartesianMeasuringContext, verticalLabelPosition: Position.Vertical, maxLabelHeight: Float, maxLineThickness: Float) = 0f
+            override fun getBottomLayerMargin(context: CartesianMeasuringContext, verticalLabelPosition: Position.Vertical, maxLabelHeight: Float, maxLineThickness: Float) = 0f
+        }
+    }
+
+    val yAxisValueFormatter = remember(insulinFormat) {
+        CartesianValueFormatter { _, value, _ ->
+            insulinFormat.format(value / 10.0)
+        }
+    }
+
     CartesianChartHost(
         chart = rememberCartesianChart(
             rememberLineCartesianLayer(
@@ -257,24 +309,13 @@ fun HistoryAndImpactChart(
                 rangeProvider = rangeProvider
             ),
             startAxis = VerticalAxis.rememberStart(
-                itemPlacer = remember {
-                    object : VerticalAxis.ItemPlacer {
-                        override fun getLabelValues(context: CartesianDrawingContext, axisHeight: Float, maxLabelHeight: Float, position: Axis.Position.Vertical) =
-                            getValues(context.ranges.getYRange(position).maxY)
-                        override fun getWidthMeasurementLabelValues(context: CartesianMeasuringContext, axisHeight: Float, maxLabelHeight: Float, position: Axis.Position.Vertical) =
-                            getValues(300.0)
-                        override fun getHeightMeasurementLabelValues(context: CartesianMeasuringContext, position: Axis.Position.Vertical) =
-                            getValues(300.0)
-                        private fun getValues(maxY: Double): List<Double> {
-                            val v = mutableListOf<Double>()
-                            var c = 0.0
-                            while (c <= maxY) { v.add(c); c += 50.0 }
-                            return v
-                        }
-                        override fun getTopLayerMargin(context: CartesianMeasuringContext, verticalLabelPosition: Position.Vertical, maxLabelHeight: Float, maxLineThickness: Float) = 0f
-                        override fun getBottomLayerMargin(context: CartesianMeasuringContext, verticalLabelPosition: Position.Vertical, maxLabelHeight: Float, maxLineThickness: Float) = 0f
-                    }
-                },
+                itemPlacer = verticalAxisItemPlacer,
+                horizontalLabelPosition = VerticalAxis.HorizontalLabelPosition.Inside,
+                line = null
+            ),
+            endAxis = VerticalAxis.rememberEnd(
+                itemPlacer = verticalAxisItemPlacer,
+                valueFormatter = yAxisValueFormatter,
                 horizontalLabelPosition = VerticalAxis.HorizontalLabelPosition.Inside,
                 line = null
             ),
@@ -292,51 +333,26 @@ fun HistoryAndImpactChart(
     )
 }
 
-private fun calculateInsulinImpact(tMinutes: Double, startMinutes: Double, units: Double): Double {
-    val tHours = (tMinutes - startMinutes) / 60.0
-    return if (tHours >= 0) {
-        // Approximate insulin action curve (e.g., peak at 1h, duration 4-5h)
-        // Scaled so 1 unit has a visible peak impact
-        (units * 10.0 * tHours * exp(-tHours)).coerceAtLeast(0.0)
-    } else 0.0
-}
-
-private fun calculateCarbImpact(tMinutes: Double, startMinutes: Double, grams: Double): Double {
-    val tHours = (tMinutes - startMinutes) / 60.0
-    return if (tHours >= 0) {
-        // Approximate carb absorption curve (e.g., peak at 30-45min)
-        // Scaled so 10g have a visible peak impact
-        (grams * 10 * tHours * exp(-2.0 * tHours)).coerceAtLeast(0.0)
-    } else 0.0
-}
-
 fun createSampleImpactDiagramData(): HistoryAndImpactDiagramData {
     val readings = createSampleReadings(120, 5)
+    val baseTs = readings.first().timestamp.ms
 
-    // Events: (Time in Minutes, Amount)
-    val insulinEvents = listOf(30.0 to 5.0, 280.0 to 8.0, 450.0 to 4.0)
-    val carbEvents = listOf(20.0 to 50.0, 300.0 to 80.0, 460.0 to 40.0)
+    val insulinApplications = listOf(
+        InsulinApplication(0, Timestamp(baseTs + 30 * MS_PER_MINUTE), 5.0, InsulinType("1", "Rapid", Minutes(60.toShort()), Minutes(300.toShort())), InsulinOrigin.Manual),
+        InsulinApplication(0, Timestamp(baseTs + 280 * MS_PER_MINUTE), 8.0, InsulinType("1", "Rapid", Minutes(60.toShort()), Minutes(300.toShort())), InsulinOrigin.Manual),
+        InsulinApplication(0, Timestamp(baseTs + 450 * MS_PER_MINUTE), 4.0, InsulinType("1", "Rapid", Minutes(60.toShort()), Minutes(300.toShort())), InsulinOrigin.Manual)
+    )
 
-    val insulinX = mutableListOf<Double>()
-    val insulinY = mutableListOf<Double>()
-    val carbX = mutableListOf<Double>()
-    val carbY = mutableListOf<Double>()
-
-    for (i in 0..600 step 5) {
-        val x = i.toDouble()
-        insulinX.add(x)
-        insulinY.add(insulinEvents.sumOf { calculateInsulinImpact(x, it.first, it.second) })
-
-        carbX.add(x)
-        carbY.add(carbEvents.sumOf { calculateCarbImpact(x, it.first, it.second) })
-    }
+    val meals = listOf(
+        MealEntry(0, Timestamp(baseTs + 20 * MS_PER_MINUTE), 50.0, MealType("1", "Normal", emptyList(), Minutes(180.toShort()))),
+        MealEntry(0, Timestamp(baseTs + 300 * MS_PER_MINUTE), 80.0, MealType("1", "Normal", emptyList(), Minutes(180.toShort()))),
+        MealEntry(0, Timestamp(baseTs + 460 * MS_PER_MINUTE), 40.0, MealType("1", "Normal", emptyList(), Minutes(180.toShort())))
+    )
 
     return HistoryAndImpactDiagramData.create(
         readings = readings,
-        insulinXValues = insulinX,
-        insulinYValues = insulinY,
-        carbXValues = carbX,
-        carbYValues = carbY
+        insulinApplications = insulinApplications,
+        meals = meals
     )!!.let { it.copy(dataSignature = "impact_${it.dataSignature}") }
 }
 

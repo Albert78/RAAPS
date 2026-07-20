@@ -40,7 +40,7 @@
 
     <string name="dashboard_permissions_missing">Für eine ordnungsgemäße Funktion benötigt die App weitere Berechtigungen</string>
     <string name="dashboard_fix_permissions_link">Reparieren</string>
-    <string name="dashboard_glucose_title">Glukosewerte</string>
+    <string name="dashboard_history_title">Aktueller Verlauf</string>
 
     <string name="error_app_settings_could_not_be_opened_message">Die App-Einstellungen konnten nicht geöffnet werden. Bitte öffnen Sie sie aus den Geräteeinstellungen.</string>
     <string name="error_battery_optimization_settings_could_not_be_opened_message">Die App-Einstellungen für die Batterie-Optimierung konnten nicht geöffnet werden. Bitte öffnen Sie sie aus den Geräteeinstellungen.</string>
@@ -88,4 +88,6 @@
     <string name="recommendation_title_bolus">Insulinempfehlung</string>
     <string name="recommendation_text_carbs">Essen Sie %1$dg Kohlenhydrate, um eine Hypoglykämie zu vermeiden.</string>
     <string name="recommendation_text_bolus">Geben Sie %1$.2fU Insulin ab, um einen hohen Blutzucker zu korrigieren.</string>
+
+    <string name="insulin_unit_label_format">%1$.1f I.E.</string>
 </resources>
