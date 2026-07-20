@@ -18,6 +18,7 @@ value class BgDelta(val mgdl: Short): Comparable<BgDelta> {
         get() = BgDelta(abs(mgdl.toInt()).toShort())
 
     override fun compareTo(other: BgDelta): Int = mgdl.compareTo(other.mgdl)
+    operator fun unaryMinus(): BgDelta = fromMgDl(-mgdl)
     operator fun minus(other: BgDelta): BgDelta = fromMgDl(mgdl - other.mgdl)
     operator fun plus(other: BgDelta): BgDelta = fromMgDl(mgdl + other.mgdl)
     operator fun times(other: Double): BgDelta = fromMgDl((mgdl * other).toInt())

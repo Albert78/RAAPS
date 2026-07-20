@@ -169,7 +169,7 @@ class ApsAlgorithmImpl(
         }?.let { firstHighPoint ->
             val nextMax = predictionModel.findNextBgMax(startAt = firstHighPoint.tick, returnLatestIfRising = true) ?: return@let
             val targetBg = (targetBgRange.lower + targetBgRange.upper) / 2.0
-            val bgError = nextMax.predictedBg1 - targetBg
+            val bgError = nextMax.predictedBg2 - targetBg
             if (bgError > BgDelta(0)) {
                 // Try to reduce BG by bgError
 
@@ -181,7 +181,7 @@ class ApsAlgorithmImpl(
 
                 // Insulin correction amount: Try correction based on bgError, but limited by lowBuffer so
                 // that we don't become low due to our IOB
-                val lowBuffer = minAfterMax?.let { minAfterMax.predictedBg1 - targetBgRange.lower } // We have that much leeway for the correction
+                val lowBuffer = minAfterMax?.let { it.predictedBg2 - targetBgRange.lower } // We have that much leeway for the correction
                 val maxCorrection = if (lowBuffer == null)
                     bgError
                 else

@@ -91,15 +91,17 @@ class PredictionModel(
                 state.isf = isf
                 state.ic = ic
                 state.basalRateUph = basalPerHour
+                calculateFutherStepsNecessary = true
+            }
 
-                val insulinEquivalentOfCarbs = state.effectiveCarbs / ic
-                // Absolute BGI: Carbs - Insulin + Basal Requirement
-                // Basal rate is converted to units per tick.
-                val basalUnitsPerTick = state.basalRateUph / (60.0 / timeline.tickDuration.value)
-                val bgi = (insulinEquivalentOfCarbs - state.effectiveInsulin + basalUnitsPerTick) * isf
+            val insulinEquivalentOfCarbs = state.effectiveCarbs / state.ic
+            // Absolute BGI: Carbs - Insulin + Basal Requirement
+            // Basal rate is converted to units per tick.
+            val basalUnitsPerTick = state.basalRateUph / timeline.ticksPerHour()
+            val bgi = (insulinEquivalentOfCarbs - state.effectiveInsulin + basalUnitsPerTick) * state.isf
 
+            if (bgi != state.bgi) {
                 state.bgi = bgi
-
                 calculateFutherStepsNecessary = true
             }
 
@@ -145,9 +147,19 @@ class PredictionModel(
         from: Tick = getFirstTick(),
         to: Tick = getLastTick()
     ) {
+        var accumulatedDeviationBg = BgDelta(0)
         forEach(from = from, to = to) { _, state ->
-            val tempBgi = state.basalRateDeviationPh * state.isf
-            state.predictedBg2 = state.predictedBg1 + tempBgi
+            // Accumulate the delta per tick
+            // basalRateDeviationPh is Units/Hour. Convert to Units/Tick.
+            val unitsPerTick = state.basalRateDeviationPh / (60.0 / timeline.tickDuration.value)
+
+            // If deviation is positive (more insulin), BG should drop.
+            // BGI is defined such that positive BGI = BG RISE.
+            // A positive basalRateDeviationPh means more insulin than profile.
+            val tickDeviationBg = -(unitsPerTick * state.isf)
+
+            accumulatedDeviationBg += tickDeviationBg
+            state.predictedBg2 = state.predictedBg1 + accumulatedDeviationBg
         }
     }
 
