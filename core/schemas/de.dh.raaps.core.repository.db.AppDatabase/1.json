@@ -2,7 +2,7 @@
   "formatVersion": 1,
   "database": {
     "version": 1,
-    "identityHash": "2e22068c873f8f8c69b13c9fed58bc94",
+    "identityHash": "8a58f9f6440606650a3b1feee5883040",
     "entities": [
       {
         "tableName": "sensor_type",
@@ -239,7 +239,7 @@
       },
       {
         "tableName": "current_therapy_settings",
-        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `profile_id` INTEGER NOT NULL, `insulin_type_id` TEXT NOT NULL, `aps_mode` TEXT NOT NULL, FOREIGN KEY(`profile_id`) REFERENCES `profiles`(`id`) ON UPDATE NO ACTION ON DELETE SET NULL , FOREIGN KEY(`insulin_type_id`) REFERENCES `insulin_type`(`id`) ON UPDATE NO ACTION ON DELETE RESTRICT )",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `profile_id` INTEGER NOT NULL, `insulin_type_id` TEXT NOT NULL, `aps_mode` TEXT NOT NULL, `adjustment_percentage` INTEGER NOT NULL, FOREIGN KEY(`profile_id`) REFERENCES `profiles`(`id`) ON UPDATE NO ACTION ON DELETE SET NULL , FOREIGN KEY(`insulin_type_id`) REFERENCES `insulin_type`(`id`) ON UPDATE NO ACTION ON DELETE RESTRICT )",
         "fields": [
           {
             "fieldPath": "id",
@@ -263,6 +263,12 @@
             "fieldPath": "aps_mode",
             "columnName": "aps_mode",
             "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "adjustment_percentage",
+            "columnName": "adjustment_percentage",
+            "affinity": "INTEGER",
             "notNull": true
           }
         ],
@@ -507,7 +513,7 @@
     ],
     "setupQueries": [
       "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
-      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '2e22068c873f8f8c69b13c9fed58bc94')"
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '8a58f9f6440606650a3b1feee5883040')"
     ]
   }
 }

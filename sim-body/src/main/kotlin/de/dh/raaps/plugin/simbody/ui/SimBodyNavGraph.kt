@@ -1,8 +1,14 @@
 package de.dh.raaps.plugin.simbody.ui
 
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.height
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation3.runtime.NavEntry
 import androidx.navigation3.runtime.NavKey
@@ -50,17 +56,26 @@ class SimBodyNavGraph(
         var therapyIsf: String? = null
         var therapyIc: String? = null
         var therapyTarget: String? = null
+        var lowThreshold: String? = null
 
         val therapyVM: CurrentTherapyViewModel = viewModel(
             factory = CurrentTherapyViewModel.Companion.Factory(raapsRegistry)
         )
         val therapyState by therapyVM.uiState.collectAsState()
 
-        therapyProfileName = therapyState.profileName
-        therapyBasal = therapyState.currentBasal?.let { "$it U/h" }
-        therapyIsf = therapyState.currentIsf?.let { "${it.mgdl} mg/dL/U" }
-        therapyIc = therapyState.currentIc?.let { "$it g/U" }
-        therapyTarget = therapyState.currentTarget?.let { "${it.lower.mgdl} - ${it.upper.mgdl} mg/dL" }
+        therapyProfileName = therapyState.activeProfile?.name
+        therapyBasal = therapyState.activeProfile?.basal?.let { "$it U/h" }
+        therapyIsf = therapyState.activeProfile?.isf?.let { "${it.mgdl} mg/dL/U" }
+        therapyIc = therapyState.activeProfile?.ic?.let { "$it g/U" }
+        therapyTarget = therapyState.activeProfile?.target?.let { "${it.mgdl} mg/dL" }
+        lowThreshold = therapyState.activeProfile?.lowThreshold?.let { "${it.mgdl} mg/dL" }
+
+        Text(
+            text = "Sim Body",
+            style = MaterialTheme.typography.bodyLarge
+        )
+
+        Spacer(modifier = Modifier.height(16.dp))
 
         SimBodyDashboardCard(
             bodyModel = bodyModel,
@@ -70,7 +85,8 @@ class SimBodyNavGraph(
             treatmentBasal = therapyBasal,
             treatmentIsf = therapyIsf,
             treatmentIc = therapyIc,
-            treatmentTarget = therapyTarget
+            treatmentTarget = therapyTarget,
+            treatmentLowThreshold = lowThreshold
         )
     }
 }

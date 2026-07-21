@@ -108,7 +108,7 @@ fun ApsControlCard(
                             )
                             Spacer(Modifier.width(4.dp))
                             Text(
-                                text = profileUiState.target.toString(),
+                                text = profileUiState.target.mgdl.toString(),
                                 style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
@@ -124,7 +124,7 @@ fun ApsControlCard(
                             )
                             Spacer(Modifier.width(4.dp))
                             Text(
-                                text = profileUiState.lowThreshold.toString(),
+                                text = profileUiState.lowThreshold.mgdl.toString(),
                                 style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
@@ -169,7 +169,7 @@ fun ApsControlCard(
                                     shape = MaterialTheme.shapes.extraSmall,
                                 ) {
                                     Text(
-                                        text = " ${stringResource(R.string.aps_control_isf_label, profileUiState.isf)} ",
+                                        text = " ${stringResource(R.string.aps_control_isf_label, profileUiState.isf.mgdl)} ",
                                         style = MaterialTheme.typography.labelSmall,
                                         modifier = Modifier.padding(horizontal = 4.dp, vertical = 2.dp)
                                     )
@@ -298,6 +298,7 @@ private fun PreviewApsControlCard() {
         }
     }
 }
+
 @Preview(name = "Light", showBackground = true)
 @Preview(name = "Dark", showBackground = true, uiMode = Configuration.UI_MODE_NIGHT_YES)
 @Composable

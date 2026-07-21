@@ -206,9 +206,7 @@ fun DashboardContent(
                 style = MaterialTheme.typography.bodyLarge
             )
 
-            Box(
-                modifier = Modifier.height(300.dp)
-            ) {
+            Box {
                 if (historyUiState.isLoading) {
                     CircularProgressIndicator(
                         modifier = Modifier.align(Alignment.Center)
@@ -242,7 +240,7 @@ fun DashboardContent(
                 onAdjustmentClick = onAdjustmentClick
             )
 
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(24.dp))
 
             extraContent()
         }

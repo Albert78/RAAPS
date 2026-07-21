@@ -42,7 +42,8 @@ fun SimBodyDashboardCard(
     treatmentBasal: String? = null,
     treatmentIsf: String? = null,
     treatmentIc: String? = null,
-    treatmentTarget: String? = null
+    treatmentTarget: String? = null,
+    treatmentLowThreshold: String? = null
 ) {
     val exercise by bodyModel.exerciseIntensityFlow.collectAsState()
     val illness by bodyModel.illnessFactorFlow.collectAsState()
@@ -103,6 +104,7 @@ fun SimBodyDashboardCard(
                 if (treatmentIsf != null) ParameterRow("ISF", treatmentIsf) { }
                 if (treatmentIc != null) ParameterRow("IC", treatmentIc) { }
                 if (treatmentTarget != null) ParameterRow("Target", treatmentTarget) { }
+                if (treatmentLowThreshold != null) ParameterRow("Low Threshold", treatmentLowThreshold) { }
             }
 
             Row(
@@ -212,7 +214,7 @@ fun SimBodyDashboardCardPreview() {
             SimBodyDashboardCard(
                 bodyModel = bodyModel,
                 onDetailsClick = {},
-                onHistoryClick = {}
+                onHistoryClick = {},
             )
         }
     }
