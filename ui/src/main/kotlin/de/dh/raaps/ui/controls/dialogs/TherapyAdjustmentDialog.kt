@@ -1,4 +1,4 @@
-package de.dh.dapsmockup.ui.mockups.composables
+package de.dh.raaps.ui.controls.dialogs
 
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -12,6 +12,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import de.dh.raaps.common.ui.composables.Picker
@@ -20,9 +21,10 @@ import de.dh.raaps.common.ui.theme.AppTheme
 import de.dh.raaps.common.ui.theme.NeutralGrey
 import de.dh.raaps.common.ui.theme.SoftBlue
 import de.dh.raaps.common.ui.theme.SoftRed
+import de.dh.raaps.ui.R
 
 @Composable
-fun InsulinModificationDialogContent(
+fun TherapyAdjustmentDialogContent(
     currentValue: Int,
     onValueChange: (Int) -> Unit
 ) {
@@ -54,23 +56,23 @@ fun InsulinModificationDialogContent(
 }
 
 @Composable
-fun InsulinModificationDialog(
+fun TherapyAdjustmentDialog(
     currentValue: Int,
     onValueChange: (Int) -> Unit,
     onDismissRequest: () -> Unit
 ) {
     AlertDialog(
         onDismissRequest = onDismissRequest,
-        title = { Text("Insulin-Anpassung") },
+        title = { Text(stringResource(id = R.string.aps_control_adjustment_dialog_title)) },
         text = {
-            InsulinModificationDialogContent(
+            TherapyAdjustmentDialogContent(
                 currentValue = currentValue,
                 onValueChange = onValueChange
             )
         },
         confirmButton = {
             TextButton(onClick = onDismissRequest) {
-                Text("Schließen")
+                Text(stringResource(id = android.R.string.ok))
             }
         }
     )
@@ -78,10 +80,10 @@ fun InsulinModificationDialog(
 
 @Preview(showBackground = true)
 @Composable
-fun InsulinModificationDialogPreview() {
+fun TherapyAdjustmentDialogPreview() {
     AppTheme {
         Surface {
-            InsulinModificationDialogContent(
+            TherapyAdjustmentDialogContent(
                 currentValue = 10,
                 onValueChange = {}
             )

@@ -204,12 +204,14 @@ fun CurrentTherapySettings.toEntity() = CurrentTherapySettingsEntity(
     id = this.id,
     profile_id = this.profile.id,
     insulin_type_id = this.insulinType.id,
-    aps_mode = this.apsMode
+    aps_mode = this.apsMode,
+    adjustment_percentage = this.adjustmentPercentage
 )
 
 fun CurrentTherapySettingsEntity.toModel(profile: Profile, insulinType: InsulinType) = CurrentTherapySettings(
     id = this.id,
     profile = profile,
     insulinType = insulinType,
-    apsMode = this.aps_mode
+    apsMode = this.aps_mode,
+    adjustmentPercentage = this.adjustment_percentage
 )

@@ -36,8 +36,11 @@ class TherapyManager(
      * Unit: Insulin units.
      */
     suspend fun getBasalPerHour(timestamp: Timestamp): Double {
-        val data = getActiveTherapySettings()?.profile?.therapyData ?: return DEFAULT_BASAL_UNITS_PER_HOUR
-        return data.basalBlocks.getAmountForMinute(timestamp.minutesSinceMidnight())
+        val settings = getActiveTherapySettings() ?: return DEFAULT_BASAL_UNITS_PER_HOUR
+        val data = settings.profile.therapyData
+        val baseBasal = data.basalBlocks.getAmountForMinute(timestamp.minutesSinceMidnight())
+        val factor = (100.0 + settings.adjustmentPercentage) / 100.0
+        return baseBasal * factor
     }
 
     /**
@@ -46,8 +49,11 @@ class TherapyManager(
      * Unit: Grams of carbs.
      */
     suspend fun getIcFactor(timestamp: Timestamp): Double {
-        val data = getActiveTherapySettings()?.profile?.therapyData ?: return DEFAULT_IC_GRAM_PER_UNIT
-        return data.icBlocks.getAmountForMinute(timestamp.minutesSinceMidnight())
+        val settings = getActiveTherapySettings() ?: return DEFAULT_IC_GRAM_PER_UNIT
+        val data = settings.profile.therapyData
+        val baseIc = data.icBlocks.getAmountForMinute(timestamp.minutesSinceMidnight())
+        val factor = (100.0 + settings.adjustmentPercentage) / 100.0
+        return baseIc / factor
     }
 
     /**
@@ -57,11 +63,13 @@ class TherapyManager(
      * Unit: Blood glucose delta.
      */
     suspend fun getIsfFactor(timestamp: Timestamp): BgDelta {
-        val data = getActiveTherapySettings()?.profile?.therapyData ?: return BgDelta(
+        val settings = getActiveTherapySettings() ?: return BgDelta(
             DEFAULT_ISF_MGDL_PER_UNIT.toInt().toShort()
         )
+        val data = settings.profile.therapyData
         val amount = data.isfBlocks.getAmountForMinute(timestamp.minutesSinceMidnight())
-        return BgDelta.fromMgDl(amount.toInt())
+        val factor = (100.0 + settings.adjustmentPercentage) / 100.0
+        return BgDelta.fromMgDl((amount / factor).toInt())
     }
 
     suspend fun getBgSettings(): Pair<BgValue, BgValue> {
@@ -101,6 +109,17 @@ class TherapyManager(
                     ?: throw IllegalStateException("No insulin type configured for insulin pump")
             )).copy(
                 profile = profile
+            )
+            therapyRepository.updateCurrentTherapySettings(newSettings)
+        }
+    }
+
+    suspend fun setAdjustmentPercentage(percentage: Int) {
+        mutex.withLock {
+            val currentSettings = getActiveTherapySettings()
+                ?: throw IllegalStateException("No active therapy settings found")
+            val newSettings = currentSettings.copy(
+                adjustmentPercentage = percentage
             )
             therapyRepository.updateCurrentTherapySettings(newSettings)
         }

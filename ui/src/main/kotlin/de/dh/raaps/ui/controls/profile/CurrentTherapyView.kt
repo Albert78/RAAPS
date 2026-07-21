@@ -165,7 +165,8 @@ fun CurrentTherapyViewPreview() {
                     ic = 10.0,
                     basal = 0.5,
                     target = BgValue.fromMgDl(100),
-                    lowThreshold = BgValue.fromMgDl(70)
+                    lowThreshold = BgValue.fromMgDl(70),
+                    adjustmentPercentage = 0
                 ),
                 glucoseUnit = GlucoseUnit.MG_DL,
                 availableProfiles = listOf(

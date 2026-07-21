@@ -43,6 +43,8 @@ import de.dh.raaps.common.ui.composables.WarningBanner
 import de.dh.raaps.common.ui.composables.screenTitle
 import de.dh.raaps.common.ui.theme.AppTheme
 import de.dh.raaps.ui.R
+import de.dh.raaps.ui.controls.apscontrol.ApsControlCard
+import de.dh.raaps.ui.controls.dialogs.TherapyAdjustmentDialog
 import de.dh.raaps.ui.controls.history.CurrentBgUiState
 import de.dh.raaps.ui.controls.history.HistoryAndImpactChartOrDefault
 import de.dh.raaps.ui.controls.history.HistoryAndImpactDiagramData
@@ -78,6 +80,16 @@ fun DashboardScreen(
     val currentTherapyUiState by currentTherapyViewModel.uiState.collectAsState()
     val permissionsUiState by permissionsViewModel.uiState.collectAsState()
 
+    var showAdjustmentDialog by remember { mutableStateOf(false) }
+
+    if (showAdjustmentDialog) {
+        TherapyAdjustmentDialog(
+            currentValue = currentTherapyUiState.activeProfile?.adjustmentPercentage ?: 0,
+            onValueChange = { currentTherapyViewModel.setAdjustmentPercentage(it) },
+            onDismissRequest = { showAdjustmentDialog = false }
+        )
+    }
+
     DashboardContent(
         dashboardUiState = uiState,
         currentBgUiState = currentBgUiState,
@@ -91,6 +103,7 @@ fun DashboardScreen(
         onHistoryChartClick = onHistoryChartClick,
         onProfileSelect = { currentTherapyViewModel.selectProfile(it) },
         onApsModeSelect = { viewModel.setApsMode(it) },
+        onAdjustmentClick = { showAdjustmentDialog = true },
         extraContent = extraContent
     )
 }
@@ -110,6 +123,7 @@ fun DashboardContent(
     onHistoryChartClick: (() -> Unit)?,
     onProfileSelect: (Profile) -> Unit,
     onApsModeSelect: (ApsMode) -> Unit,
+    onAdjustmentClick: () -> Unit,
     extraContent: @Composable () -> Unit = {}
 ) {
     val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
@@ -185,7 +199,7 @@ fun DashboardContent(
                 onInsulinToggle = { insulinVisible = it }
             )
 
-            Spacer(modifier = Modifier.padding(top = 15.dp))
+            Spacer(modifier = Modifier.height(16.dp))
 
             Text(
                 text = stringResource(R.string.dashboard_history_title),
@@ -218,6 +232,18 @@ fun DashboardContent(
 
             Spacer(modifier = Modifier.height(16.dp))
 
+            ApsControlCard(
+                modifier = Modifier.fillMaxWidth(),
+                profileUiState = currentTherapyUiState.activeProfile,
+                selectedMode = dashboardUiState.apsMode,
+                availableModes = dashboardUiState.availableApsModes,
+                onModeChange = onApsModeSelect,
+                adjustmentPercentage = currentTherapyUiState.activeProfile?.adjustmentPercentage ?: 0,
+                onAdjustmentClick = onAdjustmentClick
+            )
+
+            Spacer(modifier = Modifier.height(16.dp))
+
             extraContent()
         }
     }
@@ -241,6 +267,7 @@ fun DashboardPreview() {
                     basal = 0.5,
                     target = BgValue.fromMgDl(110),
                     lowThreshold = BgValue.fromMgDl(70),
+                    adjustmentPercentage = 0
                 ),
             ),
             permissionsUiState = PermissionsUiModel(
@@ -257,7 +284,8 @@ fun DashboardPreview() {
             onNavigateToProfileEditor = {},
             onHistoryChartClick = {},
             onProfileSelect = {},
-            onApsModeSelect = {}
+            onApsModeSelect = {},
+            onAdjustmentClick = {}
         )
     }
 }
@@ -280,6 +308,7 @@ fun DashboardPermissionsWarningPreview() {
                     basal = 0.5,
                     target = BgValue.fromMgDl(110),
                     lowThreshold = BgValue.fromMgDl(70),
+                    adjustmentPercentage = 0
                 ),
             ),
             permissionsUiState = PermissionsUiModel(
@@ -296,7 +325,8 @@ fun DashboardPermissionsWarningPreview() {
             onNavigateToProfileEditor = {},
             onHistoryChartClick = {},
             onProfileSelect = {},
-            onApsModeSelect = {}
+            onApsModeSelect = {},
+            onAdjustmentClick = {}
         )
     }
 }

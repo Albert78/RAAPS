@@ -26,7 +26,8 @@ data class ProfileUiState(
     val ic: Double,
     val basal: Double,
     val target: BgValue,
-    val lowThreshold: BgValue
+    val lowThreshold: BgValue,
+    val adjustmentPercentage: Int
 )
 
 data class CurrentTherapyUiState(
@@ -76,7 +77,8 @@ class CurrentTherapyViewModel(
                 ic = ic,
                 basal = basal,
                 target = bgSettings.first,
-                lowThreshold = bgSettings.second
+                lowThreshold = bgSettings.second,
+                adjustmentPercentage = currentSettings.adjustmentPercentage
             )
         } else null
 
@@ -92,6 +94,12 @@ class CurrentTherapyViewModel(
     fun selectProfile(profile: Profile) {
         viewModelScope.launch {
             therapyManager.selectProfile(profile)
+        }
+    }
+
+    fun setAdjustmentPercentage(percentage: Int) {
+        viewModelScope.launch {
+            therapyManager.setAdjustmentPercentage(percentage)
         }
     }
 

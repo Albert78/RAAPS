@@ -72,5 +72,6 @@ data class CurrentTherapySettingsEntity(
     val id: Long = ID_UNDEFINED,
     val profile_id: Long,
     val insulin_type_id: String,
-    val aps_mode: ApsMode
+    val aps_mode: ApsMode,
+    val adjustment_percentage: Int
 )

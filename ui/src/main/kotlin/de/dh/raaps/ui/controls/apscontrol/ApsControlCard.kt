@@ -61,8 +61,8 @@ fun ApsControlCard(
     selectedMode: ApsMode,
     availableModes: List<ApsMode>,
     onModeChange: (ApsMode) -> Unit,
-    modificationValue: Int,
-    onModificationClick: () -> Unit
+    adjustmentPercentage: Int,
+    onAdjustmentClick: () -> Unit
 ) {
     val isSuspended = selectedMode == ApsMode.Suspend
 
@@ -227,10 +227,10 @@ fun ApsControlCard(
                 }
 
                 // Adjustment Button
-                val isNeutral = modificationValue == 0
+                val isNeutral = adjustmentPercentage == 0
                 if (isNeutral) {
                     OutlinedButton(
-                        onClick = onModificationClick,
+                        onClick = onAdjustmentClick,
                         enabled = !isSuspended,
                         modifier = Modifier.fillMaxWidth(),
                         shape = MaterialTheme.shapes.small,
@@ -242,19 +242,19 @@ fun ApsControlCard(
                     }
                 } else {
                     Button(
-                        onClick = onModificationClick,
+                        onClick = onAdjustmentClick,
                         enabled = !isSuspended,
                         modifier = Modifier.fillMaxWidth(),
                         shape = MaterialTheme.shapes.small,
                         colors = ButtonDefaults.buttonColors(
-                            containerColor = if (modificationValue > 0) SoftRed else SoftBlue
+                            containerColor = if (adjustmentPercentage > 0) SoftRed else SoftBlue
                         ),
                         contentPadding = PaddingValues(horizontal = 8.dp, vertical = 8.dp)
                     ) {
                         Icon(Icons.Default.UnfoldMore, null, modifier = Modifier.size(18.dp))
                         Spacer(Modifier.width(4.dp))
                         Text(
-                            "${if (modificationValue > 0) "+" else ""}$modificationValue%",
+                            "${if (adjustmentPercentage > 0) "+" else ""}$adjustmentPercentage%",
                             style = MaterialTheme.typography.titleMedium
                         )
                     }
@@ -286,13 +286,14 @@ private fun PreviewApsControlCard() {
                     lowThreshold = BgValue.fromMgDl(70),
                     basal = 0.8,
                     ic = 12.0,
-                    isf = BgDelta.fromMgDl(50)
+                    isf = BgDelta.fromMgDl(50),
+                    adjustmentPercentage = 0
                 ),
                 selectedMode = ApsMode.AutoCorrection,
                 availableModes = ApsMode.entries,
                 onModeChange = {},
-                modificationValue = 0,
-                onModificationClick = {}
+                adjustmentPercentage = 0,
+                onAdjustmentClick = {}
             )
         }
     }
@@ -309,8 +310,8 @@ private fun PreviewApsControlCardNoProfile() {
                 selectedMode = ApsMode.AutoCorrection,
                 availableModes = ApsMode.entries,
                 onModeChange = {},
-                modificationValue = 0,
-                onModificationClick = {}
+                adjustmentPercentage = 0,
+                onAdjustmentClick = {}
             )
         }
     }
