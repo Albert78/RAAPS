@@ -47,6 +47,14 @@ class ProfileSettingsViewModel(
         _uiState.update { it.copy(editingProfile = profile) }
     }
 
+    fun copyProfile(profile: Profile, newName: String) {
+        val copy = profile.copy(
+            id = ID_UNDEFINED,
+            name = newName
+        )
+        startEditing(copy)
+    }
+
     fun isNameUnique(name: String, excludeId: Long): Boolean {
         val trimmedName = name.trim()
         return _uiState.value.profiles.none { 

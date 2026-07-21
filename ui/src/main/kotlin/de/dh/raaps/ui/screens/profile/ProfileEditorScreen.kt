@@ -22,6 +22,7 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.HelpOutline
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Adjust
+import androidx.compose.material.icons.filled.ContentCopy
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Remove
 import androidx.compose.material.icons.filled.Save
@@ -92,6 +93,7 @@ fun ProfileEditorScreen(
     onNavigateUp: () -> Unit
 ) {
     val uiState by viewModel.uiState.collectAsState()
+    val copyNameFormat = stringResource(R.string.profile_editor_copy_name_format)
 
     if (uiState.editingProfile != null) {
         ProfileDetailEditor(
@@ -124,7 +126,10 @@ fun ProfileEditorScreen(
                 )
             },
             onEditProfile = { viewModel.startEditing(it) },
-            onDeleteProfile = { viewModel.confirmDelete(it) }
+            onDeleteProfile = { viewModel.confirmDelete(it) },
+            onCopyProfile = { profile ->
+                viewModel.copyProfile(profile, copyNameFormat.format(profile.name))
+            }
         )
     }
 
@@ -154,7 +159,8 @@ fun ProfileList(
     onNavigateUp: () -> Unit,
     onAddProfile: () -> Unit,
     onEditProfile: (Profile) -> Unit,
-    onDeleteProfile: (Profile) -> Unit
+    onDeleteProfile: (Profile) -> Unit,
+    onCopyProfile: (Profile) -> Unit
 ) {
     Scaffold(
         topBar = {
@@ -196,11 +202,19 @@ fun ProfileList(
                                 .padding(8.dp)
                                 .clickable { onEditProfile(profile) },
                             trailingContent = {
-                                IconButton(onClick = { onDeleteProfile(profile) }) {
-                                    Icon(
-                                        imageVector = Icons.Default.Delete,
-                                        contentDescription = stringResource(id = R.string.cd_delete_profile)
-                                    )
+                                Row {
+                                    IconButton(onClick = { onCopyProfile(profile) }) {
+                                        Icon(
+                                            imageVector = Icons.Default.ContentCopy,
+                                            contentDescription = stringResource(id = R.string.cd_copy_profile)
+                                        )
+                                    }
+                                    IconButton(onClick = { onDeleteProfile(profile) }) {
+                                        Icon(
+                                            imageVector = Icons.Default.Delete,
+                                            contentDescription = stringResource(id = R.string.cd_delete_profile)
+                                        )
+                                    }
                                 }
                             },
                             tonalElevation = 2.dp
@@ -783,7 +797,8 @@ fun ProfileEditorPreview() {
             onNavigateUp = {},
             onAddProfile = {},
             onEditProfile = {},
-            onDeleteProfile = {}
+            onDeleteProfile = {},
+            onCopyProfile = {}
         )
     }
 }

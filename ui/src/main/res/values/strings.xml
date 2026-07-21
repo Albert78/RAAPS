@@ -111,4 +111,6 @@
     <string name="history_impact_mgdl_label">mg/dl</string>
     <string name="history_impact_ie_label">I.E.</string>
     <string name="history_impact_ke_label">KE</string>
+    <string name="cd_copy_profile">Profil kopieren</string>
+    <string name="profile_editor_copy_name_format">%1$s (Kopie)</string>
 </resources>
