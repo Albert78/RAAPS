@@ -107,4 +107,8 @@
     <string name="active_insulin_label">Akt. Insulin</string>
     <string name="cob_format">%1$.1f g</string>
     <string name="iob_format">%1$.2f U</string>
+
+    <string name="history_impact_mgdl_label">mg/dl</string>
+    <string name="history_impact_ie_label">I.E.</string>
+    <string name="history_impact_ke_label">KE</string>
 </resources>

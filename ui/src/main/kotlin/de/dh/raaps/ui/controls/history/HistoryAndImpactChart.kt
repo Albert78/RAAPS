@@ -3,8 +3,15 @@ package de.dh.raaps.ui.controls.history
 import android.content.res.Configuration
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.Stable
@@ -232,7 +239,6 @@ fun HistoryAndImpactChart(
 ) {
     val state = controlledState ?: rememberBgHistoryChartState()
     val modelProducer = remember { CartesianChartModelProducer() }
-    val insulinFormat = stringResource(R.string.insulin_unit_label_format)
 
     LaunchedEffect(diagramData.minX, diagramData.maxX) {
         state.minX = diagramData.minX
@@ -378,41 +384,75 @@ fun HistoryAndImpactChart(
         }
     }
 
-    val yAxisValueFormatter = remember(insulinFormat) {
+    val yAxisValueFormatter = remember {
         CartesianValueFormatter { _, value, _ ->
-            insulinFormat.format(value / 10.0)
+            String.format(Locale.getDefault(), "%.0f", value / 10.0)
         }
     }
 
-    CartesianChartHost(
-        chart = rememberCartesianChart(
-            rememberLineCartesianLayer(
-                lineProvider = LineCartesianLayer.LineProvider.series(listOf(bgLine, insulinLine, carbLine)),
-                rangeProvider = rangeProvider
+    val ieLabel = stringResource(R.string.history_impact_ie_label)
+    val keLabel = stringResource(R.string.history_impact_ke_label)
+    val impactLabel = remember(showInsulin, showCarbs, ieLabel, keLabel) {
+        listOfNotNull(
+            if (showInsulin) ieLabel else null,
+            if (showCarbs) keLabel else null
+        ).joinToString("/")
+    }
+
+    Column(modifier = modifier) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 4.dp),
+            horizontalArrangement = Arrangement.SpaceBetween
+        ) {
+            Text(
+                text = stringResource(R.string.history_impact_mgdl_label),
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+
+            if (showInsulin || showCarbs) {
+                Text(
+                    text = impactLabel,
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+        }
+
+        CartesianChartHost(
+            chart = rememberCartesianChart(
+                rememberLineCartesianLayer(
+                    lineProvider = LineCartesianLayer.LineProvider.series(listOf(bgLine, insulinLine, carbLine)),
+                    rangeProvider = rangeProvider
+                ),
+                startAxis = VerticalAxis.rememberStart(
+                    itemPlacer = verticalAxisItemPlacer,
+                    horizontalLabelPosition = VerticalAxis.HorizontalLabelPosition.Inside,
+                    line = null
+                ),
+                endAxis = if (showInsulin || showCarbs) {
+                    VerticalAxis.rememberEnd(
+                        itemPlacer = verticalAxisItemPlacer,
+                        valueFormatter = yAxisValueFormatter,
+                        horizontalLabelPosition = VerticalAxis.HorizontalLabelPosition.Inside,
+                        line = null
+                    )
+                } else null,
+                bottomAxis = HorizontalAxis.rememberBottom(valueFormatter = xAxisValueFormatter, itemPlacer = xItemPlacer),
             ),
-            startAxis = VerticalAxis.rememberStart(
-                itemPlacer = verticalAxisItemPlacer,
-                horizontalLabelPosition = VerticalAxis.HorizontalLabelPosition.Inside,
-                line = null
+            modelProducer = modelProducer,
+            scrollState = state.scrollState,
+            zoomState = state.zoomState,
+            modifier = Modifier.clickable(
+                interactionSource = remember { MutableInteractionSource() },
+                indication = null,
+                enabled = onChartClick != null,
+                onClick = { onChartClick?.invoke() }
             ),
-            endAxis = VerticalAxis.rememberEnd(
-                itemPlacer = verticalAxisItemPlacer,
-                valueFormatter = yAxisValueFormatter,
-                horizontalLabelPosition = VerticalAxis.HorizontalLabelPosition.Inside,
-                line = null
-            ),
-            bottomAxis = HorizontalAxis.rememberBottom(valueFormatter = xAxisValueFormatter, itemPlacer = xItemPlacer),
-        ),
-        modelProducer = modelProducer,
-        scrollState = state.scrollState,
-        zoomState = state.zoomState,
-        modifier = modifier.clickable(
-            interactionSource = remember { MutableInteractionSource() },
-            indication = null,
-            enabled = onChartClick != null,
-            onClick = { onChartClick?.invoke() }
-        ),
-    )
+        )
+    }
 }
 
 fun createSampleImpactDiagramData(): HistoryAndImpactDiagramData {
