@@ -39,6 +39,7 @@ import de.dh.raaps.common.model.ApsMode
 import de.dh.raaps.common.model.data.BgDelta
 import de.dh.raaps.common.model.data.BgValue
 import de.dh.raaps.common.model.data.Profile
+import de.dh.raaps.common.ui.composables.ProfileSelectionDialog
 import de.dh.raaps.common.ui.composables.WarningBanner
 import de.dh.raaps.common.ui.composables.screenTitle
 import de.dh.raaps.common.ui.theme.AppTheme
@@ -137,6 +138,7 @@ fun DashboardContent(
 
     var carbsVisible by remember { mutableStateOf(true) }
     var insulinVisible by remember { mutableStateOf(true) }
+    var showProfileDialog by remember { mutableStateOf(false) }
 
     Scaffold(
         modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
@@ -245,8 +247,26 @@ fun DashboardContent(
                 availableModes = dashboardUiState.availableApsModes,
                 onModeChange = onApsModeSelect,
                 adjustmentPercentage = currentTherapyUiState.activeProfile?.adjustmentPercentage ?: 0,
-                onAdjustmentClick = onAdjustmentClick
+                onAdjustmentClick = onAdjustmentClick,
+                onProfileClick = { showProfileDialog = true }
             )
+
+
+            if (showProfileDialog) {
+                ProfileSelectionDialog(
+                    profiles = currentTherapyUiState.availableProfiles,
+                    activeProfileId = currentTherapyUiState.activeProfile?.activeProfileId,
+                    onProfileSelected = {
+                        onProfileSelect(it)
+                        showProfileDialog = false
+                    },
+                    onDismiss = { showProfileDialog = false },
+                    onEditProfilesClick = {
+                        showProfileDialog = false
+                        onNavigateToProfileEditor()
+                    }
+                )
+            }
 
             Spacer(modifier = Modifier.height(24.dp))
 

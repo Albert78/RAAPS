@@ -2,6 +2,7 @@ package de.dh.raaps.ui.controls.apscontrol
 
 import android.content.res.Configuration
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -41,6 +42,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalLocale
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import de.dh.raaps.common.model.ApsMode
@@ -62,7 +65,8 @@ fun ApsControlCard(
     availableModes: List<ApsMode>,
     onModeChange: (ApsMode) -> Unit,
     adjustmentPercentage: Int,
-    onAdjustmentClick: () -> Unit
+    onAdjustmentClick: () -> Unit,
+    onProfileClick: () -> Unit
 ) {
     val isSuspended = selectedMode == ApsMode.Suspend
 
@@ -78,7 +82,10 @@ fun ApsControlCard(
         ) {
             // Info Column (left)
             Column(
-                modifier = Modifier.weight(1f).padding(16.dp),
+                modifier = Modifier
+                    .weight(1f)
+                    .clickable { onProfileClick() }
+                    .padding(16.dp),
                 verticalArrangement = Arrangement.spacedBy(4.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
@@ -87,10 +94,18 @@ fun ApsControlCard(
                         text = stringResource(R.string.aps_control_no_profile)
                     )
                 } else {
+                    val nameText = if (adjustmentPercentage != 0) {
+                        "${profileUiState.name} (${if (adjustmentPercentage > 0) "+" else ""}$adjustmentPercentage%)"
+                    } else {
+                        profileUiState.name
+                    }
                     Text(
-                        text = profileUiState.name,
+                        text = nameText,
                         style = MaterialTheme.typography.labelLarge,
-                        color = MaterialTheme.colorScheme.primary
+                        color = MaterialTheme.colorScheme.primary,
+                        maxLines = 2,
+                        overflow = TextOverflow.Ellipsis,
+                        textAlign = TextAlign.Center
                     )
 
                     Row(
@@ -293,7 +308,8 @@ private fun PreviewApsControlCard() {
                 availableModes = ApsMode.entries,
                 onModeChange = {},
                 adjustmentPercentage = 0,
-                onAdjustmentClick = {}
+                onAdjustmentClick = {},
+                onProfileClick = {}
             )
         }
     }
@@ -312,7 +328,8 @@ private fun PreviewApsControlCardNoProfile() {
                 availableModes = ApsMode.entries,
                 onModeChange = {},
                 adjustmentPercentage = 0,
-                onAdjustmentClick = {}
+                onAdjustmentClick = {},
+                onProfileClick = {}
             )
         }
     }
