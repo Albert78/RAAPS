@@ -12,11 +12,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.Stable
-import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableDoubleStateOf
-import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -36,8 +32,6 @@ import com.patrykandpatrick.vico.compose.cartesian.CartesianChartHost
 import com.patrykandpatrick.vico.compose.cartesian.CartesianDrawingContext
 import com.patrykandpatrick.vico.compose.cartesian.CartesianMeasuringContext
 import com.patrykandpatrick.vico.compose.cartesian.Scroll
-import com.patrykandpatrick.vico.compose.cartesian.VicoScrollState
-import com.patrykandpatrick.vico.compose.cartesian.VicoZoomState
 import com.patrykandpatrick.vico.compose.cartesian.Zoom
 import com.patrykandpatrick.vico.compose.cartesian.axis.Axis
 import com.patrykandpatrick.vico.compose.cartesian.axis.BaseAxis
@@ -68,7 +62,6 @@ import de.dh.raaps.common.model.MS_PER_HOUR
 import de.dh.raaps.common.model.MS_PER_MINUTE
 import de.dh.raaps.common.model.data.BgReading
 import de.dh.raaps.common.model.data.BgSampleKind
-import de.dh.raaps.common.model.data.BgValue
 import de.dh.raaps.common.model.data.Timestamp
 import de.dh.raaps.common.ui.composables.BlueA200
 import de.dh.raaps.common.ui.composables.DeepOrangeA700
@@ -77,80 +70,8 @@ import de.dh.raaps.common.ui.theme.AppTheme
 import kotlinx.coroutines.launch
 import java.util.Calendar
 import java.util.Locale
-import kotlin.math.sin
-import kotlin.random.Random
 
 private const val INITIAL_SHOW_HOURS = 4.0
-
-/**
- * State of the BgHistoryChart to observe and control the visible range.
- */
-@Stable
-class BgHistoryChartState(
-    val scrollState: VicoScrollState,
-    val zoomState: VicoZoomState
-) {
-    internal var minX by mutableDoubleStateOf(0.0)
-    internal var maxX by mutableDoubleStateOf(0.0)
-    internal var layerWidth by mutableFloatStateOf(0f)
-
-    /**
-     * The currently visible X-range in the chart (minutes offset from baseTimestamp).
-     * Uses derivedStateOf to avoid state-write loops and unnecessary recompositions.
-     */
-    val visibleRange by derivedStateOf {
-        val totalXRange = maxX - minX
-        if (layerWidth <= 0 || totalXRange <= 0.0 || scrollState.maxValue < 0f) {
-            null
-        } else {
-            // totalWidthPx is the virtual width of the entire chart
-            val totalWidthPx = scrollState.maxValue + layerWidth
-            // scrollState.value is the current horizontal scroll offset
-            val startX = minX + (scrollState.value / totalWidthPx) * totalXRange
-            val endX = startX + (layerWidth / totalWidthPx) * totalXRange
-            startX..endX
-        }
-    }
-
-    /**
-     * Programmatically sets the visible range of the chart.
-     */
-    suspend fun setVisibleRange(start: Double, end: Double) {
-        val totalXRange = maxX - minX
-        val desiredWidth = end - start
-        if (desiredWidth <= 0 || layerWidth <= 0 || totalXRange <= 0.0) return
-
-        zoomState.zoom(Zoom.x(desiredWidth))
-        scrollState.scroll(Scroll.Absolute.x(x = start))
-    }
-
-    /**
-     * Scrolls the chart to a specific time offset without changing the zoom level.
-     */
-    suspend fun scrollTo(start: Double) {
-        scrollState.scroll(Scroll.Absolute.x(x = start))
-    }
-}
-
-@Composable
-fun rememberBgHistoryChartState(
-    initialShowHours: Double = INITIAL_SHOW_HOURS
-): BgHistoryChartState {
-    val scrollState = rememberVicoScrollState(initialScroll = Scroll.Absolute.End)
-
-    val initialZoom = remember(initialShowHours) { Zoom.x(initialShowHours * 60.0) }
-    val minZoom = remember(initialShowHours) { Zoom.x(24.0 * 60) }
-    val maxZoom = remember(initialShowHours) { Zoom.x(initialShowHours * 30) }
-
-    val zoomState = rememberVicoZoomState(
-        initialZoom = initialZoom,
-        minZoom = minZoom,
-        maxZoom = maxZoom
-    )
-    return remember(scrollState, zoomState) {
-        BgHistoryChartState(scrollState, zoomState)
-    }
-}
 
 data class HistoryDiagramData(
     val readings: List<BgReading>,

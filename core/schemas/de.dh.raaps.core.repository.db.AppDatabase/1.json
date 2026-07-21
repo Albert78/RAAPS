@@ -2,7 +2,7 @@
   "formatVersion": 1,
   "database": {
     "version": 1,
-    "identityHash": "9ad34958b05bc2861027c08f4576393b",
+    "identityHash": "2e22068c873f8f8c69b13c9fed58bc94",
     "entities": [
       {
         "tableName": "sensor_type",
@@ -143,7 +143,7 @@
       },
       {
         "tableName": "therapy_data",
-        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `basal_blocks` TEXT NOT NULL, `isf_blocks` TEXT NOT NULL, `ic_blocks` TEXT NOT NULL, `target_blocks` TEXT NOT NULL)",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `basal_blocks` TEXT NOT NULL, `isf_blocks` TEXT NOT NULL, `ic_blocks` TEXT NOT NULL, `bg_blocks` TEXT NOT NULL)",
         "fields": [
           {
             "fieldPath": "id",
@@ -170,8 +170,8 @@
             "notNull": true
           },
           {
-            "fieldPath": "target_blocks",
-            "columnName": "target_blocks",
+            "fieldPath": "bg_blocks",
+            "columnName": "bg_blocks",
             "affinity": "TEXT",
             "notNull": true
           }
@@ -507,7 +507,7 @@
     ],
     "setupQueries": [
       "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
-      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '9ad34958b05bc2861027c08f4576393b')"
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '2e22068c873f8f8c69b13c9fed58bc94')"
     ]
   }
 }

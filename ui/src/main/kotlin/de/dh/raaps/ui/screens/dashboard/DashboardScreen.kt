@@ -1,7 +1,6 @@
 package de.dh.raaps.ui.screens.dashboard
 
 import android.content.res.Configuration
-import android.util.Range
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
@@ -52,6 +51,7 @@ import de.dh.raaps.ui.controls.history.HistoryViewModel
 import de.dh.raaps.ui.controls.history.rememberBgHistoryChartState
 import de.dh.raaps.ui.controls.profile.CurrentTherapyUiState
 import de.dh.raaps.ui.controls.profile.CurrentTherapyViewModel
+import de.dh.raaps.ui.controls.profile.ProfileUiState
 import de.dh.raaps.ui.controls.state.CurrentStateView
 import de.dh.raaps.ui.controls.state.createSampleGoodBgUiState
 import de.dh.raaps.ui.screens.history.createSampleHistoryUiState
@@ -233,11 +233,15 @@ fun DashboardPreview() {
             currentBgUiState = createSampleGoodBgUiState(),
             historyUiState = createSampleHistoryUiState(),
             currentTherapyUiState = CurrentTherapyUiState(
-                profileName = "Normal",
-                currentIsf = BgDelta.fromMgDl(50),
-                currentIc = 10.0,
-                currentBasal = 0.5,
-                currentTarget = Range(BgValue.fromMgDl(80), BgValue.fromMgDl(120))
+                activeProfile = ProfileUiState(
+                    name = "Normal",
+                    activeProfileId = null,
+                    isf = BgDelta.fromMgDl(50),
+                    ic = 10.0,
+                    basal = 0.5,
+                    target = BgValue.fromMgDl(110),
+                    lowThreshold = BgValue.fromMgDl(70),
+                ),
             ),
             permissionsUiState = PermissionsUiModel(
                 isLoading = false,
@@ -268,11 +272,15 @@ fun DashboardPermissionsWarningPreview() {
             currentBgUiState = createSampleGoodBgUiState(),
             historyUiState = createSampleHistoryUiState(),
             currentTherapyUiState = CurrentTherapyUiState(
-                profileName = "Normal",
-                currentIsf = BgDelta.fromMgDl(50),
-                currentIc = 10.0,
-                currentBasal = 0.5,
-                currentTarget = Range(BgValue.fromMgDl(80), BgValue.fromMgDl(120))
+                activeProfile = ProfileUiState(
+                    name = "Normal",
+                    activeProfileId = null,
+                    isf = BgDelta.fromMgDl(50),
+                    ic = 10.0,
+                    basal = 0.5,
+                    target = BgValue.fromMgDl(110),
+                    lowThreshold = BgValue.fromMgDl(70),
+                ),
             ),
             permissionsUiState = PermissionsUiModel(
                 isLoading = false,
