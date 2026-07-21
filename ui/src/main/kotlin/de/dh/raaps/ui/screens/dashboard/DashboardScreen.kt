@@ -77,6 +77,8 @@ fun DashboardScreen(
     val uiState by viewModel.uiState.collectAsState()
     val currentBgUiState by historyViewModel.currentBgUiState.collectAsState()
     val historyUiState by historyViewModel.historyUiState.collectAsState()
+    val iob by historyViewModel.iob.collectAsState()
+    val cob by historyViewModel.cob.collectAsState()
     val currentTherapyUiState by currentTherapyViewModel.uiState.collectAsState()
     val permissionsUiState by permissionsViewModel.uiState.collectAsState()
 
@@ -94,6 +96,8 @@ fun DashboardScreen(
         dashboardUiState = uiState,
         currentBgUiState = currentBgUiState,
         historyUiState = historyUiState,
+        iob = iob,
+        cob = cob,
         currentTherapyUiState = currentTherapyUiState,
         permissionsUiState = permissionsUiState,
         onFixPermissionsClick = onFixPermissions,
@@ -114,6 +118,8 @@ fun DashboardContent(
     dashboardUiState: DashboardUiState,
     currentBgUiState: CurrentBgUiState,
     historyUiState: HistoryUiState,
+    iob: Double,
+    cob: Double,
     currentTherapyUiState: CurrentTherapyUiState,
     permissionsUiState: PermissionsUiModel,
     onFixPermissionsClick: () -> Unit,
@@ -192,6 +198,8 @@ fun DashboardContent(
 
             CurrentStateView(
                 currentBgUiState = currentBgUiState,
+                iob = iob,
+                cob = cob,
                 modifier = Modifier.fillMaxWidth(),
                 carbsVisible = carbsVisible,
                 onCarbsToggle = { carbsVisible = it },
@@ -256,6 +264,8 @@ fun DashboardPreview() {
             dashboardUiState = DashboardUiState(isLoading = false, isError = false),
             currentBgUiState = createSampleGoodBgUiState(),
             historyUiState = createSampleHistoryUiState(),
+            iob = 1.57,
+            cob = 12.0,
             currentTherapyUiState = CurrentTherapyUiState(
                 activeProfile = ProfileUiState(
                     name = "Normal",
@@ -297,6 +307,8 @@ fun DashboardPermissionsWarningPreview() {
             dashboardUiState = DashboardUiState(isLoading = false, isError = false),
             currentBgUiState = createSampleGoodBgUiState(),
             historyUiState = createSampleHistoryUiState(),
+            iob = 1.57,
+            cob = 12.0,
             currentTherapyUiState = CurrentTherapyUiState(
                 activeProfile = ProfileUiState(
                     name = "Normal",

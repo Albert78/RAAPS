@@ -33,6 +33,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -45,6 +46,7 @@ import de.dh.raaps.common.ui.composables.Red
 import de.dh.raaps.common.ui.composables.Yellow
 import de.dh.raaps.common.ui.shortRelativeTimeAgo
 import de.dh.raaps.common.ui.theme.AppTheme
+import de.dh.raaps.ui.R
 import de.dh.raaps.ui.controls.history.BgTrend
 import de.dh.raaps.ui.controls.history.CurrentBgData
 import de.dh.raaps.ui.controls.history.CurrentBgUiState
@@ -53,6 +55,8 @@ import kotlinx.coroutines.delay
 @Composable
 fun CurrentStateView(
     currentBgUiState: CurrentBgUiState,
+    iob: Double,
+    cob: Double,
     modifier: Modifier = Modifier,
     carbsVisible: Boolean = true,
     onCarbsToggle: (Boolean) -> Unit = {},
@@ -105,6 +109,11 @@ fun CurrentStateView(
         else -> 0f
     }
 
+    val cobFormat = stringResource(R.string.cob_format)
+    val iobFormat = stringResource(R.string.iob_format)
+    val cobText = remember(cob, cobFormat) { cobFormat.format(cob) }
+    val iobText = remember(iob, iobFormat) { iobFormat.format(iob) }
+
     Surface(
         modifier = modifier,
         shape = RoundedCornerShape(12.dp),
@@ -126,7 +135,7 @@ fun CurrentStateView(
                     color = textColor
                 )
                 Text(
-                    text = "mg/dl",
+                    text = stringResource(R.string.glucose_unit_mgdl),
                     style = MaterialTheme.typography.labelSmall,
                     color = Color.Gray
                 )
@@ -175,19 +184,19 @@ fun CurrentStateView(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Text(
-                        text = "ca.",
+                        text = stringResource(R.string.approx_prefix),
                         style = MaterialTheme.typography.bodySmall,
                         color = Color.Gray
                     )
                     Spacer(Modifier.width(4.dp))
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
                         Text(
-                            text = "12 g",
+                            text = cobText,
                             style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
                             color = MaterialTheme.colorScheme.onSurface
                         )
                         Text(
-                            text = "Aktive KH",
+                            text = stringResource(R.string.active_carbs_label),
                             style = MaterialTheme.typography.labelSmall,
                             color = Color.Gray
                         )
@@ -213,19 +222,19 @@ fun CurrentStateView(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Text(
-                        text = "ca.",
+                        text = stringResource(R.string.approx_prefix),
                         style = MaterialTheme.typography.bodySmall,
                         color = Color.Gray
                     )
                     Spacer(Modifier.width(4.dp))
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
                         Text(
-                            text = "1,57 U",
+                            text = iobText,
                             style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
                             color = MaterialTheme.colorScheme.onSurface
                         )
                         Text(
-                            text = "Akt. Insulin",
+                            text = stringResource(R.string.active_insulin_label),
                             style = MaterialTheme.typography.labelSmall,
                             color = Color.Gray
                         )
@@ -260,7 +269,11 @@ fun CurrentStateViewPreview() {
     AppTheme {
         Surface {
             Box(Modifier.padding(16.dp)) {
-                CurrentStateView(currentBgUiState = state)
+                CurrentStateView(
+                    currentBgUiState = state,
+                    iob = 1.57,
+                    cob = 12.0
+                )
             }
         }
     }

@@ -100,4 +100,11 @@
     <string name="aps_control_adjustment_neutral">neutral</string>
     <string name="aps_control_no_profile">Kein Profil</string>
     <string name="aps_control_adjustment_dialog_title">Therapie-Anpassung</string>
+
+    <string name="glucose_unit_mgdl">mg/dL</string>
+    <string name="approx_prefix">ca.</string>
+    <string name="active_carbs_label">Aktive KH</string>
+    <string name="active_insulin_label">Akt. Insulin</string>
+    <string name="cob_format">%1$.1f g</string>
+    <string name="iob_format">%1$.2f U</string>
 </resources>

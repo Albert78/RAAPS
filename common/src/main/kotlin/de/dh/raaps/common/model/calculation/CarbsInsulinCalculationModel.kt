@@ -25,7 +25,7 @@ class CarbsInsulinCalculationModel(
      * in the interval at the given timestamp.
      * @return COB in grams.
      */
-    fun totalCob(
+    fun cob(
         meals: List<MealEntry>,
         timestamp: Timestamp
     ): Double {

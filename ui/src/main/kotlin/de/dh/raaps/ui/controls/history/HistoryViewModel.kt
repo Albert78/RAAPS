@@ -8,6 +8,7 @@ import androidx.lifecycle.viewmodel.CreationExtras
 import de.dh.raaps.common.model.InsulinApplication
 import de.dh.raaps.common.model.MealEntry
 import de.dh.raaps.common.model.ToDo
+import de.dh.raaps.common.model.calculation.CarbsInsulinCalculationModel
 import de.dh.raaps.common.model.data.BgDelta
 import de.dh.raaps.common.model.data.BgReading
 import de.dh.raaps.common.model.data.BgSampleKind
@@ -15,14 +16,15 @@ import de.dh.raaps.common.model.data.BgValue
 import de.dh.raaps.common.model.data.GlucoseUnit
 import de.dh.raaps.common.model.data.Timestamp
 import de.dh.raaps.core.RAAPSRegistry
-import de.dh.raaps.core.aps.APS
-import de.dh.raaps.core.aps.CoreState
+import de.dh.raaps.core.aps.Core
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
-import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlin.time.Duration.Companion.minutes
 
 enum class BgTrend {
     DoubleUp,
@@ -105,23 +107,43 @@ class HistoryViewModel(
     private val _historyUiState = MutableStateFlow(HistoryUiState(isLoading = true, isError = false))
     val historyUiState = _historyUiState.asStateFlow()
 
+    private val _iob = MutableStateFlow(0.0)
+    val iob = _iob.asStateFlow()
+
+    private val _cob = MutableStateFlow(0.0)
+    val cob = _cob.asStateFlow()
+
     private val glucoseRepository = raapsRegistry.glucoseRepository
     private val treatmentRepository = raapsRegistry.treatmentRepository
 
+    private val calculationModel = CarbsInsulinCalculationModel(Core.TICK_INTERVAL)
+
     init {
+        val tickerFlow = flow {
+            while (true) {
+                emit(System.currentTimeMillis())
+                delay(6.minutes)
+            }
+        }
+
         viewModelScope.launch {
             combine(
                 glucoseRepository.observeBgReadings(),
                 treatmentRepository.observeInsulinApplications(),
-                treatmentRepository.observeMeals()
-            ) { readings, insulin, meals ->
+                treatmentRepository.observeMeals(),
+                tickerFlow
+            ) { readings, insulin, meals, _ ->
                 val historyLimit = Timestamp.now().minusHours(25)
-                Triple(
-                    readings.filter { it.timestamp >= historyLimit },
-                    insulin.filter { it.timestamp >= historyLimit },
-                    meals.filter { it.timestamp >= historyLimit }
-                )
+                val filteredReadings = readings.filter { it.timestamp >= historyLimit }
+                val filteredInsulin = insulin.filter { it.timestamp >= historyLimit }
+                val filteredMeals = meals.filter { it.timestamp >= historyLimit }
+
+                Triple(filteredReadings, filteredInsulin, filteredMeals)
             }.collect { (readings, insulin, meals) ->
+                val now = Timestamp.now()
+                _iob.value = calculationModel.iob(insulin, now)
+                _cob.value = calculationModel.cob(meals, now)
+
                 updateUiModel(readings, insulin, meals)
             }
         }
