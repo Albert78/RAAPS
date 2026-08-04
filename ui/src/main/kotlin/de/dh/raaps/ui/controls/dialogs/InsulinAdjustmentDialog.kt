@@ -14,6 +14,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import de.dh.raaps.common.ui.ConfigurableDisplayStrategy
@@ -26,7 +27,7 @@ import de.dh.raaps.common.ui.theme.SoftRed
 import de.dh.raaps.ui.R
 
 @Composable
-fun TherapyAdjustmentDialogContent(
+fun InsulinAdjustmentDialogContent(
     currentValue: Int,
     onValueChange: (Int) -> Unit
 ) {
@@ -65,7 +66,7 @@ fun TherapyAdjustmentDialogContent(
 }
 
 @Composable
-fun TherapyAdjustmentDialog(
+fun InsulinAdjustmentDialog(
     currentValue: Int,
     onValueChange: (Int) -> Unit,
     onDismissRequest: () -> Unit
@@ -74,7 +75,7 @@ fun TherapyAdjustmentDialog(
         onDismissRequest = onDismissRequest,
         title = { Text(stringResource(id = R.string.aps_control_adjustment_dialog_title)) },
         text = {
-            TherapyAdjustmentDialogContent(
+            InsulinAdjustmentDialogContent(
                 currentValue = currentValue,
                 onValueChange = onValueChange
             )
@@ -89,10 +90,10 @@ fun TherapyAdjustmentDialog(
 
 @Preview(showBackground = true)
 @Composable
-fun TherapyAdjustmentDialogPreview() {
+fun InsulinAdjustmentDialogPreview() {
     AppTheme {
         Surface {
-            TherapyAdjustmentDialogContent(
+            InsulinAdjustmentDialogContent(
                 currentValue = 10,
                 onValueChange = {}
             )
