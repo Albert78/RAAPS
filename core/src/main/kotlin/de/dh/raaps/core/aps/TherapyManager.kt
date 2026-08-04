@@ -53,6 +53,27 @@ data class DeferredBolus(
     val timestamp : Timestamp
 )
 
+/**
+ * Central manager for all therapy-related operations and decisions in the APS system.
+ *
+ * This class serves as the main interface for both the automated system (APS Core) and the user
+ * interface to execute treatments and manage therapy settings.
+ *
+ * ### Functional Areas:
+ * - **Therapy Settings Management**: Access and modification of insulin profiles, factors (ISF, CR),
+ *   basal rates, and blood glucose targets.
+ * - **Insulin Delivery**: Execution of bolus and temporary basal rate commands via the [PumpManager].
+ * - **Treatment Recommendations**: Generation of recommendations for manual carbs or bolus delivery.
+ * - **Job Management**: Coordination and cleanup of pending insulin delivery tasks.
+ *
+ * ### Locking System (Concurrency Protection):
+ * To prevent race conditions and conflicting treatments (e.g., the system setting a basal rate
+ * while the user is delivering a bolus), critical functions require a [TreatmentLock].
+ *
+ * Callers must acquire this lock via [tryAcquire]. If successful, they receive a [TreatmentLock]
+ * token that must be passed to all critical methods. These methods verify the lock's validity
+ * via [checkLock] before execution.
+ */
 class TherapyManager(
     private val therapyRepository: TherapyRepository,
     private val treatmentRepository: TreatmentRepository,
@@ -87,6 +108,10 @@ class TherapyManager(
             }
         }
     }
+
+    // -----------------------------------------------------------------------------------------
+    // --- Section: Therapy Settings Management ---
+    // -----------------------------------------------------------------------------------------
 
     suspend fun getActiveTherapySettings(): CurrentTherapySettings = therapyRepository.getCurrentTherapySettings()
 
@@ -215,6 +240,10 @@ class TherapyManager(
         }
     }
 
+    // -----------------------------------------------------------------------------------------
+    // --- Section: Critical Insulin & Carb Management (Requires Lock) ---
+    // -----------------------------------------------------------------------------------------
+
     /**
      * Verifies that the provided lock matches the current execution owner.
      * @throws IllegalStateException if the lock is invalid or not held.
@@ -233,6 +262,15 @@ class TherapyManager(
         treatmentRepository.mergeInsulinHistory(history, cts.insulinProfile.insulinType)
     }
 
+    /**
+     * Initiates a bolus delivery.
+     *
+     * Depending on the current [ApsMode], this will either directly command the pump
+     * or record a recommendation for the user.
+     *
+     * @param treatmentLock The lock held by the caller.
+     * @param amount The amount of insulin to deliver.
+     */
     fun issueBolus(treatmentLock: TreatmentLock, amount: InsulinAmount) {
         checkLock(treatmentLock)
         when (systemManager.apsMode.value) {
@@ -249,6 +287,13 @@ class TherapyManager(
         }
     }
 
+    /**
+     * Sets a temporary basal rate on the pump.
+     *
+     * @param treatmentLock The lock held by the caller.
+     * @param durationInHours The duration for the temporary basal rate.
+     * @param unitsPerHour The absolute basal rate in units per hour.
+     */
     fun setTempBasal(treatmentLock: TreatmentLock, durationInHours: Int, unitsPerHour: Double) {
         checkLock(treatmentLock)
         when (systemManager.apsMode.value) {
@@ -268,6 +313,9 @@ class TherapyManager(
         }
     }
 
+    /**
+     * Cancels any active temporary basal rate on the pump.
+     */
     fun clearTempBasal(treatmentLock: TreatmentLock) {
         checkLock(treatmentLock)
         when (systemManager.apsMode.value) {
@@ -284,16 +332,25 @@ class TherapyManager(
         }
     }
 
+    /**
+     * Clears all currently active therapy recommendations.
+     */
     fun clearRecommendations(treatmentLock: TreatmentLock) {
         checkLock(treatmentLock)
         _recommendations.value = emptyList()
     }
 
+    /**
+     * Records a recommendation for carb intake.
+     */
     fun recommendCarbs(treatmentLock: TreatmentLock, amountInGram: Int) {
         checkLock(treatmentLock)
         _recommendations.value += ApsRecommendation.Carbs(amountInGram)
     }
 
+    /**
+     * Records a recommendation for bolus delivery.
+     */
     fun recommendBolus(treatmentLock: TreatmentLock, amount: InsulinAmount) {
         checkLock(treatmentLock)
         _recommendations.value += ApsRecommendation.Bolus(amount)
@@ -309,6 +366,9 @@ class TherapyManager(
         use_management_in_bolus_screen()
     }
 
+    /**
+     * Cancels all cancellable APS commands currently pending in the pump manager.
+     */
     fun coreCancelInsulinJobs(treatmentLock: TreatmentLock) {
         checkLock(treatmentLock)
         when (systemManager.apsMode.value) {
