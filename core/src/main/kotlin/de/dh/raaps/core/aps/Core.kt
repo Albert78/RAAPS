@@ -192,7 +192,7 @@ class Core(
                 )
                 onDataUpdated()
 
-                timeService.registerTickHandler(TickPriority.CORE, this@Core)
+                timeService.registerTickHandler(TickPriority.APS, this@Core)
 
                 Log.d(TAG, "Finished initialization...")
                 setCoreState(CoreState.Suspended)

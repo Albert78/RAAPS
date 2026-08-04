@@ -14,8 +14,8 @@ interface TickHandler {
  * Lower values are executed first.
  */
 object TickPriority {
-    const val SIMULATION = 100
-    const val CORE = 200
+    const val PRE_CORE = 100
+    const val APS = 200
     const val UI = 300
 }
 
