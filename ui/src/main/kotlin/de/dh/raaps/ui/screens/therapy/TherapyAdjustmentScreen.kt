@@ -169,6 +169,8 @@ fun TherapyAdjustmentContent(
                     .padding(16.dp),
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
+                Spacer(modifier = Modifier.height(8.dp))
+
                 // Insulin Adjustment Section
                 val insulinAdjustmentActive = currentPercentage != 0
                 AdjustmentSection(

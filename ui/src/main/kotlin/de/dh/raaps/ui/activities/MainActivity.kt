@@ -171,6 +171,7 @@ class MainActivity : ComponentActivity() {
         Box(modifier = Modifier.fillMaxSize()) {
             ModalNavigationDrawer(
                 drawerState = drawerState,
+                gesturesEnabled = isTopLevel,
                 drawerContent = {
                     ModalDrawerSheet(
                         modifier = Modifier.width(drawerWidth),

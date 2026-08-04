@@ -150,6 +150,8 @@ fun CurrentTherapySettingsContent(
                     .padding(16.dp),
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
+                Spacer(modifier = Modifier.height(4.dp))
+
                 // Active Insulin Profile Card
                 SectionHeader(
                     icon = Icons.Default.Tune,
