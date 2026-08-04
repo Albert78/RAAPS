@@ -270,9 +270,13 @@ class TherapyManager(
      *
      * @param treatmentLock The lock held by the caller.
      * @param amount The amount of insulin to deliver.
+     * @param deferredBolus Optional deferred bolus that was handled by this delivery.
      */
-    fun issueBolus(treatmentLock: TreatmentLock, amount: InsulinAmount) {
+    fun issueBolus(treatmentLock: TreatmentLock, amount: InsulinAmount, deferredBolus: DeferredBolus? = null) {
         checkLock(treatmentLock)
+        if (deferredBolus != null) {
+            markDeferredBolusHandled(deferredBolus)
+        }
         when (systemManager.apsMode.value) {
             ApsMode.Suspend -> return
             ApsMode.BasalOnly -> recommendBolus(treatmentLock, amount)
@@ -358,12 +362,16 @@ class TherapyManager(
 
     fun addDeferredBolus(treatmentLock: TreatmentLock, deferredBolus: DeferredBolus) {
         checkLock(treatmentLock)
-        todo()
+        // TODO: Implementation for persistent storage
     }
 
     fun getDeferredBoluses(): List<DeferredBolus> {
-        add_management_for_deferred_bolus___also_db()
-        use_management_in_bolus_screen()
+        // TODO: Implementation for persistent storage
+        return emptyList()
+    }
+
+    fun markDeferredBolusHandled(deferredBolus: DeferredBolus) {
+        // TODO: Implementation for persistent storage
     }
 
     /**

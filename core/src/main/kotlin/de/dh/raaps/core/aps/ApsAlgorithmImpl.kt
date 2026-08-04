@@ -21,7 +21,7 @@ class ApsAlgorithmImpl(
     val carbsInsulinCalculationModel: CarbsInsulinCalculationModel,
     val therapyManager: TherapyManager,
     val onCancelInsulinJobs: (treatmentLock: TreatmentLock) -> Unit,
-    val onDeliverBolus: (treatmentLock: TreatmentLock, amount: InsulinAmount) -> Unit,
+    val onDeliverBolus: (treatmentLock: TreatmentLock, amount: InsulinAmount, handledDeferredBolus: DeferredBolus?) -> Unit,
     val onSetTempBasal: (treatmentLock: TreatmentLock, durationInHours: Int, unitsPerHour: Double) -> Unit,
     val onClearTempBasal: (treatmentLock: TreatmentLock) -> Unit,
     val onCarbsHint: (treatmentLock: TreatmentLock, Int) -> Unit,
@@ -95,7 +95,8 @@ class ApsAlgorithmImpl(
         val carbsHint: Int?,
         val tempBasal: TempBasalResult?,
         val clearTempBasal: Boolean,
-        val bolus: InsulinAmount?
+        val bolus: InsulinAmount?,
+        val handledDeferredBolus: DeferredBolus?
     )
 
     override suspend fun recalculate(treatmentLock: TreatmentLock) {
@@ -112,7 +113,7 @@ class ApsAlgorithmImpl(
             onClearTempBasal(treatmentLock)
         }
         if (result.bolus != null) {
-            onDeliverBolus(treatmentLock, result.bolus)
+            onDeliverBolus(treatmentLock, result.bolus, result.handledDeferredBolus)
         }
     }
 
@@ -141,7 +142,8 @@ class ApsAlgorithmImpl(
                 carbsHint = null,
                 tempBasal = null,
                 clearTempBasal = false,
-                bolus = null
+                bolus = null,
+                handledDeferredBolus = null
             )
         }
 
@@ -218,7 +220,8 @@ class ApsAlgorithmImpl(
                 carbsHint = carbsHint,
                 tempBasal = tempBasalResult,
                 clearTempBasal = false,
-                bolus = null
+                bolus = null,
+                handledDeferredBolus = null
             ) // Stop further processing when we're currently low
         }
 
@@ -243,7 +246,8 @@ class ApsAlgorithmImpl(
                     carbsHint = null,
                     tempBasal = TempBasalResult(unitsPerHour = 0.0, durationInHours = 1),
                     clearTempBasal = false,
-                    bolus = null
+                    bolus = null,
+                    handledDeferredBolus = null
                 )
             }
             // Else go on with decreased basal
@@ -256,8 +260,10 @@ class ApsAlgorithmImpl(
 
         // Step 3: Administer scheduled meal boluses
         val deferredBoluses = therapyManager.getDeferredBoluses()
+        var handledDeferredBolus: DeferredBolus? = null
         for (deferredBolus in deferredBoluses) {
             if (deferredBolus.timestamp < now) {
+                handledDeferredBolus = deferredBolus
                 mealOrCorrectionBolus = deferredBolus.amount
             }
         }
@@ -266,7 +272,8 @@ class ApsAlgorithmImpl(
             carbsHint = null,
             tempBasal = tempBasal,
             clearTempBasal = tempBasal == null,
-            bolus = mealOrCorrectionBolus
+            bolus = mealOrCorrectionBolus,
+            handledDeferredBolus = handledDeferredBolus
         )
 
         // ------------------------ Good BG or neutral handling check ------------------------------
@@ -298,7 +305,8 @@ class ApsAlgorithmImpl(
                 carbsHint = null,
                 tempBasal = TempBasalResult(unitsPerHour = 0.0, durationInHours = 20),
                 clearTempBasal = false,
-                bolus = null
+                bolus = null,
+                handledDeferredBolus = handledDeferredBolus
             )
         }
 
@@ -323,7 +331,8 @@ class ApsAlgorithmImpl(
             carbsHint = null,
             tempBasal = TempBasalResult(unitsPerHour = 0.0, durationInHours = 1),
             clearTempBasal = false,
-            bolus = InsulinAmount(insulin)
+            bolus = InsulinAmount(insulin),
+            handledDeferredBolus = handledDeferredBolus
         )
     }
 
@@ -343,7 +352,7 @@ class ApsAlgorithmImpl(
             sampledBgReadings: SampledBgReadings,
             therapyManager: TherapyManager,
             onCancelInsulinJobs: (treatmentLock: TreatmentLock) -> Unit,
-            onDeliverBolus: (treatmentLock: TreatmentLock, amount: InsulinAmount) -> Unit,
+            onDeliverBolus: (treatmentLock: TreatmentLock, amount: InsulinAmount, handledDeferredBolus: DeferredBolus?) -> Unit,
             onSetTempBasal: (treatmentLock: TreatmentLock, durationInHours: Int, unitsPerHour: Double) -> Unit,
             onClearTempBasal: (treatmentLock: TreatmentLock) -> Unit,
             onCarbsHint: (treatmentLock: TreatmentLock, Int) -> Unit,

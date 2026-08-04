@@ -63,7 +63,7 @@ class Core(
     private val onReleaseBusyState: () -> Unit,
 
     private val onCancelInsulinJobs: (treatmentLock: TreatmentLock) -> Unit,
-    private val onDeliverBolus: (treatmentLock: TreatmentLock, amount: InsulinAmount) -> Unit,
+    private val onDeliverBolus: (treatmentLock: TreatmentLock, amount: InsulinAmount, handledDeferredBolus: DeferredBolus?) -> Unit,
     private val onSetTempBasal: (treatmentLock: TreatmentLock, durationInHours: Int, unitsPerHour: Double) -> Unit,
     private val onClearTempBasal: (treatmentLock: TreatmentLock) -> Unit,
     private val onCarbsHint: (treatmentLock: TreatmentLock, Int) -> Unit,
@@ -215,7 +215,7 @@ class Core(
             onReleaseBusyState: () -> Unit,
 
             onCancelInsulinJobs: (treatmentLock: TreatmentLock) -> Unit,
-            onDeliverBolus: (treatmentLock: TreatmentLock, amount: InsulinAmount) -> Unit,
+            onDeliverBolus: (treatmentLock: TreatmentLock, amount: InsulinAmount, handledDeferredBolus: DeferredBolus?) -> Unit,
             onSetTempBasal: (treatmentLock: TreatmentLock, durationInHours: Int, unitsPerHour: Double) -> Unit,
             onClearTempBasal: (treatmentLock: TreatmentLock) -> Unit,
             onCarbsHint: (treatmentLock: TreatmentLock, amountInGram: Int) -> Unit,
