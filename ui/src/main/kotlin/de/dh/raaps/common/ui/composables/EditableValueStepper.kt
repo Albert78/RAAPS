@@ -113,8 +113,10 @@ fun EditableValueStepper(
                     value = textFieldValue,
                     onValueChange = { newValue ->
                         textFieldValue = newValue
-                        // Immediate update of current value
-                        newValue.text.toIntOrNull()?.let { onValueChange(it) }
+                        // Immediate update of current value, ignore if it contains non-digits
+                        if (newValue.text.all { it.isDigit() }) {
+                            newValue.text.toIntOrNull()?.let { onValueChange(it) }
+                        }
                     },
                     modifier = Modifier
                         .width(80.dp)

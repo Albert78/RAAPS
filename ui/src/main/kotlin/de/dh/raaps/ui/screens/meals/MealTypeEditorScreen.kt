@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -56,6 +57,7 @@ fun MealTypeEditorScreen(
     val uiState by viewModel.uiState.collectAsState()
 
     Scaffold(
+        modifier = Modifier.imePadding(),
         topBar = {
             TopAppBar(
                 title = screenTitle(
@@ -99,7 +101,11 @@ fun MealTypeEditorScreen(
 
             OutlinedTextField(
                 value = uiState.cat,
-                onValueChange = { viewModel.onCatChange(it) },
+                onValueChange = { newVal ->
+                    if (newVal.all { it.isDigit() }) {
+                        viewModel.onCatChange(newVal)
+                    }
+                },
                 label = { Text(stringResource(R.string.meal_type_cat_label)) },
                 modifier = Modifier.fillMaxWidth(),
                 singleLine = true,
@@ -176,7 +182,9 @@ fun ComponentItem(
             OutlinedTextField(
                 value = component.weight.toString(),
                 onValueChange = { newVal ->
-                    newVal.toIntOrNull()?.let { onUpdate(component.copy(weight = it)) }
+                    if (newVal.all { it.isDigit() }) {
+                        newVal.toIntOrNull()?.let { onUpdate(component.copy(weight = it)) }
+                    }
                 },
                 label = { Text(stringResource(R.string.meal_type_weight_label)) },
                 modifier = Modifier.weight(1f),
@@ -185,7 +193,9 @@ fun ComponentItem(
             OutlinedTextField(
                 value = component.peakMinutes.value.toString(),
                 onValueChange = { newVal ->
-                    newVal.toIntOrNull()?.let { onUpdate(component.copy(peakMinutes = Minutes(it.toShort()))) }
+                    if (newVal.all { it.isDigit() }) {
+                        newVal.toIntOrNull()?.let { onUpdate(component.copy(peakMinutes = Minutes(it.toShort()))) }
+                    }
                 },
                 label = { Text(stringResource(R.string.meal_type_peak_label)) },
                 modifier = Modifier.weight(1f),
