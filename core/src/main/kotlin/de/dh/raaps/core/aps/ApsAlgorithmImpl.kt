@@ -1,6 +1,6 @@
 package de.dh.raaps.core.aps
 
-import android.util.Log
+import de.dh.raaps.common.model.INSULIN_EPSILON
 import de.dh.raaps.common.model.InsulinAmount
 import de.dh.raaps.common.model.calculation.CarbsInsulinCalculationModel
 import de.dh.raaps.common.model.convertToCarbsFromBgDelta
@@ -273,12 +273,15 @@ class ApsAlgorithmImpl(
 
         val currentCob = carbsInsulinCalculationModel.cob(meals, now)
 
-        if (currentCob > SUSPEND_HIGH_CORRECTIONS_ON_HIGH_COB_THRESHOLD) {
+        if (currentCob > SUSPEND_HIGH_CORRECTIONS_ON_HIGH_COB_THRESHOLD || mealOrCorrectionBolus.iu > INSULIN_EPSILON) {
             // We're under influence of a meal, which means we expect the blood sugar to rise; skip correction in that case
             return neutralCalculationResult
         }
 
+        mealOrCorrectionBolus = InsulinAmount(0.0) // Not relevant anymore from here on
+
         if (bg15Trend < BgDelta(10)) {
+            // BG falling fast but low handling above didn't trigger; don't correct and wait for BG trend to become normal
             return neutralCalculationResult
         }
 
@@ -295,7 +298,7 @@ class ApsAlgorithmImpl(
                 carbsHint = null,
                 tempBasal = TempBasalResult(unitsPerHour = 0.0, durationInHours = 20),
                 clearTempBasal = false,
-                bolus = mealOrCorrectionBolus
+                bolus = null
             )
         }
 
@@ -320,7 +323,7 @@ class ApsAlgorithmImpl(
             carbsHint = null,
             tempBasal = TempBasalResult(unitsPerHour = 0.0, durationInHours = 1),
             clearTempBasal = false,
-            bolus = mealOrCorrectionBolus
+            bolus = InsulinAmount(insulin)
         )
     }
 
@@ -335,7 +338,7 @@ class ApsAlgorithmImpl(
 
         val LOW_BG_SAFETY_MARGIN = BgDelta(10)
 
-        suspend fun create(
+        fun create(
             treatmentRepository: TreatmentRepository,
             sampledBgReadings: SampledBgReadings,
             therapyManager: TherapyManager,
