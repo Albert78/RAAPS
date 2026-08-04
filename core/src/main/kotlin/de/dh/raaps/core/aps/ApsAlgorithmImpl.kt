@@ -126,7 +126,7 @@ class ApsAlgorithmImpl(
         predictionModel.advanceToTick(nowTick.minus(PRESERVE_PREDICTIONS_PAST_TIME))
 
         // Default basal rate to be adapted by the following code
-        var basal = therapyManager.getBasalPerHour(now)
+        val defaultBasal = therapyManager.getBasalPerHour(now)
 
         // Filter BG values to avoid big jumps caused by measurement errors.
         // If we have enough input values, we can use the better SavitzkyGolay filter, else fallback to PTWMA
@@ -248,7 +248,7 @@ class ApsAlgorithmImpl(
                 )
             }
             // Else go on with decreased basal
-            tempBasal = TempBasalResult(unitsPerHour = (basal - correctionUnits).coerceAtLeast(0.0), durationInHours = 1)
+            tempBasal = TempBasalResult(unitsPerHour = (defaultBasal - correctionUnits).coerceAtLeast(0.0), durationInHours = 1)
         }
 
         var mealOrCorrectionBolus = InsulinAmount(0.0)
@@ -296,7 +296,7 @@ class ApsAlgorithmImpl(
 
         mealOrCorrectionBolus = InsulinAmount(0.0) // Not relevant anymore from here on
 
-        if (bg15Trend < BgDelta(10)) {
+        if (bg15Trend < BgDelta(-10)) {
             // BG falling fast but low handling above didn't trigger; don't correct and wait for BG trend to become normal
             return neutralCalculationResult
         }
@@ -310,9 +310,11 @@ class ApsAlgorithmImpl(
         val predictedBgAtPeak = lookAheadStateAtPeak.predictedBg
 
         if (predictedBgAtPeak.mgdl <= targetBg.mgdl - 10) {
+            val bgError = targetBg - predictedBgAtPeak
+            val correction = convertToUnitsFromBgDelta(bgDelta = bgError, isf = isf)
             return CalculationResult(
                 carbsHint = null,
-                tempBasal = TempBasalResult(unitsPerHour = 0.0, durationInHours = 20),
+                tempBasal = TempBasalResult(unitsPerHour = (defaultBasal - correction).coerceAtLeast(0.0), durationInHours = 1),
                 clearTempBasal = false,
                 bolus = null,
                 handledDeferredBolus = handleDeferredBolus
@@ -344,7 +346,7 @@ class ApsAlgorithmImpl(
 
         val correction = convertToUnitsFromBgDelta(bgDelta = bgErrorAtPeak, isf = isf)
 
-        val insulin = correction + insulinEquivalentOfCarbs - currentIob
+        val insulin = defaultBasal + correction + insulinEquivalentOfCarbs - currentIob
         return CalculationResult(
             carbsHint = null,
             tempBasal = TempBasalResult(unitsPerHour = 0.0, durationInHours = 1),
