@@ -66,7 +66,6 @@ import de.dh.raaps.common.ui.theme.NeutralGrey
 import de.dh.raaps.common.ui.theme.SoftBlue
 import de.dh.raaps.common.ui.theme.SoftRed
 import de.dh.raaps.ui.R
-import de.dh.raaps.ui.controls.dialogs.BgEditorDialog
 import de.dh.raaps.ui.controls.dialogs.TherapyAdjustmentDialog
 import de.dh.raaps.ui.controls.profile.CurrentTherapyUiState
 import de.dh.raaps.ui.controls.profile.CurrentTherapyViewModel
@@ -77,7 +76,8 @@ import de.dh.raaps.ui.controls.profile.TherapyAdjustment
 fun CurrentTherapySettingsScreen(
     viewModel: CurrentTherapyViewModel,
     onNavigateUp: () -> Unit,
-    onNavigateToInsulinProfileEditor: () -> Unit
+    onNavigateToInsulinProfileEditor: () -> Unit,
+    onNavigateToBgEditor: () -> Unit
 ) {
     val uiState by viewModel.uiState.collectAsState()
 
@@ -85,8 +85,8 @@ fun CurrentTherapySettingsScreen(
         uiState = uiState,
         onNavigateUp = onNavigateUp,
         onNavigateToInsulinProfileEditor = onNavigateToInsulinProfileEditor,
+        onNavigateToBgEditor = onNavigateToBgEditor,
         onSelectProfile = { viewModel.selectInsulinProfile(it) },
-        onUpdateDefaultBgBlocks = { viewModel.updateDefaultBgBlocks(it) },
         onUpdateTherapyAdjustment = { p, t, l, h -> viewModel.setTherapyAdjustment(p, t, l, h) }
     )
 }
@@ -97,12 +97,11 @@ fun CurrentTherapySettingsContent(
     uiState: CurrentTherapyUiState,
     onNavigateUp: () -> Unit,
     onNavigateToInsulinProfileEditor: () -> Unit,
+    onNavigateToBgEditor: () -> Unit,
     onSelectProfile: (InsulinProfile) -> Unit,
-    onUpdateDefaultBgBlocks: (List<BgBlock>) -> Unit,
     onUpdateTherapyAdjustment: (Int, BgValue?, BgValue?, String?) -> Unit
 ) {
     var showInsulinProfileDialog by remember { mutableStateOf(false) }
-    var showBgEditorDialog by remember { mutableStateOf(false) }
     var showAdjustmentDialog by remember { mutableStateOf(false) }
 
     Scaffold(
@@ -165,7 +164,7 @@ fun CurrentTherapySettingsContent(
 
                 BgTargetCard(
                     bgBlocks = uiState.defaultBgBlocks,
-                    onClick = { showBgEditorDialog = true }
+                    onClick = onNavigateToBgEditor
                 )
 
                 Spacer(modifier = Modifier.height(8.dp))
@@ -193,17 +192,6 @@ fun CurrentTherapySettingsContent(
                 showInsulinProfileDialog = false
             },
             onDismiss = { showInsulinProfileDialog = false }
-        )
-    }
-
-    if (showBgEditorDialog) {
-        BgEditorDialog(
-            initialBlocks = uiState.defaultBgBlocks,
-            onSave = {
-                onUpdateDefaultBgBlocks(it)
-                showBgEditorDialog = false
-            },
-            onDismiss = { showBgEditorDialog = false }
         )
     }
 
@@ -806,8 +794,8 @@ fun CurrentTherapySettingsPreview() {
             uiState = mockUiState,
             onNavigateUp = {},
             onNavigateToInsulinProfileEditor = {},
+            onNavigateToBgEditor = {},
             onSelectProfile = {},
-            onUpdateDefaultBgBlocks = {},
             onUpdateTherapyAdjustment = { _, _, _, _ -> }
         )
     }

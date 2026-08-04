@@ -1,9 +1,11 @@
-package de.dh.raaps.ui.controls.dialogs
+package de.dh.raaps.ui.screens.therapy
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -13,18 +15,21 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Adjust
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Save
 import androidx.compose.material.icons.filled.VerticalAlignBottom
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
+import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -40,55 +45,75 @@ import de.dh.raaps.common.model.data.BgValue
 import de.dh.raaps.common.model.data.Minutes
 import de.dh.raaps.common.ui.composables.TimeHourSelector
 import de.dh.raaps.common.ui.composables.contentScrollIndicator
+import de.dh.raaps.common.ui.composables.screenTitle
 import de.dh.raaps.ui.R
+import de.dh.raaps.ui.controls.profile.CurrentTherapyViewModel
 import de.dh.raaps.ui.screens.insulinprofile.InsertButton
 import de.dh.raaps.ui.screens.insulinprofile.ValueAdjuster
 import kotlin.math.roundToInt
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun BgEditorDialog(
-    initialBlocks: List<BgBlock>,
-    onSave: (List<BgBlock>) -> Unit,
-    onDismiss: () -> Unit
+fun BgEditorScreen(
+    viewModel: CurrentTherapyViewModel,
+    onNavigateUp: () -> Unit
 ) {
-    var blocks by remember { mutableStateOf(initialBlocks) }
+    val uiState by viewModel.uiState.collectAsState()
+    var blocks by remember(uiState.defaultBgBlocks) { mutableStateOf(uiState.defaultBgBlocks) }
 
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = { Text(stringResource(id = R.string.bg_editor_title)) },
-        text = {
-            Column(modifier = Modifier.height(400.dp)) {
-                Text(
-                    text = stringResource(id = R.string.bg_editor_desc),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.padding(bottom = 8.dp)
-                )
-
-                BgBlockList(
-                    blocks = blocks,
-                    onBlocksChanged = { blocks = it }
-                )
-            }
-        },
-        confirmButton = {
-            TextButton(onClick = { onSave(blocks) }) {
-                Text(stringResource(id = de.dh.raaps.common.R.string.action_save))
-            }
-        },
-        dismissButton = {
-            TextButton(onClick = onDismiss) {
-                Text(stringResource(id = android.R.string.cancel))
-            }
+    Scaffold(
+        topBar = {
+            TopAppBar(
+                title = screenTitle(stringResource(id = R.string.bg_editor_title)),
+                navigationIcon = {
+                    IconButton(onClick = onNavigateUp) {
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                            contentDescription = stringResource(id = de.dh.raaps.common.R.string.cd_navigate_up)
+                        )
+                    }
+                },
+                actions = {
+                    IconButton(onClick = {
+                        viewModel.updateDefaultBgBlocks(blocks)
+                        onNavigateUp()
+                    }) {
+                        Icon(
+                            imageVector = Icons.Default.Save,
+                            contentDescription = stringResource(id = de.dh.raaps.common.R.string.action_save)
+                        )
+                    }
+                }
+            )
         }
-    )
+    ) { innerPadding ->
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(innerPadding)
+                .padding(16.dp)
+        ) {
+            Text(
+                text = stringResource(id = R.string.bg_editor_desc),
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.padding(bottom = 16.dp)
+            )
+
+            BgBlockList(
+                blocks = blocks,
+                onBlocksChanged = { blocks = it },
+                modifier = Modifier.weight(1f)
+            )
+        }
+    }
 }
 
 @Composable
 private fun BgBlockList(
     blocks: List<BgBlock>,
-    onBlocksChanged: (List<BgBlock>) -> Unit
+    onBlocksChanged: (List<BgBlock>) -> Unit,
+    modifier: Modifier = Modifier
 ) {
     val startHours = remember(blocks) {
         var currentHour = 0
@@ -137,7 +162,7 @@ private fun BgBlockList(
 
     LazyColumn(
         state = listState,
-        modifier = Modifier.fillMaxWidth().contentScrollIndicator(listState),
+        modifier = modifier.fillMaxWidth().contentScrollIndicator(listState),
         contentPadding = PaddingValues(vertical = 8.dp),
         verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {

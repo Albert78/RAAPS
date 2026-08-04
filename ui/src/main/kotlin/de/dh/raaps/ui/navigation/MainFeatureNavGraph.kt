@@ -14,6 +14,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation3.runtime.NavEntry
 import androidx.navigation3.runtime.NavKey
 import de.dh.raaps.common.navigation.AlarmsRoute
+import de.dh.raaps.common.navigation.BgEditorRoute
 import de.dh.raaps.common.navigation.BolusHistoryRoute
 import de.dh.raaps.common.navigation.CurrentTherapySettingsRoute
 import de.dh.raaps.common.navigation.DashboardRoute
@@ -57,6 +58,7 @@ import de.dh.raaps.ui.screens.permissions.requestIgnoreBatteryOptimizations
 import de.dh.raaps.ui.screens.preferences.PreferencesScreen
 import de.dh.raaps.ui.screens.preferences.PreferencesViewModel
 import de.dh.raaps.ui.screens.systemcontrol.SystemControlScreen
+import de.dh.raaps.ui.screens.therapy.BgEditorScreen
 import de.dh.raaps.ui.screens.therapy.CurrentTherapySettingsScreen
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -118,7 +120,18 @@ class MainFeatureNavGraph(
                 CurrentTherapySettingsScreen(
                     viewModel = currentTherapyVM,
                     onNavigateUp = { navViewModel.pop() },
-                    onNavigateToInsulinProfileEditor = { navViewModel.push(InsulinProfileEditorRoute) }
+                    onNavigateToInsulinProfileEditor = { navViewModel.push(InsulinProfileEditorRoute) },
+                    onNavigateToBgEditor = { navViewModel.push(BgEditorRoute) }
+                )
+            }
+
+            is BgEditorRoute -> NavEntry(key) {
+                val currentTherapyVM: CurrentTherapyViewModel =
+                    viewModel(factory = CurrentTherapyViewModel.Companion.Factory(registry))
+
+                BgEditorScreen(
+                    viewModel = currentTherapyVM,
+                    onNavigateUp = { navViewModel.pop() }
                 )
             }
 
