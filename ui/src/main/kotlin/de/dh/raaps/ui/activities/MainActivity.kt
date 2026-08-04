@@ -6,12 +6,24 @@ import android.net.Uri
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.compose.foundation.layout.Spacer
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.safeDrawing
+import androidx.compose.foundation.layout.safeDrawingPadding
+import androidx.compose.foundation.layout.width
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material3.DrawerValue
 import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalDrawerSheet
 import androidx.compose.material3.ModalNavigationDrawer
@@ -24,7 +36,11 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.ViewModelProvider
@@ -99,7 +115,7 @@ class MainActivity : ComponentActivity() {
     @Composable
     fun MainApp(registry: SystemRegistry) {
         val backStack by navViewModel.backstack.collectAsState()
-        val currentRoute = navViewModel.currentRoute
+        val currentRoute = backStack.lastOrNull()
 
         val extraGraphs = getExtraNavGraphs?.let { it(navViewModel) } ?: emptyList()
 
@@ -109,78 +125,137 @@ class MainActivity : ComponentActivity() {
 
         val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
         val scope = rememberCoroutineScope()
+        val density = LocalDensity.current
 
         val mainGraph = MainFeatureNavGraph(
             activity = this,
             navViewModel = navViewModel,
             registry = registry,
-            onOpenDrawer = { scope.launch { drawerState.open() } },
             extraDashboardContent = extraDashboardContent
         )
         val allGraphs = listOf(mainGraph) + extraGraphs
 
         val combinedProvider = combineEntryProviders(*allGraphs.toTypedArray())
 
-        ModalNavigationDrawer(
-            drawerState = drawerState,
-            drawerContent = {
-                ModalDrawerSheet {
-                    Spacer(Modifier.height(12.dp))
-                    Text(
-                        stringResource(id = R.string.drawer_header_title),
-                        modifier = Modifier.padding(16.dp),
-                        style = MaterialTheme.typography.headlineMedium
-                    )
-                    HorizontalDivider()
+        val isTopLevel = currentRoute in listOf(
+            DashboardRoute
+        )
 
-                    NavigationDrawerItem(
-                        label = { Text(stringResource(id = R.string.menu_meals_label)) },
-                        selected = currentRoute == MealsRoute,
-                        onClick = {
-                            scope.launch { drawerState.close() }
-                            navViewModel.push(MealsRoute)
-                        },
-                        modifier = Modifier.padding(NavigationDrawerItemDefaults.ItemPadding)
-                    )
-                    NavigationDrawerItem(
-                        label = { Text(stringResource(id = R.string.menu_bolus_history_label)) },
-                        selected = currentRoute == BolusHistoryRoute,
-                        onClick = {
-                            scope.launch { drawerState.close() }
-                            navViewModel.push(BolusHistoryRoute)
-                        },
-                        modifier = Modifier.padding(NavigationDrawerItemDefaults.ItemPadding)
-                    )
-                    NavigationDrawerItem(
-                        label = { Text(stringResource(id = R.string.menu_system_control_label)) },
-                        selected = currentRoute == SystemControlRoute,
-                        onClick = {
-                            scope.launch { drawerState.close() }
-                            navViewModel.push(SystemControlRoute)
-                        },
-                        modifier = Modifier.padding(NavigationDrawerItemDefaults.ItemPadding)
-                    )
-                    NavigationDrawerItem(
-                        label = { Text(stringResource(id = R.string.menu_alarms_label)) },
-                        selected = currentRoute == AlarmsRoute,
-                        onClick = {
-                            scope.launch { drawerState.close() }
-                            navViewModel.push(AlarmsRoute)
-                        },
-                        modifier = Modifier.padding(NavigationDrawerItemDefaults.ItemPadding)
+        val drawerWidth = 320.dp
+        val safeInsets = WindowInsets.safeDrawing.asPaddingValues(density)
+        val verticalPadding = safeInsets.calculateBottomPadding()
+        val statusBarHeight = safeInsets.calculateTopPadding()
+
+        Box(modifier = Modifier.fillMaxSize()) {
+            ModalNavigationDrawer(
+                drawerState = drawerState,
+                drawerContent = {
+                    ModalDrawerSheet(
+                        modifier = Modifier.width(drawerWidth),
+                        drawerContainerColor = Color.Transparent,
+                        drawerTonalElevation = 0.dp,
+                        windowInsets = WindowInsets(0.dp)
+                    ) {
+                        Surface(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .padding(top = statusBarHeight + 2.dp, bottom = verticalPadding),
+                            color = MaterialTheme.colorScheme.surfaceContainerLow,
+                            shape = MaterialTheme.shapes.large
+                        ) {
+                            Column {
+                                Box(
+                                    modifier = Modifier
+                                        .padding(top = 100.dp) // max(0.dp, statusBarHeight - verticalPadding)
+                                        .height(64.dp)
+                                        .fillMaxWidth(),
+                                    contentAlignment = Alignment.CenterStart
+                                ) {
+                                    Text(
+                                        stringResource(id = R.string.drawer_header_title),
+                                        modifier = Modifier.padding(start = 60.dp),
+                                        style = MaterialTheme.typography.headlineMedium
+                                    )
+                                }
+                                HorizontalDivider()
+
+                                NavigationDrawerItem(
+                                    label = { Text(stringResource(id = R.string.menu_meals_label)) },
+                                    selected = currentRoute == MealsRoute,
+                                    onClick = {
+                                        scope.launch { drawerState.close() }
+                                        navViewModel.push(MealsRoute)
+                                    },
+                                    modifier = Modifier.padding(NavigationDrawerItemDefaults.ItemPadding)
+                                )
+                                NavigationDrawerItem(
+                                    label = { Text(stringResource(id = R.string.menu_bolus_history_label)) },
+                                    selected = currentRoute == BolusHistoryRoute,
+                                    onClick = {
+                                        scope.launch { drawerState.close() }
+                                        navViewModel.push(BolusHistoryRoute)
+                                    },
+                                    modifier = Modifier.padding(NavigationDrawerItemDefaults.ItemPadding)
+                                )
+                                NavigationDrawerItem(
+                                    label = { Text(stringResource(id = R.string.menu_system_control_label)) },
+                                    selected = currentRoute == SystemControlRoute,
+                                    onClick = {
+                                        scope.launch { drawerState.close() }
+                                        navViewModel.push(SystemControlRoute)
+                                    },
+                                    modifier = Modifier.padding(NavigationDrawerItemDefaults.ItemPadding)
+                                )
+                                NavigationDrawerItem(
+                                    label = { Text(stringResource(id = R.string.menu_alarms_label)) },
+                                    selected = currentRoute == AlarmsRoute,
+                                    onClick = {
+                                        scope.launch { drawerState.close() }
+                                        navViewModel.push(AlarmsRoute)
+                                    },
+                                    modifier = Modifier.padding(NavigationDrawerItemDefaults.ItemPadding)
+                                )
+                            }
+                        }
+                    }
+                }
+            ) {
+                NavDisplay(
+                    backStack = backStack,
+                    onBack = { navViewModel.pop() },
+                    entryDecorators = listOf(
+                        rememberSaveableStateHolderNavEntryDecorator(),
+                        rememberViewModelStoreNavEntryDecorator()
+                    ),
+                    entryProvider = combinedProvider
+                )
+            }
+
+            if (isTopLevel) {
+                val rotation by animateFloatAsState(
+                    targetValue = if (drawerState.targetValue == DrawerValue.Open) 90f else 0f,
+                    label = "HamburgerRotation"
+                )
+
+                IconButton(
+                    onClick = {
+                        scope.launch {
+                            if (drawerState.isOpen) drawerState.close() else drawerState.open()
+                        }
+                    },
+                    modifier = Modifier
+                        .safeDrawingPadding()
+                        .padding(start = 8.dp, top = 8.dp)
+                        .graphicsLayer {
+                            rotationZ = rotation
+                        }
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Menu,
+                        contentDescription = stringResource(id = R.string.cd_open_navigation_drawer)
                     )
                 }
             }
-        ) {
-            NavDisplay(
-                backStack = backStack,
-                onBack = { navViewModel.pop() },
-                entryDecorators = listOf(
-                    rememberSaveableStateHolderNavEntryDecorator(),
-                    rememberViewModelStoreNavEntryDecorator()
-                ),
-                entryProvider = combinedProvider
-            )
         }
     }
 

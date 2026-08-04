@@ -57,7 +57,6 @@ class MainFeatureNavGraph(
     private val activity: ComponentActivity,
     private val navViewModel: NavigationViewModel,
     private val registry: SystemRegistry,
-    private val onOpenDrawer: () -> Unit = {},
     private val extraDashboardContent: @Composable () -> Unit = {}
 ) : FeatureNavGraph {
     override fun getEntry(key: NavKey): NavEntry<NavKey>? {
@@ -84,7 +83,6 @@ class MainFeatureNavGraph(
                     historyViewModel = historyVM,
                     currentTherapyViewModel = currentTherapyVM,
                     permissionsViewModel = permissionsViewModel,
-                    onOpenDrawer = onOpenDrawer,
                     onFixPermissions = { navViewModel.push(PermissionsRoute) },
                     onNavigateToPermissions = { navViewModel.push(PermissionsRoute) },
                     onNavigateToPreferences = { navViewModel.push(PreferencesMainRoute) },
@@ -198,19 +196,19 @@ class MainFeatureNavGraph(
             }
 
             is MealsRoute -> NavEntry(key) {
-                MealsScreen(onOpenDrawer = onOpenDrawer)
+                MealsScreen(onNavigateUp = { navViewModel.pop() })
             }
 
             is BolusHistoryRoute -> NavEntry(key) {
-                BolusHistoryScreen(onOpenDrawer = onOpenDrawer)
+                BolusHistoryScreen(onNavigateUp = { navViewModel.pop() })
             }
 
             is SystemControlRoute -> NavEntry(key) {
-                SystemControlScreen(onOpenDrawer = onOpenDrawer)
+                SystemControlScreen(onNavigateUp = { navViewModel.pop() })
             }
 
             is AlarmsRoute -> NavEntry(key) {
-                AlarmsScreen(onOpenDrawer = onOpenDrawer)
+                AlarmsScreen(onNavigateUp = { navViewModel.pop() })
             }
 
             else -> null
