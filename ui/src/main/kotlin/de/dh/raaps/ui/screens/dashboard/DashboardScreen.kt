@@ -74,7 +74,7 @@ fun DashboardScreen(
     onFixPermissions: () -> Unit,
     onNavigateToPermissions: () -> Unit,
     onNavigateToPreferences: () -> Unit,
-    onNavigateToProfileEditor: () -> Unit,
+    onNavigateToAlarms: () -> Unit,
     onNavigateToTherapySettings: () -> Unit,
     onNavigateToMealBolus: () -> Unit,
     onHistoryChartClick: () -> Unit,
@@ -115,7 +115,7 @@ fun DashboardScreen(
         onFixPermissionsClick = onFixPermissions,
         onNavigateToPermissions = onNavigateToPermissions,
         onNavigateToPreferences = onNavigateToPreferences,
-        onNavigateToProfileEditor = onNavigateToProfileEditor,
+        onNavigateToAlarms = onNavigateToAlarms,
         onNavigateToTherapySettings = onNavigateToTherapySettings,
         onNavigateToMealBolus = onNavigateToMealBolus,
         onHistoryChartClick = onHistoryChartClick,
@@ -138,7 +138,7 @@ fun DashboardContent(
     onFixPermissionsClick: () -> Unit,
     onNavigateToPermissions: () -> Unit,
     onNavigateToPreferences: () -> Unit,
-    onNavigateToProfileEditor: () -> Unit,
+    onNavigateToAlarms: () -> Unit,
     onNavigateToTherapySettings: () -> Unit,
     onNavigateToMealBolus: () -> Unit,
     onHistoryChartClick: (() -> Unit)?,
@@ -190,10 +190,10 @@ fun DashboardContent(
                                 }
                             )
                             DropdownMenuItem(
-                                text = { Text(stringResource(id = R.string.menu_item_profile_editor_label)) },
+                                text = { Text(stringResource(id = R.string.menu_alarms_label)) },
                                 onClick = {
                                     menuExpanded = false
-                                    onNavigateToProfileEditor()
+                                    onNavigateToAlarms()
                                 }
                             )
                         }
@@ -341,7 +341,7 @@ fun DashboardPreview() {
             onFixPermissionsClick = {},
             onNavigateToPermissions = {},
             onNavigateToPreferences = {},
-            onNavigateToProfileEditor = {},
+            onNavigateToAlarms = {},
             onNavigateToTherapySettings = {},
             onHistoryChartClick = {},
             onApsModeSelect = {},
@@ -395,7 +395,7 @@ fun DashboardPermissionsWarningPreview() {
             onFixPermissionsClick = {},
             onNavigateToPermissions = {},
             onNavigateToPreferences = {},
-            onNavigateToProfileEditor = {},
+            onNavigateToAlarms = {},
             onNavigateToTherapySettings = {},
             onHistoryChartClick = {},
             onApsModeSelect = {},

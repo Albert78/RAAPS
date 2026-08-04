@@ -92,7 +92,7 @@ class MainFeatureNavGraph(
                     onFixPermissions = { navViewModel.push(PermissionsRoute) },
                     onNavigateToPermissions = { navViewModel.push(PermissionsRoute) },
                     onNavigateToPreferences = { navViewModel.push(PreferencesMainRoute) },
-                    onNavigateToProfileEditor = { navViewModel.push(InsulinProfileEditorRoute) },
+                    onNavigateToAlarms = { navViewModel.push(AlarmsRoute) },
                     onNavigateToTherapySettings = { navViewModel.push(CurrentTherapySettingsRoute) },
                     onNavigateToMealBolus = { navViewModel.push(MealBolusRoute()) },
                     onHistoryChartClick = { navViewModel.push(HistoryRoute) },

@@ -2,7 +2,6 @@ package de.dh.raaps.ui.activities
 
 import android.content.Context
 import android.content.Intent
-import android.net.Uri
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -48,11 +47,11 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import androidx.core.net.toUri
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewmodel.navigation3.rememberViewModelStoreNavEntryDecorator
 import androidx.navigation3.runtime.rememberSaveableStateHolderNavEntryDecorator
 import androidx.navigation3.ui.NavDisplay
-import de.dh.raaps.common.navigation.AlarmsRoute
 import de.dh.raaps.common.navigation.BolusHistoryRoute
 import de.dh.raaps.common.navigation.DashboardRoute
 import de.dh.raaps.common.navigation.FeatureNavGraph
@@ -228,15 +227,6 @@ class MainActivity : ComponentActivity() {
                                     },
                                     modifier = Modifier.padding(NavigationDrawerItemDefaults.ItemPadding)
                                 )
-                                NavigationDrawerItem(
-                                    label = { Text(stringResource(id = R.string.menu_alarms_label)) },
-                                    selected = currentRoute == AlarmsRoute,
-                                    onClick = {
-                                        scope.launch { drawerState.close() }
-                                        navViewModel.push(AlarmsRoute)
-                                    },
-                                    modifier = Modifier.padding(NavigationDrawerItemDefaults.ItemPadding)
-                                )
                             }
                         }
                     }
@@ -292,7 +282,7 @@ class MainActivity : ComponentActivity() {
         fun createStartDashboardIntent(context: Context): Intent {
             return Intent(context, MainActivity::class.java).apply {
                 action = Intent.ACTION_VIEW
-                data = Uri.parse("app://raaps.dh.de/dashboard")
+                data = "app://raaps.dh.de/dashboard".toUri()
             }
         }
     }
