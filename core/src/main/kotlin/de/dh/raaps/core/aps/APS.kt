@@ -6,14 +6,11 @@ import de.dh.raaps.AppPreferencesRepository
 import de.dh.raaps.common.model.ApsMode
 import de.dh.raaps.common.model.GlucoseSource
 import de.dh.raaps.common.model.InsulinAmount
-import de.dh.raaps.common.model.InsulinPump
 import de.dh.raaps.common.model.data.BgReading
 import de.dh.raaps.common.model.data.TimeService
 import de.dh.raaps.common.model.data.Timestamp
-import de.dh.raaps.core.pump.JobErrorCode
 import de.dh.raaps.core.pump.PumpCommand
-import de.dh.raaps.core.pump.PumpCoordinator
-import de.dh.raaps.core.pump.PumpJob
+import de.dh.raaps.core.pump.PumpManager
 import de.dh.raaps.core.repository.GlucoseRepository
 import de.dh.raaps.core.repository.SettingsRepository
 import de.dh.raaps.core.repository.TherapyRepository
@@ -42,18 +39,6 @@ enum class ApsIssue {
     StaleBG,
 
     /**
-     * The pump connection is missing, APS Core is not able to do its work.
-     * The work will be continued when the connection is available again.
-     */
-    PumpConnectionMissing,
-
-    /**
-     * The pump is connected but in a state where it cannot deliver insulin (e.g. suspended,
-     * battery empty, reservoir empty, hardware error).
-     */
-    PumpInoperative,
-
-    /**
      * Any other issue that prevents the core from working.
      */
     Other
@@ -78,6 +63,7 @@ class APS(
     val therapyManager: TherapyManager,
     val wakeService: SystemWakeService,
     val timeService: TimeService,
+    val pumpManager: PumpManager,
     val context: Context
 ) : WakeupHandler {
     // Threading: Single background thread to avoid race conditions in the core logic
@@ -87,9 +73,6 @@ class APS(
     init {
         wakeService.registerHandler(WAKE_TAG, this)
     }
-
-    var pumpCoordinator: PumpCoordinator? = null
-    private var pumpMonitorJob: Job? = null
 
     // Computation Core: Pure logic and state, completely thread-agnostic
     private val core: Core = Core.createProductiveCore(
@@ -122,50 +105,6 @@ class APS(
             restartGlucosePipeline()
         }
 
-    var insulinPump: InsulinPump? = null
-        set(value) {
-            field = value
-            inAPSThread {
-                pumpMonitorJob?.cancel()
-                pumpCoordinator = if (value == null) {
-                    null
-                } else {
-                    val pc = PumpCoordinator.create(
-                        pump = value,
-                        onAcquireBusyState = { wakeService.acquireBusyState(WAKE_TAG) },
-                        onReleaseBusyState = { wakeService.releaseBusyState(WAKE_TAG) },
-                        onRequestWakeup = { timestamp -> wakeService.scheduleWakeup(WAKE_TAG, WAKEUP_PUMP_COORDINATOR, timestamp) },
-                        onJobError = { job, jobErrorCode -> handleJobError(job, jobErrorCode) },
-                    )
-                    pumpMonitorJob = launch {
-                        launch {
-                            pc.lastConnectionTime.collect { time ->
-                                if (time != Timestamp.INVALID) {
-                                    removeIssue(ApsIssue.PumpConnectionMissing)
-                                }
-                            }
-                        }
-                        launch {
-                            pc.pump.pumpStatus.collect { status ->
-                                if (status.pumpSuspended) {
-                                    addIssue(ApsIssue.PumpInoperative)
-                                } else {
-                                    removeIssue(ApsIssue.PumpInoperative)
-                                }
-                            }
-                        }
-                        // Sync history
-                        launch {
-                            pc.pump.history.collect { history ->
-                                history?.let { core.updatePumpHistory(it) }
-                            }
-                        }
-                    }
-                    pc
-                }
-            }
-        }
-
     // Observers (Updated by the internal core, read by the facade/UI)
     private val _lastDataTime = MutableStateFlow<Timestamp>(Timestamp(0))
     val lastDataTime: StateFlow<Timestamp> = _lastDataTime.asStateFlow()
@@ -180,7 +119,7 @@ class APS(
      */
     val coreState: StateFlow<CoreState> = _coreState.asStateFlow()
 
-    private val _apsMode = MutableStateFlow<ApsMode>(ApsMode.Suspend)
+    private val _apsMode = MutableStateFlow(ApsMode.Suspend)
     val apsMode: StateFlow<ApsMode> = _apsMode.asStateFlow()
 
     private val _apsIssues = MutableStateFlow<Set<ApsIssue>>(emptySet())
@@ -204,16 +143,6 @@ class APS(
     private fun removeIssue(issue: ApsIssue) {
         if (issue in _apsIssues.value) {
             _apsIssues.value -= issue
-        }
-    }
-
-    private fun handleJobError(job: PumpJob, jobErrorCode: JobErrorCode) {
-        when (jobErrorCode) {
-            JobErrorCode.Expired -> addIssue(ApsIssue.PumpConnectionMissing)
-            else -> {
-                // TODO: Log
-                addIssue(ApsIssue.Other)
-            }
         }
     }
 
@@ -243,6 +172,9 @@ class APS(
     fun startInitialization() {
         inAPSThread {
             core.initialize()
+            pumpManager.setOnHistoryUpdateListener { history ->
+                core.updatePumpHistory(history)
+            }
 
             launch {
                 settingsRepository.observeCurrentSettings().collect { settings ->
@@ -258,7 +190,7 @@ class APS(
             launch {
                 therapyManager.currentTherapySettingsFlow.drop(1).collect { settings ->
                     if (settings == null) return@collect
-                    pumpCoordinator?.issueCommand(
+                    pumpManager.issueCommand(
                         PumpCommand.SetProfile(settings.profile.therapyData),
                         isCancelableAPSCommand = false
                     )
@@ -334,7 +266,7 @@ class APS(
             ApsMode.Suspend -> return
             ApsMode.BasalOnly -> return
             ApsMode.AutoCorrection -> {
-                pumpCoordinator?.cancelJobs { it.isCancelableAPSCommand }
+                pumpManager.cancelJobs { it.isCancelableAPSCommand }
             }
         }
     }
@@ -344,10 +276,12 @@ class APS(
             ApsMode.Suspend -> return
             ApsMode.BasalOnly -> issueBolusHint(amount)
             ApsMode.AutoCorrection -> {
-                pumpCoordinator?.issueCommand(
-                    PumpCommand.DeliverBolus(amount),
-                    isCancelableAPSCommand = true
-                )
+                inAPSThread {
+                    pumpManager.issueCommand(
+                        PumpCommand.DeliverBolus(amount),
+                        isCancelableAPSCommand = true
+                    )
+                }
             }
         }
     }
@@ -365,13 +299,15 @@ class APS(
             ApsMode.Suspend -> return
             ApsMode.BasalOnly -> return
             ApsMode.AutoCorrection -> {
-                pumpCoordinator?.issueCommand(
-                    PumpCommand.SetTempBasal(
-                        percent = 0,
-                        durationHours = durationInHours
-                    ),
-                    isCancelableAPSCommand = true
-                )
+                inAPSThread {
+                    pumpManager.issueCommand(
+                        PumpCommand.SetTempBasal(
+                            percent = 0,
+                            durationHours = durationInHours
+                        ),
+                        isCancelableAPSCommand = true
+                    )
+                }
             }
         }
     }
@@ -385,16 +321,15 @@ class APS(
     }
 
     suspend fun waitForAndResetInsulinJobs() {
-        val pc = pumpCoordinator ?: return
-        if (pc.hasPendingJobs()) {
-            pc.wakeup()
-            pc.waitForIdle()
+        if (pumpManager.hasPendingJobs()) {
+            pumpManager.wakeup()
+            pumpManager.waitForIdle()
             delay(10.seconds)
         }
         if (apsMode.value == ApsMode.AutoCorrection) {
-            if (pc.hasPendingJobs()) {
-                addIssue(ApsIssue.PumpConnectionMissing)
-                pc.cancelJobs({ it.isCancelableAPSCommand })
+            if (pumpManager.hasPendingJobs()) {
+                // This issue will now be handled by PumpManager
+                pumpManager.cancelJobs({ it.isCancelableAPSCommand })
             }
         }
     }
@@ -427,8 +362,6 @@ class APS(
                 } else {
                     removeIssue(ApsIssue.StaleBG)
                 }
-            } else if (wakeupId == WAKEUP_PUMP_COORDINATOR) {
-                pumpCoordinator?.wakeup()
             }
         }
     }
@@ -440,10 +373,6 @@ class APS(
         glucoseSource?.let {
             it.stop()
             glucoseSource = null
-        }
-        insulinPump?.let {
-            it.stop()
-            insulinPump = null
         }
         apsScope.cancel()
         apsDispatcher.close()
@@ -463,6 +392,5 @@ class APS(
         const val WAKE_TAG = "APS"
 
         const val WAKEUP_STALE_CHECK = 0
-        const val WAKEUP_PUMP_COORDINATOR = 1
     }
 }

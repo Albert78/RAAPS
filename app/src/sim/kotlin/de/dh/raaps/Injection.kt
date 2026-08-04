@@ -25,7 +25,7 @@ fun setupSystem(aps: APS, pluginManager: PluginManager, application: Application
     val glucoseSource = plugin.getGlucoseSource()
     aps.glucoseSource = glucoseSource
     val insulinPump = plugin.getInsulinPump()
-    aps.insulinPump = insulinPump
+    aps.pumpManager.insulinPump = insulinPump
 }
 
 fun getExtraNavGraphs(

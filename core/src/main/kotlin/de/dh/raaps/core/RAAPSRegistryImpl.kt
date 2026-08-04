@@ -9,7 +9,8 @@ import de.dh.raaps.common.model.data.TimeService
 import de.dh.raaps.core.aps.APS
 import de.dh.raaps.core.aps.Core
 import de.dh.raaps.core.aps.TherapyManager
-import de.dh.raaps.core.pump.PumpCoordinator
+import de.dh.raaps.core.pump.PumpManager
+import de.dh.raaps.core.pump.PumpManagerImpl
 import de.dh.raaps.core.repository.DatabaseInitializer
 import de.dh.raaps.core.repository.DeviceManagementRepository
 import de.dh.raaps.core.repository.FoodRepository
@@ -42,11 +43,9 @@ class RAAPSRegistryImpl(
     override val pluginManager: PluginManager,
     override val wakeService: SystemWakeService,
     override val timeService: TimeService,
+    override val pumpManager: PumpManager,
     override val permissionsChangedHandler: PermissionsChangedHandler
 ) : RAAPSRegistry {
-
-    override val pumpCoordinator: PumpCoordinator?
-        get() = aps.pumpCoordinator
 
     companion object {
         /**
@@ -77,6 +76,7 @@ class RAAPSRegistryImpl(
             val therapyManager = TherapyManager(therapyRepository, appPreferencesRepository)
             val wakeService = SystemWakeServiceImpl(application)
             val timeService = TimeServiceImpl(scope = scope)
+            val pumpManager = PumpManagerImpl(scope = scope, wakeService = wakeService)
 
             runBlocking {
                 treatmentRepository.load()
@@ -92,6 +92,7 @@ class RAAPSRegistryImpl(
                 therapyManager = therapyManager,
                 wakeService = wakeService,
                 timeService = timeService,
+                pumpManager = pumpManager,
                 context = application
             )
             aps.startInitialization()
@@ -115,6 +116,7 @@ class RAAPSRegistryImpl(
                 pluginManager = pluginManager,
                 wakeService = wakeService,
                 timeService = timeService,
+                pumpManager = pumpManager,
                 permissionsChangedHandler = permissionsHandler
             )
         }
