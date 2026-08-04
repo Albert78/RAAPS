@@ -71,9 +71,9 @@ data class TherapyAdjustment(
 
 data class CurrentTherapyUiState(
     val isLoading: Boolean = true,
-    val activeProfile: InsulinProfileUiState = InsulinProfileUiState.empty(),
+    val activeInsulinProfile: InsulinProfileUiState = InsulinProfileUiState.empty(),
     val glucoseUnit: GlucoseUnit = GlucoseUnit.MG_DL,
-    val availableProfiles: List<InsulinProfile> = emptyList(),
+    val availableInsulinProfiles: List<InsulinProfile> = emptyList(),
     val defaultBgBlocks: List<BgBlock> = emptyList(),
     val therapyAdjustmentPresets: List<TherapyAdjustment> = emptyList()
 )
@@ -146,9 +146,9 @@ class CurrentTherapyViewModel(
         _uiState.update {
             it.copy(
                 isLoading = false,
-                activeProfile = profileUiState,
+                activeInsulinProfile = profileUiState,
                 glucoseUnit = unit,
-                availableProfiles = profiles,
+                availableInsulinProfiles = profiles,
                 defaultBgBlocks = currentSettings.defaultBgBlocks,
                 therapyAdjustmentPresets = hardcodedPresets
             )

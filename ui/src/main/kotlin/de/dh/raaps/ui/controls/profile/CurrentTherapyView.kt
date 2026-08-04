@@ -43,7 +43,7 @@ fun CurrentTherapyView(
         GlucoseUnit.MMOL -> stringResource(id = R.string.glucose_unit_mmol)
     }
 
-    val activeProfile = uiState.activeProfile
+    val activeProfile = uiState.activeInsulinProfile
 
     OutlinedCard(
         modifier = modifier
@@ -56,21 +56,21 @@ fun CurrentTherapyView(
     ) {
         Column(modifier = Modifier.padding(12.dp)) {
             Text(
-                text = activeProfile?.name ?: "-",
+                text = activeProfile.name.ifBlank { "-" },
                 style = MaterialTheme.typography.titleMedium,
                 modifier = Modifier.padding(bottom = 4.dp)
             )
 
             InfoRow(
                 label = stringResource(id = de.dh.raaps.common.R.string.therapy_target_label),
-                value = activeProfile?.target?.toString(uiState.glucoseUnit) ?: "-",
+                value = activeProfile.target.toString(uiState.glucoseUnit),
                 unit = unitStr,
                 icon = Icons.Default.Adjust,
                 modifier = Modifier.padding(bottom = 2.dp)
             )
             InfoRow(
                 label = stringResource(id = de.dh.raaps.common.R.string.therapy_low_threshold_label),
-                value = activeProfile?.lowThreshold?.toString(uiState.glucoseUnit) ?: "-",
+                value = activeProfile.lowThreshold.toString(uiState.glucoseUnit),
                 unit = unitStr,
                 icon = Icons.Default.VerticalAlignBottom,
                 modifier = Modifier.padding(bottom = 2.dp)
@@ -97,8 +97,8 @@ fun CurrentTherapyView(
 
     if (showProfileDialog) {
         InsulinProfileSelectionDialog(
-            profiles = uiState.availableProfiles,
-            activeProfileId = activeProfile?.activeProfileId,
+            profiles = uiState.availableInsulinProfiles,
+            activeProfileId = activeProfile.activeProfileId,
             onProfileSelected = {
                 onProfileSelect(it)
                 showProfileDialog = false

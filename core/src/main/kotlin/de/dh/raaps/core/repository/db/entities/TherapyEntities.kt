@@ -11,7 +11,7 @@ import de.dh.raaps.common.model.data.Minutes
  * Entity for a therapy profile.
  */
 @Entity(
-    tableName = "profiles"
+    tableName = "insulin_profiles"
 )
 data class InsulinProfileEntity(
     @PrimaryKey(autoGenerate = true)

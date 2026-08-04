@@ -57,13 +57,13 @@ interface ProviderDao {
 @Dao
 interface TherapyDao {
     // Profiles
-    @Query("SELECT * FROM profiles ORDER BY name ASC")
+    @Query("SELECT * FROM insulin_profiles ORDER BY name ASC")
     suspend fun getAllInsulinProfiles(): List<InsulinProfileEntity>
 
-    @Query("SELECT * FROM profiles ORDER BY name ASC")
+    @Query("SELECT * FROM insulin_profiles ORDER BY name ASC")
     fun observeAllInsulinProfiles(): Flow<List<InsulinProfileEntity>>
 
-    @Query("SELECT * FROM profiles WHERE id = :id")
+    @Query("SELECT * FROM insulin_profiles WHERE id = :id")
     suspend fun getInsulinProfileById(id: Long): InsulinProfileEntity?
 
     @Insert
@@ -72,7 +72,7 @@ interface TherapyDao {
     @Update
     suspend fun updateInsulinProfile(profile: InsulinProfileEntity)
 
-    @Query("DELETE FROM profiles WHERE id = :id")
+    @Query("DELETE FROM insulin_profiles WHERE id = :id")
     suspend fun deleteInsulinProfile(id: Long)
 
     // Current Therapy Settings

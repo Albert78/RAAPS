@@ -89,10 +89,10 @@ fun DashboardScreen(
 
     if (showAdjustmentDialog) {
         TherapyAdjustmentDialog(
-            currentPercentage = currentTherapyUiState.activeProfile.insulinAdjustmentPercentage,
-            currentTarget = currentTherapyUiState.activeProfile.targetBgOverride,
-            currentLow = currentTherapyUiState.activeProfile.lowThresholdOverride,
-            currentHint = currentTherapyUiState.activeProfile.adjustmentHint,
+            currentPercentage = currentTherapyUiState.activeInsulinProfile.insulinAdjustmentPercentage,
+            currentTarget = currentTherapyUiState.activeInsulinProfile.targetBgOverride,
+            currentLow = currentTherapyUiState.activeInsulinProfile.lowThresholdOverride,
+            currentHint = currentTherapyUiState.activeInsulinProfile.adjustmentHint,
             presets = currentTherapyUiState.therapyAdjustmentPresets,
             onValuesChange = { p, t, l, h -> currentTherapyViewModel.setTherapyAdjustment(p, t, l, h) },
             onDismissRequest = { showAdjustmentDialog = false }
@@ -238,8 +238,8 @@ fun DashboardContent(
                             readings = historyUiState.readings,
                             insulinApplications = historyUiState.insulinApplications,
                             meals = historyUiState.meals,
-                            dia = currentTherapyUiState.activeProfile.dia,
-                            peak = currentTherapyUiState.activeProfile.peak
+                            dia = currentTherapyUiState.activeInsulinProfile.dia,
+                            peak = currentTherapyUiState.activeInsulinProfile.peak
                         ),
                         state = chartState,
                         onChartClick = onHistoryChartClick,
@@ -253,12 +253,12 @@ fun DashboardContent(
 
             ApsControlCard(
                 modifier = Modifier.fillMaxWidth(),
-                insulinProfileUiState = currentTherapyUiState.activeProfile,
+                insulinProfileUiState = currentTherapyUiState.activeInsulinProfile,
                 selectedMode = dashboardUiState.apsMode,
                 availableModes = dashboardUiState.availableApsModes,
                 onModeChange = onApsModeSelect,
-                insulinAdjustmentPercentage = currentTherapyUiState.activeProfile.insulinAdjustmentPercentage,
-                adjustmentHint = currentTherapyUiState.activeProfile.adjustmentHint,
+                insulinAdjustmentPercentage = currentTherapyUiState.activeInsulinProfile.insulinAdjustmentPercentage,
+                adjustmentHint = currentTherapyUiState.activeInsulinProfile.adjustmentHint,
                 onAdjustmentClick = onAdjustmentClick,
                 onProfileClick = onNavigateToTherapySettings
             )
@@ -295,7 +295,7 @@ fun DashboardPreview() {
             iob = 1.57,
             cob = 12.0,
             currentTherapyUiState = CurrentTherapyUiState(
-                activeProfile = InsulinProfileUiState(
+                activeInsulinProfile = InsulinProfileUiState(
                     name = "Normal",
                     activeProfileId = null,
                     currentIsf = BgDelta.fromMgDl(50),
@@ -347,7 +347,7 @@ fun DashboardPermissionsWarningPreview() {
             iob = 1.57,
             cob = 12.0,
             currentTherapyUiState = CurrentTherapyUiState(
-                activeProfile = InsulinProfileUiState(
+                activeInsulinProfile = InsulinProfileUiState(
                     name = "Normal",
                     activeProfileId = null,
                     currentIsf = BgDelta.fromMgDl(50),

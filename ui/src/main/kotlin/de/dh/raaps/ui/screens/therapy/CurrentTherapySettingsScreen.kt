@@ -150,7 +150,7 @@ fun CurrentTherapySettingsContent(
                 )
 
                 ActiveInsulinProfileCard(
-                    profile = uiState.activeProfile,
+                    profile = uiState.activeInsulinProfile,
                     onSwitchInsulinProfileClick = { showInsulinProfileDialog = true },
                     onManageInsulinProfilesClick = onNavigateToInsulinProfileEditor
                 )
@@ -177,7 +177,7 @@ fun CurrentTherapySettingsContent(
                 )
 
                 TemporaryAdjustmentCard(
-                    insulinProfile = uiState.activeProfile,
+                    insulinProfile = uiState.activeInsulinProfile,
                     onClick = { showAdjustmentDialog = true }
                 )
             }
@@ -186,8 +186,8 @@ fun CurrentTherapySettingsContent(
 
     if (showInsulinProfileDialog) {
         InsulinProfileSelectionDialog(
-            profiles = uiState.availableProfiles,
-            activeProfileId = uiState.activeProfile.activeProfileId,
+            profiles = uiState.availableInsulinProfiles,
+            activeProfileId = uiState.activeInsulinProfile.activeProfileId,
             onProfileSelected = {
                 onSelectProfile(it)
                 showInsulinProfileDialog = false
@@ -209,10 +209,10 @@ fun CurrentTherapySettingsContent(
 
     if (showAdjustmentDialog) {
         TherapyAdjustmentDialog(
-            currentPercentage = uiState.activeProfile.insulinAdjustmentPercentage,
-            currentTarget = uiState.activeProfile.targetBgOverride,
-            currentLow = uiState.activeProfile.lowThresholdOverride,
-            currentHint = uiState.activeProfile.adjustmentHint,
+            currentPercentage = uiState.activeInsulinProfile.insulinAdjustmentPercentage,
+            currentTarget = uiState.activeInsulinProfile.targetBgOverride,
+            currentLow = uiState.activeInsulinProfile.lowThresholdOverride,
+            currentHint = uiState.activeInsulinProfile.adjustmentHint,
             presets = uiState.therapyAdjustmentPresets,
             onValuesChange = { p, t, l, h ->
                 onUpdateTherapyAdjustment(p, t, l, h)
@@ -768,7 +768,7 @@ fun CurrentTherapySettingsPreview() {
 
     val mockUiState = CurrentTherapyUiState(
         isLoading = false,
-        activeProfile = InsulinProfileUiState(
+        activeInsulinProfile = InsulinProfileUiState(
             name = "Normal",
             activeProfileId = 1L,
             currentIsf = BgDelta(40),
@@ -786,7 +786,7 @@ fun CurrentTherapySettingsPreview() {
             dia = Minutes(300),
             peak = Minutes(75)
         ),
-        availableProfiles = listOf(mockProfile1, mockProfile2),
+        availableInsulinProfiles = listOf(mockProfile1, mockProfile2),
         defaultBgBlocks = listOf(
             BgBlock(Minutes(1440), BgValue.fromMgDl(100), BgValue.fromMgDl(70))
         ),
