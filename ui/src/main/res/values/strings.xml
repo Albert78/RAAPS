@@ -102,6 +102,9 @@
     <string name="current_therapy_manage_profile_button">Verwalten</string>
     <string name="current_therapy_dia_label_format">DIA: %1$s</string>
     <string name="current_therapy_peak_label_format">Peak: %1$s</string>
+    <string name="current_therapy_basal_label_format">Basal: %1$s %2$s</string>
+    <string name="current_therapy_cr_label_format">CR: %1$s %2$s</string>
+    <string name="current_therapy_isf_label_format">ISF: %1$s %2$s</string>
     <string name="duration_minutes_format">%1$d Min.</string>
     <string name="duration_hours_format">%1$d Std.</string>
     <string name="duration_hours_and_minutes_format">%1$d Std. %2$d Min.</string>
