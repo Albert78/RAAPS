@@ -138,13 +138,13 @@ class ApsAlgorithmImpl(
         // Goal 1: Get out of a current or impending low by lowering your basal rate early
         // Find the next occurrence where the value falls below the minimum; find the minimum with time
         predictionModel.findNext(startAt = now) {
-            it.predictedBg1 < lowThreshold
+            it.predictedBg1 < targetBg
         }?.let { firstLowPoint ->
             val basalRate = therapyManager.getBasalPerHour(firstLowPoint.tick.timestamp)
             val isf = therapyManager.getIsfFactor(firstLowPoint.tick.timestamp)
             val zeroTempDeltaBgPerHour = (basalRate * isf).mgdl.toDouble()
             val nextMin = predictionModel.findNextBgMin(startAt = firstLowPoint.tick, returnLatestIfFalling = true) ?: return@let
-            val bgError = lowThreshold - nextMin.predictedBg1 + MIN_BG_SAFETY_MARGIN
+            val bgError = targetBg - nextMin.predictedBg1 + MIN_BG_SAFETY_MARGIN
             // TODO: Check if zero temp is available. If not, issue carbs hint.
             // Also issue carbs hint if zero temp isn't sufficient.
             val startZeroTemp = maxOf(
@@ -172,7 +172,7 @@ class ApsAlgorithmImpl(
         // Goal 2: Correct the next upcoming high by administering insulin early, without subsequently dropping into a low
         // Find the next high along with the time, then find the next low along with the time
         predictionModel.findNext(startAt = now) {
-            it.predictedBg2 > targetBg
+            it.predictedBg2 > targetBg + BgValue.fromMgDl(10)
         }?.let { firstHighPoint ->
             val nextMax = predictionModel.findNextBgMax(startAt = firstHighPoint.tick, returnLatestIfRising = true) ?: return@let
             val bgError = nextMax.predictedBg2 - targetBg
@@ -217,7 +217,7 @@ class ApsAlgorithmImpl(
                     return@let
                 }
 
-                var bolusAmount = maxCorrectionAmount
+                var bolusAmount = minOf(bgError / isf, maxCorrectionAmount)
 
                 // Safety validation: The calculated correction dose is verified against the
                 // prediction model. If the simulated insulin action results in a projected
@@ -228,7 +228,7 @@ class ApsAlgorithmImpl(
                 val settings = therapyManager.getActiveTherapySettings()
                 val dia = settings.insulinProfile.dia
                 val peak = settings.insulinProfile.peak
-                
+
                 predictionModel.forEach(to = nextMax.tick) { tick, state ->
                     val bg = state.predictedBg2
                     if (bg == BgValue.INVALID) return@forEach

@@ -2,9 +2,9 @@ package de.dh.raaps.common.model
 
 enum class ApsMode {
     /**
-     * The system is suspended, only manual interaction with the pump is possible.
+     * The APS completely controls the pump.
      */
-    Suspend,
+    AutoCorrection,
 
     /**
      * The APS only delivers default basal, no other treatments are issued.
@@ -12,7 +12,7 @@ enum class ApsMode {
     BasalOnly,
 
     /**
-     * The APS completely controls the pump.
+     * The system is suspended, only manual interaction with the pump is possible.
      */
-    AutoCorrection
+    Suspend
 }
