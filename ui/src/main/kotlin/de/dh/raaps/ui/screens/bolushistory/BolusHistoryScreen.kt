@@ -1,5 +1,6 @@
 package de.dh.raaps.ui.screens.bolushistory
 
+import android.content.res.Configuration
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -18,8 +19,10 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import de.dh.raaps.common.ui.composables.screenTitle
+import de.dh.raaps.common.ui.theme.AppTheme
 import de.dh.raaps.ui.R
 
 @Composable
@@ -62,5 +65,16 @@ fun BolusHistoryContent(
                 style = MaterialTheme.typography.headlineMedium
             )
         }
+    }
+}
+
+@Preview(showBackground = true, name = "Light Mode")
+@Preview(showBackground = true, uiMode = Configuration.UI_MODE_NIGHT_YES, name = "Dark Mode")
+@Composable
+fun BolusHistoryPreview() {
+    AppTheme {
+        BolusHistoryContent(
+            onNavigateUp = {}
+        )
     }
 }
