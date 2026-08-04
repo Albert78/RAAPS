@@ -1,5 +1,6 @@
 package de.dh.raaps.core.aps
 
+import android.util.Log
 import de.dh.raaps.common.model.InsulinAmount
 import de.dh.raaps.common.model.calculation.CarbsInsulinCalculationModel
 import de.dh.raaps.common.model.convertToCarbsFromBgDelta
@@ -99,7 +100,7 @@ class ApsAlgorithmImpl(
     )
 
     override suspend fun recalculate() {
-        therapyManager.tryAcquire(TAG) {
+        val res = therapyManager.tryAcquire(TAG) {
             onCancelInsulinJobs()
 
             val result = doRecalculate()
@@ -115,6 +116,10 @@ class ApsAlgorithmImpl(
             if (result.bolus != null) {
                 onDeliverBolus(result.bolus)
             }
+        }
+        if (res is ExecutionResult.Busy) {
+            // TODO: Show popup to the user about skipping algorithm calculation
+            Log.i(TAG, "Algorithm skipping calculation since therapy manager is busy (user interaction?)")
         }
     }
 
@@ -191,7 +196,8 @@ class ApsAlgorithmImpl(
         }?.let { _ ->
             // TODO: This handling is for "normal" lows. We should also check if there is much more insulin
             // then carbs, e.g. BG prediction dropping fast. If this is the situation, tell the user to manually check the situation.
-            onSetTempBasal(1, 0.0)
+            val tempBasalResult = TempBasalResult(unitsPerHour = 0.0, durationInHours = 1)
+            var carbsHint: Int? = null
 
             // We're too low. Find out, now low we'll come to calculate the amount of suggested carbs.
 
@@ -204,9 +210,14 @@ class ApsAlgorithmImpl(
                     isf = isf,
                     cr = cr
                 )
-                onCarbsHint(carbsInG.toInt())
+                carbsHint = carbsInG.toInt()
             }
-            return // Stop further processing when we're currently low
+            return CalculationResult(
+                carbsHint = carbsHint,
+                tempBasal = tempBasalResult,
+                clearTempBasal = false,
+                bolus = null
+            ) // Stop further processing when we're currently low
         }
 
         val bgMinus15 = sampledBgReadings.getAt(nowTick.minusMinutes(15))
@@ -225,8 +236,12 @@ class ApsAlgorithmImpl(
             basal = (basal - correctionUnits).coerceAtLeast(0.0)
             if (currentBgFiltered < targetBg - BgDelta(20)) {
                 // Bg is too low and further falling -> Defer ongoing meal boluses
-                onSetTempBasal(1, basal)
-                return
+                return CalculationResult(
+                    carbsHint = null,
+                    tempBasal = TempBasalResult(unitsPerHour = basal, durationInHours = 1),
+                    clearTempBasal = false,
+                    bolus = null
+                )
             }
             // Else go on with decreased basal
         }
@@ -242,12 +257,6 @@ class ApsAlgorithmImpl(
                 mealOrCorrectionBolus = deferredBolus.amount
             }
         }
-
-//        weiter: Für das Folgende brauchen wir eine Möglichkeit im TherapyManager, um die Basisdaten für Entscheidungen
-//        zu locken, bis die Entscheidung getroffen ist. (z.B. Algorithmus so lange aufhalten, bis Nutzer Bolusscreen verlassen hat)
-//        Hmm, wie machen wir die Interaktion mit dem Bolus-Screen? Soll der unabhängig von dem Algorithmus einfach eine
-//        Bolusgabe anstoßen? Den Algorithmus einfach aussetzen, wenn er in der Zeit aktiv wird?
-//        Z.B. mit Popup "Der Algorithmus wurde ausgesetzt während Nutzeraktion"
 
         // -------------------------------- High handling ------------------------------------------
 
