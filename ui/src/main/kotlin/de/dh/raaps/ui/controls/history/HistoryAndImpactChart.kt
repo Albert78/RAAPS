@@ -51,17 +51,18 @@ import com.patrykandpatrick.vico.compose.common.Fill
 import com.patrykandpatrick.vico.compose.common.Position
 import com.patrykandpatrick.vico.compose.common.component.rememberShapeComponent
 import com.patrykandpatrick.vico.compose.common.data.ExtraStore
+import de.dh.raaps.common.model.CarbCurveComponentData
+import de.dh.raaps.common.model.DEFAULT_DIA_MINUTES
+import de.dh.raaps.common.model.DEFAULT_PEAK_MINUTES
 import de.dh.raaps.common.model.InsulinApplication
 import de.dh.raaps.common.model.InsulinOrigin
 import de.dh.raaps.common.model.InsulinType
 import de.dh.raaps.common.model.MS_PER_HOUR
 import de.dh.raaps.common.model.MS_PER_MINUTE
-import de.dh.raaps.common.model.DEFAULT_DIA_MINUTES
-import de.dh.raaps.common.model.DEFAULT_PEAK_MINUTES
 import de.dh.raaps.common.model.MealEntry
 import de.dh.raaps.common.model.MealType
-import de.dh.raaps.common.model.CarbCurveComponentData
 import de.dh.raaps.common.model.calculation.CarbsInsulinCalculationModel
+import de.dh.raaps.common.model.calculation.InsulinCurve
 import de.dh.raaps.common.model.data.BgReading
 import de.dh.raaps.common.model.data.BgSampleKind
 import de.dh.raaps.common.model.data.Minutes
@@ -258,7 +259,7 @@ fun HistoryAndImpactChart(
 
             // Layer 1 Model: Impact (Insulin & Carbs)
             lineModel {
-                // Series 0 (in this layer): Insulin
+                // Series 0: Insulin
                 val insX = diagramData.insulinXValues.ifEmpty { listOf(0.0) }
                 series(
                     x = insX,
@@ -269,7 +270,7 @@ fun HistoryAndImpactChart(
                     }
                 )
 
-                // Series 1 (in this layer): Carbs
+                // Series 1: Carbs
                 val carbX = diagramData.carbXValues.ifEmpty { listOf(0.0) }
                 series(
                     x = carbX,
@@ -393,12 +394,25 @@ fun HistoryAndImpactChart(
 
     val impactAxisItemPlacer = remember {
         object : VerticalAxis.ItemPlacer {
-            override fun getLabelValues(context: CartesianDrawingContext, axisHeight: Float, maxLabelHeight: Float, position: Axis.Position.Vertical) =
-                getValues(context.ranges.getYRange(position).maxY)
-            override fun getWidthMeasurementLabelValues(context: CartesianMeasuringContext, axisHeight: Float, maxLabelHeight: Float, position: Axis.Position.Vertical) =
-                getValues(0.5)
-            override fun getHeightMeasurementLabelValues(context: CartesianMeasuringContext, position: Axis.Position.Vertical) =
-                getValues(0.5)
+            override fun getLabelValues(
+                context: CartesianDrawingContext,
+                axisHeight: Float,
+                maxLabelHeight: Float,
+                position: Axis.Position.Vertical
+            ) = getValues(context.ranges.getYRange(position).maxY)
+
+            override fun getWidthMeasurementLabelValues(
+                context: CartesianMeasuringContext,
+                axisHeight: Float,
+                maxLabelHeight: Float,
+                position: Axis.Position.Vertical
+            ) = getValues(context.ranges.getYRange(position).maxY)
+
+            override fun getHeightMeasurementLabelValues(
+                context: CartesianMeasuringContext,
+                position: Axis.Position.Vertical
+            ) = getValues(context.ranges.getYRange(position).maxY)
+
             private fun getValues(maxY: Double): List<Double> {
                 val v = mutableListOf<Double>()
                 val step = when {
@@ -409,11 +423,26 @@ fun HistoryAndImpactChart(
                     else -> 5.0
                 }
                 var c = 0.0
-                while (c <= maxY + 0.0001) { v.add(c); c += step }
+                while (c <= maxY + 0.0001) {
+                    v.add(c)
+                    c += step
+                }
                 return v
             }
-            override fun getTopLayerMargin(context: CartesianMeasuringContext, verticalLabelPosition: Position.Vertical, maxLabelHeight: Float, maxLineThickness: Float) = 0f
-            override fun getBottomLayerMargin(context: CartesianMeasuringContext, verticalLabelPosition: Position.Vertical, maxLabelHeight: Float, maxLineThickness: Float) = 0f
+
+            override fun getTopLayerMargin(
+                context: CartesianMeasuringContext,
+                verticalLabelPosition: Position.Vertical,
+                maxLabelHeight: Float,
+                maxLineThickness: Float
+            ) = 0f
+
+            override fun getBottomLayerMargin(
+                context: CartesianMeasuringContext,
+                verticalLabelPosition: Position.Vertical,
+                maxLabelHeight: Float,
+                maxLineThickness: Float
+            ) = 0f
         }
     }
 
@@ -483,7 +512,8 @@ fun HistoryAndImpactChart(
                         itemPlacer = impactAxisItemPlacer,
                         valueFormatter = impactAxisValueFormatter,
                         horizontalLabelPosition = VerticalAxis.HorizontalLabelPosition.Inside,
-                        line = null
+                        line = null,
+                        guideline = null
                     )
                 } else null,
                 bottomAxis = HorizontalAxis.rememberBottom(valueFormatter = xAxisValueFormatter, itemPlacer = xItemPlacer),
