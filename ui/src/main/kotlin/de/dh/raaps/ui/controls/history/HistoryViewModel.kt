@@ -14,15 +14,16 @@ import de.dh.raaps.common.model.data.BgReading
 import de.dh.raaps.common.model.data.BgSampleKind
 import de.dh.raaps.common.model.data.BgValue
 import de.dh.raaps.common.model.data.GlucoseUnit
+import de.dh.raaps.common.model.data.Tick
+import de.dh.raaps.common.model.data.TickHandler
+import de.dh.raaps.common.model.data.TickPriority
 import de.dh.raaps.common.model.data.Timestamp
 import de.dh.raaps.core.RAAPSRegistry
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
-import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import kotlin.time.Duration.Companion.minutes
 
 enum class BgTrend {
     DoubleUp,
@@ -95,7 +96,7 @@ data class HistoryUiState(
  */
 class HistoryViewModel(
     private val raapsRegistry: RAAPSRegistry
-) : ViewModel() {
+) : ViewModel(), TickHandler {
     private val _currentBgUiState = MutableStateFlow(CurrentBgUiState(
         isLoading = true,
         isError = false
@@ -116,13 +117,21 @@ class HistoryViewModel(
 
     private val calculationModel = CarbsInsulinCalculationModel(raapsRegistry.timeService.tickInterval)
 
+    private val _tickCounter = MutableStateFlow(0)
+
+    override suspend fun onTick(tick: Tick) {
+        _tickCounter.value++
+    }
+
     init {
+        raapsRegistry.timeService.registerTickHandler(TickPriority.UI, this)
+        
         viewModelScope.launch {
             combine(
                 glucoseRepository.observeBgReadings(),
                 treatmentRepository.observeInsulinApplications(),
                 treatmentRepository.observeMeals(),
-                raapsRegistry.timeService.tickFlow
+                _tickCounter
             ) { readings, insulin, meals, _ ->
                 val historyLimit = Timestamp.now().minusHours(25)
                 val filteredReadings = readings.filter { it.timestamp >= historyLimit }
@@ -236,6 +245,11 @@ class HistoryViewModel(
                 meals = meals
             )
         }
+    }
+
+    override fun onCleared() {
+        super.onCleared()
+        raapsRegistry.timeService.unregisterTickHandler(this)
     }
 
     companion object {

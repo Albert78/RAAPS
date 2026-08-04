@@ -2,6 +2,7 @@ package de.dh.raaps.core.system
 
 import de.dh.raaps.common.model.data.Minutes
 import de.dh.raaps.common.model.data.Tick
+import de.dh.raaps.common.model.data.TickHandler
 import de.dh.raaps.common.model.data.TimeService
 import de.dh.raaps.common.model.data.Timeline
 import de.dh.raaps.common.model.data.Timestamp
@@ -11,6 +12,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import java.util.concurrent.CopyOnWriteArrayList
 
 /**
  * Real-time implementation of [TimeService] that emits ticks based on the system clock.
@@ -28,6 +30,18 @@ class SystemTimeService(
     override val currentTick: Tick get() = timeline.getNowTick()
     override val currentTime: Timestamp get() = Timestamp.now()
 
+    private data class HandlerEntry(val priority: Int, val handler: TickHandler)
+    private val handlers = CopyOnWriteArrayList<HandlerEntry>()
+
+    override fun registerTickHandler(priority: Int, handler: TickHandler) {
+        handlers.add(HandlerEntry(priority, handler))
+        handlers.sortBy { it.priority }
+    }
+
+    override fun unregisterTickHandler(handler: TickHandler) {
+        handlers.removeIf { it.handler == handler }
+    }
+
     init {
         scope.launch {
             while (true) {
@@ -40,7 +54,14 @@ class SystemTimeService(
                     delay(delayMs)
                 }
 
-                _tickFlow.value = timeline.getNowTick()
+                val tick = timeline.getNowTick()
+                
+                // Sequential execution of handlers
+                handlers.forEach { entry ->
+                    entry.handler.onTick(tick)
+                }
+
+                _tickFlow.value = tick
             }
         }
     }

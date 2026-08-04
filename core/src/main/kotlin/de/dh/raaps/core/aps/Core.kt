@@ -11,6 +11,9 @@ import de.dh.raaps.common.model.data.BgSampleKind
 import de.dh.raaps.common.model.data.CurrentTherapySettings
 import de.dh.raaps.common.model.data.Minutes
 import de.dh.raaps.common.model.data.SensorType
+import de.dh.raaps.common.model.data.Tick
+import de.dh.raaps.common.model.data.TickHandler
+import de.dh.raaps.common.model.data.TickPriority
 import de.dh.raaps.common.model.data.TimeService
 import de.dh.raaps.common.model.data.Timestamp
 import de.dh.raaps.core.repository.GlucoseRepository
@@ -76,7 +79,7 @@ class Core(
     private val onZeroTemp: (durationInHours: Int) -> Unit,
     private val onCarbsHint: (Int) -> Unit,
     private val onWaitForAndResetInsulinJobs: suspend () -> Unit,
-) {
+) : TickHandler {
     private var calculationAlgorithm: ApsAlgorithm = NoopAlgorithm()
 
     // State
@@ -149,6 +152,17 @@ class Core(
         onCoreStateChanged()
     }
 
+    override suspend fun onTick(tick: Tick) {
+        if (coreState !is CoreState.Active) return
+        
+        Log.d(TAG, "onTick: $tick")
+        
+        if (isStale()) {
+            // This will be handled by APS facade currently, 
+            // but we could also emit an event here.
+        }
+    }
+
     suspend fun initialize() {
         busyWork {
             atomic {
@@ -177,6 +191,8 @@ class Core(
                     tickInterval = timeService.tickInterval
                 )
                 onDataUpdated()
+
+                timeService.registerTickHandler(TickPriority.CORE, this@Core)
 
                 Log.d(TAG, "Finished initialization...")
                 setCoreState(CoreState.Suspended)
