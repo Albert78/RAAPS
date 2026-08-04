@@ -7,7 +7,6 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -213,23 +212,40 @@ private fun BgBlockList(
                     shape = RoundedCornerShape(12.dp),
                     color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f)
                 ) {
-                    Row(
+                    Column(
                         modifier = Modifier
                             .padding(8.dp)
                             .fillMaxWidth(),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
-                        TimeHourSelector(
-                            hour = currentHour,
-                            enabled = index > 0,
-                            minHour = prevHour + 1,
-                            maxHour = nextHour - 1,
-                            onHourChanged = { updateHour(index, it) },
-                            modifier = Modifier.width(70.dp)
-                        )
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
+                            TimeHourSelector(
+                                hour = currentHour,
+                                enabled = index > 0,
+                                minHour = prevHour + 1,
+                                maxHour = nextHour - 1,
+                                onHourChanged = { updateHour(index, it) },
+                                modifier = Modifier.width(150.dp)
+                            )
 
-                        Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                            if (index > 0) {
+                                IconButton(onClick = { removeBlock(index) }) {
+                                    Icon(
+                                        imageVector = Icons.Default.Delete,
+                                        contentDescription = stringResource(id = de.dh.raaps.common.R.string.action_delete)
+                                    )
+                                }
+                            }
+                        }
+
+                        Column(
+                            modifier = Modifier.fillMaxWidth(),
+                            verticalArrangement = Arrangement.spacedBy(4.dp)
+                        ) {
                             Row(verticalAlignment = Alignment.CenterVertically) {
                                 ValueAdjuster(
                                     value = block.target.mgdl.toDouble(),
@@ -247,7 +263,9 @@ private fun BgBlockList(
                                 Icon(
                                     imageVector = Icons.Default.Adjust,
                                     contentDescription = null,
-                                    modifier = Modifier.size(16.dp).padding(start = 2.dp),
+                                    modifier = Modifier
+                                        .padding(horizontal = 16.dp)
+                                        .size(16.dp),
                                     tint = MaterialTheme.colorScheme.primary
                                 )
                             }
@@ -268,15 +286,11 @@ private fun BgBlockList(
                                 Icon(
                                     imageVector = Icons.Default.VerticalAlignBottom,
                                     contentDescription = null,
-                                    modifier = Modifier.size(16.dp).padding(start = 2.dp),
+                                    modifier = Modifier
+                                        .padding(horizontal = 16.dp)
+                                        .size(16.dp),
                                     tint = MaterialTheme.colorScheme.primary
                                 )
-                            }
-                        }
-
-                        if (index > 0) {
-                            IconButton(onClick = { removeBlock(index) }) {
-                                Icon(Icons.Default.Delete, contentDescription = stringResource(id = de.dh.raaps.common.R.string.action_delete))
                             }
                         }
                     }

@@ -115,14 +115,7 @@ fun CurrentTherapySettingsContent(
                         )
                     }
                 },
-                actions = {
-                    IconButton(onClick = onNavigateToInsulinProfileEditor) {
-                        Icon(
-                            imageVector = Icons.Default.Edit,
-                            contentDescription = stringResource(id = R.string.menu_item_profile_editor_label)
-                        )
-                    }
-                }
+                actions = {}
             )
         }
     ) { innerPadding ->
