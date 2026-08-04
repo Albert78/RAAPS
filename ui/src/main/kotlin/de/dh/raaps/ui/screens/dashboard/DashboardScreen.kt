@@ -40,13 +40,6 @@ import de.dh.raaps.common.model.calculation.CarbsInsulinCalculationModel
 import de.dh.raaps.common.model.data.BgDelta
 import de.dh.raaps.common.model.data.BgValue
 import de.dh.raaps.common.model.data.Minutes
-import de.dh.raaps.common.model.data.InsulinProfile
-import de.dh.raaps.common.navigation.CurrentTherapySettingsRoute
-import de.dh.raaps.common.navigation.DashboardRoute
-import de.dh.raaps.common.navigation.HistoryRoute
-import de.dh.raaps.common.navigation.PermissionsRoute
-import de.dh.raaps.common.navigation.PreferencesMainRoute
-import de.dh.raaps.common.navigation.ProfileEditorRoute
 import de.dh.raaps.common.ui.composables.WarningBanner
 import de.dh.raaps.common.ui.composables.screenTitle
 import de.dh.raaps.common.ui.theme.AppTheme
@@ -218,7 +211,7 @@ fun DashboardContent(
                 onInsulinToggle = { insulinVisible = it }
             )
 
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(24.dp))
 
             Text(
                 text = stringResource(R.string.dashboard_history_title),
@@ -250,7 +243,7 @@ fun DashboardContent(
                 }
             }
 
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(24.dp))
 
             ApsControlCard(
                 modifier = Modifier.fillMaxWidth(),
@@ -264,7 +257,7 @@ fun DashboardContent(
             )
 
 
-            Spacer(modifier = Modifier.height(24.dp))
+            Spacer(modifier = Modifier.height(32.dp))
 
             extraContent()
         }
