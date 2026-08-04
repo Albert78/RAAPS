@@ -39,6 +39,7 @@ import de.dh.raaps.ui.screens.bolushistory.BolusHistoryViewModel
 import de.dh.raaps.ui.screens.dashboard.DashboardScreen
 import de.dh.raaps.ui.screens.dashboard.DashboardViewModel
 import de.dh.raaps.ui.screens.history.HistoryScreen
+import de.dh.raaps.ui.screens.insulinprofile.InsulinProfileEditorScreen
 import de.dh.raaps.ui.screens.mealbolus.MealBolusScreen
 import de.dh.raaps.ui.screens.mealbolus.MealBolusViewModel
 import de.dh.raaps.ui.screens.meals.MealTypeEditorScreen
@@ -55,7 +56,6 @@ import de.dh.raaps.ui.screens.permissions.openNotificationSettings
 import de.dh.raaps.ui.screens.permissions.requestIgnoreBatteryOptimizations
 import de.dh.raaps.ui.screens.preferences.PreferencesScreen
 import de.dh.raaps.ui.screens.preferences.PreferencesViewModel
-import de.dh.raaps.ui.screens.profile.InsulinProfileEditorScreen
 import de.dh.raaps.ui.screens.systemcontrol.SystemControlScreen
 import de.dh.raaps.ui.screens.therapy.CurrentTherapySettingsScreen
 import kotlinx.coroutines.Dispatchers

@@ -1,10 +1,8 @@
-package de.dh.raaps.ui.screens.profile
+package de.dh.raaps.ui.screens.insulinprofile
 
-import android.content.res.Configuration
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -18,6 +16,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.HelpOutline
@@ -28,7 +27,6 @@ import androidx.compose.material.icons.filled.Remove
 import androidx.compose.material.icons.filled.Save
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExposedDropdownMenuAnchorType
@@ -63,26 +61,24 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import de.dh.raaps.ui.R
 import de.dh.raaps.common.model.BASAL_MAX
 import de.dh.raaps.common.model.BASAL_MIN
+import de.dh.raaps.common.model.CR_MAX
+import de.dh.raaps.common.model.CR_MIN
 import de.dh.raaps.common.model.DEFAULT_BASAL_UNITS_PER_HOUR
 import de.dh.raaps.common.model.DEFAULT_CR_GRAM_PER_UNIT
 import de.dh.raaps.common.model.DEFAULT_ISF_MGDL_PER_UNIT
-import de.dh.raaps.common.model.CR_MAX
-import de.dh.raaps.common.model.CR_MIN
 import de.dh.raaps.common.model.ID_UNDEFINED
 import de.dh.raaps.common.model.ISF_MAX
 import de.dh.raaps.common.model.ISF_MIN
 import de.dh.raaps.common.model.InsulinType
 import de.dh.raaps.common.model.data.Block
-import de.dh.raaps.common.model.data.Minutes
 import de.dh.raaps.common.model.data.InsulinProfile
+import de.dh.raaps.common.model.data.Minutes
 import de.dh.raaps.common.ui.composables.TimeHourSelector
 import de.dh.raaps.common.ui.composables.screenTitle
-import de.dh.raaps.common.ui.theme.AppTheme
+import de.dh.raaps.ui.R
 import de.dh.raaps.ui.controls.profile.InsulinProfileSettingsUiState
 import de.dh.raaps.ui.controls.profile.InsulinProfileSettingsViewModel
 
@@ -256,10 +252,10 @@ fun InsulinProfileDetailEditor(
     val isNameValid = name.trim().isNotBlank() && isNameUnique(name.trim(), profile.id)
     val diaValue = dia.toIntOrNull() ?: 0
     val peakValue = peak.toIntOrNull() ?: 0
-    
-    val hasChanges = name != profile.name || 
-            basalBlocks != profile.basalBlocks || 
-            isfBlocks != profile.isfBlocks || 
+
+    val hasChanges = name != profile.name ||
+            basalBlocks != profile.basalBlocks ||
+            isfBlocks != profile.isfBlocks ||
             crBlocks != profile.crBlocks ||
             insulinType != profile.insulinType ||
             diaValue != profile.dia.value.toInt() ||
@@ -289,16 +285,16 @@ fun InsulinProfileDetailEditor(
                 },
                 actions = {
                     IconButton(
-                        onClick = { 
+                        onClick = {
                             onSave(profile.copy(
-                                name = name.trim(), 
+                                name = name.trim(),
                                 basalBlocks = basalBlocks,
                                 isfBlocks = isfBlocks,
                                 crBlocks = crBlocks,
                                 insulinType = insulinType,
                                 dia = Minutes(diaValue.toShort()),
                                 peak = Minutes(peakValue.toShort())
-                            )) 
+                            ))
                         },
                         enabled = isNameValid && diaValue > 0 && peakValue > 0
                     ) {
@@ -343,7 +339,7 @@ fun InsulinProfileDetailEditor(
                     0 -> InsulinSettingsEditor(
                         insulinTypes = insulinTypes,
                         selectedInsulinType = insulinType,
-                        onInsulinTypeSelected = { 
+                        onInsulinTypeSelected = {
                             insulinType = it
                             dia = it.dia.value.toString()
                             peak = it.peak.value.toString()

@@ -39,8 +39,8 @@ import de.dh.raaps.common.model.data.BgValue
 import de.dh.raaps.common.model.data.Minutes
 import de.dh.raaps.common.ui.composables.TimeHourSelector
 import de.dh.raaps.ui.R
-import de.dh.raaps.ui.screens.profile.InsertButton
-import de.dh.raaps.ui.screens.profile.ValueAdjuster
+import de.dh.raaps.ui.screens.insulinprofile.InsertButton
+import de.dh.raaps.ui.screens.insulinprofile.ValueAdjuster
 import kotlin.math.roundToInt
 
 @OptIn(ExperimentalMaterial3Api::class)
