@@ -257,7 +257,7 @@ fun DashboardContent(
             )
 
 
-            Spacer(modifier = Modifier.height(32.dp))
+            Spacer(modifier = Modifier.height(40.dp))
 
             extraContent()
         }

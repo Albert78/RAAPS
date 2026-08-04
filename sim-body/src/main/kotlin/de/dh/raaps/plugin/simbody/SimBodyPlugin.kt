@@ -6,7 +6,6 @@ import de.dh.raaps.common.model.InsulinPump
 import de.dh.raaps.common.model.Plugin
 import de.dh.raaps.common.model.PluginManager
 import de.dh.raaps.common.model.data.BgReading
-import de.dh.raaps.common.model.data.BgSampleKind
 import de.dh.raaps.common.model.data.Tick
 import de.dh.raaps.common.model.data.TickHandler
 import de.dh.raaps.common.model.data.TickPriority
@@ -29,13 +28,23 @@ class SimBodyPlugin(
     val bodyModel = BodyModel(DEFAULT_SIM_BODY_PROFILE, database.impactDao())
     val pumpDevice = SimBodyPumpDevice(bodyModel, DEFAULT_SIM_INSULIN_PROFILE)
 
-    private val _glucoseReadings = MutableSharedFlow<BgReading>(extraBufferCapacity = 1)
+    private val _glucoseReadings = MutableSharedFlow<BgReading>(
+        replay = 1,
+        extraBufferCapacity = 1
+    )
+
+    private val heartbeat = SimBodyHeartbeat(
+        wakeService = wakeService,
+        bodyModel = bodyModel,
+        onBgReading = { _glucoseReadings.tryEmit(it) }
+    )
 
     override val name: String = "Sim Body Plugin"
     override val neededPermissions: Collection<String> = emptyList()
 
     override fun initialize(pluginManager: PluginManager) {
         timeService.registerTickHandler(TickPriority.PRE_CORE, this)
+        heartbeat.start()
     }
 
     override suspend fun onTick(tick: Tick) {
@@ -45,13 +54,6 @@ class SimBodyPlugin(
         try {
             pumpDevice.advanceToTick(timestamp)
             bodyModel.advanceToTick(timestamp)
-
-            val reading = BgReading(
-                value = bodyModel.bloodGlucose,
-                sampleKind = BgSampleKind.Value,
-                timestamp = timestamp
-            )
-            _glucoseReadings.tryEmit(reading)
         } finally {
             wakeService.releaseBusyState(WAKE_TAG)
         }

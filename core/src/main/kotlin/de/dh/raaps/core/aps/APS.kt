@@ -2,12 +2,14 @@ package de.dh.raaps.core.aps
 
 import android.content.Context
 import android.content.Intent
+import android.util.Log
 import de.dh.raaps.AppPreferencesRepository
 import de.dh.raaps.common.model.ApsMode
 import de.dh.raaps.common.model.GlucoseSource
 import de.dh.raaps.common.model.InsulinAmount
 import de.dh.raaps.common.model.calculation.CarbsInsulinCalculationModel
 import de.dh.raaps.common.model.data.BgReading
+import de.dh.raaps.common.model.data.Minutes
 import de.dh.raaps.common.model.data.TimeService
 import de.dh.raaps.common.model.data.Timestamp
 import de.dh.raaps.core.pump.PumpCommand
@@ -107,6 +109,14 @@ class APS(
             field?.start()
             restartGlucosePipeline()
         }
+
+    /**
+     * Time delay between a glucose value in blood and the given Timestamp of the bg reading.
+     * Typically, the bg reading timestamp represents the time of measure of the CGM system, which
+     * is about 5 minutes behind blood glucose.
+     */
+    var glucoseReadingsTimeDelay: Minutes = Minutes(5)
+        private set
 
     // Observers (Updated by the internal core, read by the facade/UI)
     private val _lastDataTime = MutableStateFlow<Timestamp>(Timestamp(0))
@@ -232,10 +242,29 @@ class APS(
     }
 
     private suspend fun installGlucosePipeline_ApsThread(plugin: GlucoseSource) {
+        Log.d(TAG, "Installing glucose pipeline")
+
         val sensorType = glucoseRepository.getOrCreateSensorTypeByName(plugin.getSensorTypeName())
         val dataProvider =
             glucoseRepository.getOrCreateDataProviderByName(plugin.name, plugin.dataProviderType)
-        core.installGlucosePipeline(plugin, dataProvider, sensorType)
+
+        glucoseReadingsTimeDelay = plugin.readingsTimeDelay
+
+        // Persist values
+        val persistedValues = plugin.getValues()
+            .persist(glucoseRepository, dataProvider, sensorType)
+
+        // Collect for core calculation
+        persistedValues
+            // Threading notice:
+            // The .collect call will block our coroutine, so it must be the last action in this method.
+            // But since we're in a coroutine, the call won't block our (single) thread while
+            // waiting for new values; instead, it will just suspend and free the thread for other work.
+            .collect { bg ->
+                core.updateBg(bg)
+                // Synchronize our internal ticking grid to fire 20s after the BG reading.
+                timeService.synchronize(Timestamp.now().plusSeconds(20))
+            }
     }
 
     private fun emitDataUpdateEvent() = inExternalDispatcher {
@@ -343,9 +372,6 @@ class APS(
      */
     fun updateBg(bg: BgReading) = inAPSThread {
         _recommendations.value = emptyList()
-
-        // Synchronize our internal ticking grid to fire 20s after the BG reading.
-        timeService.synchronize(Timestamp.now().plusSeconds(20))
 
         core.updateBg(bg)
         core.nextBgStaleCheckAt()?.let {

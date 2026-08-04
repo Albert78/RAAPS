@@ -2,8 +2,6 @@ package de.dh.raaps.core.aps
 
 import android.util.Log
 import de.dh.raaps.AppPreferencesRepository
-import de.dh.raaps.common.model.DataProvider
-import de.dh.raaps.common.model.GlucoseSource
 import de.dh.raaps.common.model.InsulinAmount
 import de.dh.raaps.common.model.InsulinHistory
 import de.dh.raaps.common.model.calculation.CarbsInsulinCalculationModel
@@ -100,13 +98,6 @@ class Core(
     suspend fun isStale(): Boolean = calculationAlgorithm.isStale()
 
     /**
-     * Time delay between a glucose value in blood and the given Timestamp of the bg reading.
-     * Typically, the bg reading timestamp represents the time of measure of the CGM system, which
-     * is about 5 minutes behind blood glucose.
-     */
-    var glucoseReadingsTimeDelay: Minutes = Minutes(5)
-
-    /**
      * Lock which is acquired in situations where a suspend function
      * must be atomic. Other (non-suspend) functions don't need to be locked since
      * we're single-threaded inside this class by design.
@@ -201,37 +192,6 @@ class Core(
                 setCoreState(CoreState.Suspended)
             }
         }
-    }
-
-    /**
-     * Installs the input Flow of BG values from the given source plugin.
-     */
-    suspend fun installGlucosePipeline(
-        plugin: GlucoseSource,
-        dataProvider: DataProvider,
-        sensorType: SensorType
-    ) {
-        Log.d(TAG, "Installing glucose pipeline")
-
-        val readingsInterval = plugin.readingsInterval
-        val datasourceTimeDelay = plugin.readingsTimeDelay
-        // TODO: Save changes in readings interval (5 minutes to 1 minutes and vice versa) to database
-
-        glucoseReadingsTimeDelay = datasourceTimeDelay
-
-        // Persist values
-        val persistedValues = plugin.getValues()
-            .persist(glucoseRepository, dataProvider, sensorType)
-
-        // Collect for core calculation
-        persistedValues
-            // Threading notice:
-            // The .collect call will block our coroutine, so it must be the last action in this method.
-            // But since we're in a coroutine, the call won't block our (single) thread while
-            // waiting for new values; instead, it will just suspend and free the thread for other work.
-            .collect { bg ->
-                updateBg(bg)
-            }
     }
 
     /**

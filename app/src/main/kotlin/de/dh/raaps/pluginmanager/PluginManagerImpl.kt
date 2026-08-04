@@ -13,6 +13,7 @@ class PluginManagerImpl(
 
     override fun addPlugin(plugin: Plugin) {
         plugins.add(plugin)
+        plugin.initialize(this)
     }
 
     override fun getPlugins(): List<Plugin> {
