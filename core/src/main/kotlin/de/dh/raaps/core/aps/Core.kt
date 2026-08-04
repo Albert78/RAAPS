@@ -7,8 +7,6 @@ import de.dh.raaps.common.model.calculation.CarbsInsulinCalculationModel
 import de.dh.raaps.common.model.data.BgReading
 import de.dh.raaps.common.model.data.BgSampleKind
 import de.dh.raaps.common.model.data.CurrentTherapySettings
-import de.dh.raaps.common.model.data.Minutes
-import de.dh.raaps.common.model.data.SensorType
 import de.dh.raaps.common.model.data.Tick
 import de.dh.raaps.common.model.data.TickHandler
 import de.dh.raaps.common.model.data.TickPriority
@@ -85,8 +83,6 @@ class Core(
     var currentBg: BgReading? = null
         private set
     var lastBg: BgReading? = null
-        private set
-    var currentTherapySettings: CurrentTherapySettings? = null
         private set
     var isPredictionsStale: Boolean = true
 
@@ -169,7 +165,6 @@ class Core(
 
                 currentBg = readingsHistory.lastOrNull()
                 lastBg = if (readingsHistory.size >= 2) readingsHistory[readingsHistory.size - 2] else null
-                currentTherapySettings = therapyManager.getActiveTherapySettings()
 
                 calculationAlgorithm = ApsAlgorithmImpl.create(
                     treatmentRepository,
@@ -232,14 +227,7 @@ class Core(
      * Triggered when the therapy settings (i.e. profile) has changed.
      */
     suspend fun onTherapySettingsChanged(newData: CurrentTherapySettings?) {
-        busyWork {
-            atomic {
-                if (newData == null) {
-                    return@atomic
-                }
-                currentTherapySettings = newData
-            }
-        }
+        // For the future... If we don't need this handler, we can remove it
     }
 
     /**

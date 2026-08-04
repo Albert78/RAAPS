@@ -168,7 +168,7 @@ class APS(
 
             launch {
                 appModeManager.apsMode.collect { mode ->
-                    if (mode != ApsMode.Suspend) {
+                    if (mode == ApsMode.AutoCorrection) {
                         core.activate()
                     } else {
                         core.suspend()
@@ -177,7 +177,6 @@ class APS(
             }
             launch {
                 therapyManager.currentTherapySettingsFlow.drop(1).collect { settings ->
-                    if (settings == null) return@collect
                     core.onTherapySettingsChanged(settings)
                 }
             }

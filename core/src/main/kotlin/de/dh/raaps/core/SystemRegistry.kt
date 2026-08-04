@@ -46,16 +46,20 @@ interface SystemRegistry {
     val settingsRepository: SettingsRepository
     val appPreferencesRepository: AppPreferencesRepository
 
-    // Logical Managers and Services
-    val therapyManager: TherapyManager
-    val aps: APS
-    val appModeManager: AppModeManager
+    // System Managers and Services
     val pluginManager: PluginManager
     val wakeService: SystemWakeService
     val timeService: TimeService
-    val pumpManager: PumpManager
     val notificationManager: NotificationManager
+
+    // Domain Managers and Services
+    val therapyManager: TherapyManager
+    val aps: APS
+    val appModeManager: AppModeManager
+    val pumpManager: PumpManager
     val carbsInsulinCalculationModel: CarbsInsulinCalculationModel
+
+    // Other stuff
 
     /**
      * Handler for permission change events.
