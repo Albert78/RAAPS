@@ -167,15 +167,26 @@ class Core(
      * Triggered when the therapy settings (i.e. profile) has changed.
      */
     suspend fun onTherapySettingsChanged(newData: CurrentTherapySettings?) {
-        // For the future... If we don't need this handler, we can remove it
+        atomic {
+            calculationAlgorithm.updateTherapySettings()
+        }
     }
 
     /**
-     * Triggered on insulin or meal events.
+     * Triggered on meal events.
      */
-    suspend fun onMetabolicEventsChanged() {
+    suspend fun onMealsChanged() {
         atomic {
-            calculationAlgorithm.updateMealsAndInsulin()
+            calculationAlgorithm.updateMeals()
+        }
+    }
+
+    /**
+     * Triggered on insulin events.
+     */
+    suspend fun onInsulinChanged() {
+        atomic {
+            calculationAlgorithm.updateInsulin()
         }
     }
 

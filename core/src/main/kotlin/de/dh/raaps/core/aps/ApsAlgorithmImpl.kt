@@ -13,7 +13,6 @@ import de.dh.raaps.common.model.data.Timestamp
 import de.dh.raaps.common.model.data.times
 import de.dh.raaps.core.repository.TreatmentRepository
 
-// TODO: Document the models needed for calculation, document calculation algorithm
 class ApsAlgorithmImpl(
     val timeline: Timeline,
     val treatmentRepository: TreatmentRepository,
@@ -36,13 +35,19 @@ class ApsAlgorithmImpl(
     private val Tick.timestamp get() = timeline.timestamp(this)
 
     /**
-     * Called when meals or insulin events occured. This recalculates prediction stage 1.
+     * Called when meals occurred. This invalidates the cached effective carbs, which will be
+     * re-evaluated on the next calculation.
      */
-    override suspend fun updateMealsAndInsulin() {
-        val settings = therapyManager.getActiveTherapySettings()
-        val dia = settings.insulinProfile.dia
-        val peak = settings.insulinProfile.peak
-        predictionModel.calculatePredictionStage_1(treatmentRepository, carbsInsulinCalculationModel, dia, peak)
+    override suspend fun updateMeals() {
+        predictionModel.invalidateCarbsCache()
+    }
+
+    /**
+     * Called when insulin events occurred. This invalidates the cached effective insulin, which will be
+     * re-evaluated on the next calculation.
+     */
+    override suspend fun updateInsulin() {
+        predictionModel.invalidateInsulinCache()
     }
 
     /**
@@ -105,7 +110,7 @@ class ApsAlgorithmImpl(
         // the data is reused in succeeding calculation calls until another metabolic event occurs.
 
         // Materialize assumed ISF and CR values, update predicted BGI if changed, update BG if changed
-        predictionModel.calculatePredictionStates_2_3_4(currentBgFiltered, avgCurrentDeviationPerTick, therapyManager)
+        predictionModel.calculate(currentBgFiltered, avgCurrentDeviationPerTick, therapyManager)
 
         // We cancel all insulin jobs including temporary basal rate - this means, the following code
         // must calculate:
@@ -237,7 +242,7 @@ class ApsAlgorithmImpl(
             }
             onDeliverBolus(InsulinAmount(bolusAmount))
         }
-        Todo() // ZeroTemp
+        Todo() // SetTemp
     }
 
     companion object {
@@ -267,16 +272,6 @@ class ApsAlgorithmImpl(
             )
             predictionModel.initializeToTick(Timestamp.now().minus(PRESERVE_PREDICTIONS_PAST_TIME))
 
-            val settings = therapyManager.getActiveTherapySettings()
-            val dia = settings.insulinProfile.dia
-            val peak = settings.insulinProfile.peak
-
-            predictionModel.calculatePredictionStage_1(
-                treatmentRepository,
-                carbsInsulinCalculationModel,
-                dia,
-                peak
-            )
             return ApsAlgorithmImpl(
                 timeline = timeline,
                 treatmentRepository = treatmentRepository,

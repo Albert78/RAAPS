@@ -193,12 +193,12 @@ class SystemManagerImpl(
             }
             launch {
                 treatmentRepository.observeMeals().drop(1).collect { data ->
-                    core.onMetabolicEventsChanged()
+                    core.onMealsChanged()
                 }
             }
             launch {
                 treatmentRepository.observeInsulinApplications().drop(1).collect { data ->
-                    core.onMetabolicEventsChanged()
+                    core.onInsulinChanged()
                 }
             }
         }
