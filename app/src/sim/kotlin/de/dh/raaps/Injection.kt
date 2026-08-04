@@ -34,5 +34,5 @@ fun getExtraNavGraphs(
     registry: RAAPSRegistry
 ): List<FeatureNavGraph> {
     val bodyModel = simBodyPlugin?.bodyModel
-    return listOf(SimBodyNavGraph(navViewModel, registry, bodyModel))
+    return listOf(SimBodyNavGraph(navViewModel, bodyModel))
 }
