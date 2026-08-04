@@ -115,6 +115,7 @@ class RAAPSRegistryImpl(
                 context = application
             )
             aps.startInitialization()
+            notificationManager.startInitialization(scope, aps)
 
             val permissionsHandler = PermissionsChangedHandler {
                 pluginManager.triggerUpdatesAfterPermissionsChange()

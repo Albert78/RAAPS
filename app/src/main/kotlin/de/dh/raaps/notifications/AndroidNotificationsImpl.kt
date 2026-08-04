@@ -12,6 +12,7 @@ import androidx.core.content.getSystemService
 import de.dh.raaps.R
 import de.dh.raaps.common.model.ToDo
 import de.dh.raaps.common.model.data.BgValue
+import de.dh.raaps.core.aps.APS
 import de.dh.raaps.core.aps.ApsRecommendation
 import de.dh.raaps.core.system.AndroidNotifications
 import de.dh.raaps.ui.activities.MainActivity
@@ -27,7 +28,7 @@ class AndroidNotificationsImpl(
 ): AndroidNotifications {
     private val manager = context.getSystemService<NotificationManager>()!!
 
-    fun createNotificationChannels() {
+    override fun createNotificationChannels() {
         // Channel for the foreground service (BG values)
         val serviceName = context.getString(UiR.string.aps_service_notification_channel_name)
         val serviceImportance = NotificationManager.IMPORTANCE_HIGH
@@ -60,7 +61,8 @@ class AndroidNotificationsImpl(
         return if (bgDeltaStr == null) null else "Delta: $bgDeltaStr"
     }
 
-    fun createForegroundServiceNotification(data: MainAppNotificationData): Notification {
+    override fun createMainAppNotification(aps: APS): Notification {
+        val data = MainAppNotificationData.create(aps)
         Log.d(TAG, "Build notification for ${data.lastBgSample}")
         ToDo.toBeImplemented("Take glucose unit from preferences")
         val bgValueStr = getBgValueString(data.lastBgSample?.value, false)
@@ -85,12 +87,12 @@ class AndroidNotificationsImpl(
             .build()
     }
 
-    fun updateNotification(data: MainAppNotificationData) {
-        val notification: Notification = createForegroundServiceNotification(data)
-        notify(NOTIFICATION_ID, notification)
+    override fun updateMainAppNotification(aps: APS) {
+        val notification: Notification = createMainAppNotification(aps)
+        notify(AndroidNotifications.FOREGROUND_NOTIFICATION_ID, notification)
     }
 
-    fun showRecommendationNotification(recommendation: ApsRecommendation) {
+    override fun showRecommendationNotification(recommendation: ApsRecommendation) {
         val title = when (recommendation) {
             is ApsRecommendation.Carbs -> context.getString(UiR.string.recommendation_title_carbs)
             is ApsRecommendation.Bolus -> context.getString(UiR.string.recommendation_title_bolus)
@@ -127,7 +129,7 @@ class AndroidNotificationsImpl(
         notify(RECOMMENDATION_NOTIFICATION_ID, notification)
     }
 
-    fun cancelRecommendationNotification() {
+    override fun cancelRecommendationNotification() {
         manager.cancel(RECOMMENDATION_NOTIFICATION_ID)
     }
 
@@ -146,7 +148,6 @@ class AndroidNotificationsImpl(
 
     companion object {
         val TAG = AndroidNotificationsImpl::class.simpleName
-        const val NOTIFICATION_ID = 1
         const val RECOMMENDATION_NOTIFICATION_ID = 2
         const val CHANNEL_ID = "aps_service_channel"
         const val RECOMMENDATION_CHANNEL_ID = "aps_recommendation_channel"

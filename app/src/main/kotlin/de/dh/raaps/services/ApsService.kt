@@ -6,59 +6,32 @@ import android.content.Intent
 import android.content.pm.ServiceInfo
 import android.os.IBinder
 import de.dh.raaps.MainApplication
-import de.dh.raaps.core.aps.APS
-import de.dh.raaps.notifications.AndroidNotificationsImpl
-import de.dh.raaps.notifications.MainAppNotificationData
+import de.dh.raaps.core.system.AndroidNotifications
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
-import kotlinx.coroutines.launch
 
 /**
  * Foreground service for the RAAPS system. Makes the RAAPS process remain active with a high priority.
  */
 class ApsService : Service() {
     private val serviceScope = CoroutineScope(Dispatchers.Main + SupervisorJob())
-    private val notificationManager: AndroidNotificationsImpl = MainApplication.instance.androidNotifications
-
-    val aps : APS = MainApplication.instance.registry.aps
+    private val notificationManager = MainApplication.instance.registry.notificationManager
 
     override fun onCreate() {
         super.onCreate()
 
-        notificationManager.createNotificationChannels()
         startServiceInForeground()
 
         MainApplication.instance.setServiceRunning(true)
-
-        observeRecommendations()
-    }
-
-    private fun observeRecommendations() {
-        serviceScope.launch {
-            aps.recommendations.collect { recommendations ->
-                if (recommendations.isEmpty()) {
-                    notificationManager.cancelRecommendationNotification()
-                } else {
-                    // Show the first one for now, or could show multiple
-                    notificationManager.showRecommendationNotification(recommendations.first())
-                }
-            }
-        }
-    }
-
-    override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-        startServiceInForeground()
-        return START_STICKY
     }
 
     private fun startServiceInForeground() {
-        val apsNotificationData = MainAppNotificationData.create(aps)
-        val notification: Notification = notificationManager.createForegroundServiceNotification(apsNotificationData)
+        val notification: Notification = notificationManager.createForegroundServiceNotification()
 
         startForeground(
-            AndroidNotificationsImpl.NOTIFICATION_ID,
+            AndroidNotifications.FOREGROUND_NOTIFICATION_ID,
             notification,
             ServiceInfo.FOREGROUND_SERVICE_TYPE_HEALTH
         )

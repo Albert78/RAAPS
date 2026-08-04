@@ -8,7 +8,6 @@ import de.dh.raaps.core.RAAPSRegistry
 import de.dh.raaps.core.RAAPSRegistryImpl
 import de.dh.raaps.core.system.RegistryProvider
 import de.dh.raaps.notifications.AndroidNotificationsImpl
-import de.dh.raaps.notifications.MainAppNotificationData
 import de.dh.raaps.pluginmanager.PluginManagerImpl
 import de.dh.raaps.services.ApsService
 import de.dh.raaps.services.BootReceiver
@@ -19,7 +18,6 @@ import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.launch
 
 /**
  * Main application class for RAAPS.
@@ -63,8 +61,6 @@ class MainApplication : Application(), RegistryProvider {
 
         MainActivity.getExtraNavGraphs = ::getExtraNavGraphs
 
-        installNotificationUpdater()
-
         BootReceiver.enableBootReceiver(this)
     }
 
@@ -86,15 +82,6 @@ class MainApplication : Application(), RegistryProvider {
             // TODO: Handle
         } catch (e: IllegalStateException) {
             // TODO: Handle
-        }
-    }
-
-    fun installNotificationUpdater() {
-        applicationScope.launch {
-            registry.aps.lastDataTime.collect { _ ->
-                val notificationData = MainAppNotificationData.create(registry.aps)
-                androidNotifications.updateNotification(notificationData)
-            }
         }
     }
 
