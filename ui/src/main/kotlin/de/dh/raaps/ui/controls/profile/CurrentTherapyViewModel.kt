@@ -20,7 +20,7 @@ import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
-data class ProfileUiState(
+data class InsulinProfileUiState(
     val name: String,
     val activeProfileId: Long?,
     val isf: BgDelta,
@@ -36,7 +36,7 @@ data class ProfileUiState(
     val peak: Minutes
 ) {
     companion object {
-        fun empty() = ProfileUiState(
+        fun empty() = InsulinProfileUiState(
             name = "",
             activeProfileId = null,
             isf = BgDelta(0),
@@ -63,7 +63,7 @@ data class TherapyAdjustment(
 
 data class CurrentTherapyUiState(
     val isLoading: Boolean = true,
-    val activeProfile: ProfileUiState = ProfileUiState.empty(),
+    val activeProfile: InsulinProfileUiState = InsulinProfileUiState.empty(),
     val glucoseUnit: GlucoseUnit = GlucoseUnit.MG_DL,
     val availableProfiles: List<InsulinProfile> = emptyList(),
     val defaultBgBlocks: List<BgBlock> = emptyList(),
@@ -112,7 +112,7 @@ class CurrentTherapyViewModel(
         val activeProfileName = currentSettings.insulinProfile.id.let { pid ->
             profiles.find { it.id == pid }?.name
         } ?: "Manual Override"
-        val profileUiState = ProfileUiState(
+        val profileUiState = InsulinProfileUiState(
             name = activeProfileName,
             activeProfileId = currentSettings.insulinProfile.id,
             isf = isf,

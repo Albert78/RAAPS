@@ -77,7 +77,7 @@ import de.dh.raaps.ui.controls.dialogs.BgEditorDialog
 import de.dh.raaps.ui.controls.dialogs.TherapyAdjustmentDialog
 import de.dh.raaps.ui.controls.profile.CurrentTherapyUiState
 import de.dh.raaps.ui.controls.profile.CurrentTherapyViewModel
-import de.dh.raaps.ui.controls.profile.ProfileUiState
+import de.dh.raaps.ui.controls.profile.InsulinProfileUiState
 import de.dh.raaps.ui.controls.profile.TherapyAdjustment
 
 @Composable
@@ -184,7 +184,7 @@ fun CurrentTherapySettingsContent(
                 )
 
                 TemporaryAdjustmentCard(
-                    profile = uiState.activeProfile,
+                    insulinProfile = uiState.activeProfile,
                     onClick = { showAdjustmentDialog = true }
                 )
             }
@@ -257,7 +257,7 @@ private fun SectionHeader(
 
 @Composable
 private fun ActiveInsulinProfileCard(
-    profile: ProfileUiState,
+    profile: InsulinProfileUiState,
     onSwitchInsulinProfileClick: () -> Unit,
     onManageInsulinProfilesClick: () -> Unit,
     modifier: Modifier = Modifier
@@ -557,7 +557,7 @@ private fun BgTargetCard(
 
 @Composable
 private fun TemporaryAdjustmentCard(
-    profile: ProfileUiState,
+    insulinProfile: InsulinProfileUiState,
     onClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -587,10 +587,10 @@ private fun TemporaryAdjustmentCard(
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
                 Text(
-                    text = profile.adjustmentHint ?: stringResource(R.string.aps_control_therapy_adjustment_custom),
+                    text = insulinProfile.adjustmentHint ?: stringResource(R.string.aps_control_therapy_adjustment_custom),
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold,
-                    color = if (profile.adjustmentHint != null) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
+                    color = if (insulinProfile.adjustmentHint != null) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
                 )
 
                 Icon(
@@ -609,16 +609,16 @@ private fun TemporaryAdjustmentCard(
                 AdjustmentItem(
                     icon = Icons.Default.UnfoldMore,
                     label = stringResource(R.string.aps_control_therapy_adjustment_dialog_insulin_adjustment_label),
-                    value = displayStrategy.format(profile.insulinAdjustmentPercentage),
-                    valueColor = if (profile.insulinAdjustmentPercentage == 0)
+                    value = displayStrategy.format(insulinProfile.insulinAdjustmentPercentage),
+                    valueColor = if (insulinProfile.insulinAdjustmentPercentage == 0)
                         MaterialTheme.colorScheme.onSurfaceVariant
                     else
-                        displayStrategy.color(profile.insulinAdjustmentPercentage),
-                    status = if (profile.insulinAdjustmentPercentage == 0)
+                        displayStrategy.color(insulinProfile.insulinAdjustmentPercentage),
+                    status = if (insulinProfile.insulinAdjustmentPercentage == 0)
                         stringResource(R.string.aps_control_adjustment_neutral)
                     else
                         stringResource(
-                            if (profile.insulinAdjustmentPercentage > 0)
+                            if (insulinProfile.insulinAdjustmentPercentage > 0)
                                 R.string.label_increased
                             else
                                 R.string.label_decreased
@@ -629,16 +629,16 @@ private fun TemporaryAdjustmentCard(
                 AdjustmentItem(
                     icon = Icons.Default.Adjust,
                     label = stringResource(R.string.current_therapy_target_label),
-                    value = if (profile.targetBgOverride != null)
-                        profile.targetBgOverride.mgdl.toString()
+                    value = if (insulinProfile.targetBgOverride != null)
+                        insulinProfile.targetBgOverride.mgdl.toString()
                     else
                         stringResource(R.string.aps_control_adjustment_standard),
-                    unit = if (profile.targetBgOverride != null) stringResource(R.string.glucose_unit_mgdl) else null,
-                    valueColor = if (profile.targetBgOverride != null)
+                    unit = if (insulinProfile.targetBgOverride != null) stringResource(R.string.glucose_unit_mgdl) else null,
+                    valueColor = if (insulinProfile.targetBgOverride != null)
                         MaterialTheme.colorScheme.primary
                     else
                         MaterialTheme.colorScheme.onSurfaceVariant,
-                    status = if (profile.targetBgOverride != null)
+                    status = if (insulinProfile.targetBgOverride != null)
                         stringResource(R.string.current_therapy_active_badge)
                     else
                         null
@@ -648,16 +648,16 @@ private fun TemporaryAdjustmentCard(
                 AdjustmentItem(
                     icon = Icons.Default.VerticalAlignBottom,
                     label = stringResource(R.string.current_therapy_low_threshold_label),
-                    value = if (profile.lowThresholdOverride != null)
-                        profile.lowThresholdOverride.mgdl.toString()
+                    value = if (insulinProfile.lowThresholdOverride != null)
+                        insulinProfile.lowThresholdOverride.mgdl.toString()
                     else
                         stringResource(R.string.aps_control_adjustment_standard),
-                    unit = if (profile.lowThresholdOverride != null) stringResource(R.string.glucose_unit_mgdl) else null,
-                    valueColor = if (profile.lowThresholdOverride != null)
+                    unit = if (insulinProfile.lowThresholdOverride != null) stringResource(R.string.glucose_unit_mgdl) else null,
+                    valueColor = if (insulinProfile.lowThresholdOverride != null)
                         MaterialTheme.colorScheme.error
                     else
                         MaterialTheme.colorScheme.onSurfaceVariant,
-                    status = if (profile.lowThresholdOverride != null) stringResource(R.string.current_therapy_active_badge) else null
+                    status = if (insulinProfile.lowThresholdOverride != null) stringResource(R.string.label_active) else null
                 )
             }
         }
@@ -822,7 +822,7 @@ fun CurrentTherapySettingsPreview() {
 
     val mockUiState = CurrentTherapyUiState(
         isLoading = false,
-        activeProfile = ProfileUiState(
+        activeProfile = InsulinProfileUiState(
             name = "Normal",
             activeProfileId = 1L,
             isf = BgDelta(40),

@@ -58,12 +58,12 @@ import de.dh.raaps.common.ui.theme.SoftRed
 import de.dh.raaps.common.ui.ConfigurableDisplayStrategy
 import de.dh.raaps.common.ui.theme.NeutralGrey
 import de.dh.raaps.ui.R
-import de.dh.raaps.ui.controls.profile.ProfileUiState
+import de.dh.raaps.ui.controls.profile.InsulinProfileUiState
 
 @Composable
 fun ApsControlCard(
     modifier: Modifier = Modifier,
-    profileUiState: ProfileUiState,
+    insulinProfileUiState: InsulinProfileUiState,
     selectedMode: ApsMode,
     availableModes: List<ApsMode>,
     onModeChange: (ApsMode) -> Unit,
@@ -102,9 +102,9 @@ fun ApsControlCard(
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 val nameText = if (insulinAdjustmentPercentage != 0) {
-                    "${profileUiState.name} (${displayStrategy.format(insulinAdjustmentPercentage)})"
+                    "${insulinProfileUiState.name} (${displayStrategy.format(insulinAdjustmentPercentage)})"
                 } else {
-                    profileUiState.name
+                    insulinProfileUiState.name
                 }
                 Text(
                     text = nameText,
@@ -129,7 +129,7 @@ fun ApsControlCard(
                             color = if (isSuspended) MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f) else MaterialTheme.colorScheme.secondaryContainer,
                             shape = MaterialTheme.shapes.extraSmall,
                         ) {
-                            val basalValue = String.format(LocalLocale.current.platformLocale, "%.1f", if (isSuspended) 0.0 else profileUiState.basal)
+                            val basalValue = String.format(LocalLocale.current.platformLocale, "%.1f", if (isSuspended) 0.0 else insulinProfileUiState.basal)
                             Text(
                                 text = " ${stringResource(R.string.aps_control_basal_label, basalValue)} ",
                                 style = MaterialTheme.typography.labelSmall,
@@ -144,7 +144,7 @@ fun ApsControlCard(
                                 shape = MaterialTheme.shapes.extraSmall,
                             ) {
                                 Text(
-                                    text = " ${stringResource(R.string.aps_control_cr_label, String.format(LocalLocale.current.platformLocale, "%.1f", profileUiState.cr))} ",
+                                    text = " ${stringResource(R.string.aps_control_cr_label, String.format(LocalLocale.current.platformLocale, "%.1f", insulinProfileUiState.cr))} ",
                                     style = MaterialTheme.typography.labelSmall,
                                     modifier = Modifier.padding(horizontal = 4.dp, vertical = 2.dp)
                                 )
@@ -154,7 +154,7 @@ fun ApsControlCard(
                                 shape = MaterialTheme.shapes.extraSmall,
                             ) {
                                 Text(
-                                    text = " ${stringResource(R.string.aps_control_isf_label, profileUiState.isf.mgdl)} ",
+                                    text = " ${stringResource(R.string.aps_control_isf_label, insulinProfileUiState.isf.mgdl)} ",
                                     style = MaterialTheme.typography.labelSmall,
                                     modifier = Modifier.padding(horizontal = 4.dp, vertical = 2.dp)
                                 )
@@ -178,7 +178,7 @@ fun ApsControlCard(
                         )
                         Spacer(Modifier.width(4.dp))
                         Text(
-                            text = profileUiState.target.mgdl.toString(),
+                            text = insulinProfileUiState.target.mgdl.toString(),
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
@@ -194,7 +194,7 @@ fun ApsControlCard(
                         )
                         Spacer(Modifier.width(4.dp))
                         Text(
-                            text = profileUiState.lowThreshold.mgdl.toString(),
+                            text = insulinProfileUiState.lowThreshold.mgdl.toString(),
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
@@ -314,7 +314,7 @@ private fun PreviewApsControlCard() {
         Surface {
             ApsControlCard(
                 modifier = Modifier.padding(16.dp),
-                profileUiState = ProfileUiState(
+                insulinProfileUiState = InsulinProfileUiState(
                     name = "Standard",
                     activeProfileId = null,
                     target = BgValue.fromMgDl(100),

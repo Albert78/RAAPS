@@ -54,7 +54,7 @@ import de.dh.raaps.ui.controls.history.HistoryViewModel
 import de.dh.raaps.ui.controls.history.rememberBgHistoryChartState
 import de.dh.raaps.ui.controls.profile.CurrentTherapyUiState
 import de.dh.raaps.ui.controls.profile.CurrentTherapyViewModel
-import de.dh.raaps.ui.controls.profile.ProfileUiState
+import de.dh.raaps.ui.controls.profile.InsulinProfileUiState
 import de.dh.raaps.ui.controls.state.CurrentStateView
 import de.dh.raaps.ui.controls.state.createSampleGoodBgUiState
 import de.dh.raaps.ui.screens.history.createSampleHistoryUiState
@@ -251,7 +251,7 @@ fun DashboardContent(
 
             ApsControlCard(
                 modifier = Modifier.fillMaxWidth(),
-                profileUiState = currentTherapyUiState.activeProfile,
+                insulinProfileUiState = currentTherapyUiState.activeProfile,
                 selectedMode = dashboardUiState.apsMode,
                 availableModes = dashboardUiState.availableApsModes,
                 onModeChange = onApsModeSelect,
@@ -282,7 +282,7 @@ fun DashboardPreview() {
             cob = 12.0,
             calculationModel = CarbsInsulinCalculationModel(Minutes(5)),
             currentTherapyUiState = CurrentTherapyUiState(
-                activeProfile = ProfileUiState(
+                activeProfile = InsulinProfileUiState(
                     name = "Normal",
                     activeProfileId = null,
                     isf = BgDelta.fromMgDl(50),
@@ -331,7 +331,7 @@ fun DashboardPermissionsWarningPreview() {
             cob = 12.0,
             calculationModel = CarbsInsulinCalculationModel(Minutes(5)),
             currentTherapyUiState = CurrentTherapyUiState(
-                activeProfile = ProfileUiState(
+                activeProfile = InsulinProfileUiState(
                     name = "Normal",
                     activeProfileId = null,
                     isf = BgDelta.fromMgDl(50),

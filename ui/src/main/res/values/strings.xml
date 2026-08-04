@@ -153,4 +153,5 @@
     <string name="profile_editor_copy_name_format">%1$s (Kopie)</string>
     <string name="label_increased">erhöht</string>
     <string name="label_decreased">reduziert</string>
+    <string name="label_active">Aktiv</string>
 </resources>
