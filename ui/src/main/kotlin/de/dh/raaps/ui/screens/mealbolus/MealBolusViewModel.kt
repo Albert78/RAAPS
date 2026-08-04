@@ -14,7 +14,7 @@ import de.dh.raaps.common.model.MealType
 import de.dh.raaps.common.model.data.Minutes
 import de.dh.raaps.common.model.data.Timestamp
 import de.dh.raaps.core.SystemRegistry
-import de.dh.raaps.core.aps.ExecutionResult
+import de.dh.raaps.core.aps.LockResult
 import de.dh.raaps.core.pump.PumpCommand
 import kotlinx.coroutines.awaitCancellation
 import kotlinx.coroutines.delay
@@ -127,7 +127,7 @@ class MealBolusViewModel(
                     awaitCancellation()
                 }
 
-                if (result is ExecutionResult.Busy) {
+                if (result is LockResult.Busy) {
                     if (retryAttempt == 0) {
                         _uiState.update { it.copy(isBusy = true, lockBusyOwner = result.owner) }
                         delay(3.seconds)

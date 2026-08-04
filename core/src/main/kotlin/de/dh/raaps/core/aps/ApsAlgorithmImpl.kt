@@ -116,7 +116,7 @@ class ApsAlgorithmImpl(
                 onDeliverBolus(result.bolus)
             }
         }
-        if (res is ExecutionResult.Busy) {
+        if (res is LockResult.Busy) {
             // TODO: Show popup to the user about skipping algorithm calculation
             Log.i(TAG, "Algorithm skipping calculation since therapy manager is busy (user interaction?)")
         }

@@ -37,9 +37,9 @@ sealed class ApsRecommendation {
     data class Bolus(val amount: InsulinAmount) : ApsRecommendation()
 }
 
-sealed class ExecutionResult {
-    data object Success : ExecutionResult()
-    data class Busy(val owner: String) : ExecutionResult()
+sealed class LockResult {
+    data object Success : LockResult()
+    data class Busy(val owner: String) : LockResult()
 }
 
 data class DeferredBolus(
@@ -277,7 +277,14 @@ class TherapyManager(
         _recommendations.value += ApsRecommendation.Bolus(amount)
     }
 
-    fun getDeferredBoluses(): List<DeferredBolus> = emptyList()
+    fun addDeferredBolus(deferredBolus: DeferredBolus) {
+        todo()
+    }
+
+    fun getDeferredBoluses(): List<DeferredBolus> {
+        add_management_for_deferred_bolus___also_db()
+        use_management_in_bolus_screen()
+    }
 
     fun coreCancelInsulinJobs() {
         when (systemManager.apsMode.value) {
@@ -305,17 +312,17 @@ class TherapyManager(
 
     /**
      * Tries to acquire a lock for a specific execution block.
-     * If the lock is already held by another system part, returns [ExecutionResult.Busy].
-     * Otherwise, executes the block and returns [ExecutionResult.Success].
+     * If the lock is already held by another system part, returns [LockResult.Busy].
+     * Otherwise, executes the block and returns [LockResult.Success].
      */
-    suspend fun tryAcquire(tag: String, block: suspend () -> Unit): ExecutionResult {
+    suspend fun tryAcquire(tag: String, block: suspend () -> Unit): LockResult {
         if (!executionMutex.tryLock()) {
-            return ExecutionResult.Busy(currentExecutionOwner ?: "Unknown")
+            return LockResult.Busy(currentExecutionOwner ?: "Unknown")
         }
         currentExecutionOwner = tag
         return try {
             block()
-            ExecutionResult.Success
+            LockResult.Success
         } finally {
             currentExecutionOwner = null
             executionMutex.unlock()
