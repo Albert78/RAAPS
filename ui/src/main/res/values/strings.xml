@@ -141,6 +141,14 @@
     <string name="aps_control_adjustment_standard">Standard</string>
     <string name="aps_control_no_insulin_profile">Kein Profil</string>
 
+    <string name="therapy_settings_help_title">Hilfe zu den Einstellungen</string>
+    <string name="therapy_settings_help_insulin_title">Insulin-Profil</string>
+    <string name="therapy_settings_help_insulin_desc">Enthält deine grundlegenden Therapieparameter wie Basalrate, Kohlenhydratfaktor (CR) und Korrekturfaktor (ISF). Diese Werte bestimmen die Basis deiner automatisierten Therapie. Es kann Sinn machen, für Krankheit, veränderte Tagesrhythmen, mehrtägige Sportevents, aber auch Sommer/Winter unterschiedliche Insulinprofile zu verwenden.</string>
+    <string name="therapy_settings_help_bg_title">Ziel-BZ &amp; Niedrig-Schwelle</string>
+    <string name="therapy_settings_help_bg_desc">Hier definierst du deinen gewünschten Blutzucker-Bereich über den gesamten Tag. Das System versucht, dich im Zielbereich zu halten und warnt, wenn die Niedrig-Schwelle unterschritten wird.</string>
+    <string name="therapy_settings_help_adjustment_title">Temporäre Anpassung</string>
+    <string name="therapy_settings_help_adjustment_desc">Ermöglicht es dir, die Therapie kurzfristig an besondere Situationen wie Sport, Schlaf, Alkohol oder Stress anzupassen, indem Insulinmengen prozentual verändert oder Zielwerte verschoben werden.</string>
+
     <string name="aps_control_therapy_adjustment_label">Temporäre Anpassung</string>
     <string name="aps_control_therpay_adjustment_dialog_title">Temporäre Therapie-Anpassung</string>
     <string name="aps_control_therapy_adjustment_custom">Individuell</string>

@@ -19,12 +19,14 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.HelpOutline
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.Adjust
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Tune
 import androidx.compose.material.icons.filled.UnfoldMore
 import androidx.compose.material.icons.filled.VerticalAlignBottom
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ElevatedCard
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
@@ -102,6 +104,7 @@ fun CurrentTherapySettingsContent(
     onSelectProfile: (InsulinProfile) -> Unit
 ) {
     var showInsulinProfileDialog by remember { mutableStateOf(false) }
+    var showHelpDialog by remember { mutableStateOf(false) }
 
     Scaffold(
         topBar = {
@@ -115,7 +118,14 @@ fun CurrentTherapySettingsContent(
                         )
                     }
                 },
-                actions = {}
+                actions = {
+                    IconButton(onClick = { showHelpDialog = true }) {
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Filled.HelpOutline,
+                            contentDescription = null
+                        )
+                    }
+                }
             )
         }
     ) { innerPadding ->
@@ -191,6 +201,61 @@ fun CurrentTherapySettingsContent(
                 showInsulinProfileDialog = false
             },
             onDismiss = { showInsulinProfileDialog = false }
+        )
+    }
+
+    if (showHelpDialog) {
+        TherapySettingsHelpDialog(onDismiss = { showHelpDialog = false })
+    }
+}
+
+@Composable
+private fun TherapySettingsHelpDialog(
+    onDismiss: () -> Unit
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        confirmButton = {
+            TextButton(onClick = onDismiss) {
+                Text(text = stringResource(id = android.R.string.ok))
+            }
+        },
+        title = {
+            Text(text = stringResource(id = R.string.therapy_settings_help_title))
+        },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
+                HelpSection(
+                    title = stringResource(id = R.string.therapy_settings_help_insulin_title),
+                    description = stringResource(id = R.string.therapy_settings_help_insulin_desc)
+                )
+                HelpSection(
+                    title = stringResource(id = R.string.therapy_settings_help_bg_title),
+                    description = stringResource(id = R.string.therapy_settings_help_bg_desc)
+                )
+                HelpSection(
+                    title = stringResource(id = R.string.therapy_settings_help_adjustment_title),
+                    description = stringResource(id = R.string.therapy_settings_help_adjustment_desc)
+                )
+            }
+        }
+    )
+}
+
+@Composable
+private fun HelpSection(title: String, description: String) {
+    Column {
+        Text(
+            text = title,
+            style = MaterialTheme.typography.titleSmall,
+            fontWeight = FontWeight.Bold,
+            color = MaterialTheme.colorScheme.primary
+        )
+        Spacer(modifier = Modifier.height(4.dp))
+        Text(
+            text = description,
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
         )
     }
 }
