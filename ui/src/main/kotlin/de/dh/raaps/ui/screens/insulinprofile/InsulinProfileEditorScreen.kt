@@ -92,7 +92,7 @@ fun InsulinProfileEditorScreen(
     onNavigateUp: () -> Unit
 ) {
     val uiState by viewModel.uiState.collectAsState()
-    val copyNameFormat = stringResource(R.string.profile_editor_copy_name_format)
+    val copyNameFormat = stringResource(R.string.insulin_profile_editor_copy_name_format)
 
     if (uiState.editingProfile != null) {
         InsulinProfileDetailEditor(
@@ -165,7 +165,7 @@ fun InsulinProfileList(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = screenTitle(stringResource(id = R.string.profile_editor_screen_title)),
+                title = screenTitle(stringResource(id = R.string.insulin_profile_editor_screen_title)),
                 navigationIcon = {
                     IconButton(onClick = onNavigateUp) {
                         Icon(
@@ -251,10 +251,10 @@ fun InsulinProfileDetailEditor(
     var showDiscardConfirmation by remember { mutableStateOf(false) }
 
     val tabs = listOf(
-        stringResource(id = R.string.profile_editor_tab_insulin),
-        stringResource(id = R.string.profile_editor_tab_basal),
-        stringResource(id = R.string.profile_editor_tab_isf),
-        stringResource(id = R.string.profile_editor_tab_cr)
+        stringResource(id = R.string.insulin_profile_editor_tab_insulin),
+        stringResource(id = R.string.insulin_profile_editor_tab_basal),
+        stringResource(id = R.string.insulin_profile_editor_tab_isf),
+        stringResource(id = R.string.insulin_profile_editor_tab_cr)
     )
 
     val isNameValid = name.trim().isNotBlank() && isNameUnique(name.trim(), profile.id)
@@ -282,7 +282,7 @@ fun InsulinProfileDetailEditor(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = screenTitle(if (profile.id == ID_UNDEFINED) stringResource(id = R.string.profile_editor_new_profile) else stringResource(id = R.string.profile_editor_edit_profile)),
+                title = screenTitle(if (profile.id == ID_UNDEFINED) stringResource(id = R.string.insulin_profile_editor_new_profile) else stringResource(id = R.string.insulin_profile_editor_edit_profile)),
                 navigationIcon = {
                     IconButton(onClick = ::handleBack) {
                         Icon(
@@ -323,7 +323,7 @@ fun InsulinProfileDetailEditor(
             OutlinedTextField(
                 value = name,
                 onValueChange = { name = it },
-                label = { Text(stringResource(id = R.string.profile_editor_name_label)) },
+                label = { Text(stringResource(id = R.string.insulin_profile_editor_name_label)) },
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(16.dp),
@@ -358,8 +358,8 @@ fun InsulinProfileDetailEditor(
                         onPeakChanged = { peak = it }
                     )
                     1 -> TherapyBlockListEditor(
-                        title = stringResource(id = R.string.profile_editor_basal_title),
-                        description = stringResource(id = R.string.profile_editor_basal_desc),
+                        title = stringResource(id = R.string.insulin_profile_editor_basal_title),
+                        description = stringResource(id = R.string.insulin_profile_editor_basal_desc),
                         blocks = basalBlocks,
                         onBlocksChanged = { basalBlocks = it },
                         step = 0.05,
@@ -368,8 +368,8 @@ fun InsulinProfileDetailEditor(
                         maxValue = BASAL_MAX
                     )
                     2 -> TherapyBlockListEditor(
-                        title = stringResource(id = R.string.profile_editor_isf_title),
-                        description = stringResource(id = R.string.profile_editor_isf_desc),
+                        title = stringResource(id = R.string.insulin_profile_editor_isf_title),
+                        description = stringResource(id = R.string.insulin_profile_editor_isf_desc),
                         blocks = isfBlocks,
                         onBlocksChanged = { isfBlocks = it },
                         step = 1.0,
@@ -378,8 +378,8 @@ fun InsulinProfileDetailEditor(
                         maxValue = ISF_MAX
                     )
                     3 -> TherapyBlockListEditor(
-                        title = stringResource(id = R.string.profile_editor_cr_title),
-                        description = stringResource(id = R.string.profile_editor_cr_desc),
+                        title = stringResource(id = R.string.insulin_profile_editor_cr_title),
+                        description = stringResource(id = R.string.insulin_profile_editor_cr_desc),
                         blocks = crBlocks,
                         onBlocksChanged = { crBlocks = it },
                         step = 0.1,
@@ -395,8 +395,8 @@ fun InsulinProfileDetailEditor(
     if (showDiscardConfirmation) {
         AlertDialog(
             onDismissRequest = { showDiscardConfirmation = false },
-            title = { Text(stringResource(id = R.string.profile_editor_discard_title)) },
-            text = { Text(stringResource(id = R.string.profile_editor_discard_message)) },
+            title = { Text(stringResource(id = R.string.insulin_profile_editor_discard_title)) },
+            text = { Text(stringResource(id = R.string.insulin_profile_editor_discard_message)) },
             confirmButton = {
                 TextButton(onClick = {
                     showDiscardConfirmation = false
@@ -436,7 +436,7 @@ fun InsulinSettingsEditor(
             .padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
-        Text(text = stringResource(id = R.string.profile_editor_insulin_settings_title), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+        Text(text = stringResource(id = R.string.insulin_profile_editor_insulin_settings_title), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
 
         ExposedDropdownMenuBox(
             expanded = expanded,
@@ -446,7 +446,7 @@ fun InsulinSettingsEditor(
                 value = selectedInsulinType.name,
                 onValueChange = {},
                 readOnly = true,
-                label = { Text(stringResource(id = R.string.profile_editor_insulin_type_label)) },
+                label = { Text(stringResource(id = R.string.insulin_profile_editor_insulin_type_label)) },
                 trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
                 modifier = Modifier
                     .menuAnchor(type = ExposedDropdownMenuAnchorType.PrimaryNotEditable, enabled = true)
@@ -472,14 +472,14 @@ fun InsulinSettingsEditor(
             OutlinedTextField(
                 value = dia,
                 onValueChange = { onDiaChanged(it) },
-                label = { Text(stringResource(id = R.string.profile_editor_dia_label)) },
+                label = { Text(stringResource(id = R.string.insulin_profile_editor_dia_label)) },
                 modifier = Modifier.weight(1f),
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
             )
             OutlinedTextField(
                 value = peak,
                 onValueChange = { onPeakChanged(it) },
-                label = { Text(stringResource(id = R.string.profile_editor_peak_label)) },
+                label = { Text(stringResource(id = R.string.insulin_profile_editor_peak_label)) },
                 modifier = Modifier.weight(1f),
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
             )
@@ -612,8 +612,8 @@ fun TherapyBlockListEditor(
 fun InsulinProfileHelpDialog(onDismiss: () -> Unit) {
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text(stringResource(id = R.string.profile_editor_help_title)) },
-        text = { Text(stringResource(id = R.string.profile_editor_help_message)) },
+        title = { Text(stringResource(id = R.string.insulin_profile_editor_help_title)) },
+        text = { Text(stringResource(id = R.string.insulin_profile_editor_help_message)) },
         confirmButton = {
             TextButton(onClick = onDismiss) {
                 Text(stringResource(id = android.R.string.ok))

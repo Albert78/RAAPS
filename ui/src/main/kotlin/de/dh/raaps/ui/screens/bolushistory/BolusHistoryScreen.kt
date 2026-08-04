@@ -295,7 +295,7 @@ fun AddManualBolusDialog(
                             value = selectedInsulinType?.name ?: "",
                             onValueChange = {},
                             readOnly = true,
-                            label = { Text(stringResource(id = R.string.profile_editor_insulin_type_label)) },
+                            label = { Text(stringResource(id = R.string.insulin_profile_editor_insulin_type_label)) },
                             trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
                             colors = ExposedDropdownMenuDefaults.outlinedTextFieldColors(),
                             modifier = Modifier
