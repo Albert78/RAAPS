@@ -22,7 +22,7 @@ class SystemWakeServiceImpl(
 ) : SystemWakeService {
 
     private val handlers = ConcurrentHashMap<String, WakeupHandler>()
-    private val busyStates = ConcurrentHashMap<String, AtomicInteger>()
+    private val busyCount = AtomicInteger(0)
 
     private val powerManager = context.getSystemService(Context.POWER_SERVICE) as PowerManager
     private val wakeLock = powerManager.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, "raaps:GlobalWakeLock")
@@ -72,9 +72,9 @@ class SystemWakeServiceImpl(
     }
 
     override fun acquireBusyState(tag: String) {
-        val count = busyStates.getOrPut(tag) { AtomicInteger(0) }.incrementAndGet()
-        Log.v(TAG, "BusyState acquired for $tag (count: $count)")
-        
+        val count = busyCount.incrementAndGet()
+        Log.v(TAG, "BusyState acquired for $tag (global count: $count)")
+
         synchronized(wakeLock) {
             if (!wakeLock.isHeld) {
                 wakeLock.acquire(30_000) // Default timeout as safety net
@@ -83,20 +83,19 @@ class SystemWakeServiceImpl(
     }
 
     override fun releaseBusyState(tag: String) {
-        val atomicCount = busyStates[tag] ?: return
-        val count = atomicCount.decrementAndGet()
-        Log.v(TAG, "BusyState released for $tag (count: $count)")
+        val count = busyCount.decrementAndGet()
+        Log.v(TAG, "BusyState released for $tag (global count: $count)")
 
         if (count < 0) {
-            atomicCount.set(0)
+            Log.e(TAG, "Detected unbalanced busy state release for tag '$tag'! Global busyCount reached $count. Check for missing acquireBusyState calls. Resetting to 0.")
+            busyCount.set(0)
         }
 
         checkAndReleaseWakeLock()
     }
 
     private fun checkAndReleaseWakeLock() {
-        val totalBusy = busyStates.values.sumOf { it.get() }
-        if (totalBusy <= 0) {
+        if (busyCount.get() <= 0) {
             synchronized(wakeLock) {
                 if (wakeLock.isHeld) {
                     try {

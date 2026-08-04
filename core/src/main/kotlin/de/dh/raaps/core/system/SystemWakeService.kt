@@ -38,13 +38,18 @@ interface SystemWakeService {
     fun scheduleWakeup(tag: String, wakeupId: UInt?, timestamp: Timestamp)
 
     /**
-     * Acquires a wake lock for the given tag to prevent the device from sleeping.
-     * The lock is reference counted per tag.
+     * Acquires a wake lock to prevent the device from sleeping.
+     * The lock is reference counted globally. Each call to this method must be
+     * balanced with a call to [releaseBusyState].
+     *
+     * @param tag Informational tag identifying the component acquiring the busy state.
      */
     fun acquireBusyState(tag: String)
 
     /**
-     * Releases a previously acquired wake lock for the given tag.
+     * Releases a previously acquired wake lock.
+     *
+     * @param tag Informational tag identifying the component releasing the busy state.
      */
     fun releaseBusyState(tag: String)
 
