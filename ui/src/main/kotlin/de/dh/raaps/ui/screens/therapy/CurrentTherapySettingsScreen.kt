@@ -20,15 +20,12 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
-import androidx.compose.material.icons.automirrored.filled.List
 import androidx.compose.material.icons.filled.Adjust
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Edit
-import androidx.compose.material.icons.filled.EditNote
-import androidx.compose.material.icons.filled.RadioButtonChecked
-import androidx.compose.material.icons.filled.RadioButtonUnchecked
 import androidx.compose.material.icons.filled.SwapHoriz
 import androidx.compose.material.icons.filled.Tune
+import androidx.compose.material.icons.filled.UnfoldMore
 import androidx.compose.material.icons.filled.VerticalAlignBottom
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ElevatedCard
@@ -67,12 +64,18 @@ import de.dh.raaps.common.model.data.BgValue
 import de.dh.raaps.common.model.data.Block
 import de.dh.raaps.common.model.data.InsulinProfile
 import de.dh.raaps.common.model.data.Minutes
+import de.dh.raaps.common.ui.ConfigurableDisplayStrategy
 import de.dh.raaps.common.ui.composables.ProfileSelectionDialog
 import de.dh.raaps.common.ui.composables.screenTitle
 import de.dh.raaps.common.ui.theme.AppTheme
+import de.dh.raaps.common.ui.theme.NeutralGrey
+import de.dh.raaps.common.ui.theme.SoftBlue
 import de.dh.raaps.common.ui.theme.SoftGreen
+import de.dh.raaps.common.ui.theme.SoftRed
 import de.dh.raaps.ui.R
 import de.dh.raaps.ui.controls.dialogs.BgEditorDialog
+import de.dh.raaps.ui.controls.dialogs.InsulinAdjustmentDialog
+import de.dh.raaps.ui.controls.profile.AdjustmentPreset
 import de.dh.raaps.ui.controls.profile.CurrentTherapyUiState
 import de.dh.raaps.ui.controls.profile.CurrentTherapyViewModel
 import de.dh.raaps.ui.controls.profile.ProfileUiState
@@ -90,7 +93,8 @@ fun CurrentTherapySettingsScreen(
         onNavigateUp = onNavigateUp,
         onNavigateToProfileEditor = onNavigateToProfileEditor,
         onSelectProfile = { viewModel.selectInsulinProfile(it) },
-        onUpdateDefaultBgBlocks = { viewModel.updateDefaultBgBlocks(it) }
+        onUpdateDefaultBgBlocks = { viewModel.updateDefaultBgBlocks(it) },
+        onUpdateAdjustmentPercentage = { viewModel.setAdjustmentPercentage(it) }
     )
 }
 
@@ -101,10 +105,12 @@ fun CurrentTherapySettingsContent(
     onNavigateUp: () -> Unit,
     onNavigateToProfileEditor: () -> Unit,
     onSelectProfile: (InsulinProfile) -> Unit,
-    onUpdateDefaultBgBlocks: (List<BgBlock>) -> Unit
+    onUpdateDefaultBgBlocks: (List<BgBlock>) -> Unit,
+    onUpdateAdjustmentPercentage: (Int) -> Unit
 ) {
     var showProfileDialog by remember { mutableStateOf(false) }
     var showBgEditorDialog by remember { mutableStateOf(false) }
+    var showAdjustmentDialog by remember { mutableStateOf(false) }
 
     Scaffold(
         topBar = {
@@ -148,7 +154,8 @@ fun CurrentTherapySettingsContent(
                 ActiveProfileCard(
                     profile = uiState.activeProfile,
                     onSwitchProfileClick = { showProfileDialog = true },
-                    onEditProfileClick = onNavigateToProfileEditor
+                    onEditProfileClick = onNavigateToProfileEditor,
+                    onAdjustmentClick = { showAdjustmentDialog = true }
                 )
             }
 
@@ -191,6 +198,17 @@ fun CurrentTherapySettingsContent(
             onDismiss = { showBgEditorDialog = false }
         )
     }
+
+    if (showAdjustmentDialog) {
+        InsulinAdjustmentDialog(
+            currentValue = uiState.activeProfile.adjustmentPercentage,
+            presets = uiState.adjustmentPresets,
+            onValueChange = {
+                onUpdateAdjustmentPercentage(it)
+            },
+            onDismissRequest = { showAdjustmentDialog = false }
+        )
+    }
 }
 
 @Composable
@@ -224,6 +242,7 @@ private fun ActiveProfileCard(
     profile: ProfileUiState,
     onSwitchProfileClick: () -> Unit,
     onEditProfileClick: () -> Unit,
+    onAdjustmentClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     val locale = LocalLocale.current.platformLocale
@@ -275,7 +294,7 @@ private fun ActiveProfileCard(
                             modifier = Modifier.size(14.dp)
                         )
                         Text(
-                            text = "Aktiv",
+                            text = stringResource(id = R.string.current_therapy_active_badge),
                             style = MaterialTheme.typography.labelMedium,
                             color = MaterialTheme.colorScheme.onSurface,
                             fontWeight = FontWeight.SemiBold
@@ -292,21 +311,21 @@ private fun ActiveProfileCard(
                 MetricChip(
                     label = stringResource(id = de.dh.raaps.common.R.string.therapy_basal_label),
                     value = String.format(locale, "%.2f", profile.basal),
-                    unit = "U/h",
+                    unit = stringResource(id = R.string.unit_u_per_h),
                     modifier = Modifier.weight(1f)
                 )
 
                 MetricChip(
                     label = stringResource(id = de.dh.raaps.common.R.string.therapy_cr_label),
                     value = String.format(locale, "%.1f", profile.cr),
-                    unit = "g/U",
+                    unit = stringResource(id = R.string.unit_g_per_u),
                     modifier = Modifier.weight(1f)
                 )
 
                 MetricChip(
                     label = stringResource(id = de.dh.raaps.common.R.string.therapy_isf_label),
                     value = profile.isf.mgdl.toString(),
-                    unit = "mg/dL/U",
+                    unit = stringResource(id = R.string.unit_mgdl_per_u),
                     modifier = Modifier.weight(1f)
                 )
             }
@@ -318,7 +337,7 @@ private fun ActiveProfileCard(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
-                    text = "DIA: ${formatMinutes(profile.dia)}",
+                    text = stringResource(id = R.string.current_therapy_dia_label_format, formatMinutes(profile.dia)),
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -328,10 +347,88 @@ private fun ActiveProfileCard(
                     color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)
                 )
                 Text(
-                    text = "Peak: ${formatMinutes(profile.peak)}",
+                    text = stringResource(id = R.string.current_therapy_peak_label_format, formatMinutes(profile.peak)),
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
+            }
+
+            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
+
+            // Percentage Adjustment Clickable Section
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clickable { onAdjustmentClick() }
+                    .padding(vertical = 4.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(10.dp),
+                    modifier = Modifier.weight(1f)
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.UnfoldMore,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.size(22.dp)
+                    )
+                    Column {
+                        Text(
+                            text = stringResource(id = R.string.aps_control_adjustment_dialog_title),
+                            style = MaterialTheme.typography.bodyMedium,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.onSurface
+                        )
+                        Text(
+                            text = stringResource(id = R.string.aps_control_adjustment_dialog_description),
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                }
+
+                Spacer(modifier = Modifier.width(8.dp))
+
+                val displayStrategy = ConfigurableDisplayStrategy(
+                    positiveColor = SoftRed,
+                    negativeColor = SoftBlue,
+                    neutralColor = NeutralGrey,
+                    positivePrefix = "+",
+                    suffix = "%",
+                    neutralLabel = stringResource(R.string.aps_control_adjustment_neutral)
+                )
+
+                Surface(
+                    color = if (profile.adjustmentPercentage == 0) {
+                        MaterialTheme.colorScheme.surfaceVariant
+                    } else {
+                        displayStrategy.color(profile.adjustmentPercentage).copy(alpha = 0.15f)
+                    },
+                    shape = RoundedCornerShape(8.dp),
+                    border = BorderStroke(
+                        width = 1.dp,
+                        color = if (profile.adjustmentPercentage == 0) {
+                            MaterialTheme.colorScheme.outlineVariant
+                        } else {
+                            displayStrategy.color(profile.adjustmentPercentage)
+                        }
+                    )
+                ) {
+                    Text(
+                        text = displayStrategy.format(profile.adjustmentPercentage),
+                        style = MaterialTheme.typography.labelMedium,
+                        fontWeight = FontWeight.Bold,
+                        color = if (profile.adjustmentPercentage == 0) {
+                            MaterialTheme.colorScheme.onSurfaceVariant
+                        } else {
+                            displayStrategy.color(profile.adjustmentPercentage)
+                        },
+                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp)
+                    )
+                }
             }
 
             HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
@@ -352,7 +449,7 @@ private fun ActiveProfileCard(
                         modifier = Modifier.size(18.dp)
                     )
                     Spacer(modifier = Modifier.width(6.dp))
-                    Text(text = "Profil wechseln")
+                    Text(text = stringResource(id = R.string.current_therapy_switch_profile_button))
                 }
 
                 Spacer(modifier = Modifier.width(8.dp))
@@ -367,7 +464,7 @@ private fun ActiveProfileCard(
                         modifier = Modifier.size(18.dp)
                     )
                     Spacer(modifier = Modifier.width(4.dp))
-                    Text(text = "Bearbeiten")
+                    Text(text = stringResource(id = R.string.current_therapy_manage_profile_button))
                 }
             }
         }
@@ -428,17 +525,17 @@ private fun BgTargetCard(
     val lows = bgBlocks.map { it.lowThreshold.mgdl }.distinct()
 
     val targetValue = if (targets.size == 1) {
-        "${targets.first()} mg/dL"
+        stringResource(id = R.string.bg_value_single_format, targets.first())
     } else if (targets.isNotEmpty()) {
-        "${targets.minOrNull()}–${targets.maxOrNull()} mg/dL"
+        stringResource(id = R.string.bg_value_range_format, targets.minOrNull() ?: 0, targets.maxOrNull() ?: 0)
     } else {
         "-"
     }
 
     val lowValue = if (lows.size == 1) {
-        "${lows.first()} mg/dL"
+        stringResource(id = R.string.bg_value_single_format, lows.first())
     } else if (lows.isNotEmpty()) {
-        "${lows.minOrNull()}–${lows.maxOrNull()} mg/dL"
+        stringResource(id = R.string.bg_value_range_format, lows.minOrNull() ?: 0, lows.maxOrNull() ?: 0)
     } else {
         "-"
     }
@@ -548,119 +645,15 @@ private fun BgTargetCard(
 }
 
 @Composable
-private fun AvailableProfilesCard(
-    profiles: List<InsulinProfile>,
-    activeProfileId: Long?,
-    onSelectProfile: (InsulinProfile) -> Unit,
-    onManageProfilesClick: () -> Unit,
-    modifier: Modifier = Modifier
-) {
-    val locale = LocalLocale.current.platformLocale
-
-    OutlinedCard(
-        modifier = modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.outlinedCardColors(
-            containerColor = MaterialTheme.colorScheme.surface
-        ),
-        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
-    ) {
-        Column(modifier = Modifier.fillMaxWidth()) {
-            profiles.forEachIndexed { index, profile ->
-                val isActive = profile.id == activeProfileId
-
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clickable { onSelectProfile(profile) }
-                        .padding(horizontal = 16.dp, vertical = 12.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Icon(
-                        imageVector = if (isActive) Icons.Default.RadioButtonChecked else Icons.Default.RadioButtonUnchecked,
-                        contentDescription = null,
-                        tint = if (isActive) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.size(22.dp)
-                    )
-
-                    Spacer(modifier = Modifier.width(12.dp))
-
-                    Column(modifier = Modifier.weight(1f)) {
-                        Text(
-                            text = profile.name,
-                            style = MaterialTheme.typography.bodyLarge,
-                            fontWeight = if (isActive) FontWeight.Bold else FontWeight.Medium,
-                            color = if (isActive) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
-                        )
-
-                        val basal = profile.basalBlocks.firstOrNull()?.amount ?: 0.0
-                        val cr = profile.crBlocks.firstOrNull()?.amount ?: 0.0
-                        val isf = profile.isfBlocks.firstOrNull()?.amount ?: 0.0
-
-                        Text(
-                            text = "Basal: ${String.format(locale, "%.1f", basal)} U/h | CR: ${String.format(locale, "%.1f", cr)} | ISF: ${isf.toInt()}",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
-
-                    if (isActive) {
-                        Surface(
-                            color = SoftGreen.copy(alpha = 0.15f),
-                            shape = RoundedCornerShape(12.dp)
-                        ) {
-                            Text(
-                                text = "Aktiv",
-                                style = MaterialTheme.typography.labelSmall,
-                                color = SoftGreen,
-                                fontWeight = FontWeight.Bold,
-                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp)
-                            )
-                        }
-                    }
-                }
-
-                if (index < profiles.size - 1) {
-                    HorizontalDivider(
-                        modifier = Modifier.padding(horizontal = 16.dp),
-                        color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f)
-                    )
-                }
-            }
-
-            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
-
-            TextButton(
-                onClick = onManageProfilesClick,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(8.dp),
-                shape = RoundedCornerShape(12.dp)
-            ) {
-                Icon(
-                    imageVector = Icons.Default.EditNote,
-                    contentDescription = null,
-                    modifier = Modifier.size(18.dp)
-                )
-                Spacer(modifier = Modifier.width(6.dp))
-                Text(
-                    text = stringResource(id = R.string.profile_editor_screen_title),
-                    style = MaterialTheme.typography.labelLarge
-                )
-            }
-        }
-    }
-}
-
 private fun formatMinutes(minutes: Minutes): String {
     val total = minutes.value.toInt()
-    if (total <= 0) return "0 Min."
+    if (total <= 0) return stringResource(id = R.string.duration_minutes_format, 0)
     val hours = total / 60
     val mins = total % 60
     return when {
-        hours > 0 && mins > 0 -> "$hours Std. $mins Min."
-        hours > 0 -> "$hours Std."
-        else -> "$mins Min."
+        hours > 0 && mins > 0 -> stringResource(id = R.string.duration_hours_and_minutes_format, hours, mins)
+        hours > 0 -> stringResource(id = R.string.duration_hours_format, hours)
+        else -> stringResource(id = R.string.duration_minutes_format, mins)
     }
 }
 
@@ -713,6 +706,10 @@ fun CurrentTherapySettingsPreview() {
         availableProfiles = listOf(mockProfile1, mockProfile2),
         defaultBgBlocks = listOf(
             BgBlock(Minutes(1440), BgValue.fromMgDl(100), BgValue.fromMgDl(70))
+        ),
+        adjustmentPresets = listOf(
+            AdjustmentPreset("Normal", 0),
+            AdjustmentPreset("Sport", -20)
         )
     )
 
@@ -722,7 +719,8 @@ fun CurrentTherapySettingsPreview() {
             onNavigateUp = {},
             onNavigateToProfileEditor = {},
             onSelectProfile = {},
-            onUpdateDefaultBgBlocks = {}
+            onUpdateDefaultBgBlocks = {},
+            onUpdateAdjustmentPercentage = {}
         )
     }
 }

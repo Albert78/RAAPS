@@ -94,6 +94,19 @@
     <string name="current_therapy_bg_title">Ziel-BZ &amp; Low-Schwelle</string>
     <string name="current_therapy_low_threshold_label_singular">Niedrig-Schwelle</string>
     <string name="current_therapy_low_threshold_label_plural">Niedrig-Schwellen</string>
+    <string name="current_therapy_active_badge">Aktiv</string>
+    <string name="current_therapy_switch_profile_button">Profil wechseln</string>
+    <string name="current_therapy_manage_profile_button">Verwalten</string>
+    <string name="current_therapy_dia_label_format">DIA: %1$s</string>
+    <string name="current_therapy_peak_label_format">Peak: %1$s</string>
+    <string name="duration_minutes_format">%1$d Min.</string>
+    <string name="duration_hours_format">%1$d Std.</string>
+    <string name="duration_hours_and_minutes_format">%1$d Std. %2$d Min.</string>
+    <string name="unit_u_per_h">U/h</string>
+    <string name="unit_g_per_u">g/U</string>
+    <string name="unit_mgdl_per_u">mg/dL/U</string>
+    <string name="bg_value_single_format">%1$d mg/dL</string>
+    <string name="bg_value_range_format">%1$d–%2$d mg/dL</string>
 
     <string name="recommendation_notification_channel_name">Behandlungsempfehlungen</string>
     <string name="recommendation_title_carbs">Essensempfehlung</string>
