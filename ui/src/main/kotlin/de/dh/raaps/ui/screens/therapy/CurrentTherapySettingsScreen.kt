@@ -149,14 +149,21 @@ fun CurrentTherapySettingsContent(
                 Spacer(modifier = Modifier.height(8.dp))
 
                 // BG Target & Low Threshold Card
+                val isTargetOverridden = uiState.activeInsulinProfile.targetBgOverride != null
+                val isLowOverridden = uiState.activeInsulinProfile.lowThresholdOverride != null
+                val isBgOverridden = isTargetOverridden || isLowOverridden
+
                 SectionHeader(
                     icon = Icons.Default.Adjust,
-                    title = stringResource(id = R.string.current_therapy_bg_title)
+                    title = stringResource(id = R.string.current_therapy_bg_title),
+                    isOverridden = isBgOverridden
                 )
 
                 BgTargetCard(
                     bgBlocks = uiState.defaultBgBlocks,
-                    onClick = onNavigateToBgEditor
+                    onClick = onNavigateToBgEditor,
+                    isTargetOverridden = isTargetOverridden,
+                    isLowOverridden = isLowOverridden
                 )
 
                 Spacer(modifier = Modifier.height(8.dp))
@@ -192,7 +199,8 @@ fun CurrentTherapySettingsContent(
 private fun SectionHeader(
     icon: androidx.compose.ui.graphics.vector.ImageVector,
     title: String,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    isOverridden: Boolean = false
 ) {
     Row(
         verticalAlignment = Alignment.CenterVertically,
@@ -208,7 +216,7 @@ private fun SectionHeader(
         Text(
             text = title,
             style = MaterialTheme.typography.titleMedium,
-            color = MaterialTheme.colorScheme.onSurface,
+            color = if (isOverridden) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.onSurface,
             fontWeight = FontWeight.Bold
         )
     }
@@ -360,7 +368,9 @@ private fun ActiveInsulinProfileCard(
 private fun BgTargetCard(
     bgBlocks: List<BgBlock>,
     onClick: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    isTargetOverridden: Boolean = false,
+    isLowOverridden: Boolean = false
 ) {
     val targets = bgBlocks.map { it.target.mgdl }.distinct()
     val lows = bgBlocks.map { it.lowThreshold.mgdl }.distinct()
@@ -403,13 +413,13 @@ private fun BgTargetCard(
                 horizontalArrangement = Arrangement.spacedBy(12.dp)
             ) {
                 Surface(
-                    color = MaterialTheme.colorScheme.primaryContainer,
+                    color = if (isTargetOverridden) MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f) else MaterialTheme.colorScheme.primaryContainer,
                     shape = RoundedCornerShape(12.dp)
                 ) {
                     Icon(
                         imageVector = Icons.Default.Adjust,
                         contentDescription = null,
-                        tint = MaterialTheme.colorScheme.onPrimaryContainer,
+                        tint = if (isTargetOverridden) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.onPrimaryContainer,
                         modifier = Modifier
                             .padding(8.dp)
                             .size(24.dp)
@@ -429,7 +439,7 @@ private fun BgTargetCard(
                             text = targetValue,
                             style = MaterialTheme.typography.titleMedium,
                             fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.onSurface
+                            color = if (isTargetOverridden) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.onSurface
                         )
                         Spacer(modifier = Modifier.width(4.dp))
                         Text(
@@ -437,6 +447,13 @@ private fun BgTargetCard(
                             style = MaterialTheme.typography.labelSmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.8f),
                             modifier = Modifier.padding(bottom = 2.dp)
+                        )
+                    }
+                    if (isTargetOverridden) {
+                        Text(
+                            text = stringResource(id = R.string.label_adjusted),
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }
                 }
@@ -454,13 +471,13 @@ private fun BgTargetCard(
                 horizontalArrangement = Arrangement.spacedBy(12.dp)
             ) {
                 Surface(
-                    color = MaterialTheme.colorScheme.errorContainer,
+                    color = if (isLowOverridden) MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f) else MaterialTheme.colorScheme.errorContainer,
                     shape = RoundedCornerShape(12.dp)
                 ) {
                     Icon(
                         imageVector = Icons.Default.VerticalAlignBottom,
                         contentDescription = null,
-                        tint = MaterialTheme.colorScheme.onErrorContainer,
+                        tint = if (isLowOverridden) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.onErrorContainer,
                         modifier = Modifier
                             .padding(8.dp)
                             .size(24.dp)
@@ -480,7 +497,7 @@ private fun BgTargetCard(
                             text = lowValue,
                             style = MaterialTheme.typography.titleMedium,
                             fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.onSurface
+                            color = if (isLowOverridden) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.onSurface
                         )
                         Spacer(modifier = Modifier.width(4.dp))
                         Text(
@@ -488,6 +505,13 @@ private fun BgTargetCard(
                             style = MaterialTheme.typography.labelSmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.8f),
                             modifier = Modifier.padding(bottom = 2.dp)
+                        )
+                    }
+                    if (isLowOverridden) {
+                        Text(
+                            text = stringResource(id = R.string.label_adjusted),
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }
                 }

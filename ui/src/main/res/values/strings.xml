@@ -166,6 +166,7 @@
     <string name="label_increased">erhöht</string>
     <string name="label_decreased">reduziert</string>
     <string name="label_active">Aktiv</string>
+    <string name="label_adjusted">(angepasst)</string>
 
     <string name="dashboard_meal_bolus_button">Mahlzeit/Korrektur</string>
     <string name="meal_bolus_screen_title">Bolus-Rechner</string>
