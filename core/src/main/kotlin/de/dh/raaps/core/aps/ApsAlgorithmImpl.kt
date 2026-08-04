@@ -1,7 +1,6 @@
 package de.dh.raaps.core.aps
 
 import de.dh.raaps.common.model.InsulinAmount
-import de.dh.raaps.common.model.MS_PER_HOUR
 import de.dh.raaps.common.model.calculation.CarbsInsulinCalculationModel
 import de.dh.raaps.common.model.data.BgDelta
 import de.dh.raaps.common.model.data.BgReading
@@ -23,8 +22,8 @@ class ApsAlgorithmImpl(
     val therapyManager: TherapyManager,
     val onCancelInsulinJobs: () -> Unit,
     val onDeliverBolus: (amount: InsulinAmount) -> Unit,
-    val onCheckZeroTemp: () -> Boolean,
-    val onZeroTemp: (durationInHours: Int) -> Unit,
+    val onCheckSetTemp: () -> Boolean,
+    val onSetTempBasal: (durationInHours: Int, unitsPerHour: Double) -> Unit,
     val onCarbsHint: (Int) -> Unit,
 ): ApsAlgorithm {
     val sampledBgReadings =
@@ -105,25 +104,26 @@ class ApsAlgorithmImpl(
         val avgCurrentDeviationPerTick = calcAvgDeviationPerTick(DEVIATION_TIME_BASE)
         // Assumption: That deviation will be continued in the future but will fade away
 
-        val now = timeline.getNowTick()
+        val nowTick = timeline.getNowTick()
+        val now = Timestamp.now()
 
         // Move the prediction window forward. It always covers roughly our BG readings history cache
         // to be able to calculate deviations between the static predictions and the actual readings.
-        predictionModel.advanceToTick(now.minus(PRESERVE_PREDICTIONS_PAST_TIME))
+        predictionModel.advanceToTick(nowTick.minus(PRESERVE_PREDICTIONS_PAST_TIME))
 
         // Stage 1: Influence of meals and insulin - This is updated when metabolic events occur,
         // the data is reused in succeeding calculation calls until another metabolic event occurs.
 
         // Materialize assumed ISF and CR values, update predicted BGI if changed, update BG if changed
-        val continueCalculations = predictionModel.calculatePredictionStates_2_3_4(currentBgFiltered, avgCurrentDeviationPerTick, therapyManager)
+        predictionModel.calculatePredictionStates_2_3_4(currentBgFiltered, avgCurrentDeviationPerTick, therapyManager)
 
-        if (!continueCalculations) {
-            // Base values didn't change and predictions came true, just keep all decisions already made.
-            return
-        }
-
+        // We cancel all insulin jobs including temporary basal rate - this means, the following code
+        // must calculate:
+        // - Carbs hints for low bg
+        // - Deferred meal boluses
+        // - Currection boluses
+        // - Basal
         onCancelInsulinJobs()
-        predictionModel.clearTempBasalsStage_5()
 
         val bgSettings = therapyManager.getBgSettings()
         val targetBg = bgSettings.first
@@ -132,122 +132,95 @@ class ApsAlgorithmImpl(
         val pumpInsulinType = therapyManager.getPumpInsulinType()
         val insulinPeakTicks = timeline.inTicks(pumpInsulinType.peak)
 
-        // Goal 1: Get out of a current or impending low by lowering your basal rate early
+        // -------------------------------- Low handling -------------------------------------------
+
+        // Step 1: Get out of a current or impending low by suggesting carbs
         // Find the next occurrence where the value falls below the minimum; find the minimum with time
-        predictionModel.findNext(startAt = now) {
-            it.predictedBg1 < targetBg
-        }?.let { firstLowPoint ->
-            val basalTimeBeforeLowPoint = Tick((firstLowPoint.tick.value - insulinPeakTicks * 1.5).toInt()).timestamp
-            val basalRate = therapyManager.getBasalPerHour(basalTimeBeforeLowPoint)
-            val isf = therapyManager.getIsfFactor(basalTimeBeforeLowPoint)
-            val zeroTempDeltaBgPerHour = (basalRate * isf).mgdl.toDouble()
-            val nextMin = predictionModel.findNextBgMin(startAt = firstLowPoint.tick, returnLatestIfFalling = true) ?: return@let
-            val bgError = targetBg - nextMin.predictedBg1 + MIN_BG_SAFETY_MARGIN
-            // TODO: Check if zero temp is available. If not, issue carbs hint.
-            // Also issue carbs hint if zero temp isn't sufficient.
-            val startZeroTemp = maxOf(
-                nextMin.tick.minusHours((bgError.mgdl / zeroTempDeltaBgPerHour).toInt()).
-                    // We must drop the basal long time before the next minimum
-                    // - to avoid falling to min and
-                    // - because of the long insulin effect.
-                    // How long would be the best? I don't know. Let's take twice the peak time as first approximation.
-                    minus(insulinPeakTicks * 2),
-                now
-            )
-            // We expect that when the earliest time to reduce the temp basal is `startZeroTemp`.
-            // Since we don't issue treatments for the future for safety, we'll only issue the pump
-            // command if it's due now.
-            if (startZeroTemp <= now) {
-                val zeroTempDurationHours =
-                    (nextMin.tick.timestamp - startZeroTemp.timestamp).floorDiv(MS_PER_HOUR).toInt()
-                onZeroTemp(zeroTempDurationHours)
+        predictionModel.findNext(startAt = nowTick, until = nowTick.plusMinutes(LOW_WARNING_THRESHOLD.value.toInt())) {
+            it.predictedBg < lowThreshold + LOW_BG_SAFETY_MARGIN
+        }?.let { _ ->
+            // TODO: This handling is for "normal" lows. We should also check if there is much more insulin
+            // then carbs, e.g. BG prediction dropping fast. If this is the situation, tell the user to manually check the situation.
+            onZeroTemp(1)
+
+            // We're too low. Find out, now low we'll come to calculate the amount of suggested carbs.
+
+            // Correct the minimum BG for twice the peak time of fast KE -> Don't look into the future too much
+            val bgMin = predictionModel.findBgMin(startAt = nowTick, nowTick.plusMinutes(FAST_KE_DEFAULT_PEAK.value.toInt()))
+            if (bgMin != null && bgMin.predictedBg.isValid()) {
+                val bgError = targetBg - bgMin.predictedBg
+                val carbsInG = bgError /
+                        therapyManager.getIsfFactor(now) *
+                        therapyManager.getCrFactor(now)
+                onCarbsHint(carbsInG.toInt())
             }
-            predictionModel.setTempBasalDeviationStage_5(-basalRate, startZeroTemp, nextMin.tick)
+            return // Stop further processing
         }
 
-        predictionModel.calculatePredictionsWithTempBasalStage_6()
+        val bgMinus15 = sampledBgReadings.getAt(nowTick.minusMinutes(15))
+        val bg15Trend = if (bgMinus15.isValid() && currentBgFiltered.isValid())
+            currentBgFiltered - bgMinus15
+        else
+            BgDelta(0)
 
-        // Goal 2: Correct the next upcoming high by administering insulin early, without subsequently dropping into a low
+            // Step 2: If Bg is under normal and further falling, defer ongoing meal boluses and decrease basal
+        if (currentBgFiltered < targetBg && bg15Trend < BgDelta(0)) {
+            reduce_basis() um BG-Error
+            if (currentBgFiltered < targetBg - BgDelta(20)) {
+                return
+            }
+            return
+        }
+
+        // -------------------------------- Meal boluses -------------------------------------------
+
+        // Step 3: Administer scheduled meal boluses
+        Todo()
+
+        // -------------------------------- High handling ------------------------------------------
+
+        Todo() // Das folgende nur, wenn wir nicht unter starken Essenseinfluss sind, wo wir sowieso hoch kommen werden!
+        // Step 4: Correct the next upcoming high by administering insulin early
         // Find the next high along with the time, then find the next low along with the time
-        predictionModel.findNext(startAt = now) {
-            it.predictedBg2 > targetBg + BgValue.fromMgDl(10)
+        predictionModel.findNext(startAt = nowTick) {
+            it.predictedBg > (targetBg - BgDelta.fromMgDl(10))
         }?.let { firstHighPoint ->
-            val nextMax = predictionModel.findNextBgMax(startAt = firstHighPoint.tick, returnLatestIfRising = true) ?: return@let
-            val bgError = nextMax.predictedBg2 - targetBg
-            if (bgError > BgDelta(0)) {
-                // Try to reduce BG by bgError
+            val bgError = firstHighPoint.predictedBg - targetBg
+            // Try to reduce BG by bgError
 
-                // Attempts to find the best possible insulin doses and timing for correction with limited computational effort
-                // Basic heuristic: We always try to administer insulin as early as possible to keep blood glucose levels low.
-                // In the worst case, this can lead to larger spikes.
+            var bolusAmount = minOf(bgError / isf, maxCorrectionAmount)
 
-                val minAfterMax = predictionModel.findNextBgMin(startAt = nextMax.tick, returnLatestIfFalling = true)
+            // Safety validation: The calculated correction dose is verified against the
+            // prediction model. If the simulated insulin action results in a projected
+            // dip below the target range at any point within the prediction window,
+            // the dose is iteratively reduced until safety is ensured.
+            // The remaining correction will be calculated in one of the next cycles, when
+            // BG has risen higher again.
+            val settings = therapyManager.getActiveTherapySettings()
+            val dia = settings.insulinProfile.dia
+            val peak = settings.insulinProfile.peak
 
-                // Insulin correction amount: Try correction based on bgError, but limited by lowBuffer so
-                // that we don't become low due to our IOB
-                val lowBuffer = minAfterMax?.let { it.predictedBg2 - lowThreshold } // We have that much leeway for the correction
-                val maxCorrection = if (lowBuffer == null)
-                    bgError
-                else
-                    BgDelta.fromMgDl(minOf(bgError.mgdl, lowBuffer.mgdl))
-
-                val isf = therapyManager.getIsfFactor(firstHighPoint.tick.timestamp)
-                val maxCorrectionAmount = maxCorrection / isf
-
-                // We've found the next maximum before, so we can assume a monotonous rising BG curve.
-
-                // Now try to find the correct time allocation of one or more parts of the calculated
-                // correction insulin, which depends on the slope of the BG curve.
-
-                // The next part checks if we can apply all necessary insulin in a single application
-                // or if we must divide the insulin in multiple parts because the blood glucose
-                // raises too slowly.
-
-                // Proactive correction strategy: To effectively dampen the glucose rise,
-                // the peak insulin action is synchronized with the onset of the predicted
-                // hyperglycemia. This allows for the earliest possible intervention without
-                // increasing the risk of an immediate drop.
-                // This is a heuristic which seems well to me but could be improved in the future.
-                val insulinTick = maxOf(firstHighPoint.tick.minus(insulinPeakTicks), now)
-                if (insulinTick > now) {
-                    // Don't schedule the insulin in the future, we never know what will happen...
-                    // (User could change the target temporarily, user could do sports, ...)
-                    return@let
+            predictionModel.forEach(to = nextMax.tick) { tick, state ->
+                val bg = state.predictedBg2
+                if (bg == BgValue.INVALID) return@forEach
+                val spentInsulin = carbsInsulinCalculationModel.spentInsulin(
+                    amount = bolusAmount,
+                    applicationTimestamp = insulinTick.timestamp,
+                    timestamp = timeline.timestamp(tick),
+                    dia = dia,
+                    peak = peak
+                )
+                val bgDeltaFromTestInsulin = spentInsulin * state.isf
+                val resultBG = state.predictedBg2 - bgDeltaFromTestInsulin
+                val bgError = lowThreshold - resultBG
+                if (bgError > BgDelta(0)) {
+                    // We would drop too low, reduce insulin
+                    bolusAmount -= bgError / state.isf
                 }
-
-                var bolusAmount = minOf(bgError / isf, maxCorrectionAmount)
-
-                // Safety validation: The calculated correction dose is verified against the
-                // prediction model. If the simulated insulin action results in a projected
-                // dip below the target range at any point within the prediction window,
-                // the dose is iteratively reduced until safety is ensured.
-                // The remaining correction will be calculated in one of the next cycles, when
-                // BG has risen higher again.
-                val settings = therapyManager.getActiveTherapySettings()
-                val dia = settings.insulinProfile.dia
-                val peak = settings.insulinProfile.peak
-
-                predictionModel.forEach(to = nextMax.tick) { tick, state ->
-                    val bg = state.predictedBg2
-                    if (bg == BgValue.INVALID) return@forEach
-                    val spentInsulin = carbsInsulinCalculationModel.spentInsulin(
-                        amount = bolusAmount,
-                        applicationTimestamp = insulinTick.timestamp,
-                        timestamp = timeline.timestamp(tick),
-                        dia = dia,
-                        peak = peak
-                    )
-                    val bgDeltaFromTestInsulin = spentInsulin * state.isf
-                    val resultBG = state.predictedBg2 - bgDeltaFromTestInsulin
-                    val bgError = lowThreshold - resultBG
-                    if (bgError > BgDelta(0)) {
-                        // We would drop too low, reduce insulin
-                        bolusAmount -= bgError / state.isf
-                    }
-                }
-                onDeliverBolus(InsulinAmount(bolusAmount))
             }
+            onDeliverBolus(InsulinAmount(bolusAmount))
         }
+        Todo() // ZeroTemp
     }
 
     override suspend fun nextBgStaleCheckAt(): Timestamp? {
@@ -266,7 +239,7 @@ class ApsAlgorithmImpl(
 
         const val DEVIATION_DECAY_FACTOR_PER_TICK = 0.9
 
-        val MIN_BG_SAFETY_MARGIN = BgDelta(10)
+        val LOW_BG_SAFETY_MARGIN = BgDelta(10)
 
         suspend fun create(
             treatmentRepository: TreatmentRepository,
@@ -274,8 +247,8 @@ class ApsAlgorithmImpl(
             therapyManager: TherapyManager,
             onCancelInsulinJobs: () -> Unit,
             onDeliverBolus: (amount: InsulinAmount) -> Unit,
-            onCheckZeroTemp: () -> Boolean,
-            onZeroTemp: (durationInHours: Int) -> Unit,
+            onCheckSetTemp: () -> Boolean,
+            onSetTempBasal: (durationInHours: Int, unitsPerHour: Double) -> Unit,
             onCarbsHint: (Int) -> Unit,
             tickInterval: Minutes,
             carbsInsulinCalculationModel: CarbsInsulinCalculationModel,
@@ -310,8 +283,8 @@ class ApsAlgorithmImpl(
                 carbsInsulinCalculationModel = carbsInsulinCalculationModel,
                 therapyManager = therapyManager,
                 onCancelInsulinJobs = onCancelInsulinJobs,
-                onCheckZeroTemp = onCheckZeroTemp,
-                onZeroTemp = onZeroTemp,
+                onCheckSetTemp = onCheckSetTemp,
+                onSetTempBasal = onSetTempBasal,
                 onCarbsHint = onCarbsHint,
                 onDeliverBolus = onDeliverBolus,
             )

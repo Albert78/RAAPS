@@ -55,6 +55,7 @@ class PredictionModel(
     ) {
         val meals = treatmentRepository.getMeals()
         val insulinApplications = treatmentRepository.getInsulinApplications()
+
         forEach { tick, tickState ->
             tickState.initializeToTick(tick)
             // We only need to initialize insulin and carbs, since they only depend on the treatments.
@@ -82,7 +83,7 @@ class PredictionModel(
         currentBG: BgValue,
         avgCurrentDeviationPerTick: BgDelta,
         therapyManager: TherapyManager
-    ): Boolean {
+    ) {
         var bg = currentBG
         var deviationPerTick = avgCurrentDeviationPerTick
         var calculateFurtherStepsNecessary = false
@@ -108,7 +109,6 @@ class PredictionModel(
 
             if (bgi != state.bgi) {
                 state.bgi = bgi
-                calculateFurtherStepsNecessary = true
             }
 
             // Ease out the deviation
@@ -116,56 +116,7 @@ class PredictionModel(
 
             val isInNext30Minutes = timestamp <= timestampIn30Minutes
             bg = bg + state.bgi + deviationPerTick
-            if (isInNext30Minutes && (bg - state.predictedBg1).abs > MAX_BG_DEVIATION_FOR_KEEP_PREDICTION) {
-                // If the new situation shows a significant BG deviation from the predicted BG in the
-                // near future, recalculation is necessary
-                calculateFurtherStepsNecessary = true
-            }
-            state.predictedBg1 = bg
-        }
-        return calculateFurtherStepsNecessary
-    }
-
-    /**
-     * Clears all temporary basal derivation decisions.
-     */
-    inline fun clearTempBasalsStage_5() {
-        forEach { _, state ->
-            state.basalRateDeviationPh = 0.0
-        }
-    }
-
-    /**
-     * Sets the temporary basal derivation per hour for the given timespan.
-     * The basal derivation must be higher than the scheduled basal for that timespan.
-     */
-    inline fun setTempBasalDeviationStage_5(
-        basalDeviationPerHour: Double,
-        tempBasalStart: Tick,
-        tempBasalEnd: Tick
-    ) {
-        forEach(from = tempBasalStart, to = tempBasalEnd) { _, state ->
-            state.basalRateDeviationPh = basalDeviationPerHour
-        }
-    }
-
-    inline fun calculatePredictionsWithTempBasalStage_6(
-        from: Tick = getFirstTick(),
-        to: Tick = getLastTick()
-    ) {
-        var accumulatedDeviationBg = BgDelta(0)
-        forEach(from = from, to = to) { _, state ->
-            // Accumulate the delta per tick
-            // basalRateDeviationPh is Units/Hour. Convert to Units/Tick.
-            val unitsPerTick = state.basalRateDeviationPh / (60.0 / timeline.tickDuration.value)
-
-            // If deviation is positive (more insulin), BG should drop.
-            // BGI is defined such that positive BGI = BG RISE.
-            // A positive basalRateDeviationPh means more insulin than profile.
-            val tickDeviationBg = -(unitsPerTick * state.isf)
-
-            accumulatedDeviationBg += tickDeviationBg
-            state.predictedBg2 = state.predictedBg1 + accumulatedDeviationBg
+            state.predictedBg = bg
         }
     }
 
@@ -177,56 +128,21 @@ class PredictionModel(
         return rollingHistory.tryGetTickState(rollingHistory.getLastTick())
     }
 
-    inline fun findNextBgMin(startAt: Tick, returnLatestIfFalling: Boolean): PredictionTickState? {
-        var lastValue: BgValue = BgValue.INVALID
-
-        val tickState = rollingHistory.findForward(startAt) { tickState ->
-            val currentBg = tickState.predictedBg1
-
-            // We are looking for the point at which the value starts to grow again (local minimum)
-            if (currentBg > lastValue) {
-                // The previous point was the minimum
-                true // Stop search
-            } else {
-                lastValue = currentBg
-                false // Continue searching
+    inline fun findBgMin(startAt: Tick, until: Tick): PredictionTickState? {
+        var min: BgValue = BgValue.INVALID
+        var minState: PredictionTickState? = null
+        rollingHistory.forEach(from = startAt, to = until) { tick, state ->
+            var currentBg = state.predictedBg
+            if (min.isInvalid() || (currentBg.isValid() && currentBg.mgdl < min.mgdl)) {
+                min = currentBg
+                minState = state
             }
         }
-        return if (tickState != null) {
-            tickState
-        } else if (returnLatestIfFalling) {
-            latestPredictionTickState()
-        } else {
-            null
-        }
+        return minState
     }
 
-    inline fun findNextBgMax(startAt: Tick, returnLatestIfRising: Boolean): PredictionTickState? {
-        var lastValue: BgValue = BgValue.INVALID
-
-        val tickState = rollingHistory.findForward(startAt) { tickState ->
-            val currentBg = tickState.predictedBg1
-
-            // We are looking for the point at which the value starts to drop again (local maximum)
-            if (currentBg < lastValue) {
-                // The previous point was the maximum
-                true // Stop search
-            } else {
-                lastValue = currentBg
-                false // Continue searching
-            }
-        }
-        return if (tickState != null) {
-            tickState
-        } else if (returnLatestIfRising) {
-            latestPredictionTickState()
-        } else {
-            null
-        }
-    }
-
-    fun findNext(startAt: Tick, predicate: (PredictionTickState) -> Boolean): PredictionTickState? {
-        return rollingHistory.findForward(startAt, predicate)
+    fun findNext(startAt: Tick, until: Tick, predicate: (PredictionTickState) -> Boolean): PredictionTickState? {
+        return rollingHistory.findForward(startTick = startAt, endTick = until, predicate = predicate)
     }
 
     suspend fun findNextS(startAt: Tick, predicate: suspend (PredictionTickState) -> Boolean): PredictionTickState? {

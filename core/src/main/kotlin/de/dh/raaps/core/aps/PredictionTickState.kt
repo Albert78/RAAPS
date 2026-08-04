@@ -26,13 +26,7 @@ class PredictionTickState {
     var bgi: BgDelta = BgDelta(0)
 
     // Stage 4: Predicted BG depends on stages 1, 2, 3 and current BG.
-    var predictedBg1: BgValue = BgValue.INVALID // Calculated from a starting BG, applying BGIs of previous ticks
-
-    // Stage 5: Final calculated decision for temp basal depends on stages 1-4.
-    var basalRateDeviationPh: Double = 0.0 // Remember temp basal deviation decisions (in units per hour)
-
-    // Stage 6: Predicted BG from stage 4, including basal deviation from stage 5.
-    var predictedBg2: BgValue = BgValue.INVALID
+    var predictedBg: BgValue = BgValue.INVALID // Calculated from a starting BG, applying BGIs of previous ticks
 
     fun initializeToTick(tick: Tick) {
         this.tick = tick
@@ -41,8 +35,6 @@ class PredictionTickState {
         isf = BgDelta(0)
         cr = 0.0
         bgi = BgDelta(0)
-        basalRateDeviationPh = 0.0
-        predictedBg1 = BgValue.INVALID
-        predictedBg2 = BgValue.INVALID
+        predictedBg = BgValue.INVALID
     }
 }

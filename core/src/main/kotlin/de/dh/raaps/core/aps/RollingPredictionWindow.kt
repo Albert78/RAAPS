@@ -84,12 +84,14 @@ class RollingPredictionWindow(
      */
     fun findForward(
         startTick: Tick = anchorTick,
-        predicate: (PredictionTickState) -> Boolean
+        endTick: Tick? = null,
+        predicate: (PredictionTickState) -> Boolean,
     ): PredictionTickState? {
-        val maxTick = getLastTick().value
         val start = startTick.value.coerceAtLeast(anchorTick.value)
+        val last = getLastTick().value
+        val end = (endTick?.value ?: last).coerceAtMost(last)
 
-        for (v in start..maxTick) {
+        for (v in start..end) {
             val state = buffer[bufferIndex(Tick(v))]
             if (predicate(state)) {
                 return state

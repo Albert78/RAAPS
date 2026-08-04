@@ -83,8 +83,8 @@ class APS(
 
         onCancelInsulinJobs = { therapyManager.coreCancelInsulinJobs() },
         onDeliverBolus = { amount -> therapyManager.issueBolus(amount) },
-        onCheckZeroTemp = { therapyManager.canIssueZeroTemp() },
-        onZeroTemp = { durationInHours -> therapyManager.issueZeroTemp(durationInHours) },
+        onCheckSetTemp = { therapyManager.canSetTemp() },
+        onSetTempBasal = { durationInHours, unitsPerHour -> therapyManager.setTempBasal(durationInHours, unitsPerHour) },
         onCarbsHint = { amountInGram -> therapyManager.recommendCarbs(amountInGram) },
         onWaitForAndResetInsulinJobs = { therapyManager.waitForAndResetInsulinJobs() }
     )

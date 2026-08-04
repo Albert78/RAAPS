@@ -139,17 +139,14 @@ class SimBodyInsulinPump(
         // Simple simulator: bolus is instant
     }
 
-    override suspend fun tempBasal(percent: Int, durationHours: Int) {
+    override suspend fun tempBasal(absoluteUnits: Double, durationHours: Int) {
         if (!_isConnected.value) throw Exception("Pump not connected to App")
 
         if (device.isBroken.value || device.hasHardwareError.value) {
             throw Exception("Pump hardware error - cannot set temp basal")
         }
 
-        val normalRate = device.getProfileBasalRate()
-        val newRate = normalRate * (percent / 100.0)
-
-        device.updateBasalRate(newRate, percent)
+        device.updateBasalRate(absoluteUnits)
         refreshStatus()
     }
 

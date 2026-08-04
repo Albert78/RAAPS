@@ -4,10 +4,11 @@ import android.content.Context
 import de.dh.raaps.common.R
 import de.dh.raaps.common.model.CarbCurveComponentData
 import de.dh.raaps.common.model.DEFAULT_BASAL_UNITS_PER_HOUR
+import de.dh.raaps.common.model.DEFAULT_BG_LOW_THRESHOLD_MGDL
+import de.dh.raaps.common.model.DEFAULT_BG_TARGET_MGDL
 import de.dh.raaps.common.model.DEFAULT_CR_GRAM_PER_UNIT
 import de.dh.raaps.common.model.DEFAULT_ISF_MGDL_PER_UNIT
-import de.dh.raaps.common.model.DEFAULT_BG_TARGET_MGDL
-import de.dh.raaps.common.model.DEFAULT_BG_LOW_THRESHOLD_MGDL
+import de.dh.raaps.common.model.FAST_KE_DEFAULT_PEAK_IN_MINUTES
 import de.dh.raaps.common.model.ID_INSULIN_ASPART
 import de.dh.raaps.common.model.ID_INSULIN_FIASP
 import de.dh.raaps.common.model.ID_MEAL_FAST
@@ -16,13 +17,13 @@ import de.dh.raaps.common.model.ID_MEAL_SLOW
 import de.dh.raaps.common.model.ID_MEAL_STANDARD
 import de.dh.raaps.common.model.InsulinType
 import de.dh.raaps.common.model.MealType
+import de.dh.raaps.common.model.data.BgBlock
 import de.dh.raaps.common.model.data.BgValue
 import de.dh.raaps.common.model.data.Block
 import de.dh.raaps.common.model.data.CurrentSettings
 import de.dh.raaps.common.model.data.CurrentTherapySettings
-import de.dh.raaps.common.model.data.Minutes
 import de.dh.raaps.common.model.data.InsulinProfile
-import de.dh.raaps.common.model.data.BgBlock
+import de.dh.raaps.common.model.data.Minutes
 
 object DatabaseInitializer {
     suspend fun initialize(
@@ -68,7 +69,9 @@ object DatabaseInitializer {
                 id = ID_MEAL_FAST,
                 name = context.getString(R.string.meal_type_fast_carbs_name),
                 components = listOf(
-                    CarbCurveComponentData(weight = 100, peakMinutes = Minutes(25))
+                    CarbCurveComponentData(weight = 100, peakMinutes = Minutes(
+                        FAST_KE_DEFAULT_PEAK_IN_MINUTES
+                    ))
                 ),
                 cat = Minutes(90)
             )

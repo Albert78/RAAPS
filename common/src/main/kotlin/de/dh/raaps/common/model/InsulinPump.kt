@@ -133,7 +133,7 @@ interface InsulinPump {
      *
      * @throws Exception if the command cannot be sent or the pump connection fails.
      */
-    suspend fun tempBasal(percent: Int, durationHours: Int)
+    suspend fun tempBasal(absoluteUnits: Double, durationHours: Int)
 
     /**
      * Cancels the currently active temporary basal rate.

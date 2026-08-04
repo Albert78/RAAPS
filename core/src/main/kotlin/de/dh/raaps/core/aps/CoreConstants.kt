@@ -1,6 +1,5 @@
 package de.dh.raaps.core.aps
 
-import de.dh.raaps.common.model.data.BgDelta
 import de.dh.raaps.common.model.data.Minutes
 
 /**
@@ -20,4 +19,5 @@ val EARLY_BG_GUARD = Minutes(1)
  */
 val STALE_BG_THRESHOLD = Minutes(12)
 
-val MAX_BG_DEVIATION_FOR_KEEP_PREDICTION = BgDelta(10)
+val LOW_WARNING_THRESHOLD = Minutes(25)
+val FAST_KE_DEFAULT_PEAK = Minutes(25)

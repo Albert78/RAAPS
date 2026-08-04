@@ -37,6 +37,10 @@ sealed class ApsRecommendation {
     data class Bolus(val amount: InsulinAmount) : ApsRecommendation()
 }
 
+class DeferredBolus {
+    // TODO
+}
+
 class TherapyManager(
     private val therapyRepository: TherapyRepository,
     private val treatmentRepository: TreatmentRepository,
@@ -205,20 +209,6 @@ class TherapyManager(
         treatmentRepository.mergeInsulinHistory(history, cts.insulinProfile.insulinType)
     }
 
-    fun clearRecommendations() {
-        _recommendations.value = emptyList()
-    }
-
-    fun coreCancelInsulinJobs() {
-        when (appModeManager.apsMode.value) {
-            ApsMode.Suspend -> return
-            ApsMode.BasalOnly -> return
-            ApsMode.AutoCorrection -> {
-                pumpManager.cancelJobs { it.isCancelableAPSCommand }
-            }
-        }
-    }
-
     fun issueBolus(amount: InsulinAmount) {
         when (appModeManager.apsMode.value) {
             ApsMode.Suspend -> return
@@ -234,7 +224,7 @@ class TherapyManager(
         }
     }
 
-    fun canIssueZeroTemp(): Boolean {
+    fun canSetTemp(): Boolean {
         return when (appModeManager.apsMode.value) {
             ApsMode.Suspend -> false
             ApsMode.BasalOnly -> false
@@ -242,7 +232,7 @@ class TherapyManager(
         }
     }
 
-    fun issueZeroTemp(durationInHours: Int) {
+    fun setTempBasal(durationInHours: Int, unitsPerHour: Double) {
         when (appModeManager.apsMode.value) {
             ApsMode.Suspend -> return
             ApsMode.BasalOnly -> return
@@ -250,7 +240,7 @@ class TherapyManager(
                 scope.launch {
                     pumpManager.issueCommand(
                         PumpCommand.SetTempBasal(
-                            percent = 0,
+                            absoluteUnits = unitsPerHour,
                             durationHours = durationInHours
                         ),
                         isCancelableAPSCommand = true
@@ -260,12 +250,28 @@ class TherapyManager(
         }
     }
 
+    fun clearRecommendations() {
+        _recommendations.value = emptyList()
+    }
+
     fun recommendCarbs(amountInGram: Int) {
         _recommendations.value += ApsRecommendation.Carbs(amountInGram)
     }
 
     fun recommendBolus(amount: InsulinAmount) {
         _recommendations.value += ApsRecommendation.Bolus(amount)
+    }
+
+    fun getDeferredBoluses(): List<DeferredBolus> = emptyList()
+
+    fun coreCancelInsulinJobs() {
+        when (appModeManager.apsMode.value) {
+            ApsMode.Suspend -> return
+            ApsMode.BasalOnly -> return
+            ApsMode.AutoCorrection -> {
+                pumpManager.cancelJobs { it.isCancelableAPSCommand }
+            }
+        }
     }
 
     suspend fun waitForAndResetInsulinJobs() {

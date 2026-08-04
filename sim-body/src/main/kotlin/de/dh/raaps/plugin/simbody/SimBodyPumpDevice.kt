@@ -48,9 +48,6 @@ class SimBodyPumpDevice(
     private val _tempBasalRate = MutableStateFlow<Double?>(null)
     val tempBasalRate: StateFlow<Double?> = _tempBasalRate.asStateFlow()
 
-    private val _tempBasalPercent = MutableStateFlow<Int?>(null)
-    val tempBasalPercent: StateFlow<Int?> = _tempBasalPercent.asStateFlow()
-
     private var lastBasalDeliveryTimestamp: Long = 0L // Initialize on first tick
 
     fun setBatteryLevel(level: Double) {
@@ -159,9 +156,8 @@ class SimBodyPumpDevice(
         return true
     }
 
-    fun updateBasalRate(unitsPerHour: Double?, percent: Int? = null) {
+    fun updateBasalRate(unitsPerHour: Double?) {
         _tempBasalRate.value = unitsPerHour
-        _tempBasalPercent.value = percent
     }
 
     fun getHistory(): List<InsulinHistoryPoint> = _history.toList()

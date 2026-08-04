@@ -74,8 +74,8 @@ class Core(
 
     private val onCancelInsulinJobs: () -> Unit,
     private val onDeliverBolus: (amount: InsulinAmount) -> Unit,
-    private val onCheckZeroTemp: () -> Boolean,
-    private val onZeroTemp: (durationInHours: Int) -> Unit,
+    private val onCheckSetTemp: () -> Boolean,
+    private val onSetTempBasal: (durationInHours: Int, unitsPerHour: Double) -> Unit,
     private val onCarbsHint: (Int) -> Unit,
     private val onWaitForAndResetInsulinJobs: suspend () -> Unit,
 ) : TickHandler {
@@ -177,8 +177,8 @@ class Core(
                     therapyManager,
                     onCancelInsulinJobs = onCancelInsulinJobs,
                     onDeliverBolus = onDeliverBolus,
-                    onCheckZeroTemp = onCheckZeroTemp,
-                    onZeroTemp = onZeroTemp,
+                    onCheckSetTemp = onCheckSetTemp,
+                    onSetTempBasal = onSetTempBasal,
                     onCarbsHint = onCarbsHint,
                     tickInterval = timeService.tickInterval,
                     carbsInsulinCalculationModel = carbsInsulinCalculationModel
@@ -272,8 +272,8 @@ class Core(
 
             onCancelInsulinJobs: () -> Unit,
             onDeliverBolus: (amount: InsulinAmount) -> Unit,
-            onCheckZeroTemp: () -> Boolean,
-            onZeroTemp: (durationInHours: Int) -> Unit,
+            onCheckSetTemp: () -> Boolean,
+            onSetTempBasal: (durationInHours: Int, unitsPerHour: Double) -> Unit,
             onCarbsHint: (amountInGram: Int) -> Unit,
             onWaitForAndResetInsulinJobs: suspend () -> Unit,
         ): Core {
@@ -292,8 +292,8 @@ class Core(
 
                 onCancelInsulinJobs = onCancelInsulinJobs,
                 onDeliverBolus = onDeliverBolus,
-                onCheckZeroTemp = onCheckZeroTemp,
-                onZeroTemp = onZeroTemp,
+                onCheckSetTemp = onCheckSetTemp,
+                onSetTempBasal = onSetTempBasal,
                 onCarbsHint = onCarbsHint,
                 onWaitForAndResetInsulinJobs = onWaitForAndResetInsulinJobs,
             )
