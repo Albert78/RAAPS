@@ -15,6 +15,7 @@ import de.dh.raaps.core.repository.db.toEntity
 import de.dh.raaps.core.repository.db.toModel
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.mapNotNull
 
 /**
  * Repository for therapy settings, profiles and active therapy data.
@@ -85,15 +86,18 @@ class TherapyRepository(
     // --- Current Therapy Settings Operations ---
 
     fun observeCurrentTherapySettings(): Flow<CurrentTherapySettings> = therapyDao.observeCurrentTherapySettings()
-        .map { getCurrentTherapySettings() }
+        .mapNotNull { getCurrentTherapySettingsOrNull() }
 
     suspend fun getCurrentTherapySettings(): CurrentTherapySettings {
-        val entity = therapyDao.getCurrentTherapySettings()
+        return getCurrentTherapySettingsOrNull()
             ?: throw IllegalStateException("No current therapy settings found in database")
-        val profile = getInsulinProfileById(entity.profile_id)
-            ?: throw IllegalStateException("Active profile ${entity.profile_id} not found")
+    }
+
+    suspend fun getCurrentTherapySettingsOrNull(): CurrentTherapySettings? {
+        val entity = therapyDao.getCurrentTherapySettings() ?: return null
+        val profile = getInsulinProfileById(entity.profile_id) ?: return null
         val settings = entity.toModel(profile)
-        
+
         return if (settings.defaultBgBlocks.isEmpty()) {
             settings.copy(
                 defaultBgBlocks = listOf(

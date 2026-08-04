@@ -132,7 +132,7 @@ object DatabaseInitializer {
             profiles = listOf(normalProfile)
         }
 
-        if (repository.getCurrentTherapySettings() == null) {
+        if (repository.getCurrentTherapySettingsOrNull() == null) {
             val activeProfile = profiles.first()
 
             val currentTherapySettings = CurrentTherapySettings(
