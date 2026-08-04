@@ -164,9 +164,12 @@ class MainFeatureNavGraph(
                 val vm: MealBolusViewModel = viewModel(
                     factory = MealBolusViewModel.Companion.Factory(registry, key.mealId)
                 )
+                val historyVM: HistoryViewModel =
+                    viewModel(factory = HistoryViewModel.Companion.Factory(registry))
 
                 MealBolusScreen(
                     viewModel = vm,
+                    historyViewModel = historyVM,
                     onNavigateUp = { navViewModel.pop() }
                 )
             }

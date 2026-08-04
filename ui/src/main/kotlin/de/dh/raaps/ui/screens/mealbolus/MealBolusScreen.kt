@@ -22,6 +22,7 @@ import de.dh.raaps.common.ui.composables.contentScrollIndicator
 import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowForward
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.KeyboardArrowDown
@@ -48,6 +49,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.stringResource
@@ -64,24 +66,40 @@ import de.dh.raaps.common.model.CARBS_KE_MAX
 import de.dh.raaps.common.model.CARBS_KE_MIN
 import de.dh.raaps.common.model.CarbCurveComponentData
 import de.dh.raaps.common.model.MealType
-import de.dh.raaps.ui.screens.meals.getIcon
+import de.dh.raaps.common.model.data.BgDelta
+import de.dh.raaps.common.model.data.BgValue
 import de.dh.raaps.common.model.data.Minutes
+import de.dh.raaps.common.model.data.Timestamp
 import de.dh.raaps.common.ui.DefaultSteppingStrategy
 import de.dh.raaps.common.ui.ValueDisplayStrategy
 import de.dh.raaps.common.ui.composables.EditableValueStepper
+import de.dh.raaps.common.ui.composables.LightGreenA700
+import de.dh.raaps.common.ui.composables.Red
+import de.dh.raaps.common.ui.composables.Yellow
 import de.dh.raaps.common.ui.theme.AppTheme
 import de.dh.raaps.ui.R
+import de.dh.raaps.ui.controls.history.BgTrend
+import de.dh.raaps.ui.controls.history.CurrentBgData
+import de.dh.raaps.ui.controls.history.HistoryViewModel
+import de.dh.raaps.ui.screens.meals.getIcon
 import java.util.Locale
 
 @Composable
 fun MealBolusScreen(
     viewModel: MealBolusViewModel,
+    historyViewModel: HistoryViewModel,
     onNavigateUp: () -> Unit
 ) {
     val uiState by viewModel.uiState.collectAsState()
+    val currentBgUiState by historyViewModel.currentBgUiState.collectAsState()
+    val iob by historyViewModel.iob.collectAsState()
+    val cob by historyViewModel.cob.collectAsState()
 
     MealBolusContent(
         uiState = uiState,
+        currentBgValue = currentBgUiState.currentBgValue,
+        iob = iob,
+        cob = cob,
         onNavigateUp = onNavigateUp,
         onCarbsChange = { viewModel.onCarbsChange(it) },
         onMealTypeChange = { viewModel.onMealTypeChange(it) },
@@ -94,6 +112,9 @@ fun MealBolusScreen(
 @Composable
 fun MealBolusContent(
     uiState: MealBolusUiState,
+    currentBgValue: CurrentBgData?,
+    iob: Double,
+    cob: Double,
     onNavigateUp: () -> Unit,
     onCarbsChange: (Double) -> Unit,
     onMealTypeChange: (MealType) -> Unit,
@@ -154,6 +175,68 @@ fun MealBolusContent(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(24.dp)
         ) {
+            // Header with BG, IOB, COB
+            Column(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(4.dp)
+                ) {
+                    val bgText = currentBgValue?.bgValue?.toString(currentBgValue.glucoseUnit) ?: "?"
+                    val textColor = if (currentBgValue == null || (currentBgValue.isValueOld)) {
+                        Color.Gray
+                    } else when {
+                        currentBgValue.bgValue.mgdl < 70 -> Red
+                        currentBgValue.bgValue.mgdl < 180 -> LightGreenA700
+                        else -> Yellow
+                    }
+                    Text(
+                        text = bgText,
+                        style = MaterialTheme.typography.displayMedium.copy(fontWeight = FontWeight.Bold),
+                        color = textColor
+                    )
+                    Text(
+                        text = stringResource(R.string.glucose_unit_mgdl),
+                        style = MaterialTheme.typography.titleMedium,
+                        color = Color.Gray,
+                        modifier = Modifier.align(Alignment.Bottom).padding(bottom = 12.dp)
+                    )
+                    if (currentBgValue?.trend != null && currentBgValue.trend != BgTrend.NotComputable) {
+                        val trendRotation = when (currentBgValue.trend) {
+                            BgTrend.DoubleUp, BgTrend.SingleUp -> -90f
+                            BgTrend.FortyFiveUp -> -45f
+                            BgTrend.Flat -> 0f
+                            BgTrend.FortyFiveDown -> 45f
+                            BgTrend.SingleDown, BgTrend.DoubleDown -> 90f
+                            BgTrend.NotComputable -> 0f
+                        }
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Filled.ArrowForward,
+                            contentDescription = null,
+                            modifier = Modifier
+                                .size(48.dp)
+                                .rotate(trendRotation),
+                            tint = MaterialTheme.colorScheme.onSurface
+                        )
+                    }
+                }
+                Spacer(Modifier.height(8.dp))
+                Text(
+                    text = "Aktive Kohlenhydrate: " + stringResource(R.string.cob_format).format(cob),
+                    style = MaterialTheme.typography.bodyLarge,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                Text(
+                    text = "Aktives Insulin: " + stringResource(R.string.iob_format).format(iob),
+                    style = MaterialTheme.typography.bodyLarge,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+
+            HorizontalDivider()
+
             if (uiState.lockError) {
                 Card(
                     modifier = Modifier.fillMaxWidth(),
@@ -486,6 +569,14 @@ private fun MealBolusPreview(isAuto: Boolean) {
                     isAutomaticMode = false
                 )
             },
+            currentBgValue = CurrentBgData.valid(
+                bgValue = BgValue(if (isAuto) 160 else 140),
+                delta = BgDelta(5),
+                trend = BgTrend.FortyFiveUp,
+                timestamp = Timestamp.now()
+            ),
+            iob = 1.2,
+            cob = 25.0,
             onNavigateUp = {},
             onCarbsChange = {},
             onMealTypeChange = {},
