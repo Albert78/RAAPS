@@ -71,3 +71,13 @@ data class InsulinEntity(
     val origin: InsulinOrigin,
     val provisional: Boolean
 )
+
+@Entity(
+    tableName = "deferred_bolus"
+)
+data class DeferredBolusEntity(
+    @PrimaryKey(autoGenerate = true)
+    var id: Long = ID_UNDEFINED,
+    val timestamp: Timestamp,
+    val amount: Double
+)

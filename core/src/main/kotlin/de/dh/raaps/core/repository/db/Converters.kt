@@ -6,6 +6,7 @@ import de.dh.raaps.common.model.InsulinApplication
 import de.dh.raaps.common.model.InsulinType
 import de.dh.raaps.common.model.MealEntry
 import de.dh.raaps.common.model.MealType
+import de.dh.raaps.core.aps.DeferredBolus
 import de.dh.raaps.common.model.data.BgBlock
 import de.dh.raaps.common.model.data.BgReading
 import de.dh.raaps.common.model.data.BgValue
@@ -21,6 +22,7 @@ import de.dh.raaps.core.repository.db.entities.CurrentTherapySettingsEntity
 import de.dh.raaps.core.repository.db.entities.DBBgBlock
 import de.dh.raaps.core.repository.db.entities.DBBlock
 import de.dh.raaps.core.repository.db.entities.DataProviderEntity
+import de.dh.raaps.core.repository.db.entities.DeferredBolusEntity
 import de.dh.raaps.core.repository.db.entities.GlucoseReadingEntity
 import de.dh.raaps.core.repository.db.entities.InsulinEntity
 import de.dh.raaps.core.repository.db.entities.InsulinProfileEntity
@@ -148,6 +150,19 @@ fun InsulinEntity.toModel(type: InsulinType) = InsulinApplication(
     insulinType = type,
     origin = this.origin,
     provisional = this.provisional
+)
+
+// Deferred Bolus Converters
+fun DeferredBolus.toEntity() = DeferredBolusEntity(
+    id = this.id,
+    timestamp = this.timestamp,
+    amount = this.amount.iu
+)
+
+fun DeferredBolusEntity.toModel() = DeferredBolus(
+    id = this.id,
+    amount = de.dh.raaps.common.model.InsulinAmount(this.amount),
+    timestamp = this.timestamp
 )
 
 

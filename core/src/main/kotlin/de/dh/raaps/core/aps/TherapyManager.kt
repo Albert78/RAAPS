@@ -49,6 +49,7 @@ sealed class LockResult {
 }
 
 data class DeferredBolus(
+    var id: Long = de.dh.raaps.common.model.ID_UNDEFINED,
     val amount : InsulinAmount,
     val timestamp : Timestamp
 )
@@ -272,10 +273,10 @@ class TherapyManager(
      * @param amount The amount of insulin to deliver.
      * @param deferredBolus Optional deferred bolus that was handled by this delivery.
      */
-    fun issueBolus(treatmentLock: TreatmentLock, amount: InsulinAmount, deferredBolus: DeferredBolus? = null) {
+    suspend fun issueBolus(treatmentLock: TreatmentLock, amount: InsulinAmount, deferredBolus: DeferredBolus? = null) {
         checkLock(treatmentLock)
         if (deferredBolus != null) {
-            markDeferredBolusHandled(deferredBolus)
+            markDeferredBolusHandled(treatmentLock, deferredBolus)
         }
         when (systemManager.apsMode.value) {
             ApsMode.Suspend -> return
@@ -360,18 +361,18 @@ class TherapyManager(
         _recommendations.value += ApsRecommendation.Bolus(amount)
     }
 
-    fun addDeferredBolus(treatmentLock: TreatmentLock, deferredBolus: DeferredBolus) {
+    suspend fun addDeferredBolus(treatmentLock: TreatmentLock, deferredBolus: DeferredBolus) {
         checkLock(treatmentLock)
-        // TODO: Implementation for persistent storage
+        treatmentRepository.addDeferredBolus(deferredBolus)
     }
 
-    fun getDeferredBoluses(): List<DeferredBolus> {
-        // TODO: Implementation for persistent storage
-        return emptyList()
+    suspend fun getDeferredBoluses(): List<DeferredBolus> {
+        return treatmentRepository.getDeferredBoluses()
     }
 
-    fun markDeferredBolusHandled(deferredBolus: DeferredBolus) {
-        // TODO: Implementation for persistent storage
+    suspend fun markDeferredBolusHandled(treatmentLock: TreatmentLock, deferredBolus: DeferredBolus) {
+        checkLock(treatmentLock)
+        treatmentRepository.removeDeferredBolus(deferredBolus)
     }
 
     /**

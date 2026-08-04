@@ -7,6 +7,7 @@ import de.dh.raaps.common.model.InsulinOrigin
 import de.dh.raaps.common.model.InsulinType
 import de.dh.raaps.common.model.MealEntry
 import de.dh.raaps.common.model.MealType
+import de.dh.raaps.core.aps.DeferredBolus
 import de.dh.raaps.common.model.data.Minutes
 import de.dh.raaps.common.model.data.Timestamp
 import de.dh.raaps.core.repository.db.AppDatabase
@@ -35,6 +36,7 @@ class TreatmentRepository(
 
     private var mealsHistory: MutableList<MealEntry> = mutableListOf()
     private var insulinHistory: MutableList<InsulinApplication> = mutableListOf()
+    private var deferredBoluses: MutableList<DeferredBolus> = mutableListOf()
     private var mealTypes: List<MealType> = emptyList()
     private var insulinTypes: List<InsulinType> = emptyList()
 
@@ -90,6 +92,12 @@ class TreatmentRepository(
             type?.let { entity.toModel(it) }
         }.toMutableList()
         insulinHistory.sortBy { it.timestamp }
+
+        // Load Deferred Boluses
+        deferredBoluses = metabolicEventsDao.getAllDeferredBoluses()
+            .map { it.toModel() }
+            .toMutableList()
+        deferredBoluses.sortBy { it.timestamp }
     }
 
     /**
@@ -99,6 +107,7 @@ class TreatmentRepository(
         val historyStart = historyStart()
         mealsHistory.removeIf { it.timestamp < historyStart }
         insulinHistory.removeIf { it.timestamp < historyStart }
+        deferredBoluses.removeIf { it.timestamp < historyStart }
     }
 
     /**
@@ -303,5 +312,33 @@ class TreatmentRepository(
         mutex.withLock {
             insulinTypes = insulinTypes.filter { it.id != insulinType.id }
         }
+    }
+
+    // --- Deferred Boluses ---
+
+    suspend fun addDeferredBolus(deferredBolus: DeferredBolus) {
+        val historyStart = historyStart()
+        mutex.withLock {
+            if (deferredBolus.timestamp >= historyStart) {
+                deferredBoluses.removeIf { it.timestamp == deferredBolus.timestamp }
+                deferredBoluses.add(deferredBolus)
+                deferredBoluses.sortBy { it.timestamp }
+            }
+        }
+        val id = metabolicEventsDao.insertDeferredBolus(deferredBolus.toEntity())
+        if (id != -1L) {
+            deferredBolus.id = id
+        }
+    }
+
+    suspend fun getDeferredBoluses(): List<DeferredBolus> = mutex.withLock {
+        return deferredBoluses.toList()
+    }
+
+    suspend fun removeDeferredBolus(deferredBolus: DeferredBolus) {
+        mutex.withLock {
+            deferredBoluses.removeIf { it.id == deferredBolus.id }
+        }
+        metabolicEventsDao.deleteDeferredBolus(deferredBolus.id)
     }
 }

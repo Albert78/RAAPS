@@ -14,6 +14,7 @@ import de.dh.raaps.common.model.InsulinOrigin
 import de.dh.raaps.core.repository.db.entities.CurrentSettingsEntity
 import de.dh.raaps.core.repository.db.entities.CurrentTherapySettingsEntity
 import de.dh.raaps.core.repository.db.entities.DataProviderEntity
+import de.dh.raaps.core.repository.db.entities.DeferredBolusEntity
 import de.dh.raaps.core.repository.db.entities.GlucoseReadingEntity
 import de.dh.raaps.core.repository.db.entities.InsulinEntity
 import de.dh.raaps.core.repository.db.entities.InsulinTypeEntity
@@ -187,6 +188,16 @@ interface MetabolicEventsDao {
 
     @Query("DELETE FROM meal WHERE timestamp >= :from AND timestamp <= :to")
     suspend fun deleteMealsInRange(from: Long, to: Long)
+
+    // Deferred Bolus
+    @Query("SELECT * FROM deferred_bolus ORDER BY timestamp ASC")
+    suspend fun getAllDeferredBoluses(): List<DeferredBolusEntity>
+
+    @Insert
+    suspend fun insertDeferredBolus(deferredBolus: DeferredBolusEntity): Long
+
+    @Query("DELETE FROM deferred_bolus WHERE id = :id")
+    suspend fun deleteDeferredBolus(id: Long)
 }
 
 @Database(entities = [
@@ -204,7 +215,8 @@ interface MetabolicEventsDao {
     MealTypeEntity::class,
     MealEntity::class,
     InsulinTypeEntity::class,
-    InsulinEntity::class
+    InsulinEntity::class,
+    DeferredBolusEntity::class
 ], version = 1)
 @TypeConverters(
     DbTypeConverters::class
