@@ -85,7 +85,6 @@ class APS(
     private val apsScope = CoroutineScope(apsDispatcher + SupervisorJob())
 
     init {
-        instance = this
         wakeService.registerHandler(WAKE_TAG, this)
     }
 
@@ -434,7 +433,6 @@ class APS(
      * Gracefully stops the APS system and releases all background resources.
      */
     fun stop() {
-        instance = null
         glucoseSource?.let {
             it.stop()
             glucoseSource = null
@@ -462,8 +460,5 @@ class APS(
 
         const val WAKEUP_STALE_CHECK = 0
         const val WAKEUP_PUMP_COORDINATOR = 1
-
-        @Volatile
-        private var instance: APS? = null
     }
 }
