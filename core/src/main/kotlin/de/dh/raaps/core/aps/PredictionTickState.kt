@@ -23,6 +23,8 @@ class PredictionTickState {
 
     // Block 3: BGI values depend on blocks 1 and 2.
     // Includes Carb Impact, Insulin Impact and Basal Requirement (from profile).
+    // The BGI is calculated as if no basal rate would be injected, i.e. without correcting, BGI will rise.
+    // With all basal applications registered as insulin applications, we get the actual prediction.
     var bgi: BgDelta = BgDelta(0)
 
     // Block 4: Predicted BG depends on block 3 and current BG.

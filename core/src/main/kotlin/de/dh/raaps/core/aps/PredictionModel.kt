@@ -6,6 +6,7 @@ import de.dh.raaps.common.model.calculation.CarbsInsulinCalculationModel
 import de.dh.raaps.common.model.convertToUnitsFromCarbs
 import de.dh.raaps.common.model.data.BgDelta
 import de.dh.raaps.common.model.data.BgValue
+import de.dh.raaps.common.model.data.Minutes
 import de.dh.raaps.common.model.data.Tick
 import de.dh.raaps.common.model.data.Timeline
 import de.dh.raaps.common.model.data.Timestamp
@@ -74,16 +75,13 @@ class PredictionModel(
         avgCurrentDeviationPerTick: BgDelta,
         meals: List<MealEntry>,
         insulinApplications: List<InsulinApplication>,
+        dia: Minutes,
+        insulinPeak: Minutes,
         therapyManager: TherapyManager,
         carbsInsulinCalculationModel: CarbsInsulinCalculationModel
     ) {
-        val settings = therapyManager.getActiveTherapySettings()
-        val dia = settings.insulinProfile.dia
-        val insulinPeak = settings.insulinProfile.peak
-
         var bg = currentBG
         var deviationPerTick = avgCurrentDeviationPerTick
-        val timestampIn30Minutes = Timestamp.now().plusMinutes(30)
         forEachS(from = timeline.getNowTick() + 1, to = getLastTick()) { tick, state ->
             if (state.effectiveCarbs == null) {
                 state.effectiveCarbs = carbsInsulinCalculationModel.carbAbsorption(

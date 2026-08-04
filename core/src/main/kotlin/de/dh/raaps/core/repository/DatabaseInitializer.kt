@@ -8,7 +8,6 @@ import de.dh.raaps.common.model.DEFAULT_BG_LOW_THRESHOLD_MGDL
 import de.dh.raaps.common.model.DEFAULT_BG_TARGET_MGDL
 import de.dh.raaps.common.model.DEFAULT_CR_GRAM_PER_UNIT
 import de.dh.raaps.common.model.DEFAULT_ISF_MGDL_PER_UNIT
-import de.dh.raaps.common.model.FAST_KE_DEFAULT_PEAK_IN_MINUTES
 import de.dh.raaps.common.model.ID_INSULIN_ASPART
 import de.dh.raaps.common.model.ID_INSULIN_FIASP
 import de.dh.raaps.common.model.ID_MEAL_FAST
@@ -24,6 +23,7 @@ import de.dh.raaps.common.model.data.CurrentSettings
 import de.dh.raaps.common.model.data.CurrentTherapySettings
 import de.dh.raaps.common.model.data.InsulinProfile
 import de.dh.raaps.common.model.data.Minutes
+import de.dh.raaps.core.aps.FAST_KE_DEFAULT_PEAK
 
 object DatabaseInitializer {
     suspend fun initialize(
@@ -69,9 +69,8 @@ object DatabaseInitializer {
                 id = ID_MEAL_FAST,
                 name = context.getString(R.string.meal_type_fast_carbs_name),
                 components = listOf(
-                    CarbCurveComponentData(weight = 100, peakMinutes = Minutes(
-                        FAST_KE_DEFAULT_PEAK_IN_MINUTES
-                    ))
+                    CarbCurveComponentData(weight = 100, peakMinutes = FAST_KE_DEFAULT_PEAK
+                    )
                 ),
                 cat = Minutes(90)
             )
