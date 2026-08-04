@@ -115,7 +115,8 @@ class TreatmentRepository(
                 timestamp = Timestamp(point.timestamp),
                 amount = point.amount,
                 insulinType = insulinType,
-                origin = InsulinOrigin.Pump
+                origin = InsulinOrigin.Pump,
+                provisional = false
             )
         }.filter { it.amount > INSULIN_EPSILON && it.timestamp >= from && it.timestamp <= to }
 

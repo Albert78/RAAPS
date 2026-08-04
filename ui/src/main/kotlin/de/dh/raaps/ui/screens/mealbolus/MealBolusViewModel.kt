@@ -173,7 +173,8 @@ class MealBolusViewModel(
                         timestamp = now,
                         amount = state.manualBolus,
                         insulinType = insulinType,
-                        origin = InsulinOrigin.Manual
+                        origin = InsulinOrigin.Manual,
+                        provisional = true
                     )
                     treatmentRepository.addInsulinApplication(application)
                 }

@@ -278,7 +278,8 @@ class BodyModel(
             timestamp = timestamp,
             amount = amount,
             insulinType = type ?: defaultInsulinType,
-            origin = InsulinOrigin.Pump
+            origin = InsulinOrigin.Pump,
+            provisional = false
         )
         insulinApplications.add(entry)
 

@@ -75,7 +75,8 @@ data class InsulinApplication(
     val timestamp: Timestamp,
     val amount: Double,
     val insulinType: InsulinType,
-    val origin: InsulinOrigin
+    val origin: InsulinOrigin,
+    val provisional: Boolean = false
 )
 
 /**
