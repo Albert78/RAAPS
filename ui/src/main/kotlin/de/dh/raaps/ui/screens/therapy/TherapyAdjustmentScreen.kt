@@ -30,12 +30,13 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.MediumTopAppBar
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SuggestionChip
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -43,6 +44,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -84,10 +86,12 @@ fun TherapyAdjustmentScreen(
     onNavigateUp: () -> Unit
 ) {
     val uiState by viewModel.uiState.collectAsState()
+    val scrollBehavior = TopAppBarDefaults.enterAlwaysScrollBehavior()
 
     Scaffold(
+        modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
         topBar = {
-            TopAppBar(
+            MediumTopAppBar(
                 title = screenTitle(stringResource(id = R.string.aps_control_therpay_adjustment_dialog_title)),
                 navigationIcon = {
                     IconButton(onClick = onNavigateUp) {
@@ -96,14 +100,16 @@ fun TherapyAdjustmentScreen(
                             contentDescription = stringResource(id = de.dh.raaps.common.R.string.cd_navigate_up)
                         )
                     }
-                }
+                },
+                scrollBehavior = scrollBehavior
             )
         }
     ) { innerPadding ->
-        Surface(
+        Box(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(innerPadding)
+                .padding(innerPadding),
+            contentAlignment = Alignment.TopCenter
         ) {
             val activeProfile = uiState.activeInsulinProfile
             TherapyAdjustmentContent(
@@ -153,7 +159,7 @@ private fun TherapyAdjustmentContent(
     val scrollState = rememberScrollState()
     Column(
         modifier = Modifier
-            .fillMaxSize()
+            .fillMaxWidth()
             .contentScrollIndicator(scrollState)
             .verticalScroll(scrollState)
             .clickable(
