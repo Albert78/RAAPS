@@ -35,29 +35,97 @@ fun interface PermissionsChangedHandler {
  * This acts as the single source of truth for component access within the application.
  */
 interface SystemRegistry {
+    /**
+     * The global application context.
+     */
     val appContext: Context
 
     // Data Repositories
+
+    /**
+     * Repository for data providers, sensors and glucose values. The glucose source plugin
+     * might have its own database, if needed.
+     */
     val glucoseRepository: GlucoseRepository
+
+    /**
+     * Repository for therapy settings, profiles, and active therapy configurations.
+     */
     val therapyRepository: TherapyRepository
+
+    /**
+     * Repository for active metabolic treatments, including insulin applications and carb intake.
+     */
     val treatmentRepository: TreatmentRepository
+
+    /**
+     * Repository for managing known food items and nutritional data.
+     */
     val foodRepository: FoodRepository
+
+    /**
+     * Repository for tracking device-related events, such as cannula or reservoir changes.
+     */
     val deviceManagementRepository: DeviceManagementRepository
+
+    /**
+     * Repository for general system and application settings.
+     */
     val settingsRepository: SettingsRepository
+
+    /**
+     * Repository for lightweight application preferences and key-value pairs.
+     */
     val appPreferencesRepository: AppPreferencesRepository
 
     // System Managers and Services
+
+    /**
+     * Central coordinator for managing system plugins (e.g., pump or glucose source drivers).
+     */
     val pluginManager: PluginManager
+
+    /**
+     * Manages system wakeups and wake locks to ensure critical background tasks are executed.
+     */
     val wakeService: SystemWakeService
+
+    /**
+     * Provides the system-wide time reference and handles synchronized ticking for background processes.
+     */
     val timeService: TimeService
+
+    /**
+     * High-level manager for orchestrating APS-related user notifications and alerts.
+     */
     val notificationManager: NotificationManager
 
     // Domain Managers and Services
-    val glucoseSourceManager: GlucoseSourceManager
-    val therapyManager: TherapyManager
-    val systemManager: SystemManager
-    val pumpManager: PumpManager
+
+    /**
+     * The mathematical core for calculating insulin-on-board (IOB) and carbs-on-board (COB).
+     */
     val carbsInsulinCalculationModel: CarbsInsulinCalculationModel
+
+    /**
+     * Manages the active glucose data source and processes incoming blood glucose readings.
+     */
+    val glucoseSourceManager: GlucoseSourceManager
+
+    /**
+     * Central interface for monitoring and interacting with the insulin pump hardware.
+     */
+    val pumpManager: PumpManager
+
+    /**
+     * Core coordinator for therapy logic, combining data from various sources to generate APS recommendations.
+     */
+    val therapyManager: TherapyManager
+
+    /**
+     * Manages the overall application state, including the active APS mode and system-wide issues.
+     */
+    val systemManager: SystemManager
 
     // Other stuff
 
@@ -66,5 +134,8 @@ interface SystemRegistry {
      */
     val permissionsChangedHandler: PermissionsChangedHandler
 
+    /**
+     * The class reference for the background service that hosts the APS core logic.
+     */
     val apsServiceClass: Class<out Service>
 }
