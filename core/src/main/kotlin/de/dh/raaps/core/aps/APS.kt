@@ -185,7 +185,6 @@ class APS(
     fun startInitialization() {
         inAPSThread {
             core.initialize()
-            therapyManager.startInitialization(pumpManager)
 
             launch {
                 settingsRepository.observeCurrentSettings().collect { settings ->
@@ -201,10 +200,6 @@ class APS(
             launch {
                 therapyManager.currentTherapySettingsFlow.drop(1).collect { settings ->
                     if (settings == null) return@collect
-                    pumpManager.issueCommand(
-                        PumpCommand.SetProfile(settings.insulinProfile),
-                        isCancelableAPSCommand = false
-                    )
                     core.onTherapySettingsChanged(settings)
                 }
             }

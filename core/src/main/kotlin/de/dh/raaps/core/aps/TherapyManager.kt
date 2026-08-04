@@ -16,21 +16,45 @@ import de.dh.raaps.common.model.data.InsulinProfile
 import de.dh.raaps.common.model.data.Timestamp
 import de.dh.raaps.common.model.data.getAmountForMinute
 import de.dh.raaps.common.model.data.getBgForMinute
+import de.dh.raaps.core.pump.PumpCommand
 import de.dh.raaps.core.pump.PumpManager
 import de.dh.raaps.core.repository.TherapyRepository
 import de.dh.raaps.core.repository.TreatmentRepository
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.drop
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 
 class TherapyManager(
     private val therapyRepository: TherapyRepository,
     private val treatmentRepository: TreatmentRepository,
-    private val appPreferencesRepository: AppPreferencesRepository
+    private val appPreferencesRepository: AppPreferencesRepository,
+    private val pumpManager: PumpManager,
+    private val scope: CoroutineScope
 ) {
     private val mutex = Mutex()
 
     val currentTherapySettingsFlow: Flow<CurrentTherapySettings> = therapyRepository.observeCurrentTherapySettings()
+
+    /**
+     * Wires up the therapy manager with external components.
+     */
+    fun startInitialization() {
+        pumpManager.setOnHistoryUpdateListener { history ->
+            updatePumpHistory(history)
+        }
+
+        scope.launch {
+            currentTherapySettingsFlow.drop(1).collect { settings ->
+                pumpManager.issueCommand(
+                    PumpCommand.SetProfile(settings.insulinProfile),
+                    isCancelableAPSCommand = false
+                )
+            }
+        }
+    }
 
     suspend fun getActiveTherapySettings(): CurrentTherapySettings = therapyRepository.getCurrentTherapySettings()
 
@@ -108,7 +132,7 @@ class TherapyManager(
     suspend fun selectInsulinProfile(profile: InsulinProfile) {
         mutex.withLock {
             val currentSettings = getActiveTherapySettings()
-            
+
             val newSettings = currentSettings.copy(
                 insulinProfile = profile
             )
@@ -156,15 +180,6 @@ class TherapyManager(
                 lowThresholdOverride = threshold
             )
             therapyRepository.updateCurrentTherapySettings(newSettings)
-        }
-    }
-
-    /**
-     * Wires up the therapy manager with external components.
-     */
-    fun startInitialization(pumpManager: PumpManager) {
-        pumpManager.setOnHistoryUpdateListener { history ->
-            updatePumpHistory(history)
         }
     }
 

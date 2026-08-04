@@ -75,16 +75,24 @@ class RAAPSRegistryImpl(
             val settingsRepository = SettingsRepository(appDatabase)
 
             // Initialize Managers
-            val therapyManager = TherapyManager(therapyRepository, treatmentRepository, appPreferencesRepository)
             val wakeService = SystemWakeServiceImpl(application)
             val timeService = TimeServiceImpl(scope = scope)
             val pumpManager = PumpManagerImpl(scope = scope, wakeService = wakeService)
+            val therapyManager = TherapyManager(
+                therapyRepository = therapyRepository,
+                treatmentRepository = treatmentRepository,
+                appPreferencesRepository = appPreferencesRepository,
+                pumpManager = pumpManager,
+                scope = scope
+            )
             val carbsInsulinCalculationModel = CarbsInsulinCalculationModel(timeService.tickInterval)
 
             runBlocking {
                 treatmentRepository.load()
                 DatabaseInitializer.initialize(application, treatmentRepository, therapyRepository, settingsRepository)
             }
+
+            therapyManager.startInitialization()
 
             val aps = APS(
                 glucoseRepository = glucoseRepository,
