@@ -111,46 +111,9 @@ fun ApsControlCard(
                     color = MaterialTheme.colorScheme.primary,
                     maxLines = 2,
                     overflow = TextOverflow.Ellipsis,
-                    textAlign = TextAlign.Center
-                )
-
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                    textAlign = TextAlign.Center,
                     modifier = Modifier.padding(bottom = 4.dp)
-                ) {
-                    // Target
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Icon(
-                            imageVector = Icons.Default.Adjust,
-                            contentDescription = null,
-                            modifier = Modifier.size(14.dp),
-                            tint = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                        Spacer(Modifier.width(4.dp))
-                        Text(
-                            text = profileUiState.target.mgdl.toString(),
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
-
-                    // Low
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Icon(
-                            imageVector = Icons.Default.VerticalAlignBottom,
-                            contentDescription = null,
-                            modifier = Modifier.size(14.dp),
-                            tint = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                        Spacer(Modifier.width(4.dp))
-                        Text(
-                            text = profileUiState.lowThreshold.mgdl.toString(),
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
-                }
+                )
 
                 // Chips (Basal, I:C, ISF)
                 CompositionLocalProvider(
@@ -196,6 +159,44 @@ fun ApsControlCard(
                                 )
                             }
                         }
+                    }
+                }
+
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                    modifier = Modifier.padding(top = 8.dp)
+                ) {
+                    // Target
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(
+                            imageVector = Icons.Default.Adjust,
+                            contentDescription = null,
+                            modifier = Modifier.size(14.dp),
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        Spacer(Modifier.width(4.dp))
+                        Text(
+                            text = profileUiState.target.mgdl.toString(),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+
+                    // Low
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(
+                            imageVector = Icons.Default.VerticalAlignBottom,
+                            contentDescription = null,
+                            modifier = Modifier.size(14.dp),
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        Spacer(Modifier.width(4.dp))
+                        Text(
+                            text = profileUiState.lowThreshold.mgdl.toString(),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
                     }
                 }
             }
@@ -259,7 +260,7 @@ fun ApsControlCard(
                         contentPadding = PaddingValues(horizontal = 8.dp, vertical = 8.dp)
                     ) {
                         Icon(Icons.Default.UnfoldMore, null, modifier = Modifier.size(18.dp))
-                        Spacer(Modifier.width(4.dp))
+                        Spacer(Modifier.width(8.dp))
                         Text(displayStrategy.format(adjustmentPercentage), style = MaterialTheme.typography.titleMedium)
                     }
                 } else {
@@ -274,7 +275,7 @@ fun ApsControlCard(
                         contentPadding = PaddingValues(horizontal = 8.dp, vertical = 8.dp)
                     ) {
                         Icon(Icons.Default.UnfoldMore, null, modifier = Modifier.size(18.dp))
-                        Spacer(Modifier.width(4.dp))
+                        Spacer(Modifier.width(8.dp))
                         Text(
                             displayStrategy.format(adjustmentPercentage),
                             style = MaterialTheme.typography.titleMedium

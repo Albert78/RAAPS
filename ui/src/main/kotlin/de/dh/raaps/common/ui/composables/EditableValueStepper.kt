@@ -27,6 +27,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.text.TextRange
@@ -52,11 +53,21 @@ fun EditableValueStepper(
     suffix: String = ""
 ) {
     var isEditing by remember { mutableStateOf(false) }
+    // Track if the field actually gained focus to avoid closing immediately on mount
+    var hasGainedFocus by remember { mutableStateOf(false) }
+
     var textFieldValue by remember {
         mutableStateOf(TextFieldValue(currentValue.toString()))
     }
     val focusManager = LocalFocusManager.current
     val focusRequester = remember { FocusRequester() }
+
+    // Reset focus tracking when editing starts
+    LaunchedEffect(isEditing) {
+        if (!isEditing) {
+            hasGainedFocus = false
+        }
+    }
 
     val onStepUp = {
         val nextValue = steppingStrategy.stepUp(currentValue)
@@ -105,7 +116,14 @@ fun EditableValueStepper(
                     },
                     modifier = Modifier
                         .width(80.dp)
-                        .focusRequester(focusRequester),
+                        .focusRequester(focusRequester)
+                        .onFocusChanged { focusState ->
+                            if (focusState.isFocused) {
+                                hasGainedFocus = true
+                            } else if (hasGainedFocus) {
+                                isEditing = false
+                            }
+                        },
                     textStyle = MaterialTheme.typography.titleLarge.copy(textAlign = TextAlign.Center),
                     keyboardOptions = KeyboardOptions(
                         keyboardType = KeyboardType.Number,
