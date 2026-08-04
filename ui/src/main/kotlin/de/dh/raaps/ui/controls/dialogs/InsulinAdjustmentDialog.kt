@@ -67,7 +67,7 @@ fun InsulinAdjustmentDialogContent(
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
         Text(
-            text = stringResource(R.string.aps_control_adjustment_dialog_description),
+            text = stringResource(R.string.aps_control_insulin_adjustment_dialog_description),
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
@@ -98,7 +98,7 @@ fun InsulinAdjustmentDialogContent(
                 HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
 
                 Text(
-                    text = stringResource(R.string.aps_control_adjustment_dialog_presets_title),
+                    text = stringResource(R.string.aps_control_insulin_adjustment_dialog_presets_title),
                     style = MaterialTheme.typography.labelMedium,
                     color = MaterialTheme.colorScheme.primary
                 )
@@ -144,7 +144,7 @@ fun InsulinAdjustmentDialog(
 ) {
     AlertDialog(
         onDismissRequest = onDismissRequest,
-        title = { Text(stringResource(id = R.string.aps_control_adjustment_dialog_title)) },
+        title = { Text(stringResource(id = R.string.aps_control_insulin_adjustment_dialog_title)) },
         text = {
             InsulinAdjustmentDialogContent(
                 currentValue = currentValue,

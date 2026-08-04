@@ -260,7 +260,7 @@ private fun ActiveInsulinProfileCard(
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
                 Text(
-                    text = profile.name.ifBlank { stringResource(id = R.string.aps_control_no_profile) },
+                    text = profile.name.ifBlank { stringResource(id = R.string.aps_control_no_insulin_profile) },
                     style = MaterialTheme.typography.headlineSmall,
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.onSurface,
@@ -377,7 +377,7 @@ private fun ActiveInsulinProfileCard(
                             color = MaterialTheme.colorScheme.onSurface
                         )
                         Text(
-                            text = stringResource(id = R.string.aps_control_adjustment_dialog_description),
+                            text = stringResource(id = R.string.aps_control_insulin_adjustment_dialog_description),
                             style = MaterialTheme.typography.labelSmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )

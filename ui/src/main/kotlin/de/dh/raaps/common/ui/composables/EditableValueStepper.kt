@@ -1,5 +1,6 @@
 package de.dh.raaps.common.ui.composables
 
+import android.content.res.Configuration
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Row
@@ -16,6 +17,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -36,13 +38,13 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import de.dh.raaps.common.ui.DefaultSteppingStrategy
 import de.dh.raaps.common.ui.DefaultValueDisplayStrategy
 import de.dh.raaps.common.ui.SteppingStrategy
 import de.dh.raaps.common.ui.ValueDisplayStrategy
-import kotlin.math.ceil
-import kotlin.math.floor
+import de.dh.raaps.common.ui.theme.AppTheme
 
 @Composable
 fun EditableValueStepper(
@@ -172,6 +174,22 @@ fun EditableValueStepper(
             modifier = Modifier.size(48.dp)
         ) {
             Icon(Icons.Default.Add, contentDescription = "Increase")
+        }
+    }
+}
+
+@Preview(showBackground = true)
+@Preview(showBackground = true, uiMode = Configuration.UI_MODE_NIGHT_YES)
+@Composable
+fun EditableValueStepperPreview() {
+    var value by remember { mutableStateOf(100) }
+    AppTheme {
+        Surface {
+            EditableValueStepper(
+                currentValue = value,
+                onValueChange = { value = it },
+                suffix = "mg/dL"
+            )
         }
     }
 }

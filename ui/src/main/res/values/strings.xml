@@ -127,11 +127,13 @@
     <string name="aps_control_cr_label">CR %1$s</string>
     <string name="aps_control_isf_label">ISF %1$d</string>
     <string name="aps_control_adjustment_neutral">neutral</string>
-    <string name="aps_control_no_profile">Kein Profil</string>
+    <string name="aps_control_no_insulin_profile">Kein Profil</string>
+
     <string name="aps_control_insulin_adjustment_label">Temporäre Anpassung</string>
-    <string name="aps_control_adjustment_dialog_title">Insulin-Anpassung</string>
-    <string name="aps_control_adjustment_dialog_description">Passt die abgegebene Insulinmenge prozentual an.</string>
-    <string name="aps_control_adjustment_dialog_presets_title">Schnellauswahl</string>
+    <string name="aps_control_insulin_adjustment_dialog_title">Insulin-Anpassung</string>
+    <string name="aps_control_insulin_adjustment_dialog_description">Passe die abgegebene Insulinmenge für einen begrenzten Zeitraum prozentual an.</string>
+    <string name="aps_control_insulin_adjustment_dialog_presets_title">Schnellauswahl</string>
+
 
     <string name="glucose_unit_mgdl">mg/dL</string>
     <string name="glucose_unit_mmol">mmol/l</string>
