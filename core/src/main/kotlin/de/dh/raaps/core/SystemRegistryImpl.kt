@@ -8,7 +8,6 @@ import de.dh.raaps.common.model.PluginManager
 import de.dh.raaps.common.model.calculation.CarbsInsulinCalculationModel
 import de.dh.raaps.common.model.data.Minutes
 import de.dh.raaps.common.model.data.TimeService
-import de.dh.raaps.core.aps.APS
 import de.dh.raaps.core.aps.Core
 import de.dh.raaps.core.aps.GlucoseSourceManager
 import de.dh.raaps.core.aps.SystemManager
@@ -45,9 +44,8 @@ class SystemRegistryImpl(
     override val deviceManagementRepository: DeviceManagementRepository,
     override val settingsRepository: SettingsRepository,
     override val appPreferencesRepository: AppPreferencesRepository,
-    override val therapyManager: TherapyManager,
     override val glucoseSourceManager: GlucoseSourceManager,
-    override val aps: APS,
+    override val therapyManager: TherapyManager,
     override val systemManager: SystemManager,
     override val pluginManager: PluginManager,
     override val wakeService: SystemWakeService,
@@ -124,18 +122,13 @@ class SystemRegistryImpl(
 
             therapyManager.startInitialization()
 
-            val aps = APS(
-                glucoseSourceManager = glucoseSourceManager,
+            systemManager.startInitialization(
                 treatmentRepository = treatmentRepository,
                 therapyManager = therapyManager,
-                systemManager = systemManager,
-                wakeService = wakeService,
-                timeService = timeService,
                 appPreferencesRepository = appPreferencesRepository,
                 carbsInsulinCalculationModel = carbsInsulinCalculationModel,
                 context = application
             )
-            aps.startInitialization()
 
             notificationManager.startInitialization(scope, glucoseSourceManager, therapyManager, timeService)
 
@@ -155,7 +148,6 @@ class SystemRegistryImpl(
                 appPreferencesRepository = appPreferencesRepository,
                 therapyManager = therapyManager,
                 glucoseSourceManager = glucoseSourceManager,
-                aps = aps,
                 systemManager = systemManager,
                 pluginManager = pluginManager,
                 wakeService = wakeService,

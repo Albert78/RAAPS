@@ -1,18 +1,28 @@
 package de.dh.raaps.core.aps
 
+import android.content.Context
 import android.content.Intent
+import de.dh.raaps.AppPreferencesRepository
 import de.dh.raaps.common.model.ApsMode
+import de.dh.raaps.common.model.calculation.CarbsInsulinCalculationModel
 import de.dh.raaps.common.model.data.TimeService
 import de.dh.raaps.common.model.data.Timestamp
 import de.dh.raaps.core.repository.SettingsRepository
+import de.dh.raaps.core.repository.TreatmentRepository
 import de.dh.raaps.core.system.SystemWakeService
 import de.dh.raaps.core.system.WakeupHandler
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.asCoroutineDispatcher
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.drop
 import kotlinx.coroutines.launch
+import java.util.concurrent.Executors
 
 enum class ApsIssue {
     /**
@@ -42,9 +52,30 @@ interface SystemManager {
     val apsIssues: StateFlow<Set<ApsIssue>>
 
     /**
+     * State of the core loop.
+     */
+    val coreState: StateFlow<CoreState>
+
+    /**
      * Updates the APS mode and persists the change.
      */
     fun setApsMode(mode: ApsMode)
+
+    /**
+     * Starts the initialization of the system core.
+     */
+    fun startInitialization(
+        treatmentRepository: TreatmentRepository,
+        therapyManager: TherapyManager,
+        appPreferencesRepository: AppPreferencesRepository,
+        carbsInsulinCalculationModel: CarbsInsulinCalculationModel,
+        context: Context
+    )
+
+    /**
+     * Gracefully stops the system.
+     */
+    fun stop()
 }
 
 /**
@@ -57,11 +88,21 @@ class SystemManagerImpl(
     private val timeService: TimeService,
     private val scope: CoroutineScope
 ) : SystemManager, WakeupHandler {
+    // Threading: Single background thread to avoid race conditions in the core logic
+    private val coreDispatcher = Executors.newSingleThreadExecutor().asCoroutineDispatcher()
+    private val coreScope = CoroutineScope(coreDispatcher + SupervisorJob())
+
     private val _apsMode = MutableStateFlow(ApsMode.Suspend)
     override val apsMode: StateFlow<ApsMode> = _apsMode.asStateFlow()
 
     private val _apsIssues = MutableStateFlow<Set<ApsIssue>>(emptySet())
     override val apsIssues: StateFlow<Set<ApsIssue>> = _apsIssues.asStateFlow()
+
+    private val _coreState = MutableStateFlow<CoreState>(CoreState.Initializing)
+    override val coreState: StateFlow<CoreState> = _coreState.asStateFlow()
+
+    // Computation Core: Pure logic and state, completely thread-agnostic
+    private lateinit var core: Core
 
     init {
         wakeService.registerHandler(WAKE_TAG, this)
@@ -86,6 +127,98 @@ class SystemManagerImpl(
                 }
             }
         }
+    }
+
+    /**
+     * Executes the given block on the internal core thread.
+     */
+    private fun inCoreThread(block: suspend CoroutineScope.() -> Unit): Job {
+        return coreScope.launch {
+            block()
+        }
+    }
+
+    /**
+     * Executes the given block in a thread of the default dispatcher for
+     * async executions of outgoing events.
+     */
+    private fun inExternalDispatcher(block: suspend CoroutineScope.() -> Unit): Job {
+        return coreScope.launch(Dispatchers.Default) {
+            block()
+        }
+    }
+
+    override fun startInitialization(
+        treatmentRepository: TreatmentRepository,
+        therapyManager: TherapyManager,
+        appPreferencesRepository: AppPreferencesRepository,
+        carbsInsulinCalculationModel: CarbsInsulinCalculationModel,
+        context: Context
+    ) {
+        core = Core.createProductiveCore(
+            therapyManager = therapyManager,
+            treatmentRepository = treatmentRepository,
+            timeService = timeService,
+            carbsInsulinCalculationModel = carbsInsulinCalculationModel,
+            glucoseSourceManager = glucoseSourceManager,
+
+            onCoreStateChanged = { emitCoreStateChangedEvent() },
+            onAcquireBusyState = { acquireBusyState() },
+            onReleaseBusyState = { releaseBusyState() },
+
+            onCancelInsulinJobs = { therapyManager.coreCancelInsulinJobs() },
+            onDeliverBolus = { amount -> therapyManager.issueBolus(amount) },
+            onSetTempBasal = { durationInHours, unitsPerHour -> therapyManager.setTempBasal(durationInHours, unitsPerHour) },
+            onCarbsHint = { amountInGram -> therapyManager.recommendCarbs(amountInGram) },
+            onClearRecommendations = { therapyManager.clearRecommendations() },
+            onWaitForAndResetInsulinJobs = { therapyManager.waitForAndResetInsulinJobs() }
+        )
+
+        inCoreThread {
+            core.initialize()
+
+            launch {
+                apsMode.collect { mode ->
+                    if (mode == ApsMode.AutoCorrection) {
+                        core.activate()
+                    } else {
+                        core.suspend()
+                    }
+                }
+            }
+            launch {
+                therapyManager.currentTherapySettingsFlow.drop(1).collect { settings ->
+                    core.onTherapySettingsChanged(settings)
+                }
+            }
+            launch {
+                treatmentRepository.observeMeals().drop(1).collect { data ->
+                    core.onMetabolicEventsChanged()
+                }
+            }
+            launch {
+                treatmentRepository.observeInsulinApplications().drop(1).collect { data ->
+                    core.onMetabolicEventsChanged()
+                }
+            }
+        }
+    }
+
+    private fun acquireBusyState() {
+        wakeService.acquireBusyState(APS_WAKE_TAG)
+    }
+
+    private fun releaseBusyState() {
+        wakeService.releaseBusyState(APS_WAKE_TAG)
+    }
+
+    private fun emitCoreStateChangedEvent() = inExternalDispatcher {
+        _coreState.emit(core.coreState)
+    }
+
+    override fun stop() {
+        coreScope.cancel()
+        coreDispatcher.close()
     }
 
     override fun setApsMode(mode: ApsMode) {
@@ -132,6 +265,7 @@ class SystemManagerImpl(
 
     companion object {
         const val WAKE_TAG = "SystemManager"
+        const val APS_WAKE_TAG = "APS"
         const val WAKEUP_STALE_CHECK = 0u
     }
 }

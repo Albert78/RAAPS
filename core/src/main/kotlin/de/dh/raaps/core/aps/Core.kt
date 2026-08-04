@@ -58,7 +58,6 @@ class Core(
     private val carbsInsulinCalculationModel: CarbsInsulinCalculationModel,
     private val glucoseSourceManager: GlucoseSourceManager,
 
-    private val onDataUpdated: () -> Unit,
     private val onCoreStateChanged: () -> Unit,
     private val onAcquireBusyState: () -> Unit,
     private val onReleaseBusyState: () -> Unit,
@@ -140,7 +139,6 @@ class Core(
                     tickInterval = timeService.tickInterval,
                     carbsInsulinCalculationModel = carbsInsulinCalculationModel
                 )
-                onDataUpdated()
 
                 timeService.registerTickHandler(TickPriority.APS, this@Core)
 
@@ -193,7 +191,6 @@ class Core(
             carbsInsulinCalculationModel: CarbsInsulinCalculationModel,
             glucoseSourceManager: GlucoseSourceManager,
 
-            onDataUpdated: () -> Unit,
             onCoreStateChanged: () -> Unit,
             onAcquireBusyState: () -> Unit,
             onReleaseBusyState: () -> Unit,
@@ -212,7 +209,6 @@ class Core(
                 carbsInsulinCalculationModel = carbsInsulinCalculationModel,
                 glucoseSourceManager = glucoseSourceManager,
 
-                onDataUpdated = onDataUpdated,
                 onCoreStateChanged = onCoreStateChanged,
                 onAcquireBusyState = onAcquireBusyState,
                 onReleaseBusyState = onReleaseBusyState,
