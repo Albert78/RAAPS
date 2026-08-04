@@ -24,7 +24,7 @@ import de.dh.raaps.common.navigation.combineEntryProviders
 import de.dh.raaps.common.ui.composables.EdgeToEdgeHandler
 import de.dh.raaps.common.ui.theme.AppTheme
 import de.dh.raaps.common.ui.theme.rememberUseDarkTheme
-import de.dh.raaps.core.RAAPSRegistry
+import de.dh.raaps.core.SystemRegistry
 import de.dh.raaps.core.system.RegistryProvider
 import de.dh.raaps.ui.navigation.MainFeatureNavGraph
 
@@ -77,7 +77,7 @@ class MainActivity : ComponentActivity() {
     }
 
     @Composable
-    fun MainApp(registry: RAAPSRegistry) {
+    fun MainApp(registry: SystemRegistry) {
         val backStack by navViewModel.backstack.collectAsState()
 
         val extraGraphs = getExtraNavGraphs?.let { it(navViewModel) } ?: emptyList()

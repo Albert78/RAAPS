@@ -8,7 +8,7 @@ import androidx.lifecycle.viewmodel.CreationExtras
 import de.dh.raaps.common.ui.ThemeMode
 import de.dh.raaps.common.ui.setThemeMode
 import de.dh.raaps.common.ui.themeMode
-import de.dh.raaps.core.RAAPSRegistry
+import de.dh.raaps.core.SystemRegistry
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -28,9 +28,9 @@ data class PreferencesUiState(
  * ViewModel for application-wide preferences.
  */
 class PreferencesViewModel(
-    private val raapsRegistry: RAAPSRegistry
+    private val systemRegistry: SystemRegistry
 ) : ViewModel() {
-    private val appPreferencesRepository = raapsRegistry.appPreferencesRepository
+    private val appPreferencesRepository = systemRegistry.appPreferencesRepository
     private val _uiState = MutableStateFlow(PreferencesUiState(isLoading = true, isError = false))
     val uiState: StateFlow<PreferencesUiState> = _uiState.asStateFlow()
 
@@ -76,7 +76,7 @@ class PreferencesViewModel(
 
     companion object {
         class Factory(
-            private val registry: RAAPSRegistry
+            private val registry: SystemRegistry
         ) : ViewModelProvider.Factory {
             @Suppress("UNCHECKED_CAST")
             override fun <T : ViewModel> create(modelClass: Class<T>, extras: CreationExtras): T {

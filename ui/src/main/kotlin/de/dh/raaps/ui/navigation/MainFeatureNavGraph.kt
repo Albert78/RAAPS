@@ -22,7 +22,7 @@ import de.dh.raaps.common.navigation.MealBolusRoute
 import de.dh.raaps.common.navigation.NavigationViewModel
 import de.dh.raaps.common.navigation.PermissionsRoute
 import de.dh.raaps.common.navigation.PreferencesMainRoute
-import de.dh.raaps.core.RAAPSRegistry
+import de.dh.raaps.core.SystemRegistry
 import de.dh.raaps.setUserDeclinedPermissions
 import de.dh.raaps.ui.controls.history.HistoryViewModel
 import de.dh.raaps.ui.controls.profile.CurrentTherapyViewModel
@@ -48,7 +48,7 @@ import kotlinx.coroutines.launch
 class MainFeatureNavGraph(
     private val activity: ComponentActivity,
     private val navViewModel: NavigationViewModel,
-    private val registry: RAAPSRegistry,
+    private val registry: SystemRegistry,
     private val extraDashboardContent: @Composable () -> Unit = {}
 ) : FeatureNavGraph {
     override fun getEntry(key: NavKey): NavEntry<NavKey>? {

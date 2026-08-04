@@ -4,8 +4,8 @@ import android.app.Application
 import android.app.ForegroundServiceStartNotAllowedException
 import android.content.Intent
 import androidx.core.content.ContextCompat
-import de.dh.raaps.core.RAAPSRegistry
-import de.dh.raaps.core.RAAPSRegistryImpl
+import de.dh.raaps.core.SystemRegistry
+import de.dh.raaps.core.SystemRegistryImpl
 import de.dh.raaps.core.system.RegistryProvider
 import de.dh.raaps.notifications.AndroidNotificationsImpl
 import de.dh.raaps.pluginmanager.PluginManagerImpl
@@ -27,7 +27,7 @@ class MainApplication : Application(), RegistryProvider {
     lateinit var androidNotifications: AndroidNotificationsImpl
         private set
 
-    override lateinit var registry: RAAPSRegistry
+    override lateinit var registry: SystemRegistry
         private set
 
     val applicationScope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
@@ -43,7 +43,7 @@ class MainApplication : Application(), RegistryProvider {
 
         val pluginManager = PluginManagerImpl(this)
 
-        registry = RAAPSRegistryImpl.create(
+        registry = SystemRegistryImpl.create(
             application = this,
             scope = applicationScope,
             pluginManager = pluginManager,

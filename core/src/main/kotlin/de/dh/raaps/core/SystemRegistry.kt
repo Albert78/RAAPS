@@ -33,7 +33,7 @@ fun interface PermissionsChangedHandler {
  * Central registry for all core services, repositories, and coordinators.
  * This acts as the single source of truth for component access within the application.
  */
-interface RAAPSRegistry {
+interface SystemRegistry {
     val appContext: Context
 
     // Data Repositories

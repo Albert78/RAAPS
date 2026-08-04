@@ -5,7 +5,7 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.CreationExtras
 import de.dh.raaps.common.model.ApsMode
-import de.dh.raaps.core.RAAPSRegistry
+import de.dh.raaps.core.SystemRegistry
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -26,9 +26,9 @@ data class DashboardUiState(
  * ViewModel for the main dashboard screen.
  */
 class DashboardViewModel(
-    private val raapsRegistry: RAAPSRegistry
+    private val systemRegistry: SystemRegistry
 ) : ViewModel() {
-    private val aps = raapsRegistry.aps
+    private val aps = systemRegistry.aps
     private val _uiState = MutableStateFlow(DashboardUiState())
 
     val uiState: StateFlow<DashboardUiState> = combine(
@@ -38,8 +38,8 @@ class DashboardViewModel(
         state.copy(apsMode = mode)
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), DashboardUiState())
 
-    private val glucoseRepository = raapsRegistry.glucoseRepository
-    private val treatmentRepository = raapsRegistry.treatmentRepository
+    private val glucoseRepository = systemRegistry.glucoseRepository
+    private val treatmentRepository = systemRegistry.treatmentRepository
 
     init {
         reload()
@@ -70,7 +70,7 @@ class DashboardViewModel(
     }
 
     companion object {
-        class Factory(private val registry: RAAPSRegistry) : ViewModelProvider.Factory {
+        class Factory(private val registry: SystemRegistry) : ViewModelProvider.Factory {
             @Suppress("UNCHECKED_CAST")
             override fun <T : ViewModel> create(modelClass: Class<T>, extras: CreationExtras): T {
                 return DashboardViewModel(registry) as T

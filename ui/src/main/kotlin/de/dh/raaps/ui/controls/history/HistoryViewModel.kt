@@ -8,7 +8,6 @@ import androidx.lifecycle.viewmodel.CreationExtras
 import de.dh.raaps.common.model.InsulinApplication
 import de.dh.raaps.common.model.MealEntry
 import de.dh.raaps.common.model.ToDo
-import de.dh.raaps.common.model.calculation.CarbsInsulinCalculationModel
 import de.dh.raaps.common.model.data.BgDelta
 import de.dh.raaps.common.model.data.BgReading
 import de.dh.raaps.common.model.data.BgSampleKind
@@ -18,7 +17,7 @@ import de.dh.raaps.common.model.data.Tick
 import de.dh.raaps.common.model.data.TickHandler
 import de.dh.raaps.common.model.data.TickPriority
 import de.dh.raaps.common.model.data.Timestamp
-import de.dh.raaps.core.RAAPSRegistry
+import de.dh.raaps.core.SystemRegistry
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
@@ -95,7 +94,7 @@ data class HistoryUiState(
  * ViewModel for blood glucose history and current status.
  */
 class HistoryViewModel(
-    private val raapsRegistry: RAAPSRegistry
+    private val systemRegistry: SystemRegistry
 ) : ViewModel(), TickHandler {
     private val _currentBgUiState = MutableStateFlow(CurrentBgUiState(
         isLoading = true,
@@ -112,11 +111,11 @@ class HistoryViewModel(
     private val _cob = MutableStateFlow(0.0)
     val cob = _cob.asStateFlow()
 
-    private val glucoseRepository = raapsRegistry.glucoseRepository
-    private val treatmentRepository = raapsRegistry.treatmentRepository
-    private val therapyManager = raapsRegistry.therapyManager
+    private val glucoseRepository = systemRegistry.glucoseRepository
+    private val treatmentRepository = systemRegistry.treatmentRepository
+    private val therapyManager = systemRegistry.therapyManager
 
-    val calculationModel = raapsRegistry.carbsInsulinCalculationModel
+    val calculationModel = systemRegistry.carbsInsulinCalculationModel
 
     private val _tickCounter = MutableStateFlow(0)
 
@@ -125,8 +124,8 @@ class HistoryViewModel(
     }
 
     init {
-        raapsRegistry.timeService.registerTickHandler(TickPriority.UI, this)
-        
+        systemRegistry.timeService.registerTickHandler(TickPriority.UI, this)
+
         viewModelScope.launch {
             combine(
                 glucoseRepository.observeBgReadings(),
@@ -252,14 +251,14 @@ class HistoryViewModel(
 
     override fun onCleared() {
         super.onCleared()
-        raapsRegistry.timeService.unregisterTickHandler(this)
+        systemRegistry.timeService.unregisterTickHandler(this)
     }
 
     companion object {
         val TAG = HistoryViewModel::class.simpleName
 
         class Factory(
-            private val registry: RAAPSRegistry,
+            private val registry: SystemRegistry,
         ) : ViewModelProvider.Factory {
             @Suppress("UNCHECKED_CAST")
             override fun <T : ViewModel> create(modelClass: Class<T>, extras: CreationExtras): T {

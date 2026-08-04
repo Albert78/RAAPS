@@ -4,10 +4,10 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.CreationExtras
-import de.dh.raaps.core.RAAPSRegistry
 import de.dh.raaps.common.model.ID_UNDEFINED
 import de.dh.raaps.common.model.InsulinType
 import de.dh.raaps.common.model.data.InsulinProfile
+import de.dh.raaps.core.SystemRegistry
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
@@ -25,13 +25,13 @@ data class InsulinProfileSettingsUiState(
  * ViewModel for managing therapy profiles (CRUD operations).
  */
 class InsulinProfileSettingsViewModel(
-    private val raapsRegistry: RAAPSRegistry
+    private val systemRegistry: SystemRegistry
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(InsulinProfileSettingsUiState())
     val uiState = _uiState.asStateFlow()
 
-    private val therapyRepository = raapsRegistry.therapyRepository
+    private val therapyRepository = systemRegistry.therapyRepository
 
     init {
         loadData()
@@ -64,8 +64,8 @@ class InsulinProfileSettingsViewModel(
 
     fun isNameUnique(name: String, excludeId: Long): Boolean {
         val trimmedName = name.trim()
-        return _uiState.value.profiles.none { 
-            it.name.trim().equals(trimmedName, ignoreCase = true) && it.id != excludeId 
+        return _uiState.value.profiles.none {
+            it.name.trim().equals(trimmedName, ignoreCase = true) && it.id != excludeId
         }
     }
 
@@ -102,7 +102,7 @@ class InsulinProfileSettingsViewModel(
     }
 
     companion object {
-        class Factory(private val registry: RAAPSRegistry) : ViewModelProvider.Factory {
+        class Factory(private val registry: SystemRegistry) : ViewModelProvider.Factory {
             @Suppress("UNCHECKED_CAST")
             override fun <T : ViewModel> create(modelClass: Class<T>, extras: CreationExtras): T {
                 return InsulinProfileSettingsViewModel(registry) as T

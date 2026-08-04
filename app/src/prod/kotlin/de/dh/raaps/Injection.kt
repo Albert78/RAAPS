@@ -5,12 +5,12 @@ import androidx.activity.ComponentActivity
 import de.dh.raaps.common.model.PluginManager
 import de.dh.raaps.common.navigation.FeatureNavGraph
 import de.dh.raaps.common.navigation.NavigationViewModel
-import de.dh.raaps.core.RAAPSRegistry
+import de.dh.raaps.core.SystemRegistry
 import de.dh.raaps.plugin.glucose.receiver.ExternalSourceType
 import de.dh.raaps.plugin.glucose.receiver.ReceiverGlucosePlugin
 import de.dh.raaps.plugin.pump.SampleInsulinPumpPlugin
 
-fun setupSystem(registry: RAAPSRegistry, pluginManager: PluginManager, application: Application) {
+fun setupSystem(registry: SystemRegistry, pluginManager: PluginManager, application: Application) {
     val aps = registry.aps
     val glucosePlugin = ReceiverGlucosePlugin(
         application,

@@ -30,10 +30,10 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.runBlocking
 
 /**
- * Default implementation of the [RAAPSRegistry].
+ * Default implementation of the [SystemRegistry].
  * Manages the lifecycle and dependencies of all core components.
  */
-class RAAPSRegistryImpl(
+class SystemRegistryImpl(
     override val appContext: Context,
     override val glucoseRepository: GlucoseRepository,
     override val therapyRepository: TherapyRepository,
@@ -52,10 +52,10 @@ class RAAPSRegistryImpl(
     override val carbsInsulinCalculationModel: CarbsInsulinCalculationModel,
     override val permissionsChangedHandler: PermissionsChangedHandler,
     override val apsServiceClass: Class<out Service>
-) : RAAPSRegistry {
+) : SystemRegistry {
     companion object {
         /**
-         * Factory method to create and initialize the [RAAPSRegistry].
+         * Factory method to create and initialize the [SystemRegistry].
          * This encapsulates the complex setup of all repositories, managers, and the APS core.
          */
         fun create(
@@ -65,7 +65,7 @@ class RAAPSRegistryImpl(
             androidNotifications: AndroidNotifications,
             onPermissionsChanged: () -> Unit,
             apsServiceClass: Class<out Service>
-        ): RAAPSRegistry {
+        ): SystemRegistry {
             val appPreferencesRepository = AppPreferencesRepository(context = application, scope = scope)
             val appDatabase = AppDatabase.getInstance(application)
 
@@ -122,7 +122,7 @@ class RAAPSRegistryImpl(
                 onPermissionsChanged()
             }
 
-            return RAAPSRegistryImpl(
+            return SystemRegistryImpl(
                 appContext = application,
                 glucoseRepository = glucoseRepository,
                 therapyRepository = therapyRepository,

@@ -4,7 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.CreationExtras
-import de.dh.raaps.core.RAAPSRegistry
+import de.dh.raaps.core.SystemRegistry
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.launchIn
@@ -22,9 +22,9 @@ import kotlinx.coroutines.flow.update
  * [updateAppPermissions] but we need the UI to call this method when permissions have changed.
  */
 class PermissionsViewModel(
-    private val raapsRegistry: RAAPSRegistry
+    private val systemRegistry: SystemRegistry
 ) : ViewModel() {
-    private val appStateRepository = raapsRegistry.appPreferencesRepository
+    private val appStateRepository = systemRegistry.appPreferencesRepository
 
     private val _uiState = MutableStateFlow(PermissionsUiModel.loading())
     val uiState = _uiState.asStateFlow()
@@ -50,7 +50,7 @@ class PermissionsViewModel(
      * Updates the internal state of the system permissions with the current system settings for this app.
      */
     fun updateAppPermissions() {
-        val appContext = raapsRegistry.appContext
+        val appContext = systemRegistry.appContext
         val canPost = canPostNotifications(appContext)
         val isIgnoring = isIgnoringBatteryOptimizations(appContext)
         val isAutoRevoke = isAutoRevokePermissions(appContext)
@@ -89,13 +89,13 @@ class PermissionsViewModel(
                 notificationPermissionStatus,
                 ignoreBatteryOptimizationPermissionStatus,
                 autoRevokePermissionsPermissionStatus,
-                resources = raapsRegistry.appContext.resources
+                resources = systemRegistry.appContext.resources
             )
         }
     }
 
     companion object {
-        class Factory(private val registry: RAAPSRegistry) : ViewModelProvider.Factory {
+        class Factory(private val registry: SystemRegistry) : ViewModelProvider.Factory {
             @Suppress("UNCHECKED_CAST")
             override fun <T : ViewModel> create(modelClass: Class<T>, extras: CreationExtras): T {
                 return PermissionsViewModel(registry) as T

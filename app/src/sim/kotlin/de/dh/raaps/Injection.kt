@@ -4,7 +4,7 @@ import android.app.Application
 import de.dh.raaps.common.model.PluginManager
 import de.dh.raaps.common.navigation.FeatureNavGraph
 import de.dh.raaps.common.navigation.NavigationViewModel
-import de.dh.raaps.core.RAAPSRegistry
+import de.dh.raaps.core.SystemRegistry
 import de.dh.raaps.plugin.simbody.SimBodyPlugin
 import de.dh.raaps.plugin.simbody.ui.SimBodyNavGraph
 
@@ -16,7 +16,7 @@ private var simBodyPlugin: SimBodyPlugin? = null
  * With this plugin, we can interactively test our core calculation algorithms and the behavior
  * of the app in simulated, "real" situations.
  */
-fun setupSystem(registry: RAAPSRegistry, pluginManager: PluginManager, application: Application) {
+fun setupSystem(registry: SystemRegistry, pluginManager: PluginManager, application: Application) {
     val aps = registry.aps
     val plugin = SimBodyPlugin(application, registry.wakeService, registry.timeService)
     simBodyPlugin = plugin

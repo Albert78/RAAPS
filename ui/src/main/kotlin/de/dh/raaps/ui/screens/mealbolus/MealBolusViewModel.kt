@@ -12,7 +12,7 @@ import de.dh.raaps.common.model.InsulinOrigin
 import de.dh.raaps.common.model.MealEntry
 import de.dh.raaps.common.model.MealType
 import de.dh.raaps.common.model.data.Timestamp
-import de.dh.raaps.core.RAAPSRegistry
+import de.dh.raaps.core.SystemRegistry
 import de.dh.raaps.core.pump.PumpCommand
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -42,16 +42,16 @@ data class MealBolusUiState(
 )
 
 class MealBolusViewModel(
-    private val raapsRegistry: RAAPSRegistry
+    private val systemRegistry: SystemRegistry
 ) : ViewModel() {
     private val _uiState = MutableStateFlow(MealBolusUiState())
     val uiState: StateFlow<MealBolusUiState> = _uiState.asStateFlow()
 
-    private val therapyManager = raapsRegistry.therapyManager
-    private val glucoseRepository = raapsRegistry.glucoseRepository
-    private val treatmentRepository = raapsRegistry.treatmentRepository
-    private val pumpManager = raapsRegistry.pumpManager
-    private val calculationModel = raapsRegistry.carbsInsulinCalculationModel
+    private val therapyManager = systemRegistry.therapyManager
+    private val glucoseRepository = systemRegistry.glucoseRepository
+    private val treatmentRepository = systemRegistry.treatmentRepository
+    private val pumpManager = systemRegistry.pumpManager
+    private val calculationModel = systemRegistry.carbsInsulinCalculationModel
 
     init {
         viewModelScope.launch {
@@ -175,7 +175,7 @@ class MealBolusViewModel(
     }
 
     companion object {
-        class Factory(private val registry: RAAPSRegistry) : ViewModelProvider.Factory {
+        class Factory(private val registry: SystemRegistry) : ViewModelProvider.Factory {
             @Suppress("UNCHECKED_CAST")
             override fun <T : ViewModel> create(modelClass: Class<T>, extras: CreationExtras): T {
                 return MealBolusViewModel(registry) as T

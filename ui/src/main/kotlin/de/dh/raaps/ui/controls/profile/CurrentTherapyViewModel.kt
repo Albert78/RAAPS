@@ -12,7 +12,7 @@ import de.dh.raaps.common.model.data.GlucoseUnit
 import de.dh.raaps.common.model.data.InsulinProfile
 import de.dh.raaps.common.model.data.Minutes
 import de.dh.raaps.common.model.data.Timestamp
-import de.dh.raaps.core.RAAPSRegistry
+import de.dh.raaps.core.SystemRegistry
 import de.dh.raaps.glucoseUnit
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -82,13 +82,13 @@ data class CurrentTherapyUiState(
  * ViewModel for viewing and selecting the current therapy settings.
  */
 class CurrentTherapyViewModel(
-    private val raapsRegistry: RAAPSRegistry
+    private val systemRegistry: SystemRegistry
 ) : ViewModel() {
     private val _uiState = MutableStateFlow(CurrentTherapyUiState())
     val uiState: StateFlow<CurrentTherapyUiState> = _uiState
 
-    private val therapyManager = raapsRegistry.therapyManager
-    private val appPreferencesRepository = raapsRegistry.appPreferencesRepository
+    private val therapyManager = systemRegistry.therapyManager
+    private val appPreferencesRepository = systemRegistry.appPreferencesRepository
 
     // Hardcoded presets for now.
     // TODO: Make these user-editable in the future (e.g. via a database table or preferences).
@@ -203,7 +203,7 @@ class CurrentTherapyViewModel(
     }
 
     companion object {
-        class Factory(private val registry: RAAPSRegistry) : ViewModelProvider.Factory {
+        class Factory(private val registry: SystemRegistry) : ViewModelProvider.Factory {
             @Suppress("UNCHECKED_CAST")
             override fun <T : ViewModel> create(modelClass: Class<T>, extras: CreationExtras): T {
                 return CurrentTherapyViewModel(registry) as T
