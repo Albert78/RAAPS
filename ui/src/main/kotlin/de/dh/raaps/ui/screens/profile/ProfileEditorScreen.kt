@@ -68,10 +68,10 @@ import de.dh.raaps.ui.R
 import de.dh.raaps.common.model.BASAL_MAX
 import de.dh.raaps.common.model.BASAL_MIN
 import de.dh.raaps.common.model.DEFAULT_BASAL_UNITS_PER_HOUR
-import de.dh.raaps.common.model.DEFAULT_IC_GRAM_PER_UNIT
+import de.dh.raaps.common.model.DEFAULT_CR_GRAM_PER_UNIT
 import de.dh.raaps.common.model.DEFAULT_ISF_MGDL_PER_UNIT
-import de.dh.raaps.common.model.IC_MAX
-import de.dh.raaps.common.model.IC_MIN
+import de.dh.raaps.common.model.CR_MAX
+import de.dh.raaps.common.model.CR_MIN
 import de.dh.raaps.common.model.ID_UNDEFINED
 import de.dh.raaps.common.model.ISF_MAX
 import de.dh.raaps.common.model.ISF_MIN
@@ -116,7 +116,7 @@ fun ProfileEditorScreen(
                                 DEFAULT_BASAL_UNITS_PER_HOUR
                             )),
                             isfBlocks = listOf(Block(Minutes.ofHours(24), DEFAULT_ISF_MGDL_PER_UNIT)),
-                            icBlocks = listOf(Block(Minutes.ofHours(24), DEFAULT_IC_GRAM_PER_UNIT)),
+                            crBlocks = listOf(Block(Minutes.ofHours(24), DEFAULT_CR_GRAM_PER_UNIT)),
                             insulinType = defaultInsulinType,
                             dia = defaultInsulinType.dia,
                             peak = defaultInsulinType.peak
@@ -237,7 +237,7 @@ fun ProfileDetailEditor(
     var name by remember { mutableStateOf(profile.name) }
     var basalBlocks by remember { mutableStateOf(profile.basalBlocks) }
     var isfBlocks by remember { mutableStateOf(profile.isfBlocks) }
-    var icBlocks by remember { mutableStateOf(profile.icBlocks) }
+    var crBlocks by remember { mutableStateOf(profile.crBlocks) }
     var insulinType by remember { mutableStateOf(profile.insulinType) }
     var dia by remember { mutableStateOf(profile.dia.value.toString()) }
     var peak by remember { mutableStateOf(profile.peak.value.toString()) }
@@ -249,7 +249,7 @@ fun ProfileDetailEditor(
         "Insulin",
         stringResource(id = R.string.profile_editor_tab_basal),
         stringResource(id = R.string.profile_editor_tab_isf),
-        stringResource(id = R.string.profile_editor_tab_ic)
+        stringResource(id = R.string.profile_editor_tab_cr)
     )
 
     val isNameValid = name.trim().isNotBlank() && isNameUnique(name.trim(), profile.id)
@@ -259,7 +259,7 @@ fun ProfileDetailEditor(
     val hasChanges = name != profile.name || 
             basalBlocks != profile.basalBlocks || 
             isfBlocks != profile.isfBlocks || 
-            icBlocks != profile.icBlocks ||
+            crBlocks != profile.crBlocks ||
             insulinType != profile.insulinType ||
             diaValue != profile.dia.value.toInt() ||
             peakValue != profile.peak.value.toInt()
@@ -293,7 +293,7 @@ fun ProfileDetailEditor(
                                 name = name.trim(), 
                                 basalBlocks = basalBlocks,
                                 isfBlocks = isfBlocks,
-                                icBlocks = icBlocks,
+                                crBlocks = crBlocks,
                                 insulinType = insulinType,
                                 dia = Minutes(diaValue.toShort()),
                                 peak = Minutes(peakValue.toShort())
@@ -373,14 +373,14 @@ fun ProfileDetailEditor(
                         maxValue = ISF_MAX
                     )
                     3 -> TherapyBlockListEditor(
-                        title = stringResource(id = R.string.profile_editor_ic_title),
-                        description = stringResource(id = R.string.profile_editor_ic_desc),
-                        blocks = icBlocks,
-                        onBlocksChanged = { icBlocks = it },
+                        title = stringResource(id = R.string.profile_editor_cr_title),
+                        description = stringResource(id = R.string.profile_editor_cr_desc),
+                        blocks = crBlocks,
+                        onBlocksChanged = { crBlocks = it },
                         step = 0.1,
                         format = "%.1f",
-                        minValue = IC_MIN,
-                        maxValue = IC_MAX
+                        minValue = CR_MIN,
+                        maxValue = CR_MAX
                     )
                 }
             }

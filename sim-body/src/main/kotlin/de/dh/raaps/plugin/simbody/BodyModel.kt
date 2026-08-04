@@ -105,8 +105,8 @@ class BodyModel(
     val isf: Double
         get() = activeProfile.isfBlocks.getAmountForMinute(Timestamp.now().minutesSinceMidnight())
 
-    val ic: Double
-        get() = activeProfile.icBlocks.getAmountForMinute(Timestamp.now().minutesSinceMidnight())
+    val cr: Double
+        get() = activeProfile.crBlocks.getAmountForMinute(Timestamp.now().minutesSinceMidnight())
 
     val liverGlucoseOutputGph: Double
         get() = activeProfile.liverGlucoseOutputBlocks.getAmountForMinute(Timestamp.now().minutesSinceMidnight())
@@ -187,7 +187,7 @@ class BodyModel(
 
         // Liver production offsets normal basal insulin.
         // Liver output is in grams of carbs per hour.
-        val endogenousImpact = (liverGlucoseOutputGph / ic) * isf * durationHours
+        val endogenousImpact = (liverGlucoseOutputGph / cr) * isf * durationHours
 
         // Exercise and Stress impact on BG level directly
         val exerciseImpact = exerciseIntensity * 60.0 * durationHours
@@ -343,7 +343,7 @@ class BodyModel(
             totalCarbsAbsorbed += mealAbsorbedInWindow
         }
 
-        // Rise from carbs depends on Insulin-to-Carb ratio (IC)
-        return (totalCarbsAbsorbed / ic) * isf
+        // Rise from carbs depends on Insulin-to-Carb ratio (CR)
+        return (totalCarbsAbsorbed / cr) * isf
     }
 }

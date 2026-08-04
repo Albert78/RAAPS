@@ -36,5 +36,5 @@
     <string name="therapy_low_threshold_label">Low-Schwelle</string>
     <string name="therapy_basal_label">Basalrate</string>
     <string name="therapy_isf_label">ISF</string>
-    <string name="therapy_ic_label">I:C</string>
+    <string name="therapy_cr_label">CR</string>
 </resources>

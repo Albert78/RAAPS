@@ -124,8 +124,8 @@ fun CurrentTherapySettingsContent(
                                         String.format(locale, "%.1f", activeProfile.basal)
                                     ) + " | " +
                                             stringResource(
-                                                id = R.string.aps_control_ic_label,
-                                                String.format(locale, "%.1f", activeProfile.ic)
+                                                id = R.string.aps_control_cr_label,
+                                                String.format(locale, "%.1f", activeProfile.cr)
                                             ) + " | " +
                                             stringResource(
                                                 id = R.string.aps_control_isf_label,

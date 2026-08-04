@@ -24,7 +24,7 @@ data class ProfileUiState(
     val name: String,
     val activeProfileId: Long?,
     val isf: BgDelta,
-    val ic: Double,
+    val cr: Double,
     val basal: Double,
     val target: BgValue,
     val lowThreshold: BgValue,
@@ -37,7 +37,7 @@ data class ProfileUiState(
             name = "",
             activeProfileId = null,
             isf = BgDelta(0),
-            ic = 0.0,
+            cr = 0.0,
             basal = 0.0,
             target = BgValue.fromMgDl(0),
             lowThreshold = BgValue.fromMgDl(0),
@@ -96,7 +96,7 @@ class CurrentTherapyViewModel(
     private suspend fun updateState(currentSettings: CurrentTherapySettings, profiles: List<InsulinProfile>) {
         val now = Timestamp.now()
         val isf = therapyManager.getIsfFactor(now)
-        val ic = therapyManager.getIcFactor(now)
+        val cr = therapyManager.getCrFactor(now)
         val basal = therapyManager.getBasalPerHour(now)
         val bgSettings = therapyManager.getBgSettings()
 
@@ -107,7 +107,7 @@ class CurrentTherapyViewModel(
             name = activeProfileName,
             activeProfileId = currentSettings.insulinProfile.id,
             isf = isf,
-            ic = ic,
+            cr = cr,
             basal = basal,
             target = bgSettings.first,
             lowThreshold = bgSettings.second,

@@ -2,7 +2,7 @@
   "formatVersion": 1,
   "database": {
     "version": 1,
-    "identityHash": "6497569ce3f8a003756cdda2a1c07563",
+    "identityHash": "f11b9f3188785ecbaff6f39363351a4d",
     "entities": [
       {
         "tableName": "sensor_type",
@@ -143,7 +143,7 @@
       },
       {
         "tableName": "profiles",
-        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `name` TEXT NOT NULL, `basal_blocks` TEXT NOT NULL, `isf_blocks` TEXT NOT NULL, `ic_blocks` TEXT NOT NULL, `insulin_type_id` TEXT NOT NULL, `dia` INTEGER NOT NULL, `peak` INTEGER NOT NULL)",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `name` TEXT NOT NULL, `basal_blocks` TEXT NOT NULL, `isf_blocks` TEXT NOT NULL, `cr_blocks` TEXT NOT NULL, `insulin_type_id` TEXT NOT NULL, `dia` INTEGER NOT NULL, `peak` INTEGER NOT NULL)",
         "fields": [
           {
             "fieldPath": "id",
@@ -170,8 +170,8 @@
             "notNull": true
           },
           {
-            "fieldPath": "ic_blocks",
-            "columnName": "ic_blocks",
+            "fieldPath": "cr_blocks",
+            "columnName": "cr_blocks",
             "affinity": "TEXT",
             "notNull": true
           },
@@ -475,7 +475,7 @@
     ],
     "setupQueries": [
       "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
-      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '6497569ce3f8a003756cdda2a1c07563')"
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, 'f11b9f3188785ecbaff6f39363351a4d')"
     ]
   }
 }

@@ -93,8 +93,8 @@ fun CurrentTherapyView(
                 modifier = Modifier.padding(bottom = 2.dp)
             )
             InfoRow(
-                label = stringResource(id = de.dh.raaps.common.R.string.therapy_ic_label),
-                value = activeProfile?.ic?.let { String.format(Locale.getDefault(), "%.1f", it) } ?: "-",
+                label = stringResource(id = de.dh.raaps.common.R.string.therapy_cr_label),
+                value = activeProfile?.cr?.let { String.format(Locale.getDefault(), "%.1f", it) } ?: "-",
                 unit = "g/U"
             )
         }

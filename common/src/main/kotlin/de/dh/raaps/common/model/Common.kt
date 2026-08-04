@@ -27,15 +27,15 @@ const val BASAL_MAX = 10.0
 const val ISF_MIN = 10.0
 const val ISF_MAX = 300.0
 
-const val IC_MIN = 1.0
-const val IC_MAX = 100.0
+const val CR_MIN = 1.0
+const val CR_MAX = 100.0
 
 const val TARGET_MIN = 70
 const val TARGET_MAX = 180
 
 const val DEFAULT_BASAL_UNITS_PER_HOUR = 0.5
 const val DEFAULT_ISF_MGDL_PER_UNIT = 50.0
-const val DEFAULT_IC_GRAM_PER_UNIT = 10.0
+const val DEFAULT_CR_GRAM_PER_UNIT = 10.0
 const val DEFAULT_BG_TARGET_MGDL: Short = 100
 const val DEFAULT_BG_LOW_THRESHOLD_MGDL: Short = 70
 

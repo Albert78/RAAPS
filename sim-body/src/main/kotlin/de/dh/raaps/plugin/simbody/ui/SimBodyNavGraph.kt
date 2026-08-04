@@ -54,7 +54,7 @@ class SimBodyNavGraph(
         var therapyProfileName: String? = null
         var therapyBasal: String? = null
         var therapyIsf: String? = null
-        var therapyIc: String? = null
+        var therapyCr: String? = null
         var therapyTarget: String? = null
         var lowThreshold: String? = null
 
@@ -66,7 +66,7 @@ class SimBodyNavGraph(
         therapyProfileName = therapyState.activeProfile?.name
         therapyBasal = therapyState.activeProfile?.basal?.let { "$it U/h" }
         therapyIsf = therapyState.activeProfile?.isf?.let { "${it.mgdl} mg/dL/U" }
-        therapyIc = therapyState.activeProfile?.ic?.let { "$it g/U" }
+        therapyCr = therapyState.activeProfile?.cr?.let { "$it g/U" }
         therapyTarget = therapyState.activeProfile?.target?.let { "${it.mgdl} mg/dL" }
         lowThreshold = therapyState.activeProfile?.lowThreshold?.let { "${it.mgdl} mg/dL" }
 
@@ -84,7 +84,7 @@ class SimBodyNavGraph(
             treatmentProfileName = therapyProfileName,
             treatmentBasal = therapyBasal,
             treatmentIsf = therapyIsf,
-            treatmentIc = therapyIc,
+            treatmentCr = therapyCr,
             treatmentTarget = therapyTarget,
             treatmentLowThreshold = lowThreshold
         )

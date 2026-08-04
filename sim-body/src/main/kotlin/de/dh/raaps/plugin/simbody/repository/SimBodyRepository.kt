@@ -33,7 +33,7 @@ class SimBodyRepository(private val simBodyDao: SimBodyDao) {
     suspend fun getActiveBodyProfile(): BodyProfile? {
         val entity = simBodyDao.getActiveBodyProfile() ?: return null
         return BodyProfile(
-            icBlocks = parseBlocks(entity.icBlocks),
+            crBlocks = parseBlocks(entity.crBlocks),
             isfBlocks = parseBlocks(entity.isfBlocks),
             liverGlucoseOutputBlocks = parseBlocks(entity.liverGlucoseOutputBlocks)
         )
@@ -67,7 +67,7 @@ class SimBodyRepository(private val simBodyDao: SimBodyDao) {
         simBodyDao.insertBodyProfile(
             BodyProfileEntity(
                 name = name,
-                icBlocks = blocksToJson(profile.icBlocks),
+                crBlocks = blocksToJson(profile.crBlocks),
                 isfBlocks = blocksToJson(profile.isfBlocks),
                 liverGlucoseOutputBlocks = blocksToJson(profile.liverGlucoseOutputBlocks),
                 isActive = isActive

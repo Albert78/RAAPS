@@ -11,14 +11,14 @@
     <string name="profile_editor_name_label">Profilname</string>
     <string name="profile_editor_tab_basal">Basal</string>
     <string name="profile_editor_tab_isf">ISF</string>
-    <string name="profile_editor_tab_ic">I:C</string>
+    <string name="profile_editor_tab_cr">CR</string>
     <string name="profile_editor_tab_bg">BG</string>
     <string name="profile_editor_basal_title">Basalrate</string>
     <string name="profile_editor_basal_desc">Die Menge an Insulin, die kontinuierlich abgegeben wird (Einheit: U/h).</string>
     <string name="profile_editor_isf_title">ISF (Insulin-Sensitivitäts-Faktor)</string>
     <string name="profile_editor_isf_desc">Gibt an, wie stark eine Einheit Insulin den Blutzucker senkt (Einheit: mg/dL/U).</string>
-    <string name="profile_editor_ic_title">I:C (Insulin-Kohlenhydrat-Verhältnis)</string>
-    <string name="profile_editor_ic_desc">Gibt an, wie viele Gramm Kohlenhydrate durch eine Einheit Insulin abgedeckt werden (Einheit: g/U).</string>
+    <string name="profile_editor_cr_title">CR (Kohlenhydrat-Insulin-Verhältnis)</string>
+    <string name="profile_editor_cr_desc">Gibt an, wie viele Gramm Kohlenhydrate durch eine Einheit Insulin abgedeckt werden (Einheit: g/U).</string>
     <string name="profile_editor_help_title">Anleitung: 24h-Profil</string>
     <string name="profile_editor_help_message">Jeder Block definiert den Wert ab der gewählten Uhrzeit bis zum Start des nächsten Blocks.\n\n• Der erste Block beginnt immer um 00:00 Uhr.\n• Nutze das [+], um neue Zeitabschnitte einzufügen.\n• Die Uhrzeit eines Blocks kann nur zwischen seinen Nachbarn verschoben werden.\n• Am Ende des Tages schließt der letzte Block automatisch um 24:00 Uhr ab.</string>
 
@@ -107,7 +107,7 @@
     <string name="aps_mode_basal_only">Nur Basal</string>
     <string name="aps_mode_auto_correction">Auto-Korr.</string>
     <string name="aps_control_basal_label">Basal: %1$s U/h</string>
-    <string name="aps_control_ic_label">I:C %1$s</string>
+    <string name="aps_control_cr_label">CR %1$s</string>
     <string name="aps_control_isf_label">ISF %1$d</string>
     <string name="aps_control_adjustment_neutral">neutral</string>
     <string name="aps_control_no_profile">Kein Profil</string>

@@ -4,7 +4,7 @@ import android.content.Context
 import de.dh.raaps.common.R
 import de.dh.raaps.common.model.CarbCurveComponentData
 import de.dh.raaps.common.model.DEFAULT_BASAL_UNITS_PER_HOUR
-import de.dh.raaps.common.model.DEFAULT_IC_GRAM_PER_UNIT
+import de.dh.raaps.common.model.DEFAULT_CR_GRAM_PER_UNIT
 import de.dh.raaps.common.model.DEFAULT_ISF_MGDL_PER_UNIT
 import de.dh.raaps.common.model.DEFAULT_BG_TARGET_MGDL
 import de.dh.raaps.common.model.DEFAULT_BG_LOW_THRESHOLD_MGDL
@@ -123,7 +123,7 @@ object DatabaseInitializer {
                     DEFAULT_BASAL_UNITS_PER_HOUR
                 )),
                 isfBlocks = listOf(Block(Minutes.ofHours(24), DEFAULT_ISF_MGDL_PER_UNIT)),
-                icBlocks = listOf(Block(Minutes.ofHours(24), DEFAULT_IC_GRAM_PER_UNIT)),
+                crBlocks = listOf(Block(Minutes.ofHours(24), DEFAULT_CR_GRAM_PER_UNIT)),
                 insulinType = defaultInsulinType,
                 dia = defaultInsulinType.dia,
                 peak = defaultInsulinType.peak

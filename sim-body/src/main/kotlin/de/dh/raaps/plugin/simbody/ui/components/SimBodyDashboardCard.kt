@@ -41,7 +41,7 @@ fun SimBodyDashboardCard(
     treatmentProfileName: String? = null,
     treatmentBasal: String? = null,
     treatmentIsf: String? = null,
-    treatmentIc: String? = null,
+    treatmentCr: String? = null,
     treatmentTarget: String? = null,
     treatmentLowThreshold: String? = null
 ) {
@@ -91,7 +91,7 @@ fun SimBodyDashboardCard(
                 modifier = Modifier.padding(top = 8.dp)
             )
             ParameterRow("ISF", "${bodyModel.isf} mg/dL/U") { }
-            ParameterRow("IC", "${bodyModel.ic} g/U") { }
+            ParameterRow("CR", "${bodyModel.cr} g/U") { }
             ParameterRow("Liver Output", "${bodyModel.liverGlucoseOutputGph} g/h") { }
 
             if (treatmentProfileName != null) {
@@ -102,7 +102,7 @@ fun SimBodyDashboardCard(
                 )
                 if (treatmentBasal != null) ParameterRow("Basal", treatmentBasal) { }
                 if (treatmentIsf != null) ParameterRow("ISF", treatmentIsf) { }
-                if (treatmentIc != null) ParameterRow("IC", treatmentIc) { }
+                if (treatmentCr != null) ParameterRow("CR", treatmentCr) { }
                 if (treatmentTarget != null) ParameterRow("Target", treatmentTarget) { }
                 if (treatmentLowThreshold != null) ParameterRow("Low Threshold", treatmentLowThreshold) { }
             }
@@ -196,7 +196,7 @@ private fun EditDoubleDialog(
 @Composable
 fun SimBodyDashboardCardPreview() {
     val mockProfile = BodyProfile(
-        icBlocks = listOf(Block(Minutes.ofHours(24), 10.0)),
+        crBlocks = listOf(Block(Minutes.ofHours(24), 10.0)),
         isfBlocks = listOf(Block(Minutes.ofHours(24), 50.0)),
         liverGlucoseOutputBlocks = listOf(Block(Minutes.ofHours(24), 5.0))
     )

@@ -151,7 +151,7 @@ fun isfValue(value: BgDelta?, unit: GlucoseUnit, default: String = "-"): String 
 }
 
 @Composable
-fun icValue(value: Double?, default: String = "-"): String {
+fun crValue(value: Double?, default: String = "-"): String {
     return value?.let { String.format(Locale.getDefault(), "%.1f g/U", it) } ?: default
 }
 

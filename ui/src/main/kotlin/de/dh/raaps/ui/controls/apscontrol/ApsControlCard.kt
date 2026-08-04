@@ -143,7 +143,7 @@ fun ApsControlCard(
                                 shape = MaterialTheme.shapes.extraSmall,
                             ) {
                                 Text(
-                                    text = " ${stringResource(R.string.aps_control_ic_label, String.format(LocalLocale.current.platformLocale, "%.1f", profileUiState.ic))} ",
+                                    text = " ${stringResource(R.string.aps_control_cr_label, String.format(LocalLocale.current.platformLocale, "%.1f", profileUiState.cr))} ",
                                     style = MaterialTheme.typography.labelSmall,
                                     modifier = Modifier.padding(horizontal = 4.dp, vertical = 2.dp)
                                 )
@@ -308,7 +308,7 @@ private fun PreviewApsControlCard() {
                     target = BgValue.fromMgDl(100),
                     lowThreshold = BgValue.fromMgDl(70),
                     basal = 0.8,
-                    ic = 12.0,
+                    cr = 12.0,
                     isf = BgDelta.fromMgDl(50),
                     adjustmentPercentage = 0,
                     dia = Minutes(300),

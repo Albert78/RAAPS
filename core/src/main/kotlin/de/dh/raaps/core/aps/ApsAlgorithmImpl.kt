@@ -117,7 +117,7 @@ class ApsAlgorithmImpl(
         // Stage 1: Influence of meals and insulin - This is updated when metabolic events occur,
         // the data is reused in succeeding calculation calls until another metabolic event occurs.
 
-        // Materialize assumed ISF and IC values, update predicted BGI if changed, update BG if changed
+        // Materialize assumed ISF and CR values, update predicted BGI if changed, update BG if changed
         val continueCalculations = predictionModel.calculatePredictionStates_2_3_4(currentBgFiltered, avgCurrentDeviation, therapyManager)
 
         if (!continueCalculations) {

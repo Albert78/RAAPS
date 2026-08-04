@@ -20,7 +20,7 @@ import de.dh.raaps.core.repository.TreatmentRepository
  *
  * When a new blood glucose value is received, these cached BGI values are projected forward from
  * the current reading. Recalculation of the underlying BGI values is only necessary if the
- * user profile (ISF, IC, Basal) or the treatment history changes.
+ * user profile (ISF, CR, Basal) or the treatment history changes.
  */
 class PredictionModel(
     val predictionWindowHours: Int = 10,
@@ -90,17 +90,17 @@ class PredictionModel(
         forEachS(from = timeline.getNowTick() + 1, to = getLastTick()) { tick, state ->
             val timestamp = timeline.timestamp(tick)
             val isf = therapyManager.getIsfFactor(timestamp)
-            val ic = therapyManager.getIcFactor(timestamp)
+            val cr = therapyManager.getCrFactor(timestamp)
             val basalPerHour = therapyManager.getBasalPerHour(timestamp)
 
-            if (isf != state.isf || ic != state.ic || basalPerHour != state.basalRateUph) {
+            if (isf != state.isf || cr != state.cr || basalPerHour != state.basalRateUph) {
                 state.isf = isf
-                state.ic = ic
+                state.cr = cr
                 state.basalRateUph = basalPerHour
                 calculateFurtherStepsNecessary = true
             }
 
-            val insulinEquivalentOfCarbs = state.effectiveCarbs / state.ic
+            val insulinEquivalentOfCarbs = state.effectiveCarbs / state.cr
             // Absolute BGI: Carbs - Insulin + Basal Requirement
             // Basal rate is converted to units per tick.
             val basalUnitsPerTick = state.basalRateUph / timeline.ticksPerHour()

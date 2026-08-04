@@ -43,7 +43,7 @@ data class BodyProfileEntity(
     val id: Long = 0,
     val name: String,
     val isfBlocks: String, // JSON
-    val icBlocks: String, // JSON
+    val crBlocks: String, // JSON
     val liverGlucoseOutputBlocks: String, // JSON
     val isActive: Boolean = false
 )

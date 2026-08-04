@@ -12,7 +12,7 @@ data class InsulinProfile(
     val name: String,
     val basalBlocks: List<Block>,
     val isfBlocks: List<Block>,
-    val icBlocks: List<Block>,
+    val crBlocks: List<Block>,
     val insulinType: InsulinType,
     val dia: Minutes,
     val peak: Minutes

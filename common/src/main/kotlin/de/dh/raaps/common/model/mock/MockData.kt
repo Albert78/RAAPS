@@ -14,7 +14,7 @@ fun mockInsulinType() = InsulinType(
 fun mockSimpleInsulinProfile() =
     InsulinProfile(
         name = "Mock Profile",
-        icBlocks = listOf(
+        crBlocks = listOf(
             Block(
                 Minutes.ONE_DAY,
                 10.0

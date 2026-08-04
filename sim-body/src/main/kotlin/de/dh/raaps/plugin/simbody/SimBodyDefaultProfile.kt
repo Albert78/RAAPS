@@ -23,7 +23,7 @@ val DEFAULT_SIM_INSULIN_PROFILE = InsulinProfile(
     name = "Simulator Default",
     basalBlocks = listOf(Block(Minutes.ofHours(24), 0.5)),
     isfBlocks = listOf(Block(Minutes.ofHours(24), 50.0)),
-    icBlocks = listOf(Block(Minutes.ofHours(24), 10.0)),
+    crBlocks = listOf(Block(Minutes.ofHours(24), 10.0)),
     insulinType = DEFAULT_SIM_INSULIN_TYPE,
     dia = DEFAULT_SIM_INSULIN_TYPE.dia,
     peak = DEFAULT_SIM_INSULIN_TYPE.peak
@@ -35,5 +35,5 @@ val DEFAULT_SIM_INSULIN_PROFILE = InsulinProfile(
 val DEFAULT_SIM_BODY_PROFILE = BodyProfile(
     liverGlucoseOutputBlocks = listOf(Block(Minutes.ofHours(24), 5.0)),
     isfBlocks = listOf(Block(Minutes.ofHours(24), 50.0)),
-    icBlocks = listOf(Block(Minutes.ofHours(24), 10.0))
+    crBlocks = listOf(Block(Minutes.ofHours(24), 10.0))
 )

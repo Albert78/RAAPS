@@ -1,7 +1,7 @@
 package de.dh.raaps.core.aps
 
 import de.dh.raaps.AppPreferencesRepository
-import de.dh.raaps.common.model.DEFAULT_IC_GRAM_PER_UNIT
+import de.dh.raaps.common.model.DEFAULT_CR_GRAM_PER_UNIT
 import de.dh.raaps.common.model.DEFAULT_ISF_MGDL_PER_UNIT
 import de.dh.raaps.common.model.DEFAULT_BG_TARGET_MGDL
 import de.dh.raaps.common.model.DEFAULT_BG_LOW_THRESHOLD_MGDL
@@ -43,16 +43,16 @@ class TherapyManager(
     }
 
     /**
-     * Gets the insulin to carbs ratio to be used for calculations at the given timestamp.
-     * The ICR is a measure of how many grams of carbohydrates are covered by one unit of insulin.
+     * Gets the carbohydrate to insulin ratio to be used for calculations at the given timestamp.
+     * The CR is a measure of how many grams of carbohydrates are covered by one unit of insulin.
      * Unit: Grams of carbs.
      */
-    suspend fun getIcFactor(timestamp: Timestamp): Double {
+    suspend fun getCrFactor(timestamp: Timestamp): Double {
         val settings = getActiveTherapySettings()
         val profile = settings.insulinProfile
-        val baseIc = profile.icBlocks.getAmountForMinute(timestamp.minutesSinceMidnight())
+        val baseCr = profile.crBlocks.getAmountForMinute(timestamp.minutesSinceMidnight())
         val factor = (100.0 + settings.adjustmentPercentage) / 100.0
-        return baseIc / factor
+        return baseCr / factor
     }
 
     /**
