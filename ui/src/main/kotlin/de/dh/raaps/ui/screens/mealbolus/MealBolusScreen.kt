@@ -1,18 +1,17 @@
 package de.dh.raaps.ui.screens.mealbolus
 
-import android.content.res.Configuration
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.selection.selectable
@@ -23,6 +22,7 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -31,7 +31,6 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
@@ -40,10 +39,12 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import de.dh.raaps.common.model.BOLUS_MAX
 import de.dh.raaps.common.model.BOLUS_MIN
@@ -53,11 +54,11 @@ import de.dh.raaps.common.model.CarbCurveComponentData
 import de.dh.raaps.common.model.MealType
 import de.dh.raaps.common.model.data.Minutes
 import de.dh.raaps.common.ui.DefaultSteppingStrategy
-import de.dh.raaps.common.ui.DefaultValueDisplayStrategy
+import de.dh.raaps.common.ui.ValueDisplayStrategy
 import de.dh.raaps.common.ui.composables.EditableValueStepper
 import de.dh.raaps.common.ui.theme.AppTheme
 import de.dh.raaps.ui.R
-import androidx.compose.ui.tooling.preview.Preview
+import java.util.Locale
 
 @Composable
 fun MealBolusScreen(
@@ -65,7 +66,7 @@ fun MealBolusScreen(
     onNavigateUp: () -> Unit
 ) {
     val uiState by viewModel.uiState.collectAsState()
-    
+
     MealBolusContent(
         uiState = uiState,
         onNavigateUp = onNavigateUp,
@@ -123,7 +124,7 @@ fun MealBolusContent(
             if (uiState.isEditMode) {
                 Card(
                     modifier = Modifier.fillMaxWidth(),
-                    colors = androidx.compose.material3.CardDefaults.cardColors(
+                    colors = CardDefaults.cardColors(
                         containerColor = MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.5f)
                     )
                 ) {
@@ -149,9 +150,9 @@ fun MealBolusContent(
                     minValue = CARBS_KE_MIN,
                     maxValue = CARBS_KE_MAX,
                     steppingStrategy = DefaultSteppingStrategy(0.5), // 0.5 KE steps
-                    displayStrategy = object : de.dh.raaps.common.ui.ValueDisplayStrategy {
-                        override fun format(value: Double): String = String.format("%.1f", value)
-                        override fun color(value: Double): androidx.compose.ui.graphics.Color = androidx.compose.ui.graphics.Color.Unspecified
+                    displayStrategy = object : ValueDisplayStrategy {
+                        override fun format(value: Double): String = String.format(Locale.getDefault(), "%.1f", value)
+                        override fun color(value: Double): Color = Color.Unspecified
                     },
                     suffix = " KE"
                 )
@@ -256,9 +257,9 @@ fun MealBolusContent(
                         minValue = BOLUS_MIN,
                         maxValue = BOLUS_MAX,
                         steppingStrategy = DefaultSteppingStrategy(0.1), // 0.1 U steps
-                        displayStrategy = object : de.dh.raaps.common.ui.ValueDisplayStrategy {
-                            override fun format(value: Double): String = String.format("%.2f", value)
-                            override fun color(value: Double): androidx.compose.ui.graphics.Color = androidx.compose.ui.graphics.Color.Unspecified
+                        displayStrategy = object : ValueDisplayStrategy {
+                            override fun format(value: Double): String = String.format(Locale.getDefault(), "%.2f", value)
+                            override fun color(value: Double): Color = Color.Unspecified
                         },
                         suffix = " U"
                     )

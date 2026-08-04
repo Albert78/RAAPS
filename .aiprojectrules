@@ -1,0 +1,8 @@
+# AI Project Rules - RAAPS
+
+## Kotlin / Compose Coding Style
+
+### Trailing Lambda Usage
+- **Do not** generally move the last parameter of a function call behind the parentheses as a trailing lambda block, even if it is a lambda.
+- **Exception**: Only use trailing lambda syntax if the function is specifically designed for it (e.g., the parameter is named `content` or it's a DSL-style function like `items { ... }`, `Box { ... }`, `Scaffold { ... }`).
+- **Standard Callbacks**: For standard event listeners or navigation callbacks (e.g., `onNavigateUp`, `onEditClick`, `onClick`), keep the lambda inside the parentheses to maintain clarity and consistency, unless the project style explicitly favors trailing lambdas for those specific cases.

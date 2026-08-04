@@ -65,11 +65,12 @@ import de.dh.raaps.common.ui.theme.AppTheme
 import de.dh.raaps.ui.R
 import java.time.format.DateTimeFormatter
 import java.time.format.FormatStyle
+import java.util.Locale
 
 @Composable
 fun BolusHistoryScreen(
     viewModel: BolusHistoryViewModel,
-    onNavigateUp: () -> Unit
+    onNavigateUp: () -> Unit,
 ) {
     val uiState by viewModel.uiState.collectAsState()
 
@@ -78,7 +79,7 @@ fun BolusHistoryScreen(
         onAddManualBolus = { amount, type -> viewModel.addManualBolus(amount, type) },
         onUpdateManualBolus = { app, amount, type -> viewModel.updateManualBolus(app, amount, type) },
         onDeleteBolus = { viewModel.deleteBolus(it) },
-        onNavigateUp = onNavigateUp
+        onNavigateUp = onNavigateUp,
     )
 }
 
@@ -89,7 +90,7 @@ fun BolusHistoryContent(
     onAddManualBolus: (Double, InsulinType) -> Unit,
     onUpdateManualBolus: (InsulinApplication, Double, InsulinType) -> Unit,
     onDeleteBolus: (InsulinApplication) -> Unit,
-    onNavigateUp: () -> Unit
+    onNavigateUp: () -> Unit,
 ) {
     var showAddDialog by remember { mutableStateOf(false) }
     var editingBolus by remember { mutableStateOf<InsulinApplication?>(null) }
@@ -164,7 +165,7 @@ fun BolusHistoryContent(
             ) {
                 items(uiState.bolusEntries) { entry ->
                     val isEditable = remember(entry.timestamp, entry.origin, uiState.editThresholdHours) {
-                        entry.origin == InsulinOrigin.Manual && entry.timestamp >= Timestamp.now().minusHours(uiState.editThresholdHours)
+                        (entry.origin == InsulinOrigin.Manual) && (entry.timestamp >= Timestamp.now().minusHours(uiState.editThresholdHours))
                     }
 
                     BolusItem(
@@ -319,7 +320,7 @@ fun AddManualBolusDialog(
                         maxValue = BOLUS_MAX,
                         steppingStrategy = DefaultSteppingStrategy(0.5),
                         displayStrategy = object : ValueDisplayStrategy {
-                            override fun format(value: Double): String = String.format("%.2f", value)
+                            override fun format(value: Double): String = String.format(Locale.getDefault(), "%.2f", value)
                             override fun color(value: Double): Color =
                                 Color.Unspecified
                         },

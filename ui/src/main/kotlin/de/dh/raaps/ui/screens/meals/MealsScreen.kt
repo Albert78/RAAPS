@@ -56,7 +56,7 @@ fun MealsScreen(
     onNavigateToMealTypes: () -> Unit,
     onNavigateToMealBolus: () -> Unit,
     onEditMeal: (MealEntry) -> Unit,
-    onNavigateUp: () -> Unit
+    onNavigateUp: () -> Unit,
 ) {
     val uiState by viewModel.uiState.collectAsState()
 
@@ -65,7 +65,7 @@ fun MealsScreen(
         onNavigateToMealTypes = onNavigateToMealTypes,
         onNavigateToMealBolus = onNavigateToMealBolus,
         onEditMeal = onEditMeal,
-        onNavigateUp = onNavigateUp
+        onNavigateUp = onNavigateUp,
     )
 }
 
@@ -76,7 +76,7 @@ fun MealsContent(
     onNavigateToMealTypes: () -> Unit,
     onNavigateToMealBolus: () -> Unit,
     onEditMeal: (MealEntry) -> Unit,
-    onNavigateUp: () -> Unit
+    onNavigateUp: () -> Unit,
 ) {
     var showMenu by remember { mutableStateOf(false) }
 
@@ -133,7 +133,7 @@ fun MealsContent(
                 Text(
                     text = stringResource(id = R.string.meals_empty_list),
                     style = MaterialTheme.typography.bodyLarge,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
         } else {
@@ -163,7 +163,7 @@ fun MealsContent(
 fun MealItem(
     meal: MealEntry,
     isEditable: Boolean,
-    onEditClick: () -> Unit
+    onEditClick: () -> Unit,
 ) {
     val timeFormatter = remember { DateTimeFormatter.ofLocalizedDateTime(FormatStyle.SHORT) }
     val timeString = remember(meal.timestamp) {
@@ -186,7 +186,7 @@ fun MealItem(
                 Text(
                     text = timeString,
                     style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
                 if (isEditable) {
                     Spacer(Modifier.width(8.dp))
