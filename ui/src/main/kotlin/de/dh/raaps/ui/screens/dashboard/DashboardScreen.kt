@@ -223,8 +223,10 @@ fun DashboardContent(
                 style = MaterialTheme.typography.bodyLarge
             )
 
-            Box {
-                if (historyUiState.isLoading) {
+            Box(
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                if (historyUiState.isLoading || currentTherapyUiState.isLoading) {
                     CircularProgressIndicator(
                         modifier = Modifier.align(Alignment.Center)
                     )
