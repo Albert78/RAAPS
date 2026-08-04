@@ -14,11 +14,13 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -50,6 +52,7 @@ import java.time.format.FormatStyle
 fun MealsScreen(
     viewModel: MealsViewModel,
     onNavigateToMealTypes: () -> Unit,
+    onNavigateToMealBolus: () -> Unit,
     onEditMeal: (MealEntry) -> Unit,
     onNavigateUp: () -> Unit
 ) {
@@ -58,6 +61,7 @@ fun MealsScreen(
     MealsContent(
         uiState = uiState,
         onNavigateToMealTypes = onNavigateToMealTypes,
+        onNavigateToMealBolus = onNavigateToMealBolus,
         onEditMeal = onEditMeal,
         onNavigateUp = onNavigateUp
     )
@@ -68,6 +72,7 @@ fun MealsScreen(
 fun MealsContent(
     uiState: MealsUiState,
     onNavigateToMealTypes: () -> Unit,
+    onNavigateToMealBolus: () -> Unit,
     onEditMeal: (MealEntry) -> Unit,
     onNavigateUp: () -> Unit
 ) {
@@ -106,6 +111,14 @@ fun MealsContent(
                     }
                 }
             )
+        },
+        floatingActionButton = {
+            FloatingActionButton(onClick = onNavigateToMealBolus) {
+                Icon(
+                    imageVector = Icons.Default.Add,
+                    contentDescription = stringResource(id = R.string.cd_add_meal)
+                )
+            }
         }
     ) { innerPadding ->
         LazyColumn(
@@ -180,6 +193,7 @@ fun MealsPreview() {
         MealsContent(
             uiState = MealsUiState(),
             onNavigateToMealTypes = {},
+            onNavigateToMealBolus = {},
             onEditMeal = {},
             onNavigateUp = {}
         )
