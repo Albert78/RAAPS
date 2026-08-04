@@ -13,6 +13,7 @@ value class Minutes(val value: Short) : Comparable<Minutes> {
 
     operator fun plus(other: Minutes) = Minutes((value + other.value).toShort())
     operator fun times(factor: Int): Minutes = Minutes((value * factor).toShort())
+    operator fun times(factor: Double): Minutes = Minutes((value * factor).toInt().toShort())
 
     fun inMs(): Long {
         return value * 60L * 1000L

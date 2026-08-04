@@ -55,29 +55,26 @@ class ApsAlgorithmImpl(
      * Deviations typically occur due to unannounced meals or variations in insulin/carb sensitivity
      * compared to the prediction model.
      */
-    private fun calcAvgDeviation(): BgDelta {
-        val startTick = predictionModel.getFirstTick()
+    private fun calcAvgDeviationPerTick(pastTime: Minutes): BgDelta {
         val endTick = timeline.getNowTick()
+        val startTick = endTick.minus(pastTime)
 
-        var sumDeviationsMgdl = 0
-        var numValues = 0
+        val bgStart = sampledBgReadings.getAt(startTick)
+        if (!bgStart.isValid()) return BgDelta(0)
 
-        for (t in startTick.value until endTick.value) {
-            val tick = Tick(t)
-            val bgA = sampledBgReadings.getAt(tick)
-            if (!bgA.isValid()) continue
-            val bgB = sampledBgReadings.getAt(Tick(t + 1))
-            if (!bgB.isValid()) continue
+        val bgEnd = sampledBgReadings.getAt(endTick)
+        if (!bgEnd.isValid()) return BgDelta(0)
 
-            val predictionTickState = predictionModel.tryGetTickState(tick) ?: continue
+        var sumDeviationsMgdl = 0.0
+        val numValues = endTick.value - startTick.value
 
-            // The difference of the real bg slope and the predicted bg slope (= bgi) is the deviation
-            val actualSlope = bgB - bgA
-            sumDeviationsMgdl += (actualSlope - predictionTickState.bgi).mgdl.toInt()
-            numValues++
+        if (numValues == 0) return BgDelta(0)
+
+        predictionModel.forEach(from = startTick, to = endTick) { _, state ->
+            sumDeviationsMgdl += state.bgi.mgdl
         }
 
-        return if (numValues == 0) BgDelta(0) else BgDelta.fromMgDl(sumDeviationsMgdl / numValues)
+        return BgDelta.fromMgDl((sumDeviationsMgdl / numValues).toInt())
     }
 
     override suspend fun recalculateForNewBgValue(currentBG: BgReading) {
@@ -105,7 +102,7 @@ class ApsAlgorithmImpl(
         // To react to dynamic changes (e.g. unannounced snacks), we calculate an average deviation of our
         // model predictions to the real blood glucose.
         // The deviation is the actual slope of bg values minus the bgi, which is the predicted slope.
-        val avgCurrentDeviation = calcAvgDeviation()
+        val avgCurrentDeviationPerTick = calcAvgDeviationPerTick(DEVIATION_TIME_BASE)
         // Assumption: That deviation will be continued in the future but will fade away
 
         val now = timeline.getNowTick()
@@ -118,7 +115,7 @@ class ApsAlgorithmImpl(
         // the data is reused in succeeding calculation calls until another metabolic event occurs.
 
         // Materialize assumed ISF and CR values, update predicted BGI if changed, update BG if changed
-        val continueCalculations = predictionModel.calculatePredictionStates_2_3_4(currentBgFiltered, avgCurrentDeviation, therapyManager)
+        val continueCalculations = predictionModel.calculatePredictionStates_2_3_4(currentBgFiltered, avgCurrentDeviationPerTick, therapyManager)
 
         if (!continueCalculations) {
             // Base values didn't change and predictions came true, just keep all decisions already made.
@@ -140,8 +137,9 @@ class ApsAlgorithmImpl(
         predictionModel.findNext(startAt = now) {
             it.predictedBg1 < targetBg
         }?.let { firstLowPoint ->
-            val basalRate = therapyManager.getBasalPerHour(firstLowPoint.tick.timestamp)
-            val isf = therapyManager.getIsfFactor(firstLowPoint.tick.timestamp)
+            val basalTimeBeforeLowPoint = Tick((firstLowPoint.tick.value - insulinPeakTicks * 1.5).toInt()).timestamp
+            val basalRate = therapyManager.getBasalPerHour(basalTimeBeforeLowPoint)
+            val isf = therapyManager.getIsfFactor(basalTimeBeforeLowPoint)
             val zeroTempDeltaBgPerHour = (basalRate * isf).mgdl.toDouble()
             val nextMin = predictionModel.findNextBgMin(startAt = firstLowPoint.tick, returnLatestIfFalling = true) ?: return@let
             val bgError = targetBg - nextMin.predictedBg1 + MIN_BG_SAFETY_MARGIN

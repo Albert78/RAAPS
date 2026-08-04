@@ -80,11 +80,11 @@ class PredictionModel(
      */
     inline suspend fun calculatePredictionStates_2_3_4(
         currentBG: BgValue,
-        avgCurrentDeviation: BgDelta,
+        avgCurrentDeviationPerTick: BgDelta,
         therapyManager: TherapyManager
     ): Boolean {
         var bg = currentBG
-        var deviation = avgCurrentDeviation
+        var deviationPerTick = avgCurrentDeviationPerTick
         var calculateFurtherStepsNecessary = false
         val timestampIn30Minutes = Timestamp.now().plusMinutes(30)
         forEachS(from = timeline.getNowTick() + 1, to = getLastTick()) { tick, state ->
@@ -112,10 +112,10 @@ class PredictionModel(
             }
 
             // Ease out the deviation
-            deviation *= DEVIATION_DECAY_FACTOR_PER_TICK
+            deviationPerTick *= DEVIATION_DECAY_FACTOR_PER_TICK
 
             val isInNext30Minutes = timestamp <= timestampIn30Minutes
-            bg = bg + state.bgi + deviation
+            bg = bg + state.bgi + deviationPerTick
             if (isInNext30Minutes && (bg - state.predictedBg1).abs > MAX_BG_DEVIATION_FOR_KEEP_PREDICTION) {
                 // If the new situation shows a significant BG deviation from the predicted BG in the
                 // near future, recalculation is necessary

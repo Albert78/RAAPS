@@ -13,8 +13,8 @@ import de.dh.raaps.common.model.data.Tick
 class PredictionTickState {
     var tick: Tick = Tick.invalid()
     // Stage 1: Impacts of carbs and insulin. Depend on metabolic events.
-    var effectiveCarbs: Double = 0.0 // Sum from all meals in the past
-    var effectiveInsulin: Double = 0.0 // Sum from all insulin applications in the past
+    var effectiveCarbs: Double = 0.0 // Sum from all meals in the past, per tick
+    var effectiveInsulin: Double = 0.0 // Sum from all insulin applications in the past, per tick
 
     // Stage 2: ISF and CR. Might be adapted by user, so need to be checked each tick.
     var isf: BgDelta = BgDelta(0) // ISF at the time of this tick, from profile
@@ -25,7 +25,7 @@ class PredictionTickState {
     // Includes Carb Impact, Insulin Impact and Basal Requirement (from profile).
     var bgi: BgDelta = BgDelta(0)
 
-    // Stage 4: Predicted BG depends on stages 1, 2 and 3.
+    // Stage 4: Predicted BG depends on stages 1, 2, 3 and current BG.
     var predictedBg1: BgValue = BgValue.INVALID // Calculated from a starting BG, applying BGIs of previous ticks
 
     // Stage 5: Final calculated decision for temp basal depends on stages 1-4.
