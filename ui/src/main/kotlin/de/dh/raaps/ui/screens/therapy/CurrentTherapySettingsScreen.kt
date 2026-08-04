@@ -473,9 +473,10 @@ private fun TemporaryAdjustmentCard(
                     icon = Icons.Default.Adjust,
                     label = stringResource(R.string.current_therapy_target_label_singular),
                     value = if (profile.targetBgOverride != null)
-                        stringResource(R.string.bg_value_single_format, profile.targetBgOverride.mgdl)
+                        profile.targetBgOverride.mgdl.toString()
                     else
-                        stringResource(R.string.aps_control_adjustment_neutral),
+                        stringResource(R.string.aps_control_adjustment_standard),
+                    unit = if (profile.targetBgOverride != null) stringResource(R.string.glucose_unit_mgdl) else null,
                     valueColor = if (profile.targetBgOverride != null)
                         MaterialTheme.colorScheme.primary
                     else
@@ -488,9 +489,10 @@ private fun TemporaryAdjustmentCard(
                     icon = Icons.Default.VerticalAlignBottom,
                     label = stringResource(R.string.current_therapy_low_threshold_label_singular),
                     value = if (profile.lowThresholdOverride != null)
-                        stringResource(R.string.bg_value_single_format, profile.lowThresholdOverride.mgdl)
+                        profile.lowThresholdOverride.mgdl.toString()
                     else
-                        stringResource(R.string.aps_control_adjustment_neutral),
+                        stringResource(R.string.aps_control_adjustment_standard),
+                    unit = if (profile.lowThresholdOverride != null) stringResource(R.string.glucose_unit_mgdl) else null,
                     valueColor = if (profile.lowThresholdOverride != null)
                         MaterialTheme.colorScheme.error
                     else
@@ -508,7 +510,8 @@ private fun AdjustmentItem(
     label: String,
     value: String,
     valueColor: androidx.compose.ui.graphics.Color,
-    status: String? = null
+    status: String? = null,
+    unit: String? = null
 ) {
     Row(
         modifier = Modifier.fillMaxWidth(),
@@ -545,12 +548,25 @@ private fun AdjustmentItem(
             }
         }
 
-        Text(
-            text = value,
-            style = MaterialTheme.typography.titleMedium,
-            fontWeight = FontWeight.Bold,
-            color = valueColor
-        )
+        Row(
+            verticalAlignment = Alignment.Bottom,
+            horizontalArrangement = Arrangement.spacedBy(4.dp)
+        ) {
+            Text(
+                text = value,
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.Bold,
+                color = valueColor
+            )
+            if (unit != null) {
+                Text(
+                    text = unit,
+                    style = MaterialTheme.typography.labelSmall,
+                    color = valueColor.copy(alpha = 0.7f),
+                    fontWeight = FontWeight.Normal
+                )
+            }
+        }
     }
 }
 
@@ -608,20 +624,22 @@ private fun BgTargetCard(
     val lows = bgBlocks.map { it.lowThreshold.mgdl }.distinct()
 
     val targetValue = if (targets.size == 1) {
-        stringResource(id = R.string.bg_value_single_format, targets.first())
+        targets.first().toString()
     } else if (targets.isNotEmpty()) {
-        stringResource(id = R.string.bg_value_range_format, targets.minOrNull() ?: 0, targets.maxOrNull() ?: 0)
+        "${targets.minOrNull() ?: 0}–${targets.maxOrNull() ?: 0}"
     } else {
         "-"
     }
 
     val lowValue = if (lows.size == 1) {
-        stringResource(id = R.string.bg_value_single_format, lows.first())
+        lows.first().toString()
     } else if (lows.isNotEmpty()) {
-        stringResource(id = R.string.bg_value_range_format, lows.minOrNull() ?: 0, lows.maxOrNull() ?: 0)
+        "${lows.minOrNull() ?: 0}–${lows.maxOrNull() ?: 0}"
     } else {
         "-"
     }
+
+    val unit = stringResource(id = R.string.glucose_unit_mgdl)
 
     ElevatedCard(
         modifier = modifier
@@ -668,6 +686,11 @@ private fun BgTargetCard(
                         fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.onSurface
                     )
+                    Text(
+                        text = unit,
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.8f)
+                    )
                 }
             }
 
@@ -707,6 +730,11 @@ private fun BgTargetCard(
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.onSurface
+                    )
+                    Text(
+                        text = unit,
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.8f)
                     )
                 }
             }

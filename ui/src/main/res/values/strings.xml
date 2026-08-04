@@ -96,8 +96,8 @@
     <string name="current_therapy_target_label_singular">Zielwert</string>
     <string name="current_therapy_target_label_plural">Zielwerte</string>
     <string name="current_therapy_bg_title">Ziel-BZ &amp; Low-Schwelle</string>
-    <string name="current_therapy_low_threshold_label_singular">Niedrig-Schwelle</string>
-    <string name="current_therapy_low_threshold_label_plural">Niedrig-Schwellen</string>
+    <string name="current_therapy_low_threshold_label_singular">Niedrig-&#173;Schwelle</string>
+    <string name="current_therapy_low_threshold_label_plural">Niedrig-&#173;Schwellen</string>
     <string name="current_therapy_active_badge">Aktiv</string>
     <string name="current_therapy_switch_profile_button">Profil wechseln</string>
     <string name="current_therapy_manage_profile_button">Verwalten</string>
@@ -127,6 +127,7 @@
     <string name="aps_control_cr_label">CR %1$s</string>
     <string name="aps_control_isf_label">ISF %1$d</string>
     <string name="aps_control_adjustment_neutral">neutral</string>
+    <string name="aps_control_adjustment_standard">Standard</string>
     <string name="aps_control_no_insulin_profile">Kein Profil</string>
 
     <string name="aps_control_therapy_adjustment_label">Temporäre Anpassung</string>
@@ -134,7 +135,7 @@
     <string name="aps_control_therapy_adjustment_dialog_insulin_adjustment_label">Insulin-Anpassung</string>
     <string name="aps_control_therapy_adjustment_dialog_insulin_adjustment_description">Passe die abgegebene Insulinmenge für einen begrenzten Zeitraum prozentual an.</string>
     <string name="aps_control_therapy_adjustment_dialog_bg_adjustment_label">Werte-Anpassung</string>
-    <string name="aps_control_therapy_adjustment_dialog_bg_adjustment_description">Überschreibe Zielwert und Niedrig-Schwelle für einen begrenzten Zeitraum.</string>
+    <string name="aps_control_therapy_adjustment_dialog_bg_adjustment_description">Überschreibe Zielwert und Niedrig-&#173;Schwelle für einen begrenzten Zeitraum.</string>
     <string name="aps_control_therapy_adjustment_dialog_presets_title">Schnellauswahl</string>
 
     <string name="glucose_unit_mgdl">mg/dL</string>
