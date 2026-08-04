@@ -9,13 +9,18 @@
     <string name="time_ago_minutes_ago">vor %1$d Min</string>
     <string name="time_ago_hours_ago">vor %1$d Std</string>
 
+    <!-- Content descriptions -->
     <string name="cd_cancel">Abbrechen</string>
     <string name="cd_navigate_up">Zurück</string>
     <string name="cd_close">Schließen</string>
     <string name="cd_more_options">Überlaufmenü - mehr Optionen anzeigen</string>
     <string name="cd_clear_selection">Selektion aufheben</string>
     <string name="cd_delete_selected_items">Selektierte Einträge löschen</string>
+
     <string name="action_delete">Löschen</string>
+    <string name="action_save">Speichern</string>
+    <string name="action_close">Schließen</string>
+
     <string name="selection_mode_num_items_selected">%d ausgewählt</string>
 
     <string name="theme_system">Systemstandard</string>
@@ -31,7 +36,6 @@
     <string name="profile_default_normal_name">Normal</string>
 
     <string name="therapy_profile_selection_title">Profil auswählen</string>
-    <string name="cd_edit_profiles">Profile bearbeiten</string>
     <string name="therapy_target_label">Zielwert</string>
     <string name="therapy_low_threshold_label">Low-Schwelle</string>
     <string name="therapy_basal_label">Basalrate</string>

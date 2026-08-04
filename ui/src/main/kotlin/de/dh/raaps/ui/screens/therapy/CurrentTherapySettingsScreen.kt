@@ -27,7 +27,6 @@ import androidx.compose.material.icons.filled.SwapHoriz
 import androidx.compose.material.icons.filled.Tune
 import androidx.compose.material.icons.filled.UnfoldMore
 import androidx.compose.material.icons.filled.VerticalAlignBottom
-import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ElevatedCard
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
@@ -35,7 +34,6 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
-import androidx.compose.material3.OutlinedCard
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -84,14 +82,14 @@ import de.dh.raaps.ui.controls.profile.ProfileUiState
 fun CurrentTherapySettingsScreen(
     viewModel: CurrentTherapyViewModel,
     onNavigateUp: () -> Unit,
-    onNavigateToProfileEditor: () -> Unit
+    onNavigateToInsulinProfileEditor: () -> Unit
 ) {
     val uiState by viewModel.uiState.collectAsState()
 
     CurrentTherapySettingsContent(
         uiState = uiState,
         onNavigateUp = onNavigateUp,
-        onNavigateToProfileEditor = onNavigateToProfileEditor,
+        onNavigateToInsulinProfileEditor = onNavigateToInsulinProfileEditor,
         onSelectProfile = { viewModel.selectInsulinProfile(it) },
         onUpdateDefaultBgBlocks = { viewModel.updateDefaultBgBlocks(it) },
         onUpdateAdjustmentPercentage = { viewModel.setAdjustmentPercentage(it) }
@@ -103,12 +101,12 @@ fun CurrentTherapySettingsScreen(
 fun CurrentTherapySettingsContent(
     uiState: CurrentTherapyUiState,
     onNavigateUp: () -> Unit,
-    onNavigateToProfileEditor: () -> Unit,
+    onNavigateToInsulinProfileEditor: () -> Unit,
     onSelectProfile: (InsulinProfile) -> Unit,
     onUpdateDefaultBgBlocks: (List<BgBlock>) -> Unit,
     onUpdateAdjustmentPercentage: (Int) -> Unit
 ) {
-    var showProfileDialog by remember { mutableStateOf(false) }
+    var showInsulinProfileDialog by remember { mutableStateOf(false) }
     var showBgEditorDialog by remember { mutableStateOf(false) }
     var showAdjustmentDialog by remember { mutableStateOf(false) }
 
@@ -125,7 +123,7 @@ fun CurrentTherapySettingsContent(
                     }
                 },
                 actions = {
-                    IconButton(onClick = onNavigateToProfileEditor) {
+                    IconButton(onClick = onNavigateToInsulinProfileEditor) {
                         Icon(
                             imageVector = Icons.Default.Edit,
                             contentDescription = stringResource(id = R.string.menu_item_profile_editor_label)
@@ -151,10 +149,10 @@ fun CurrentTherapySettingsContent(
 
                 Spacer(modifier = Modifier.height(8.dp))
 
-                ActiveProfileCard(
+                ActiveInsulinProfileCard(
                     profile = uiState.activeProfile,
-                    onSwitchProfileClick = { showProfileDialog = true },
-                    onEditProfileClick = onNavigateToProfileEditor,
+                    onSwitchInsulinProfileClick = { showInsulinProfileDialog = true },
+                    onManageInsulinProfilesClick = onNavigateToInsulinProfileEditor,
                     onAdjustmentClick = { showAdjustmentDialog = true }
                 )
             }
@@ -176,15 +174,15 @@ fun CurrentTherapySettingsContent(
         }
     }
 
-    if (showProfileDialog) {
+    if (showInsulinProfileDialog) {
         ProfileSelectionDialog(
             profiles = uiState.availableProfiles,
             activeProfileId = uiState.activeProfile.activeProfileId,
             onProfileSelected = {
                 onSelectProfile(it)
-                showProfileDialog = false
+                showInsulinProfileDialog = false
             },
-            onDismiss = { showProfileDialog = false }
+            onDismiss = { showInsulinProfileDialog = false }
         )
     }
 
@@ -238,10 +236,10 @@ private fun SectionHeader(
 }
 
 @Composable
-private fun ActiveProfileCard(
+private fun ActiveInsulinProfileCard(
     profile: ProfileUiState,
-    onSwitchProfileClick: () -> Unit,
-    onEditProfileClick: () -> Unit,
+    onSwitchInsulinProfileClick: () -> Unit,
+    onManageInsulinProfilesClick: () -> Unit,
     onAdjustmentClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -249,11 +247,7 @@ private fun ActiveProfileCard(
 
     ElevatedCard(
         modifier = modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.elevatedCardColors(
-            containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.25f)
-        ),
-        elevation = CardDefaults.elevatedCardElevation(defaultElevation = 2.dp)
+        shape = RoundedCornerShape(16.dp)
     ) {
         Column(
             modifier = Modifier.padding(16.dp),
@@ -377,7 +371,7 @@ private fun ActiveProfileCard(
                     )
                     Column {
                         Text(
-                            text = stringResource(id = R.string.aps_control_adjustment_dialog_title),
+                            text = stringResource(id = R.string.aps_control_insulin_adjustment_label),
                             style = MaterialTheme.typography.bodyMedium,
                             fontWeight = FontWeight.Bold,
                             color = MaterialTheme.colorScheme.onSurface
@@ -440,7 +434,7 @@ private fun ActiveProfileCard(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 OutlinedButton(
-                    onClick = onSwitchProfileClick,
+                    onClick = onSwitchInsulinProfileClick,
                     shape = RoundedCornerShape(12.dp)
                 ) {
                     Icon(
@@ -455,7 +449,7 @@ private fun ActiveProfileCard(
                 Spacer(modifier = Modifier.width(8.dp))
 
                 TextButton(
-                    onClick = onEditProfileClick,
+                    onClick = onManageInsulinProfilesClick,
                     shape = RoundedCornerShape(12.dp)
                 ) {
                     Icon(
@@ -540,15 +534,11 @@ private fun BgTargetCard(
         "-"
     }
 
-    OutlinedCard(
+    ElevatedCard(
         modifier = modifier
             .fillMaxWidth()
             .clickable { onClick() },
-        shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.outlinedCardColors(
-            containerColor = MaterialTheme.colorScheme.surface
-        ),
-        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
+        shape = RoundedCornerShape(16.dp)
     ) {
         Row(
             modifier = Modifier
@@ -717,7 +707,7 @@ fun CurrentTherapySettingsPreview() {
         CurrentTherapySettingsContent(
             uiState = mockUiState,
             onNavigateUp = {},
-            onNavigateToProfileEditor = {},
+            onNavigateToInsulinProfileEditor = {},
             onSelectProfile = {},
             onUpdateDefaultBgBlocks = {},
             onUpdateAdjustmentPercentage = {}

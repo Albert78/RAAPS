@@ -26,6 +26,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import de.dh.raaps.ui.R
 import de.dh.raaps.common.model.data.BgDelta
 import de.dh.raaps.common.model.data.BgValue
 import de.dh.raaps.common.model.data.GlucoseUnit
@@ -44,8 +45,8 @@ fun CurrentTherapyView(
     var showProfileDialog by remember { mutableStateOf(false) }
 
     val unitStr = when(uiState.glucoseUnit) {
-        GlucoseUnit.MG_DL -> "mg/dL"
-        GlucoseUnit.MMOL -> "mmol/l"
+        GlucoseUnit.MG_DL -> stringResource(id = R.string.glucose_unit_mgdl)
+        GlucoseUnit.MMOL -> stringResource(id = R.string.glucose_unit_mmol)
     }
 
     val activeProfile = uiState.activeProfile
@@ -83,7 +84,7 @@ fun CurrentTherapyView(
             InfoRow(
                 label = stringResource(id = de.dh.raaps.common.R.string.therapy_basal_label),
                 value = activeProfile?.basal?.let { String.format(Locale.getDefault(), "%.2f", it) } ?: "-",
-                unit = "U/h",
+                unit = stringResource(id = R.string.unit_u_per_h),
                 modifier = Modifier.padding(bottom = 2.dp)
             )
             InfoRow(
@@ -95,7 +96,7 @@ fun CurrentTherapyView(
             InfoRow(
                 label = stringResource(id = de.dh.raaps.common.R.string.therapy_cr_label),
                 value = activeProfile?.cr?.let { String.format(Locale.getDefault(), "%.1f", it) } ?: "-",
-                unit = "g/U"
+                unit = stringResource(id = R.string.unit_g_per_u)
             )
         }
     }

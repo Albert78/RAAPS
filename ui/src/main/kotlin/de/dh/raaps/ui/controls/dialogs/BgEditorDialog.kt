@@ -72,12 +72,12 @@ fun BgEditorDialog(
         },
         confirmButton = {
             TextButton(onClick = { onSave(blocks) }) {
-                Text(stringResource(id = R.string.cd_save_profile))
+                Text(stringResource(id = de.dh.raaps.common.R.string.action_save))
             }
         },
         dismissButton = {
             TextButton(onClick = onDismiss) {
-                Text(stringResource(id = de.dh.raaps.common.R.string.cd_cancel))
+                Text(stringResource(id = android.R.string.cancel))
             }
         }
     )

@@ -54,7 +54,7 @@ fun ProfileSelectionDialog(
         },
         confirmButton = {
             TextButton(onClick = onDismiss) {
-                Text(stringResource(id = R.string.cd_close))
+                Text(stringResource(id = R.string.action_close))
             }
         }
     )

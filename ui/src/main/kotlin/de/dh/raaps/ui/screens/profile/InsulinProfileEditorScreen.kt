@@ -246,7 +246,7 @@ fun InsulinProfileDetailEditor(
     var showDiscardConfirmation by remember { mutableStateOf(false) }
 
     val tabs = listOf(
-        "Insulin",
+        stringResource(id = R.string.profile_editor_tab_insulin),
         stringResource(id = R.string.profile_editor_tab_basal),
         stringResource(id = R.string.profile_editor_tab_isf),
         stringResource(id = R.string.profile_editor_tab_cr)
@@ -428,7 +428,7 @@ fun InsulinSettingsEditor(
             .padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
-        Text(text = "Insulin Settings", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+        Text(text = stringResource(id = R.string.profile_editor_insulin_settings_title), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
 
         ExposedDropdownMenuBox(
             expanded = expanded,
@@ -438,7 +438,7 @@ fun InsulinSettingsEditor(
                 value = selectedInsulinType.name,
                 onValueChange = {},
                 readOnly = true,
-                label = { Text("Insulin Type") },
+                label = { Text(stringResource(id = R.string.profile_editor_insulin_type_label)) },
                 trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
                 modifier = Modifier
                     .menuAnchor()
@@ -464,14 +464,14 @@ fun InsulinSettingsEditor(
             OutlinedTextField(
                 value = dia,
                 onValueChange = { onDiaChanged(it) },
-                label = { Text("DIA (min)") },
+                label = { Text(stringResource(id = R.string.profile_editor_dia_label)) },
                 modifier = Modifier.weight(1f),
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
             )
             OutlinedTextField(
                 value = peak,
                 onValueChange = { onPeakChanged(it) },
-                label = { Text("Peak (min)") },
+                label = { Text(stringResource(id = R.string.profile_editor_peak_label)) },
                 modifier = Modifier.weight(1f),
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
             )

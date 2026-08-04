@@ -17,10 +17,10 @@ import de.dh.raaps.common.navigation.CurrentTherapySettingsRoute
 import de.dh.raaps.common.navigation.DashboardRoute
 import de.dh.raaps.common.navigation.FeatureNavGraph
 import de.dh.raaps.common.navigation.HistoryRoute
+import de.dh.raaps.common.navigation.InsulinProfileEditorRoute
 import de.dh.raaps.common.navigation.NavigationViewModel
 import de.dh.raaps.common.navigation.PermissionsRoute
 import de.dh.raaps.common.navigation.PreferencesMainRoute
-import de.dh.raaps.common.navigation.ProfileEditorRoute
 import de.dh.raaps.core.RAAPSRegistry
 import de.dh.raaps.setUserDeclinedPermissions
 import de.dh.raaps.ui.controls.history.HistoryViewModel
@@ -75,14 +75,14 @@ class MainFeatureNavGraph(
                     onFixPermissions = { navViewModel.push(PermissionsRoute) },
                     onNavigateToPermissions = { navViewModel.push(PermissionsRoute) },
                     onNavigateToPreferences = { navViewModel.push(PreferencesMainRoute) },
-                    onNavigateToProfileEditor = { navViewModel.push(ProfileEditorRoute) },
+                    onNavigateToProfileEditor = { navViewModel.push(InsulinProfileEditorRoute) },
                     onNavigateToTherapySettings = { navViewModel.push(CurrentTherapySettingsRoute) },
                     onHistoryChartClick = { navViewModel.push(HistoryRoute) },
                     extraContent = extraDashboardContent
                 )
             }
 
-            is ProfileEditorRoute -> NavEntry(key) {
+            is InsulinProfileEditorRoute -> NavEntry(key) {
                 val vm: InsulinProfileSettingsViewModel = viewModel(
                     factory = InsulinProfileSettingsViewModel.Companion.Factory(registry)
                 )
@@ -100,7 +100,7 @@ class MainFeatureNavGraph(
                 CurrentTherapySettingsScreen(
                     viewModel = currentTherapyVM,
                     onNavigateUp = { navViewModel.pop() },
-                    onNavigateToProfileEditor = { navViewModel.push(ProfileEditorRoute) }
+                    onNavigateToInsulinProfileEditor = { navViewModel.push(InsulinProfileEditorRoute) }
                 )
             }
 

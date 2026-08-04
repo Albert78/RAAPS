@@ -13,6 +13,11 @@
     <string name="profile_editor_tab_isf">ISF</string>
     <string name="profile_editor_tab_cr">CR</string>
     <string name="profile_editor_tab_bg">BG</string>
+    <string name="profile_editor_tab_insulin">Insulin</string>
+    <string name="profile_editor_insulin_settings_title">Insulin-Einstellungen</string>
+    <string name="profile_editor_insulin_type_label">Insulin-Typ</string>
+    <string name="profile_editor_dia_label">DIA (Min.)</string>
+    <string name="profile_editor_peak_label">Peak (Min.)</string>
     <string name="profile_editor_basal_title">Basalrate</string>
     <string name="profile_editor_basal_desc">Die Menge an Insulin, die kontinuierlich abgegeben wird (Einheit: U/h).</string>
     <string name="profile_editor_isf_title">ISF (Insulin-Sensitivitäts-Faktor)</string>
@@ -29,7 +34,6 @@
     <string name="profile_editor_discard_message">Es gibt ungespeicherte Änderungen. Möchtest du den Editor wirklich verlassen?</string>
     <string name="profile_editor_discard_confirm">Verwerfen</string>
     <string name="profile_editor_discard_dismiss">Bleiben</string>
-    <string name="cd_edit_profile">Insulin-Profil bearbeiten</string>
     <string name="invalid_profile">Ungültiges Insulin-Profil</string>
     <string name="cd_add_profile">Insulin-Profil hinzufügen</string>
     <string name="cd_save_profile">Insulin-Profil speichern</string>
@@ -124,11 +128,13 @@
     <string name="aps_control_isf_label">ISF %1$d</string>
     <string name="aps_control_adjustment_neutral">neutral</string>
     <string name="aps_control_no_profile">Kein Profil</string>
+    <string name="aps_control_insulin_adjustment_label">Temporäre Anpassung</string>
     <string name="aps_control_adjustment_dialog_title">Insulin-Anpassung</string>
-    <string name="aps_control_adjustment_dialog_description">Passt die abgegebene Insulinmenge (Basalrate, ISF und I:C) prozentual an.</string>
+    <string name="aps_control_adjustment_dialog_description">Passt die abgegebene Insulinmenge prozentual an.</string>
     <string name="aps_control_adjustment_dialog_presets_title">Schnellauswahl</string>
 
     <string name="glucose_unit_mgdl">mg/dL</string>
+    <string name="glucose_unit_mmol">mmol/l</string>
     <string name="approx_prefix">ca.</string>
     <string name="active_carbs_label">Aktive KH</string>
     <string name="active_insulin_label">Akt. Insulin</string>
