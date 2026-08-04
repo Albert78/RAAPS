@@ -13,6 +13,9 @@ interface SimBodyDao {
     @Query("SELECT * FROM impact_history ORDER BY timestampMs DESC")
     fun observeAllImpacts(): Flow<List<ImpactHistoryEntity>>
 
+    @Query("SELECT * FROM impact_history WHERE timestampMs >= :sinceMs ORDER BY timestampMs DESC")
+    suspend fun getImpactsSince(sinceMs: Long): List<ImpactHistoryEntity>
+
     @Insert
     suspend fun insertImpact(impact: ImpactHistoryEntity): Long
 

@@ -10,6 +10,7 @@ import de.dh.raaps.common.model.MealType
 import de.dh.raaps.common.model.calculation.CarbCurveComponent
 import de.dh.raaps.common.model.calculation.InsulinCurve
 import de.dh.raaps.common.model.data.BgValue
+import de.dh.raaps.common.model.data.Block
 import de.dh.raaps.common.model.data.Minutes
 import de.dh.raaps.common.model.data.Timestamp
 import de.dh.raaps.common.model.data.getAmountForMinute
@@ -24,6 +25,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import org.json.JSONArray
 
 data class Impacts(
     val carbImpact: Double,
@@ -150,11 +152,91 @@ class BodyModel(
         }
     val bloodGlucoseFlow: StateFlow<BgValue> = _bloodGlucose.asStateFlow()
 
-    var lastTickTimestamp: Timestamp = Timestamp.now()
+    private val _lastTickTimestamp = MutableStateFlow(Timestamp.now())
+    var lastTickTimestamp: Timestamp
+        get() = _lastTickTimestamp.value
         set(value) {
-            field = value
+            _lastTickTimestamp.value = value
             persistState()
         }
+
+    fun loadState() {
+        val dao = simBodyDao ?: return
+        scope.launch {
+            // Load simulation state
+            dao.getSimulationState()?.let { state ->
+                _bloodGlucose.value = BgValue.fromMgDl(state.currentBgMgDl)
+                _lastTickTimestamp.value = Timestamp(state.lastTickTimestampMs)
+                _exerciseIntensity.value = state.exerciseIntensity
+                _stressLevel.value = state.stressLevel
+                _illnessFactor.value = state.illnessFactor
+            }
+
+            // Load active profile if exists
+            dao.getActiveBodyProfile()?.let { entity ->
+                activeProfile = BodyProfile(
+                    crBlocks = parseBlocks(entity.crBlocks),
+                    isfBlocks = parseBlocks(entity.isfBlocks),
+                    liverGlucoseOutputBlocks = parseBlocks(entity.liverGlucoseOutputBlocks)
+                )
+            }
+
+            val horizonMs = 10 * 60 * 60 * 1000L
+            val threshold = Timestamp.now().ms - horizonMs
+
+            // Load events (meals and boluses) from the last 10 hours
+            val events = dao.getEventsSince(threshold)
+
+            val loadedMeals = events.filter { it.type == "MEAL" }.map { event ->
+                MealEntry(
+                    timestamp = Timestamp(event.timestampMs),
+                    carbGrams = event.amount,
+                    mealType = if (event.detailId == defaultMealType.id) defaultMealType else defaultMealType
+                )
+            }
+            meals.clear()
+            meals.addAll(loadedMeals)
+
+            val loadedInsulin = events.filter { it.type == "BOLUS" }.map { event ->
+                InsulinApplication(
+                    timestamp = Timestamp(event.timestampMs),
+                    amount = event.amount,
+                    insulinType = if (event.detailId == defaultInsulinType.id) defaultInsulinType else defaultInsulinType,
+                    origin = event.insulinOrigin ?: InsulinOrigin.Pump,
+                    provisional = false
+                )
+            }
+            insulinApplications.clear()
+            insulinApplications.addAll(loadedInsulin)
+
+            // Load impact history
+            val history = dao.getImpactsSince(threshold).map { entity ->
+                Impacts(
+                    carbImpact = entity.carbImpact,
+                    insulinImpact = entity.insulinImpact,
+                    endogenousImpact = entity.endogenousImpact,
+                    exerciseImpact = entity.exerciseImpact,
+                    stressImpact = entity.stressImpact,
+                    currentTimestamp = Timestamp(entity.timestampMs)
+                )
+            }
+            impactHistory.clear()
+            impactHistory.addAll(history)
+        }
+    }
+
+    private fun parseBlocks(json: String): List<Block> {
+        val array = JSONArray(json)
+        val list = mutableListOf<Block>()
+        for (i in 0 until array.length()) {
+            val obj = array.getJSONObject(i)
+            list.add(Block(
+                duration = Minutes(obj.getInt("duration").toShort()),
+                amount = obj.getDouble("amount")
+            ))
+        }
+        return list
+    }
 
     private fun persistState() {
         val dao = simBodyDao ?: return

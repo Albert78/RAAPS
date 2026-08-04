@@ -43,6 +43,7 @@ class SimBodyPlugin(
     override val neededPermissions: Collection<String> = emptyList()
 
     override fun initialize(pluginManager: PluginManager) {
+        bodyModel.loadState()
         timeService.registerTickHandler(TickPriority.PRE_CORE, this)
         heartbeat.start()
     }
