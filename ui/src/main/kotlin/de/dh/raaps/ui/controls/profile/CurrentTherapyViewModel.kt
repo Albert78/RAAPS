@@ -56,7 +56,7 @@ data class ProfileUiState(
 
 data class TherapyAdjustment(
     val name: String,
-    val percentage: Int,
+    val percentage: Int = 0,
     val targetBgMgDl: Short? = null,
     val lowThresholdMgDl: Short? = null
 )
@@ -85,12 +85,12 @@ class CurrentTherapyViewModel(
     // Hardcoded presets for now.
     // TODO: Make these user-editable in the future (e.g. via a database table or preferences).
     private val hardcodedPresets = listOf(
-        TherapyAdjustment("Neutral", 0),
-        TherapyAdjustment("Fahrrad fahren", -30, targetBgMgDl = 150, lowThresholdMgDl = 100),
-        TherapyAdjustment("Klettern", -40, targetBgMgDl = 160, lowThresholdMgDl = 110),
-        TherapyAdjustment("Schlafen", 10, 110, 85),
-        TherapyAdjustment("Krank", 30, 100, 70),
-        TherapyAdjustment("Stress", 20, 115, 75)
+        TherapyAdjustment("Neutral"),
+        TherapyAdjustment("Fahrrad fahren", percentage = -30, targetBgMgDl = 150, lowThresholdMgDl = 100),
+        TherapyAdjustment("Klettern", percentage = -40, targetBgMgDl = 160, lowThresholdMgDl = 110),
+        TherapyAdjustment("Alkohol", percentage = -15, targetBgMgDl = 120, lowThresholdMgDl = 80),
+        TherapyAdjustment("Krank", percentage = 30, targetBgMgDl = 100, lowThresholdMgDl = 70),
+        TherapyAdjustment("Stress", percentage = 20, targetBgMgDl = 115, lowThresholdMgDl = 75)
     )
 
     init {

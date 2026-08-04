@@ -4,6 +4,7 @@ import android.content.res.Configuration
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.PaddingValues
@@ -16,7 +17,9 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
@@ -64,6 +67,7 @@ import de.dh.raaps.common.model.data.InsulinProfile
 import de.dh.raaps.common.model.data.Minutes
 import de.dh.raaps.common.ui.ConfigurableDisplayStrategy
 import de.dh.raaps.common.ui.composables.InsulinProfileSelectionDialog
+import de.dh.raaps.common.ui.composables.contentScrollIndicator
 import de.dh.raaps.common.ui.composables.screenTitle
 import de.dh.raaps.common.ui.theme.AppTheme
 import de.dh.raaps.common.ui.theme.NeutralGrey
@@ -133,52 +137,53 @@ fun CurrentTherapySettingsContent(
             )
         }
     ) { innerPadding ->
-        LazyColumn(
+        Box(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(innerPadding),
-            contentPadding = PaddingValues(16.dp),
-            verticalArrangement = Arrangement.spacedBy(20.dp)
+            contentAlignment = Alignment.TopCenter
         ) {
-            // Active Insulin Profile Card
-            item {
+            val scrollState = rememberScrollState()
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .contentScrollIndicator(scrollState)
+                    .verticalScroll(scrollState)
+                    .padding(innerPadding),
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                // Active Insulin Profile Card
                 SectionHeader(
                     icon = Icons.Default.Tune,
                     title = stringResource(id = R.string.current_therapy_active_insulin_profile_label)
                 )
-
-                Spacer(modifier = Modifier.height(8.dp))
 
                 ActiveInsulinProfileCard(
                     profile = uiState.activeProfile,
                     onSwitchInsulinProfileClick = { showInsulinProfileDialog = true },
                     onManageInsulinProfilesClick = onNavigateToInsulinProfileEditor
                 )
-            }
 
-            // BG Target & Low Threshold Card
-            item {
+                Spacer(modifier = Modifier.height(8.dp))
+
+                // BG Target & Low Threshold Card
                 SectionHeader(
                     icon = Icons.Default.Adjust,
                     title = stringResource(id = R.string.current_therapy_bg_title)
                 )
 
-                Spacer(modifier = Modifier.height(8.dp))
-
                 BgTargetCard(
                     bgBlocks = uiState.defaultBgBlocks,
                     onClick = { showBgEditorDialog = true }
                 )
-            }
 
-            // Temporary Adjustment Card
-            item {
+                Spacer(modifier = Modifier.height(8.dp))
+
+                // Temporary Adjustment Card
                 SectionHeader(
                     icon = Icons.Default.UnfoldMore,
                     title = stringResource(id = R.string.aps_control_therapy_adjustment_label)
                 )
-
-                Spacer(modifier = Modifier.height(8.dp))
 
                 TemporaryAdjustmentCard(
                     profile = uiState.activeProfile,
@@ -806,10 +811,10 @@ fun CurrentTherapySettingsPreview() {
             basal = 0.5,
             target = BgValue.fromMgDl(100),
             lowThreshold = BgValue.fromMgDl(70),
-            insulinAdjustmentPercentage = 0,
-            targetBgOverride = null,
-            lowThresholdOverride = null,
-            adjustmentHint = null,
+            insulinAdjustmentPercentage = -30,
+            targetBgOverride = BgValue.fromMgDl(160),
+            lowThresholdOverride = BgValue.fromMgDl(90),
+            adjustmentHint = "Fahrrad fahren",
             dia = Minutes(300),
             peak = Minutes(75)
         ),
@@ -818,8 +823,9 @@ fun CurrentTherapySettingsPreview() {
             BgBlock(Minutes(1440), BgValue.fromMgDl(100), BgValue.fromMgDl(70))
         ),
         therapyAdjustmentPresets = listOf(
-            TherapyAdjustment("Normal", 0),
-            TherapyAdjustment("Sport", -20)
+            TherapyAdjustment("Neutral"),
+            TherapyAdjustment("Fahrrad fahren", percentage = -30, targetBgMgDl = 150, lowThresholdMgDl = 100),
+            TherapyAdjustment("Klettern", percentage = -40, targetBgMgDl = 160, lowThresholdMgDl = 110),
         )
     )
 

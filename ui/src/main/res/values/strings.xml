@@ -133,9 +133,9 @@
     <string name="aps_control_therpay_adjustment_dialog_title">Temporäre Therapie-Anpassung</string>
     <string name="aps_control_therapy_adjustment_custom">Individuell</string>
     <string name="aps_control_therapy_adjustment_dialog_insulin_adjustment_label">Insulin-Anpassung</string>
-    <string name="aps_control_therapy_adjustment_dialog_insulin_adjustment_description">Passe die abgegebene Insulinmenge für einen begrenzten Zeitraum prozentual an.</string>
+    <string name="aps_control_therapy_adjustment_dialog_insulin_adjustment_description">Passt die abgegebene Insulinmenge für einen begrenzten Zeitraum prozentual an.</string>
     <string name="aps_control_therapy_adjustment_dialog_bg_adjustment_label">Werte-Anpassung</string>
-    <string name="aps_control_therapy_adjustment_dialog_bg_adjustment_description">Überschreibe Zielwert und Niedrig-&#173;Schwelle für einen begrenzten Zeitraum.</string>
+    <string name="aps_control_therapy_adjustment_dialog_bg_adjustment_description">Überschreibt Zielwert und Niedrig-&#173;Schwelle für einen begrenzten Zeitraum.</string>
     <string name="aps_control_therapy_adjustment_dialog_presets_title">Schnellauswahl</string>
 
     <string name="glucose_unit_mgdl">mg/dL</string>
