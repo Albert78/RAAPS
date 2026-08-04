@@ -34,8 +34,8 @@
 
     <string name="profile_editor_discard_title">Änderungen verwerfen?</string>
     <string name="profile_editor_discard_message">Es gibt ungespeicherte Änderungen. Möchtest du den Editor wirklich verlassen?</string>
-    <string name="profile_editor_discard_confirm">Verwerfen</string>
-    <string name="profile_editor_discard_dismiss">Bleiben</string>
+    <string name="discard_confirm_button">Verwerfen</string>
+    <string name="discard_dismiss_button">Bleiben</string>
     <string name="invalid_profile">Ungültiges Insulin-Profil</string>
     <string name="cd_add_profile">Insulin-Profil hinzufügen</string>
     <string name="cd_save_profile">Insulin-Profil speichern</string>

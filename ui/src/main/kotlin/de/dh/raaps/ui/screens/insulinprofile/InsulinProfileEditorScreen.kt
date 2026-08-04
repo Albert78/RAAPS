@@ -4,8 +4,6 @@ import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -18,8 +16,10 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.HelpOutline
@@ -402,12 +402,12 @@ fun InsulinProfileDetailEditor(
                     showDiscardConfirmation = false
                     onCancel()
                 }) {
-                    Text(stringResource(id = R.string.profile_editor_discard_confirm))
+                    Text(stringResource(id = R.string.discard_confirm_button))
                 }
             },
             dismissButton = {
                 TextButton(onClick = { showDiscardConfirmation = false }) {
-                    Text(stringResource(id = R.string.profile_editor_discard_dismiss))
+                    Text(stringResource(id = R.string.discard_dismiss_button))
                 }
             }
         )

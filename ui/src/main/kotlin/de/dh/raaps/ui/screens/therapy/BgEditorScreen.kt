@@ -1,6 +1,7 @@
 package de.dh.raaps.ui.screens.therapy
 
 import androidx.activity.compose.BackHandler
+import android.content.res.Configuration
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -39,6 +40,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import de.dh.raaps.common.model.TARGET_MAX
 import de.dh.raaps.common.model.TARGET_MIN
@@ -49,6 +51,7 @@ import de.dh.raaps.common.ui.composables.TimeHourSelector
 import de.dh.raaps.common.ui.composables.contentScrollIndicator
 import de.dh.raaps.common.ui.composables.screenTitle
 import de.dh.raaps.ui.R
+import de.dh.raaps.common.ui.theme.AppTheme
 import de.dh.raaps.ui.controls.profile.CurrentTherapyViewModel
 import de.dh.raaps.ui.screens.insulinprofile.InsertButton
 import de.dh.raaps.ui.screens.insulinprofile.ValueAdjuster
@@ -105,25 +108,11 @@ fun BgEditorScreen(
             )
         }
     ) { innerPadding ->
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(innerPadding)
-                .padding(16.dp)
-        ) {
-            Text(
-                text = stringResource(id = R.string.bg_editor_desc),
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.padding(bottom = 16.dp)
-            )
-
-            BgBlockList(
-                blocks = blocks,
-                onBlocksChanged = { blocks = it },
-                modifier = Modifier.weight(1f)
-            )
-        }
+        BgEditorContent(
+            blocks = blocks,
+            onBlocksChanged = { blocks = it },
+            modifier = Modifier.padding(innerPadding)
+        )
     }
 
     if (showDiscardConfirmation) {
@@ -144,6 +133,32 @@ fun BgEditorScreen(
                     Text(stringResource(id = R.string.discard_dismiss_button))
                 }
             }
+        )
+    }
+}
+
+@Composable
+private fun BgEditorContent(
+    blocks: List<BgBlock>,
+    onBlocksChanged: (List<BgBlock>) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Column(
+        modifier = modifier
+            .fillMaxSize()
+            .padding(16.dp)
+    ) {
+        Text(
+            text = stringResource(id = R.string.bg_editor_desc),
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.padding(bottom = 16.dp)
+        )
+
+        BgBlockList(
+            blocks = blocks,
+            onBlocksChanged = onBlocksChanged,
+            modifier = Modifier.weight(1f)
         )
     }
 }
@@ -304,6 +319,32 @@ private fun BgBlockList(
             item(key = "insert_$index") {
                 InsertButton(canInsert = nextHour - currentHour > 1) { addBlock(index + 1) }
             }
+        }
+    }
+}
+
+@Preview(showBackground = true, name = "Light Mode")
+@Preview(showBackground = true, uiMode = Configuration.UI_MODE_NIGHT_YES, name = "Dark Mode")
+@Composable
+private fun BgEditorPreview() {
+    val mockBlocks = listOf(
+        BgBlock(
+            duration = Minutes.ofHours(8),
+            target = BgValue(100),
+            lowThreshold = BgValue(70)
+        ),
+        BgBlock(
+            duration = Minutes.ofHours(16),
+            target = BgValue(110),
+            lowThreshold = BgValue(80)
+        )
+    )
+    AppTheme {
+        Surface {
+            BgEditorContent(
+                blocks = mockBlocks,
+                onBlocksChanged = {}
+            )
         }
     }
 }

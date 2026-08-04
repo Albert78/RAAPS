@@ -1,5 +1,6 @@
 package de.dh.raaps.ui.screens.therapy
 
+import android.content.res.Configuration
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
@@ -36,15 +37,14 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import de.dh.raaps.common.model.ADJUSTMENT_PERCENTAGE_MAX
 import de.dh.raaps.common.model.ADJUSTMENT_PERCENTAGE_MIN
@@ -58,6 +58,7 @@ import de.dh.raaps.common.ui.ModuloSteppingStrategy
 import de.dh.raaps.common.ui.composables.EditableValueStepper
 import de.dh.raaps.common.ui.composables.contentScrollIndicator
 import de.dh.raaps.common.ui.composables.screenTitle
+import de.dh.raaps.common.ui.theme.AppTheme
 import de.dh.raaps.common.ui.theme.NeutralGrey
 import de.dh.raaps.common.ui.theme.SoftBlue
 import de.dh.raaps.common.ui.theme.SoftRed
@@ -72,7 +73,7 @@ fun TherapyAdjustmentScreen(
     onNavigateUp: () -> Unit
 ) {
     val uiState by viewModel.uiState.collectAsState()
-    
+
     Scaffold(
         topBar = {
             TopAppBar(
@@ -166,7 +167,7 @@ private fun TherapyAdjustmentContent(
                 maxValue = ADJUSTMENT_PERCENTAGE_MAX.toDouble(),
                 steppingStrategy = steppingStrategyInsulin,
                 displayStrategy = displayStrategyInsulin,
-                suffix = "%"
+                suffix = if (currentPercentage != 0) "%" else ""
             )
         }
 
@@ -421,6 +422,52 @@ private fun AdjustmentSection(
             ) {
                 content()
             }
+        }
+    }
+}
+
+@Preview(showBackground = true, name = "Light Mode")
+@Preview(showBackground = true, uiMode = Configuration.UI_MODE_NIGHT_YES, name = "Dark Mode")
+@Composable
+private fun TherapyAdjustmentPreviewValues() {
+    AppTheme {
+        Surface {
+            TherapyAdjustmentContent(
+                currentPercentage = -10,
+                currentTarget = BgValue.fromMgDl(120),
+                currentLow = BgValue.fromMgDl(80),
+                baseTarget = BgValue.fromMgDl(100),
+                baseLow = BgValue.fromMgDl(70),
+                onValuesChange = { _, _, _, _ -> },
+                onPresetApplied = { _, _, _, _ -> },
+                presets = listOf(
+                    TherapyAdjustment("Fahrrad fahren", percentage = -30, targetBgMgDl = 150, lowThresholdMgDl = 100),
+                    TherapyAdjustment("Stress", percentage = 20, targetBgMgDl = 115, lowThresholdMgDl = 75)
+                )
+            )
+        }
+    }
+}
+
+@Preview(showBackground = true, name = "Light Mode")
+@Preview(showBackground = true, uiMode = Configuration.UI_MODE_NIGHT_YES, name = "Dark Mode")
+@Composable
+private fun TherapyAdjustmentPreviewEmpty() {
+    AppTheme {
+        Surface {
+            TherapyAdjustmentContent(
+                currentPercentage = 0,
+                currentTarget = null,
+                currentLow = null,
+                baseTarget = BgValue.fromMgDl(100),
+                baseLow = BgValue.fromMgDl(70),
+                onValuesChange = { _, _, _, _ -> },
+                onPresetApplied = { _, _, _, _ -> },
+                presets = listOf(
+                    TherapyAdjustment("Fahrrad fahren", percentage = -30, targetBgMgDl = 150, lowThresholdMgDl = 100),
+                    TherapyAdjustment("Stress", percentage = 20, targetBgMgDl = 115, lowThresholdMgDl = 75)
+                )
+            )
         }
     }
 }
