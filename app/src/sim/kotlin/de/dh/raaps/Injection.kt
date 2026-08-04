@@ -18,13 +18,14 @@ private var simBodyPlugin: SimBodyPlugin? = null
  */
 fun setupSystem(registry: SystemRegistry, pluginManager: PluginManager, application: Application) {
     val aps = registry.aps
+    val pumpManager = registry.pumpManager
     val plugin = SimBodyPlugin(application, registry.wakeService, registry.timeService)
     simBodyPlugin = plugin
     pluginManager.addPlugin(plugin)
     val glucoseSource = plugin.getGlucoseSource()
     aps.glucoseSource = glucoseSource
     val insulinPump = plugin.getInsulinPump()
-    aps.pumpManager.insulinPump = insulinPump
+    pumpManager.insulinPump = insulinPump
 }
 
 fun getExtraNavGraphs(

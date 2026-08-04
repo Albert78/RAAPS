@@ -2,6 +2,7 @@ package de.dh.raaps.core.system
 
 import android.app.Notification
 import de.dh.raaps.core.aps.APS
+import de.dh.raaps.core.aps.TherapyManager
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 
@@ -13,13 +14,15 @@ class NotificationManager(
     val androidNotifications: AndroidNotifications
 ) {
     private lateinit var aps: APS
+    private lateinit var therapyManager: TherapyManager
 
-    fun startInitialization(scope: CoroutineScope, aps: APS) {
+    fun startInitialization(scope: CoroutineScope, aps: APS, therapyManager: TherapyManager) {
         this.aps = aps
+        this.therapyManager = therapyManager
         androidNotifications.createNotificationChannels()
 
         scope.launch {
-            aps.recommendations.collect { recommendations ->
+            therapyManager.recommendations.collect { recommendations ->
                 if (recommendations.isEmpty()) {
                     androidNotifications.cancelRecommendationNotification()
                 } else {

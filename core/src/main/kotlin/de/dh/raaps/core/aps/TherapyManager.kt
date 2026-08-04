@@ -1,10 +1,12 @@
 package de.dh.raaps.core.aps
 
 import de.dh.raaps.AppPreferencesRepository
+import de.dh.raaps.common.model.ApsMode
 import de.dh.raaps.common.model.DEFAULT_CR_GRAM_PER_UNIT
 import de.dh.raaps.common.model.DEFAULT_ISF_MGDL_PER_UNIT
 import de.dh.raaps.common.model.DEFAULT_BG_TARGET_MGDL
 import de.dh.raaps.common.model.DEFAULT_BG_LOW_THRESHOLD_MGDL
+import de.dh.raaps.common.model.InsulinAmount
 import de.dh.raaps.common.model.InsulinType
 import de.dh.raaps.common.model.InsulinHistory
 import de.dh.raaps.common.model.data.BgDelta
@@ -21,20 +23,34 @@ import de.dh.raaps.core.pump.PumpManager
 import de.dh.raaps.core.repository.TherapyRepository
 import de.dh.raaps.core.repository.TreatmentRepository
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.drop
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
+import kotlin.time.Duration.Companion.seconds
+
+sealed class ApsRecommendation {
+    data class Carbs(val amountInGram: Int) : ApsRecommendation()
+    data class Bolus(val amount: InsulinAmount) : ApsRecommendation()
+}
 
 class TherapyManager(
     private val therapyRepository: TherapyRepository,
     private val treatmentRepository: TreatmentRepository,
     private val appPreferencesRepository: AppPreferencesRepository,
     private val pumpManager: PumpManager,
+    private val appModeManager: AppModeManager,
     private val scope: CoroutineScope
 ) {
     private val mutex = Mutex()
+
+    private val _recommendations = MutableStateFlow<List<ApsRecommendation>>(emptyList())
+    val recommendations: StateFlow<List<ApsRecommendation>> = _recommendations.asStateFlow()
 
     val currentTherapySettingsFlow: Flow<CurrentTherapySettings> = therapyRepository.observeCurrentTherapySettings()
 
@@ -189,5 +205,82 @@ class TherapyManager(
     suspend fun updatePumpHistory(history: InsulinHistory) {
         val cts = getActiveTherapySettings()
         treatmentRepository.mergeInsulinHistory(history, cts.insulinProfile.insulinType)
+    }
+
+    fun clearRecommendations() {
+        _recommendations.value = emptyList()
+    }
+
+    fun coreCancelInsulinJobs() {
+        when (appModeManager.apsMode.value) {
+            ApsMode.Suspend -> return
+            ApsMode.BasalOnly -> return
+            ApsMode.AutoCorrection -> {
+                pumpManager.cancelJobs { it.isCancelableAPSCommand }
+            }
+        }
+    }
+
+    fun deliverBolus(amount: InsulinAmount) {
+        when (appModeManager.apsMode.value) {
+            ApsMode.Suspend -> return
+            ApsMode.BasalOnly -> issueBolusHint(amount)
+            ApsMode.AutoCorrection -> {
+                scope.launch {
+                    pumpManager.issueCommand(
+                        PumpCommand.DeliverBolus(amount),
+                        isCancelableAPSCommand = true
+                    )
+                }
+            }
+        }
+    }
+
+    fun canIssueZeroTemp(): Boolean {
+        return when (appModeManager.apsMode.value) {
+            ApsMode.Suspend -> false
+            ApsMode.BasalOnly -> false
+            ApsMode.AutoCorrection -> true // TODO: Check if pump supports zero temp
+        }
+    }
+
+    fun issueZeroTemp(durationInHours: Int) {
+        when (appModeManager.apsMode.value) {
+            ApsMode.Suspend -> return
+            ApsMode.BasalOnly -> return
+            ApsMode.AutoCorrection -> {
+                scope.launch {
+                    pumpManager.issueCommand(
+                        PumpCommand.SetTempBasal(
+                            percent = 0,
+                            durationHours = durationInHours
+                        ),
+                        isCancelableAPSCommand = true
+                    )
+                }
+            }
+        }
+    }
+
+    fun issueCarbHint(amountInGram: Int) {
+        _recommendations.value += ApsRecommendation.Carbs(amountInGram)
+    }
+
+    fun issueBolusHint(amount: InsulinAmount) {
+        _recommendations.value += ApsRecommendation.Bolus(amount)
+    }
+
+    suspend fun waitForAndResetInsulinJobs() {
+        if (pumpManager.hasPendingJobs()) {
+            pumpManager.wakeup()
+            pumpManager.waitForIdle()
+            delay(10.seconds)
+        }
+        if (appModeManager.apsMode.value == ApsMode.AutoCorrection) {
+            if (pumpManager.hasPendingJobs()) {
+                // This issue will now be handled by PumpManager
+                pumpManager.cancelJobs({ it.isCancelableAPSCommand })
+            }
+        }
     }
 }

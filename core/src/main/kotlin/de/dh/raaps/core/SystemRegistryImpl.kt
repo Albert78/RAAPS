@@ -88,11 +88,18 @@ class SystemRegistryImpl(
             val wakeService = SystemWakeServiceImpl(application)
             val timeService = TimeServiceImpl(scope = scope)
             val pumpManager = PumpManagerImpl(scope = scope, wakeService = wakeService)
+
+            val appModeManager = AppModeManagerImpl(
+                settingsRepository = settingsRepository,
+                scope = scope
+            )
+
             val therapyManager = TherapyManager(
                 therapyRepository = therapyRepository,
                 treatmentRepository = treatmentRepository,
                 appPreferencesRepository = appPreferencesRepository,
                 pumpManager = pumpManager,
+                appModeManager = appModeManager,
                 scope = scope
             )
             val carbsInsulinCalculationModel = CarbsInsulinCalculationModel(timeService.tickInterval)
@@ -104,11 +111,6 @@ class SystemRegistryImpl(
 
             therapyManager.startInitialization()
 
-            val appModeManager = AppModeManagerImpl(
-                settingsRepository = settingsRepository,
-                scope = scope
-            )
-
             val aps = APS(
                 glucoseRepository = glucoseRepository,
                 therapyRepository = therapyRepository,
@@ -118,12 +120,11 @@ class SystemRegistryImpl(
                 appModeManager = appModeManager,
                 wakeService = wakeService,
                 timeService = timeService,
-                pumpManager = pumpManager,
                 carbsInsulinCalculationModel = carbsInsulinCalculationModel,
                 context = application
             )
             aps.startInitialization()
-            notificationManager.startInitialization(scope, aps)
+            notificationManager.startInitialization(scope, aps, therapyManager)
 
             val permissionsHandler = PermissionsChangedHandler {
                 pluginManager.triggerUpdatesAfterPermissionsChange()

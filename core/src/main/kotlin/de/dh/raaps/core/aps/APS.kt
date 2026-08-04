@@ -6,16 +6,12 @@ import android.util.Log
 import de.dh.raaps.AppPreferencesRepository
 import de.dh.raaps.common.model.ApsMode
 import de.dh.raaps.common.model.GlucoseSource
-import de.dh.raaps.common.model.InsulinAmount
 import de.dh.raaps.common.model.calculation.CarbsInsulinCalculationModel
 import de.dh.raaps.common.model.data.BgReading
 import de.dh.raaps.common.model.data.Minutes
 import de.dh.raaps.common.model.data.TimeService
 import de.dh.raaps.common.model.data.Timestamp
-import de.dh.raaps.core.pump.PumpCommand
-import de.dh.raaps.core.pump.PumpManager
 import de.dh.raaps.core.repository.GlucoseRepository
-import de.dh.raaps.core.repository.SettingsRepository
 import de.dh.raaps.core.repository.TherapyRepository
 import de.dh.raaps.core.repository.TreatmentRepository
 import de.dh.raaps.core.system.SystemWakeService
@@ -26,14 +22,12 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.asCoroutineDispatcher
 import kotlinx.coroutines.cancel
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.drop
 import kotlinx.coroutines.launch
 import java.util.concurrent.Executors
-import kotlin.time.Duration.Companion.seconds
 
 enum class ApsIssue {
     /**
@@ -47,10 +41,6 @@ enum class ApsIssue {
     Other
 }
 
-sealed class ApsRecommendation {
-    data class Carbs(val amountInGram: Int) : ApsRecommendation()
-    data class Bolus(val amount: InsulinAmount) : ApsRecommendation()
-}
 
 /**
  * APS system facade for the access from outside (UI, ...).
@@ -66,7 +56,6 @@ class APS(
     val appModeManager: AppModeManager,
     val wakeService: SystemWakeService,
     val timeService: TimeService,
-    val pumpManager: PumpManager,
     val carbsInsulinCalculationModel: CarbsInsulinCalculationModel,
     val context: Context
 ) : WakeupHandler {
@@ -92,12 +81,12 @@ class APS(
         onAcquireBusyState = { acquireBusyState() },
         onReleaseBusyState = { releaseBusyState() },
 
-        onCancelInsulinJobs = { coreCancelInsulinJobs() },
-        onDeliverBolus = { amount -> deliverBolus(amount) },
-        onCheckZeroTemp = { canIssueZeroTemp() },
-        onZeroTemp = { durationInHours -> issueZeroTemp(durationInHours) },
-        onCarbsHint = { amountInGram -> issueCarbHint(amountInGram) },
-        onWaitForAndResetInsulinJobs = { waitForAndResetInsulinJobs() }
+        onCancelInsulinJobs = { therapyManager.coreCancelInsulinJobs() },
+        onDeliverBolus = { amount -> therapyManager.deliverBolus(amount) },
+        onCheckZeroTemp = { therapyManager.canIssueZeroTemp() },
+        onZeroTemp = { durationInHours -> therapyManager.issueZeroTemp(durationInHours) },
+        onCarbsHint = { amountInGram -> therapyManager.issueCarbHint(amountInGram) },
+        onWaitForAndResetInsulinJobs = { therapyManager.waitForAndResetInsulinJobs() }
     )
 
     // Plugins & Active Jobs
@@ -137,12 +126,6 @@ class APS(
      * Active issues of the APS.
      */
     val apsIssues: StateFlow<Set<ApsIssue>> = _apsIssues.asStateFlow()
-
-    private val _recommendations = MutableStateFlow<List<ApsRecommendation>>(emptyList())
-    /**
-     * Active recommendations of the APS.
-     */
-    val recommendations: StateFlow<List<ApsRecommendation>> = _recommendations.asStateFlow()
 
     private fun addIssue(issue: ApsIssue) {
         if (issue !in _apsIssues.value) {
@@ -263,85 +246,13 @@ class APS(
         _coreState.emit(core.coreState)
     }
 
-    fun coreCancelInsulinJobs() {
-        when (appModeManager.apsMode.value) {
-            ApsMode.Suspend -> return
-            ApsMode.BasalOnly -> return
-            ApsMode.AutoCorrection -> {
-                pumpManager.cancelJobs { it.isCancelableAPSCommand }
-            }
-        }
-    }
-
-    fun deliverBolus(amount: InsulinAmount) {
-        when (appModeManager.apsMode.value) {
-            ApsMode.Suspend -> return
-            ApsMode.BasalOnly -> issueBolusHint(amount)
-            ApsMode.AutoCorrection -> {
-                inAPSThread {
-                    pumpManager.issueCommand(
-                        PumpCommand.DeliverBolus(amount),
-                        isCancelableAPSCommand = true
-                    )
-                }
-            }
-        }
-    }
-
-    fun canIssueZeroTemp(): Boolean {
-        return when (appModeManager.apsMode.value) {
-            ApsMode.Suspend -> false
-            ApsMode.BasalOnly -> false
-            ApsMode.AutoCorrection -> true // TODO: Check if pump supports zero temp
-        }
-    }
-
-    fun issueZeroTemp(durationInHours: Int) {
-        when (appModeManager.apsMode.value) {
-            ApsMode.Suspend -> return
-            ApsMode.BasalOnly -> return
-            ApsMode.AutoCorrection -> {
-                inAPSThread {
-                    pumpManager.issueCommand(
-                        PumpCommand.SetTempBasal(
-                            percent = 0,
-                            durationHours = durationInHours
-                        ),
-                        isCancelableAPSCommand = true
-                    )
-                }
-            }
-        }
-    }
-
-    fun issueCarbHint(amountInGram: Int) {
-        _recommendations.value += ApsRecommendation.Carbs(amountInGram)
-    }
-
-    fun issueBolusHint(amount: InsulinAmount) {
-        _recommendations.value += ApsRecommendation.Bolus(amount)
-    }
-
-    suspend fun waitForAndResetInsulinJobs() {
-        if (pumpManager.hasPendingJobs()) {
-            pumpManager.wakeup()
-            pumpManager.waitForIdle()
-            delay(10.seconds)
-        }
-        if (appModeManager.apsMode.value == ApsMode.AutoCorrection) {
-            if (pumpManager.hasPendingJobs()) {
-                // This issue will now be handled by PumpManager
-                pumpManager.cancelJobs({ it.isCancelableAPSCommand })
-            }
-        }
-    }
 
     /**
      * Entry point for external BG updates.
      * Guaranteed to run on the internal APS thread.
      */
     fun updateBg(bg: BgReading) = inAPSThread {
-        _recommendations.value = emptyList()
+        therapyManager.clearRecommendations()
 
         core.updateBg(bg)
         core.nextBgStaleCheckAt()?.let {
