@@ -22,8 +22,6 @@ import androidx.compose.material.icons.filled.UnfoldMore
 import androidx.compose.material.icons.filled.VerticalAlignBottom
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.DropdownMenu
-import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
 import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
@@ -217,10 +215,10 @@ fun ApsControlCard(
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 // Mode Button
-                var showModeMenu by remember { mutableStateOf(false) }
+                var showModeDialog by remember { mutableStateOf(false) }
                 Box {
                     Button(
-                        onClick = { showModeMenu = true },
+                        onClick = { showModeDialog = true },
                         modifier = Modifier.fillMaxWidth(),
                         shape = MaterialTheme.shapes.small,
                         colors = ButtonDefaults.buttonColors(
@@ -232,21 +230,16 @@ fun ApsControlCard(
                         ),
                         contentPadding = PaddingValues(horizontal = 8.dp, vertical = 8.dp)
                     ) {
-                        Text(selectedMode.toDisplayString(), style = MaterialTheme.typography.titleMedium)
+                        Text(selectedMode.toDisplayStringShort(), style = MaterialTheme.typography.titleMedium)
                     }
-                    DropdownMenu(
-                        expanded = showModeMenu,
-                        onDismissRequest = { showModeMenu = false }
-                    ) {
-                        availableModes.forEach { mode ->
-                            DropdownMenuItem(
-                                text = { Text(mode.toDisplayString()) },
-                                onClick = {
-                                    onModeChange(mode)
-                                    showModeMenu = false
-                                }
-                            )
-                        }
+
+                    if (showModeDialog) {
+                        ApsModeSelectionDialog(
+                            selectedMode = selectedMode,
+                            availableModes = availableModes,
+                            onModeChange = onModeChange,
+                            onDismissRequest = { showModeDialog = false }
+                        )
                     }
                 }
 
@@ -300,10 +293,10 @@ fun ApsControlCard(
 }
 
 @Composable
-private fun ApsMode.toDisplayString(): String = stringResource(id = when (this) {
-    ApsMode.Suspend -> R.string.aps_mode_suspend
-    ApsMode.BasalOnly -> R.string.aps_mode_basal_only
-    ApsMode.AutoCorrection -> R.string.aps_mode_auto_correction
+private fun ApsMode.toDisplayStringShort(): String = stringResource(id = when (this) {
+    ApsMode.Suspend -> R.string.aps_mode_suspend_short
+    ApsMode.BasalOnly -> R.string.aps_mode_basal_only_short
+    ApsMode.AutoCorrection -> R.string.aps_mode_auto_correction_short
 })
 
 @Preview(name = "Light", showBackground = true)

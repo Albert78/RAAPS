@@ -122,9 +122,16 @@
 
     <string name="insulin_unit_label_format">%1$.1f I.E.</string>
 
-    <string name="aps_mode_suspend">Pumpe Stopp</string>
-    <string name="aps_mode_basal_only">Nur Basal</string>
-    <string name="aps_mode_auto_correction">Auto-Korr.</string>
+    <string name="aps_mode_dialog_title">Modus wählen</string>
+    <string name="aps_mode_suspend">Stopp der Pumpe</string>
+    <string name="aps_mode_suspend_short">Pumpe Stopp</string>
+    <string name="aps_mode_suspend_desc">Die Insulinabgabe ist vollständig unterbrochen. Eingriffe sind nur manuell an der Pumpe möglich.</string>
+    <string name="aps_mode_basal_only">Nur Basalabgabe</string>
+    <string name="aps_mode_basal_only_short">Nur Basal</string>
+    <string name="aps_mode_basal_only_desc">Es wird nur die programmierte Basalrate abgegeben. Keine automatischen Korrekturen.</string>
+    <string name="aps_mode_auto_correction">Automatische Korrektur</string>
+    <string name="aps_mode_auto_correction_short">Auto-Korr.</string>
+    <string name="aps_mode_auto_correction_desc">Das System steuert die Insulinabgabe vollständig und nimmt automatische Korrekturen vor.</string>
     <string name="aps_control_basal_label">Basal: %1$s U/h</string>
     <string name="aps_control_cr_label">CR %1$s</string>
     <string name="aps_control_isf_label">ISF %1$d</string>
