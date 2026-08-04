@@ -3,6 +3,7 @@ package de.dh.raaps.common.ui.composables
 import android.content.res.Configuration
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -50,6 +51,8 @@ import de.dh.raaps.common.ui.theme.AppTheme
 fun EditableValueStepper(
     currentValue: Double,
     onValueChange: (Double) -> Unit,
+    minValue: Double = Double.NEGATIVE_INFINITY,
+    maxValue: Double = Double.POSITIVE_INFINITY,
     steppingStrategy: SteppingStrategy = DefaultSteppingStrategy(),
     displayStrategy: ValueDisplayStrategy = DefaultValueDisplayStrategy(),
     suffix: String = ""
@@ -74,14 +77,14 @@ fun EditableValueStepper(
     }
 
     val onStepUp = {
-        val nextValue = steppingStrategy.stepUp(currentValue)
+        val nextValue = steppingStrategy.stepUp(currentValue).coerceAtMost(maxValue)
         onValueChange(nextValue)
         isEditing = false
         focusManager.clearFocus()
     }
 
     val onStepDown = {
-        val nextValue = steppingStrategy.stepDown(currentValue)
+        val nextValue = steppingStrategy.stepDown(currentValue).coerceAtLeast(minValue)
         onValueChange(nextValue)
         isEditing = false
         focusManager.clearFocus()
@@ -94,7 +97,8 @@ fun EditableValueStepper(
     ) {
         IconButton(
             onClick = onStepDown,
-            modifier = Modifier.size(48.dp)
+            modifier = Modifier.size(48.dp),
+            enabled = currentValue > minValue
         ) {
             Icon(Icons.Default.Remove, contentDescription = "Decrease")
         }
@@ -106,72 +110,75 @@ fun EditableValueStepper(
                 focusRequester.requestFocus()
             }
 
-            Row(
-                modifier = Modifier.width(120.dp),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.Center
-            ) {
-                OutlinedTextField(
-                    value = textFieldValue,
-                    onValueChange = { newValue ->
-                        textFieldValue = newValue
-                        // Immediate update of current value, ignore if it contains non-digits/decimal
-                        val cleanedText = newValue.text.replace(',', '.')
-                        if (cleanedText.isEmpty() || cleanedText.all { it.isDigit() || it == '.' }) {
-                            cleanedText.toDoubleOrNull()?.let { onValueChange(it) }
+            OutlinedTextField(
+                value = textFieldValue,
+                onValueChange = { newValue ->
+                    textFieldValue = newValue
+                    // Immediate update of current value, ignore if it contains non-digits/decimal
+                    val cleanedText = newValue.text.replace(',', '.')
+                    if (cleanedText.isEmpty() || cleanedText.all { it.isDigit() || it == '.' }) {
+                        cleanedText.toDoubleOrNull()?.let { onValueChange(it.coerceIn(minValue, maxValue)) }
+                    }
+                },
+                modifier = Modifier
+                    .width(120.dp)
+                    .focusRequester(focusRequester)
+                    .onFocusChanged { focusState ->
+                        if (focusState.isFocused) {
+                            hasGainedFocus = true
+                        } else if (hasGainedFocus) {
+                            isEditing = false
                         }
                     },
-                    modifier = Modifier
-                        .width(80.dp)
-                        .focusRequester(focusRequester)
-                        .onFocusChanged { focusState ->
-                            if (focusState.isFocused) {
-                                hasGainedFocus = true
-                            } else if (hasGainedFocus) {
-                                isEditing = false
-                            }
-                        },
-                    textStyle = MaterialTheme.typography.titleLarge.copy(textAlign = TextAlign.Center),
-                    keyboardOptions = KeyboardOptions(
-                        keyboardType = KeyboardType.Decimal,
-                        imeAction = ImeAction.Done
-                    ),
-                    keyboardActions = KeyboardActions(
-                        onDone = {
-                            isEditing = false
-                            focusManager.clearFocus()
-                        }
-                    ),
-                    singleLine = true
-                )
-                if (suffix.isNotEmpty()) {
-                    Spacer(Modifier.width(4.dp))
-                    Text(suffix, style = MaterialTheme.typography.titleLarge)
-                }
-            }
-        } else {
-            Text(
-                text = displayStrategy.format(currentValue),
-                style = MaterialTheme.typography.headlineMedium.copy(
-                    fontWeight = FontWeight.Bold,
-                    color = displayStrategy.color(currentValue).let {
-                        if (it == Color.Unspecified) MaterialTheme.colorScheme.onSurface else it
+                textStyle = MaterialTheme.typography.titleLarge.copy(textAlign = TextAlign.Center),
+                keyboardOptions = KeyboardOptions(
+                    keyboardType = KeyboardType.Decimal,
+                    imeAction = ImeAction.Done
+                ),
+                keyboardActions = KeyboardActions(
+                    onDone = {
+                        isEditing = false
+                        focusManager.clearFocus()
                     }
                 ),
+                singleLine = true
+            )
+        } else {
+            Row(
                 modifier = Modifier
                     .width(120.dp)
                     .clickable {
                         isEditing = true
                     },
-                textAlign = TextAlign.Center
-            )
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.Center
+            ) {
+                Text(
+                    text = displayStrategy.format(currentValue),
+                    style = MaterialTheme.typography.headlineMedium.copy(
+                        fontWeight = FontWeight.Bold,
+                        color = displayStrategy.color(currentValue).let {
+                            if (it == Color.Unspecified) MaterialTheme.colorScheme.onSurface else it
+                        }
+                    ),
+                    textAlign = TextAlign.Center
+                )
+                if (suffix.isNotEmpty()) {
+                    Spacer(Modifier.width(4.dp))
+                    Text(
+                        text = suffix.trim(),
+                        style = MaterialTheme.typography.titleLarge
+                    )
+                }
+            }
         }
 
         Spacer(Modifier.width(16.dp))
 
         IconButton(
             onClick = onStepUp,
-            modifier = Modifier.size(48.dp)
+            modifier = Modifier.size(48.dp),
+            enabled = currentValue < maxValue
         ) {
             Icon(Icons.Default.Add, contentDescription = "Increase")
         }
@@ -185,11 +192,16 @@ fun EditableValueStepperPreview() {
     var value by remember { mutableStateOf(100.0) }
     AppTheme {
         Surface {
-            EditableValueStepper(
-                currentValue = value,
-                onValueChange = { value = it },
-                suffix = "mg/dL"
-            )
+            Column {
+                Text("Range: 90 - 110")
+                EditableValueStepper(
+                    currentValue = value,
+                    onValueChange = { value = it },
+                    minValue = 90.0,
+                    maxValue = 110.0,
+                    suffix = "mg/dL"
+                )
+            }
         }
     }
 }

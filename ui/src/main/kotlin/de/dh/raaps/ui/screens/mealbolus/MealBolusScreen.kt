@@ -42,6 +42,10 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import de.dh.raaps.common.model.BOLUS_MAX
+import de.dh.raaps.common.model.BOLUS_MIN
+import de.dh.raaps.common.model.CARBS_KE_MAX
+import de.dh.raaps.common.model.CARBS_KE_MIN
 import de.dh.raaps.common.model.MealType
 import de.dh.raaps.common.ui.DefaultSteppingStrategy
 import de.dh.raaps.common.ui.DefaultValueDisplayStrategy
@@ -115,11 +119,14 @@ fun MealBolusScreen(
                 EditableValueStepper(
                     currentValue = uiState.carbsKe,
                     onValueChange = { viewModel.onCarbsChange(it) },
+                    minValue = CARBS_KE_MIN,
+                    maxValue = CARBS_KE_MAX,
                     steppingStrategy = DefaultSteppingStrategy(0.5), // 0.5 KE steps
                     displayStrategy = object : de.dh.raaps.common.ui.ValueDisplayStrategy {
                         override fun format(value: Double): String = String.format("%.1f", value)
                         override fun color(value: Double): androidx.compose.ui.graphics.Color = androidx.compose.ui.graphics.Color.Unspecified
-                    }
+                    },
+                    suffix = " KE"
                 )
             }
 
@@ -198,11 +205,14 @@ fun MealBolusScreen(
                     EditableValueStepper(
                         currentValue = uiState.manualBolus,
                         onValueChange = { viewModel.onManualBolusChange(it) },
+                        minValue = BOLUS_MIN,
+                        maxValue = BOLUS_MAX,
                         steppingStrategy = DefaultSteppingStrategy(0.1), // 0.1 U steps
                         displayStrategy = object : de.dh.raaps.common.ui.ValueDisplayStrategy {
                             override fun format(value: Double): String = String.format("%.2f", value)
                             override fun color(value: Double): androidx.compose.ui.graphics.Color = androidx.compose.ui.graphics.Color.Unspecified
-                        }
+                        },
+                        suffix = " U"
                     )
                 }
             }

@@ -41,6 +41,12 @@ import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import de.dh.raaps.common.model.ADJUSTMENT_PERCENTAGE_MAX
+import de.dh.raaps.common.model.ADJUSTMENT_PERCENTAGE_MIN
+import de.dh.raaps.common.model.LOW_THRESHOLD_MAX
+import de.dh.raaps.common.model.LOW_THRESHOLD_MIN
+import de.dh.raaps.common.model.TARGET_MAX
+import de.dh.raaps.common.model.TARGET_MIN
 import de.dh.raaps.common.model.data.BgValue
 import de.dh.raaps.common.ui.ConfigurableDisplayStrategy
 import de.dh.raaps.common.ui.ModuloSteppingStrategy
@@ -71,7 +77,6 @@ fun TherapyAdjustmentDialogContent(
         negativeColor = SoftBlue,
         neutralColor = NeutralGrey,
         positivePrefix = "+",
-        suffix = "%",
         neutralLabel = stringResource(R.string.aps_control_adjustment_neutral)
     )
 
@@ -100,6 +105,8 @@ fun TherapyAdjustmentDialogContent(
             EditableValueStepper(
                 currentValue = currentPercentage.toDouble(),
                 onValueChange = { onValuesChange(it.toInt(), currentTarget, currentLow, null) },
+                minValue = ADJUSTMENT_PERCENTAGE_MIN.toDouble(),
+                maxValue = ADJUSTMENT_PERCENTAGE_MAX.toDouble(),
                 steppingStrategy = steppingStrategyInsulin,
                 displayStrategy = displayStrategyInsulin,
                 suffix = "%"
@@ -144,6 +151,8 @@ fun TherapyAdjustmentDialogContent(
                             val newValue = if (it == 0.0) null else BgValue.fromMgDl(it.toInt())
                             onValuesChange(currentPercentage, newValue, currentLow, null)
                         },
+                        minValue = TARGET_MIN.toDouble(),
+                        maxValue = TARGET_MAX.toDouble(),
                         steppingStrategy = steppingStrategyBg,
                         suffix = " mg/dL"
                     )
@@ -175,6 +184,8 @@ fun TherapyAdjustmentDialogContent(
                             val newValue = if (it == 0.0) null else BgValue.fromMgDl(it.toInt())
                             onValuesChange(currentPercentage, currentTarget, newValue, null)
                         },
+                        minValue = LOW_THRESHOLD_MIN.toDouble(),
+                        maxValue = LOW_THRESHOLD_MAX.toDouble(),
                         steppingStrategy = steppingStrategyBg,
                         suffix = " mg/dL"
                     )

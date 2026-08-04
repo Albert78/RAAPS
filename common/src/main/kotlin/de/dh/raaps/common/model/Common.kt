@@ -33,6 +33,18 @@ const val CR_MAX = 100.0
 const val TARGET_MIN = 70
 const val TARGET_MAX = 180
 
+const val LOW_THRESHOLD_MIN = 50
+const val LOW_THRESHOLD_MAX = 120
+
+const val ADJUSTMENT_PERCENTAGE_MIN = -100
+const val ADJUSTMENT_PERCENTAGE_MAX = 200
+
+const val CARBS_KE_MIN = 0.0
+const val CARBS_KE_MAX = 30.0
+
+const val BOLUS_MIN = 0.0
+const val BOLUS_MAX = 50.0
+
 const val DEFAULT_BASAL_UNITS_PER_HOUR = 0.5
 const val DEFAULT_ISF_MGDL_PER_UNIT = 50.0
 const val DEFAULT_CR_GRAM_PER_UNIT = 10.0
