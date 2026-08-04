@@ -27,6 +27,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.font.FontWeight
@@ -35,15 +36,20 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import de.dh.raaps.common.ui.theme.SoftBlue
-import de.dh.raaps.common.ui.theme.SoftRed
+import de.dh.raaps.common.ui.DefaultSteppingStrategy
+import de.dh.raaps.common.ui.DefaultValueDisplayStrategy
+import de.dh.raaps.common.ui.SteppingStrategy
+import de.dh.raaps.common.ui.ValueDisplayStrategy
 import kotlin.math.ceil
 import kotlin.math.floor
 
 @Composable
 fun EditableValueStepper(
     currentValue: Int,
-    onValueChange: (Int) -> Unit
+    onValueChange: (Int) -> Unit,
+    steppingStrategy: SteppingStrategy = DefaultSteppingStrategy(),
+    displayStrategy: ValueDisplayStrategy = DefaultValueDisplayStrategy(),
+    suffix: String = ""
 ) {
     var isEditing by remember { mutableStateOf(false) }
     var textFieldValue by remember {
@@ -52,16 +58,15 @@ fun EditableValueStepper(
     val focusManager = LocalFocusManager.current
     val focusRequester = remember { FocusRequester() }
 
-    // Stepping logic (modulo 5)
     val onStepUp = {
-        val nextValue = (floor(currentValue / 5.0).toInt() + 1) * 5
+        val nextValue = steppingStrategy.stepUp(currentValue)
         onValueChange(nextValue)
         isEditing = false
         focusManager.clearFocus()
     }
 
     val onStepDown = {
-        val nextValue = (ceil(currentValue / 5.0).toInt() - 1) * 5
+        val nextValue = steppingStrategy.stepDown(currentValue)
         onValueChange(nextValue)
         isEditing = false
         focusManager.clearFocus()
@@ -114,18 +119,18 @@ fun EditableValueStepper(
                     ),
                     singleLine = true
                 )
-                Spacer(Modifier.width(4.dp))
-                Text("%", style = MaterialTheme.typography.titleLarge)
+                if (suffix.isNotEmpty()) {
+                    Spacer(Modifier.width(4.dp))
+                    Text(suffix, style = MaterialTheme.typography.titleLarge)
+                }
             }
         } else {
             Text(
-                text = if (currentValue == 0) "neutral" else "${if (currentValue > 0) "+" else ""}$currentValue%",
+                text = displayStrategy.format(currentValue),
                 style = MaterialTheme.typography.headlineMedium.copy(
                     fontWeight = FontWeight.Bold,
-                    color = when {
-                        currentValue > 0 -> SoftRed
-                        currentValue < 0 -> SoftBlue
-                        else -> MaterialTheme.colorScheme.onSurface
+                    color = displayStrategy.color(currentValue).let {
+                        if (it == Color.Unspecified) MaterialTheme.colorScheme.onSurface else it
                     }
                 ),
                 modifier = Modifier

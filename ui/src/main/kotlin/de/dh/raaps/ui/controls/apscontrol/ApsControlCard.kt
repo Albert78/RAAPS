@@ -55,6 +55,8 @@ import de.dh.raaps.common.ui.theme.AppTheme
 import de.dh.raaps.common.ui.theme.SoftBlue
 import de.dh.raaps.common.ui.theme.SoftGreen
 import de.dh.raaps.common.ui.theme.SoftRed
+import de.dh.raaps.common.ui.ConfigurableDisplayStrategy
+import de.dh.raaps.common.ui.theme.NeutralGrey
 import de.dh.raaps.ui.R
 import de.dh.raaps.ui.controls.profile.ProfileUiState
 
@@ -70,6 +72,14 @@ fun ApsControlCard(
     onProfileClick: () -> Unit
 ) {
     val isSuspended = selectedMode == ApsMode.Suspend
+    val displayStrategy = ConfigurableDisplayStrategy(
+        positiveColor = SoftRed,
+        negativeColor = SoftBlue,
+        neutralColor = NeutralGrey,
+        positivePrefix = "+",
+        suffix = "%",
+        neutralLabel = stringResource(R.string.aps_control_adjustment_neutral)
+    )
 
     Surface(
         modifier = modifier.height(IntrinsicSize.Min),
@@ -91,7 +101,7 @@ fun ApsControlCard(
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 val nameText = if (adjustmentPercentage != 0) {
-                    "${profileUiState.name} (${if (adjustmentPercentage > 0) "+" else ""}$adjustmentPercentage%)"
+                    "${profileUiState.name} (${displayStrategy.format(adjustmentPercentage)})"
                 } else {
                     profileUiState.name
                 }
@@ -250,7 +260,7 @@ fun ApsControlCard(
                     ) {
                         Icon(Icons.Default.UnfoldMore, null, modifier = Modifier.size(18.dp))
                         Spacer(Modifier.width(4.dp))
-                        Text(stringResource(R.string.aps_control_adjustment_neutral), style = MaterialTheme.typography.titleMedium)
+                        Text(displayStrategy.format(adjustmentPercentage), style = MaterialTheme.typography.titleMedium)
                     }
                 } else {
                     Button(
@@ -259,14 +269,14 @@ fun ApsControlCard(
                         modifier = Modifier.fillMaxWidth(),
                         shape = MaterialTheme.shapes.small,
                         colors = ButtonDefaults.buttonColors(
-                            containerColor = if (adjustmentPercentage > 0) SoftRed else SoftBlue
+                            containerColor = displayStrategy.color(adjustmentPercentage)
                         ),
                         contentPadding = PaddingValues(horizontal = 8.dp, vertical = 8.dp)
                     ) {
                         Icon(Icons.Default.UnfoldMore, null, modifier = Modifier.size(18.dp))
                         Spacer(Modifier.width(4.dp))
                         Text(
-                            "${if (adjustmentPercentage > 0) "+" else ""}$adjustmentPercentage%",
+                            displayStrategy.format(adjustmentPercentage),
                             style = MaterialTheme.typography.titleMedium
                         )
                     }

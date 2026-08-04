@@ -25,7 +25,6 @@
     <string name="bg_editor_title">Ziel-BZ &amp; Low-Schwelle</string>
     <string name="bg_editor_desc">Der angestrebte Blutzucker und die Schwelle für niedrige Werte (Einheit: mg/dL).</string>
 
-
     <string name="profile_editor_discard_title">Änderungen verwerfen?</string>
     <string name="profile_editor_discard_message">Es gibt ungespeicherte Änderungen. Möchtest du den Editor wirklich verlassen?</string>
     <string name="profile_editor_discard_confirm">Verwerfen</string>
@@ -113,6 +112,7 @@
     <string name="aps_control_adjustment_neutral">neutral</string>
     <string name="aps_control_no_profile">Kein Profil</string>
     <string name="aps_control_adjustment_dialog_title">Therapie-Anpassung</string>
+    <string name="aps_control_adjustment_dialog_description">Mit dieser Einstellung passt du die Profileinstellungen (Basalrate, ISF und I:C) prozentual an. Dies wirkt sich auf die berechneten Insulinmengen aus, lässt die Wirkdauer (DIA) jedoch unverändert.</string>
 
     <string name="glucose_unit_mgdl">mg/dL</string>
     <string name="approx_prefix">ca.</string>
