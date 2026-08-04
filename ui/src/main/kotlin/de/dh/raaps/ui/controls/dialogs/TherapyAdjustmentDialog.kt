@@ -11,7 +11,8 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Adjust
 import androidx.compose.material.icons.filled.VerticalAlignBottom
@@ -39,6 +40,7 @@ import de.dh.raaps.common.model.data.BgValue
 import de.dh.raaps.common.ui.ConfigurableDisplayStrategy
 import de.dh.raaps.common.ui.ModuloSteppingStrategy
 import de.dh.raaps.common.ui.composables.EditableValueStepper
+import de.dh.raaps.common.ui.composables.contentScrollIndicator
 import de.dh.raaps.common.ui.theme.AppTheme
 import de.dh.raaps.common.ui.theme.NeutralGrey
 import de.dh.raaps.common.ui.theme.SoftBlue
@@ -70,9 +72,12 @@ fun TherapyAdjustmentDialogContent(
 
     val focusManager = LocalFocusManager.current
 
+    val scrollState = rememberScrollState()
     Column(
         modifier = Modifier
             .fillMaxWidth()
+            .contentScrollIndicator(scrollState)
+            .verticalScroll(scrollState)
             .clickable(
                 indication = null,
                 interactionSource = remember { MutableInteractionSource() }
@@ -102,23 +107,30 @@ fun TherapyAdjustmentDialogContent(
             title = stringResource(R.string.aps_control_therapy_adjustment_dialog_bg_adjustment_label),
             description = stringResource(R.string.aps_control_therapy_adjustment_dialog_bg_adjustment_description)
         ) {
-            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Column(
+                verticalArrangement = Arrangement.spacedBy(12.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
                 // Target BG
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.spacedBy(4.dp)
                 ) {
-                    Icon(
-                        imageVector = Icons.Default.Adjust,
-                        contentDescription = null,
-                        modifier = Modifier.size(20.dp),
-                        tint = MaterialTheme.colorScheme.primary
-                    )
-                    Text(
-                        text = stringResource(R.string.current_therapy_target_label),
-                        style = MaterialTheme.typography.labelMedium,
-                        modifier = Modifier.width(100.dp)
-                    )
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Adjust,
+                            contentDescription = null,
+                            modifier = Modifier.size(20.dp),
+                            tint = MaterialTheme.colorScheme.primary
+                        )
+                        Text(
+                            text = stringResource(R.string.current_therapy_target_label),
+                            style = MaterialTheme.typography.labelMedium
+                        )
+                    }
                     EditableValueStepper(
                         currentValue = currentTarget?.mgdl?.toInt() ?: 0,
                         onValueChange = {
@@ -131,21 +143,25 @@ fun TherapyAdjustmentDialogContent(
                 }
 
                 // Low Threshold
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.spacedBy(4.dp)
                 ) {
-                    Icon(
-                        imageVector = Icons.Default.VerticalAlignBottom,
-                        contentDescription = null,
-                        modifier = Modifier.size(20.dp),
-                        tint = MaterialTheme.colorScheme.error
-                    )
-                    Text(
-                        text = stringResource(R.string.current_therapy_low_threshold_label),
-                        style = MaterialTheme.typography.labelMedium,
-                        modifier = Modifier.width(100.dp)
-                    )
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.VerticalAlignBottom,
+                            contentDescription = null,
+                            modifier = Modifier.size(20.dp),
+                            tint = MaterialTheme.colorScheme.error
+                        )
+                        Text(
+                            text = stringResource(R.string.current_therapy_low_threshold_label),
+                            style = MaterialTheme.typography.labelMedium
+                        )
+                    }
                     EditableValueStepper(
                         currentValue = currentLow?.mgdl?.toInt() ?: 0,
                         onValueChange = {
@@ -314,7 +330,12 @@ fun TherapyAdjustmentDialogPreview() {
                     TherapyAdjustment("Normal", 0),
                     TherapyAdjustment("Wandern", -20, 140, 90),
                     TherapyAdjustment("Fahrrad fahren", -30, 150, 100),
-                    TherapyAdjustment("Klettern", -40, 160, 110)
+                    TherapyAdjustment("Klettern", -40, 160, 110),
+                    TherapyAdjustment("Schwimmen", -50, 180, 120),
+                    TherapyAdjustment("Laufen", -25, 130, 95),
+                    TherapyAdjustment("Schlafen", 10, 110, 85),
+                    TherapyAdjustment("Krank", 30, 100, 70),
+                    TherapyAdjustment("Stress", 20, 115, 75)
                 )
             )
         }

@@ -86,9 +86,11 @@ class CurrentTherapyViewModel(
     // TODO: Make these user-editable in the future (e.g. via a database table or preferences).
     private val hardcodedPresets = listOf(
         TherapyAdjustment("Neutral", 0),
-        TherapyAdjustment("Wandern", -20, targetBgMgDl = 140, lowThresholdMgDl = 90),
         TherapyAdjustment("Fahrrad fahren", -30, targetBgMgDl = 150, lowThresholdMgDl = 100),
-        TherapyAdjustment("Klettern", -40, targetBgMgDl = 160, lowThresholdMgDl = 110)
+        TherapyAdjustment("Klettern", -40, targetBgMgDl = 160, lowThresholdMgDl = 110),
+        TherapyAdjustment("Schlafen", 10, 110, 85),
+        TherapyAdjustment("Krank", 30, 100, 70),
+        TherapyAdjustment("Stress", 20, 115, 75)
     )
 
     init {
