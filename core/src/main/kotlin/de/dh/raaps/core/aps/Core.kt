@@ -81,9 +81,6 @@ class Core(
     var coreState: CoreState = CoreState.Uninitialized
         private set
 
-    suspend fun nextBgStaleCheckAt(): Timestamp? = glucoseSourceManager.nextBgStaleCheckAt()
-    suspend fun isStale(): Boolean = glucoseSourceManager.isBgStale()
-
     /**
      * Lock which is acquired in situations where a suspend function
      * must be atomic. Other (non-suspend) functions don't need to be locked since
@@ -136,11 +133,6 @@ class Core(
         if (coreState !is CoreState.Active) return
 
         Log.d(TAG, "onTick: $tick")
-
-        if (isStale()) {
-            // This will be handled by APS facade currently,
-            // but we could also emit an event here.
-        }
     }
 
     suspend fun initialize() {

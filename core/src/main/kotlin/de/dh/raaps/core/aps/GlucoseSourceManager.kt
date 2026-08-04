@@ -24,7 +24,6 @@ class GlucoseSourceManager(
     private var glucoseJob: Job? = null
     private var scope: CoroutineScope? = null
     private var inAPSThread: ((suspend CoroutineScope.() -> Unit) -> Job)? = null
-    private var onNewBg: (suspend (BgReading) -> Unit)? = null
 
     private val _currentBg = MutableStateFlow<BgReading?>(null)
     val currentBg: StateFlow<BgReading?> = _currentBg.asStateFlow()
@@ -54,10 +53,6 @@ class GlucoseSourceManager(
     fun setThreading(scope: CoroutineScope, inAPSThread: (suspend CoroutineScope.() -> Unit) -> Job) {
         this.scope = scope
         this.inAPSThread = inAPSThread
-    }
-
-    fun setOnNewBg(onNewBg: suspend (BgReading) -> Unit) {
-        this.onNewBg = onNewBg
     }
 
     suspend fun initialize() {
@@ -92,15 +87,9 @@ class GlucoseSourceManager(
         val persistedValues = plugin.getValues()
             .persist(glucoseRepository, dataProvider, sensorType)
 
-        // Collect for core calculation
         persistedValues
-            // Threading notice:
-            // The .collect call will block our coroutine, so it must be the last action in this method.
-            // But since we're in a coroutine, the call won't block our (single) thread while
-            // waiting for new values; instead, it will just suspend and free the thread for other work.
             .collect { bg ->
                 addReading(bg)
-                onNewBg?.invoke(bg)
                 // Synchronize our internal ticking grid to fire 20s after the BG reading.
                 timeService.synchronize(Timestamp.now().plusSeconds(20))
             }

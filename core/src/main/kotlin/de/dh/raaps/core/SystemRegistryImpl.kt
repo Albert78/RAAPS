@@ -9,10 +9,10 @@ import de.dh.raaps.common.model.calculation.CarbsInsulinCalculationModel
 import de.dh.raaps.common.model.data.Minutes
 import de.dh.raaps.common.model.data.TimeService
 import de.dh.raaps.core.aps.APS
+import de.dh.raaps.core.aps.Core
 import de.dh.raaps.core.aps.GlucoseSourceManager
 import de.dh.raaps.core.aps.SystemManager
 import de.dh.raaps.core.aps.SystemManagerImpl
-import de.dh.raaps.core.aps.Core
 import de.dh.raaps.core.aps.TherapyManager
 import de.dh.raaps.core.pump.PumpManager
 import de.dh.raaps.core.pump.PumpManagerImpl
@@ -91,7 +91,17 @@ class SystemRegistryImpl(
             val timeService = TimeServiceImpl(scope = scope)
             val pumpManager = PumpManagerImpl(scope = scope, wakeService = wakeService)
 
+            val glucoseSourceManager = GlucoseSourceManager(
+                glucoseRepository = glucoseRepository,
+                timeService = timeService
+            )
+            runBlocking {
+                glucoseSourceManager.initialize()
+            }
+
             val systemManager = SystemManagerImpl(
+                glucoseSourceManager = glucoseSourceManager,
+                wakeService = wakeService,
                 settingsRepository = settingsRepository,
                 scope = scope
             )
@@ -106,14 +116,6 @@ class SystemRegistryImpl(
             )
             val carbsInsulinCalculationModel = CarbsInsulinCalculationModel(timeService.tickInterval)
 
-            val glucoseSourceManager = GlucoseSourceManager(
-                glucoseRepository = glucoseRepository,
-                timeService = timeService
-            )
-            runBlocking {
-                glucoseSourceManager.initialize()
-            }
-
             runBlocking {
                 treatmentRepository.load()
                 DatabaseInitializer.initialize(application, treatmentRepository, therapyRepository, settingsRepository)
@@ -122,8 +124,6 @@ class SystemRegistryImpl(
             therapyManager.startInitialization()
 
             val aps = APS(
-                glucoseRepository = glucoseRepository,
-                therapyRepository = therapyRepository,
                 treatmentRepository = treatmentRepository,
                 appPreferencesRepository = appPreferencesRepository,
                 therapyManager = therapyManager,

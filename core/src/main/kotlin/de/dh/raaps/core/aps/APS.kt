@@ -1,17 +1,13 @@
 package de.dh.raaps.core.aps
 
 import android.content.Context
-import android.content.Intent
 import de.dh.raaps.AppPreferencesRepository
 import de.dh.raaps.common.model.ApsMode
 import de.dh.raaps.common.model.calculation.CarbsInsulinCalculationModel
 import de.dh.raaps.common.model.data.BgReading
 import de.dh.raaps.common.model.data.TimeService
-import de.dh.raaps.core.repository.GlucoseRepository
-import de.dh.raaps.core.repository.TherapyRepository
 import de.dh.raaps.core.repository.TreatmentRepository
 import de.dh.raaps.core.system.SystemWakeService
-import de.dh.raaps.core.system.WakeupHandler
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -25,27 +21,12 @@ import kotlinx.coroutines.flow.drop
 import kotlinx.coroutines.launch
 import java.util.concurrent.Executors
 
-enum class ApsIssue {
-    /**
-     * No recent glucose value available, the loop cannot calculate new treatments.
-     */
-    StaleBG,
-
-    /**
-     * Any other issue that prevents the core from working.
-     */
-    Other
-}
-
-
 /**
  * APS system facade for the access from outside (UI, ...).
  * Manages threading and plugin lifecycles, ensuring all calls to the core are serialized
  * on a single background thread.
  */
 class APS(
-    val glucoseRepository: GlucoseRepository,
-    val therapyRepository: TherapyRepository,
     val treatmentRepository: TreatmentRepository,
     val appPreferencesRepository: AppPreferencesRepository,
     val therapyManager: TherapyManager,
@@ -55,23 +36,19 @@ class APS(
     val carbsInsulinCalculationModel: CarbsInsulinCalculationModel,
     val context: Context,
     val glucoseSourceManager: GlucoseSourceManager
-) : WakeupHandler {
+) {
     // Threading: Single background thread to avoid race conditions in the core logic
     private val apsDispatcher = Executors.newSingleThreadExecutor().asCoroutineDispatcher()
     private val apsScope = CoroutineScope(apsDispatcher + SupervisorJob())
 
     init {
-        wakeService.registerHandler(WAKE_TAG, this)
         glucoseSourceManager.setThreading(scope = apsScope, inAPSThread = { block -> inAPSThread(block) })
-        glucoseSourceManager.setOnNewBg { bg -> updateBg(bg) }
     }
 
     // Computation Core: Pure logic and state, completely thread-agnostic
     private val core: Core = Core.createProductiveCore(
         therapyManager = therapyManager,
-        glucoseRepository = glucoseRepository,
         treatmentRepository = treatmentRepository,
-        appPreferencesRepository = appPreferencesRepository,
         timeService = timeService,
         carbsInsulinCalculationModel = carbsInsulinCalculationModel,
         glucoseSourceManager = glucoseSourceManager,
@@ -98,24 +75,6 @@ class APS(
      * ```
      */
     val coreState: StateFlow<CoreState> = _coreState.asStateFlow()
-
-    private val _apsIssues = MutableStateFlow<Set<ApsIssue>>(emptySet())
-    /**
-     * Active issues of the APS.
-     */
-    val apsIssues: StateFlow<Set<ApsIssue>> = _apsIssues.asStateFlow()
-
-    private fun addIssue(issue: ApsIssue) {
-        if (issue !in _apsIssues.value) {
-            _apsIssues.value += issue
-        }
-    }
-
-    private fun removeIssue(issue: ApsIssue) {
-        if (issue in _apsIssues.value) {
-            _apsIssues.value -= issue
-        }
-    }
 
     /**
      * Executes the given block on the internal APS thread.
@@ -168,6 +127,13 @@ class APS(
                     core.onMetabolicEventsChanged()
                 }
             }
+            launch {
+                glucoseSourceManager.currentBg.drop(1).collect { bg ->
+                    if (bg != null) {
+                        updateBg(bg)
+                    }
+                }
+            }
         }
     }
 
@@ -192,25 +158,6 @@ class APS(
         therapyManager.clearRecommendations()
 
         core.updateBg(bg)
-        core.nextBgStaleCheckAt()?.let {
-            wakeService.scheduleWakeup(WAKE_TAG, WAKEUP_STALE_CHECK, it)
-        }
-    }
-
-    /**
-     * Entry point for system wakeups.
-     * Guaranteed to run on the internal APS thread.
-     */
-    override fun onWakeup(wakeupId: UInt?, intent: Intent?) {
-        inAPSThread {
-            if (wakeupId == WAKEUP_STALE_CHECK) {
-                if (glucoseSourceManager.isBgStale()) {
-                    addIssue(ApsIssue.StaleBG)
-                } else {
-                    removeIssue(ApsIssue.StaleBG)
-                }
-            }
-        }
     }
 
     /**
@@ -225,7 +172,5 @@ class APS(
         private val TAG = APS::class.simpleName
 
         const val WAKE_TAG = "APS"
-
-        val WAKEUP_STALE_CHECK = 0u
     }
 }
