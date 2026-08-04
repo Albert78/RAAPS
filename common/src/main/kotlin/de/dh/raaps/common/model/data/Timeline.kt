@@ -1,14 +1,10 @@
-package de.dh.raaps.core.aps
-
-import de.dh.raaps.common.model.data.Minutes
-import de.dh.raaps.common.model.data.Tick
-import de.dh.raaps.common.model.data.Timestamp
+package de.dh.raaps.common.model.data
 
 /**
  * Manages the conversion between absolute [Timestamp]s and discrete [Tick]s
  * based on a fixed interval.
  */
-class ApsTimeline(val tickDuration: Minutes) {
+class Timeline(val tickDuration: Minutes) {
     val tickSizeMs: Long = tickDuration.value.toLong() * 60 * 1000
 
     /**
@@ -38,5 +34,9 @@ class ApsTimeline(val tickDuration: Minutes) {
 
     fun inTicks(minutes: Minutes): Int {
         return minutes.value / tickDuration.value
+    }
+
+    companion object {
+        val DEFAULT_TICK_INTERVAL = Minutes(5)
     }
 }

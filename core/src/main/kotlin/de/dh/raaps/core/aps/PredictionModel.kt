@@ -4,6 +4,7 @@ import de.dh.raaps.common.model.calculation.CarbsInsulinCalculationModel
 import de.dh.raaps.common.model.data.BgDelta
 import de.dh.raaps.common.model.data.BgValue
 import de.dh.raaps.common.model.data.Tick
+import de.dh.raaps.common.model.data.Timeline
 import de.dh.raaps.common.model.data.Timestamp
 import de.dh.raaps.common.model.data.times
 import de.dh.raaps.core.aps.ApsAlgorithmImpl.Companion.DEVIATION_DECAY_FACTOR_PER_TICK
@@ -22,7 +23,7 @@ import de.dh.raaps.core.repository.TreatmentRepository
  */
 class PredictionModel(
     val predictionWindowHours: Int = 10,
-    val timeline: ApsTimeline
+    val timeline: Timeline
 ) {
     var rollingHistory = RollingPredictionWindow(
         predictionWindowHours = predictionWindowHours,

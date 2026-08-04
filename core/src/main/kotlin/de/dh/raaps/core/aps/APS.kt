@@ -8,6 +8,7 @@ import de.dh.raaps.common.model.GlucoseSource
 import de.dh.raaps.common.model.InsulinAmount
 import de.dh.raaps.common.model.InsulinPump
 import de.dh.raaps.common.model.data.BgReading
+import de.dh.raaps.common.model.data.TimeService
 import de.dh.raaps.common.model.data.Timestamp
 import de.dh.raaps.core.pump.JobErrorCode
 import de.dh.raaps.core.pump.PumpCommand
@@ -76,6 +77,7 @@ class APS(
     val appPreferencesRepository: AppPreferencesRepository,
     val therapyManager: TherapyManager,
     val wakeService: SystemWakeService,
+    val timeService: TimeService,
     val context: Context
 ) : WakeupHandler {
     // Threading: Single background thread to avoid race conditions in the core logic
@@ -96,6 +98,7 @@ class APS(
         glucoseRepository = glucoseRepository,
         treatmentRepository = treatmentRepository,
         appPreferencesRepository = appPreferencesRepository,
+        timeService = timeService,
 
         onDataUpdated = { emitDataUpdateEvent() },
         onCoreStateChanged = { emitCoreStateChangedEvent() },

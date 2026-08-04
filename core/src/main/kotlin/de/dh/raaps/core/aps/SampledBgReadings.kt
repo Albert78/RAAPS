@@ -2,6 +2,7 @@ package de.dh.raaps.core.aps
 
 import de.dh.raaps.common.model.data.BgValue
 import de.dh.raaps.common.model.data.Tick
+import de.dh.raaps.common.model.data.Timeline
 
 /**
  * Provides a sampled view of the blood glucose history, aligned to discrete time ticks.
@@ -14,7 +15,7 @@ import de.dh.raaps.common.model.data.Tick
  * this sample buffer instance for each tick calculation.
  */
 class SampledBgReadings(
-    private val timeline: ApsTimeline,
+    private val timeline: Timeline,
     private val history: RecentBgReadingsHistory
 ) {
     private val capacity = history.historySize.value / timeline.tickDuration.value

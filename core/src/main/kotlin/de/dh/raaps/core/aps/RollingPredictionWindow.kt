@@ -1,10 +1,11 @@
 package de.dh.raaps.core.aps
 
 import de.dh.raaps.common.model.data.Tick
+import de.dh.raaps.common.model.data.Timeline
 
 class RollingPredictionWindow(
     val predictionWindowHours: Int,
-    val timeline: ApsTimeline,
+    val timeline: Timeline,
     anchorTick: Tick
 ) {
     private val capacity = (predictionWindowHours * 60) / timeline.tickDuration.value.toInt()

@@ -8,13 +8,14 @@ import de.dh.raaps.common.model.data.BgReading
 import de.dh.raaps.common.model.data.BgValue
 import de.dh.raaps.common.model.data.Minutes
 import de.dh.raaps.common.model.data.Tick
+import de.dh.raaps.common.model.data.Timeline
 import de.dh.raaps.common.model.data.Timestamp
 import de.dh.raaps.common.model.data.times
 import de.dh.raaps.core.repository.TreatmentRepository
 
 // TODO: Document the models needed for calculation, document calculation algorithm
 class ApsAlgorithmImpl(
-    val timeline: ApsTimeline,
+    val timeline: Timeline,
     val treatmentRepository: TreatmentRepository,
     val bgReadingsHistory: RecentBgReadingsHistory,
     val predictionModel: PredictionModel,
@@ -272,7 +273,7 @@ class ApsAlgorithmImpl(
             onCarbsHint: (Int) -> Unit,
             tickInterval: Minutes,
         ): ApsAlgorithm {
-            val timeline = ApsTimeline(tickInterval)
+            val timeline = Timeline(tickInterval)
             val predictionModel = PredictionModel(
                 predictionWindowHours = PREDICTION_WINDOW_HOURS,
                 timeline = timeline

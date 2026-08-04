@@ -3,6 +3,7 @@ package de.dh.raaps.core
 import android.content.Context
 import de.dh.raaps.AppPreferencesRepository
 import de.dh.raaps.common.model.PluginManager
+import de.dh.raaps.common.model.data.TimeService
 import de.dh.raaps.core.aps.APS
 import de.dh.raaps.core.aps.TherapyManager
 import de.dh.raaps.core.pump.PumpCoordinator
@@ -46,6 +47,7 @@ interface RAAPSRegistry {
     val aps: APS
     val pluginManager: PluginManager
     val wakeService: SystemWakeService
+    val timeService: TimeService
 
     /**
      * Provides access to the current pump coordinator.

@@ -16,8 +16,6 @@ import de.dh.raaps.common.model.data.BgValue
 import de.dh.raaps.common.model.data.GlucoseUnit
 import de.dh.raaps.common.model.data.Timestamp
 import de.dh.raaps.core.RAAPSRegistry
-import de.dh.raaps.core.aps.Core
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
@@ -116,22 +114,15 @@ class HistoryViewModel(
     private val glucoseRepository = raapsRegistry.glucoseRepository
     private val treatmentRepository = raapsRegistry.treatmentRepository
 
-    private val calculationModel = CarbsInsulinCalculationModel(Core.TICK_INTERVAL)
+    private val calculationModel = CarbsInsulinCalculationModel(raapsRegistry.timeService.tickInterval)
 
     init {
-        val tickerFlow = flow {
-            while (true) {
-                emit(System.currentTimeMillis())
-                delay(6.minutes)
-            }
-        }
-
         viewModelScope.launch {
             combine(
                 glucoseRepository.observeBgReadings(),
                 treatmentRepository.observeInsulinApplications(),
                 treatmentRepository.observeMeals(),
-                tickerFlow
+                raapsRegistry.timeService.tickFlow
             ) { readings, insulin, meals, _ ->
                 val historyLimit = Timestamp.now().minusHours(25)
                 val filteredReadings = readings.filter { it.timestamp >= historyLimit }

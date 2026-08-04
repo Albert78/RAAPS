@@ -11,6 +11,7 @@ import de.dh.raaps.common.model.data.BgSampleKind
 import de.dh.raaps.common.model.data.CurrentTherapySettings
 import de.dh.raaps.common.model.data.Minutes
 import de.dh.raaps.common.model.data.SensorType
+import de.dh.raaps.common.model.data.TimeService
 import de.dh.raaps.common.model.data.Timestamp
 import de.dh.raaps.core.repository.GlucoseRepository
 import de.dh.raaps.core.repository.TreatmentRepository
@@ -62,6 +63,7 @@ class Core(
     val therapyManager: TherapyManager,
     private val glucoseRepository: GlucoseRepository,
     private val appPreferencesRepository: AppPreferencesRepository,
+    private val timeService: TimeService,
 
     private val onDataUpdated: () -> Unit,
     private val onCoreStateChanged: () -> Unit,
@@ -172,7 +174,7 @@ class Core(
                     onCheckZeroTemp = onCheckZeroTemp,
                     onZeroTemp = onZeroTemp,
                     onCarbsHint = onCarbsHint,
-                    tickInterval = TICK_INTERVAL
+                    tickInterval = timeService.tickInterval
                 )
                 onDataUpdated()
 
@@ -288,14 +290,13 @@ class Core(
         val TAG = Core::class.simpleName
 
         const val METABOLIC_EVENTS_HISTORY_HOURS = 10
-        const val TICK_INTERVAL_MINUTES: Short = 5
-        val TICK_INTERVAL = Minutes(TICK_INTERVAL_MINUTES)
 
         fun createProductiveCore(
             therapyManager: TherapyManager,
             glucoseRepository: GlucoseRepository,
             treatmentRepository: TreatmentRepository,
             appPreferencesRepository: AppPreferencesRepository,
+            timeService: TimeService,
 
             onDataUpdated: () -> Unit,
             onCoreStateChanged: () -> Unit,
@@ -314,6 +315,7 @@ class Core(
                 therapyManager = therapyManager,
                 glucoseRepository = glucoseRepository,
                 appPreferencesRepository = appPreferencesRepository,
+                timeService = timeService,
 
                 onDataUpdated = onDataUpdated,
                 onCoreStateChanged = onCoreStateChanged,
