@@ -15,7 +15,6 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.ListItem
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
@@ -107,7 +106,7 @@ fun CurrentTherapySettingsContent(
             LazyColumn(modifier = Modifier.fillMaxSize()) {
                 item {
                     Text(
-                        text = stringResource(id = R.string.current_therapy_active_profile_label),
+                        text = stringResource(id = R.string.current_therapy_active_insulin_profile_label),
                         style = MaterialTheme.typography.labelLarge,
                         color = MaterialTheme.colorScheme.primary,
                         modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
@@ -115,34 +114,29 @@ fun CurrentTherapySettingsContent(
                 }
 
                 val activeProfile = uiState.activeProfile
-                if (activeProfile != null) {
-                    item {
-                        ListItem(
-                            headlineContent = { Text(activeProfile.name) },
-                            supportingContent = {
-                                Text(
-                                    stringResource(
-                                        id = R.string.aps_control_basal_label,
-                                        String.format(locale, "%.1f", activeProfile.basal)
-                                    ) + " | " +
-                                            stringResource(
-                                                id = R.string.aps_control_cr_label,
-                                                String.format(locale, "%.1f", activeProfile.cr)
-                                            ) + " | " +
-                                            stringResource(
-                                                id = R.string.aps_control_isf_label,
-                                                activeProfile.isf.mgdl
-                                            )
-                                )
-                            },
-                            leadingContent = {
-                                RadioButton(selected = true, onClick = null)
-                            },
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .clickable { showProfileDialog = true }
-                        )
-                    }
+                item {
+                    ListItem(
+                        headlineContent = { Text(activeProfile.name) },
+                        supportingContent = {
+                            Text(
+                                stringResource(
+                                    id = R.string.aps_control_basal_label,
+                                    String.format(locale, "%.1f", activeProfile.basal)
+                                ) + " | " +
+                                        stringResource(
+                                            id = R.string.aps_control_cr_label,
+                                            String.format(locale, "%.1f", activeProfile.cr)
+                                        ) + " | " +
+                                        stringResource(
+                                            id = R.string.aps_control_isf_label,
+                                            activeProfile.isf.mgdl
+                                        )
+                            )
+                        },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable { showProfileDialog = true }
+                    )
                 }
 
                 item {

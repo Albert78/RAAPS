@@ -13,7 +13,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
-data class ProfileSettingsUiState(
+data class InsulinProfileSettingsUiState(
     val profiles: List<InsulinProfile> = emptyList(),
     val insulinTypes: List<InsulinType> = emptyList(),
     val isLoading: Boolean = false,
@@ -24,11 +24,11 @@ data class ProfileSettingsUiState(
 /**
  * ViewModel for managing therapy profiles (CRUD operations).
  */
-class ProfileSettingsViewModel(
+class InsulinProfileSettingsViewModel(
     private val raapsRegistry: RAAPSRegistry
 ) : ViewModel() {
 
-    private val _uiState = MutableStateFlow(ProfileSettingsUiState())
+    private val _uiState = MutableStateFlow(InsulinProfileSettingsUiState())
     val uiState = _uiState.asStateFlow()
 
     private val therapyRepository = raapsRegistry.therapyRepository
@@ -105,7 +105,7 @@ class ProfileSettingsViewModel(
         class Factory(private val registry: RAAPSRegistry) : ViewModelProvider.Factory {
             @Suppress("UNCHECKED_CAST")
             override fun <T : ViewModel> create(modelClass: Class<T>, extras: CreationExtras): T {
-                return ProfileSettingsViewModel(registry) as T
+                return InsulinProfileSettingsViewModel(registry) as T
             }
         }
     }

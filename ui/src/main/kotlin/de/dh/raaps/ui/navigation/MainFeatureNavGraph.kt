@@ -25,7 +25,7 @@ import de.dh.raaps.core.RAAPSRegistry
 import de.dh.raaps.setUserDeclinedPermissions
 import de.dh.raaps.ui.controls.history.HistoryViewModel
 import de.dh.raaps.ui.controls.profile.CurrentTherapyViewModel
-import de.dh.raaps.ui.controls.profile.ProfileSettingsViewModel
+import de.dh.raaps.ui.controls.profile.InsulinProfileSettingsViewModel
 import de.dh.raaps.ui.screens.dashboard.DashboardScreen
 import de.dh.raaps.ui.screens.dashboard.DashboardViewModel
 import de.dh.raaps.ui.screens.history.HistoryScreen
@@ -37,7 +37,7 @@ import de.dh.raaps.ui.screens.permissions.openNotificationSettings
 import de.dh.raaps.ui.screens.permissions.requestIgnoreBatteryOptimizations
 import de.dh.raaps.ui.screens.preferences.PreferencesScreen
 import de.dh.raaps.ui.screens.preferences.PreferencesViewModel
-import de.dh.raaps.ui.screens.profile.ProfileEditorScreen
+import de.dh.raaps.ui.screens.profile.InsulinProfileEditorScreen
 import de.dh.raaps.ui.screens.therapy.CurrentTherapySettingsScreen
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -83,11 +83,11 @@ class MainFeatureNavGraph(
             }
 
             is ProfileEditorRoute -> NavEntry(key) {
-                val vm: ProfileSettingsViewModel = viewModel(
-                    factory = ProfileSettingsViewModel.Companion.Factory(registry)
+                val vm: InsulinProfileSettingsViewModel = viewModel(
+                    factory = InsulinProfileSettingsViewModel.Companion.Factory(registry)
                 )
 
-                ProfileEditorScreen(
+                InsulinProfileEditorScreen(
                     viewModel = vm,
                     onNavigateUp = { navViewModel.pop() }
                 )

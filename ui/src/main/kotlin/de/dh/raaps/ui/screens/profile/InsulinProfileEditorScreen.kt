@@ -82,19 +82,19 @@ import de.dh.raaps.common.model.data.InsulinProfile
 import de.dh.raaps.common.ui.composables.TimeHourSelector
 import de.dh.raaps.common.ui.composables.screenTitle
 import de.dh.raaps.common.ui.theme.AppTheme
-import de.dh.raaps.ui.controls.profile.ProfileSettingsUiState
-import de.dh.raaps.ui.controls.profile.ProfileSettingsViewModel
+import de.dh.raaps.ui.controls.profile.InsulinProfileSettingsUiState
+import de.dh.raaps.ui.controls.profile.InsulinProfileSettingsViewModel
 
 @Composable
-fun ProfileEditorScreen(
-    viewModel: ProfileSettingsViewModel,
+fun InsulinProfileEditorScreen(
+    viewModel: InsulinProfileSettingsViewModel,
     onNavigateUp: () -> Unit
 ) {
     val uiState by viewModel.uiState.collectAsState()
     val copyNameFormat = stringResource(R.string.profile_editor_copy_name_format)
 
     if (uiState.editingProfile != null) {
-        ProfileDetailEditor(
+        InsulinProfileDetailEditor(
             profile = uiState.editingProfile!!,
             insulinTypes = uiState.insulinTypes,
             onSave = { viewModel.saveInsulinProfile(it) },
@@ -102,7 +102,7 @@ fun ProfileEditorScreen(
             isNameUnique = { name, id -> viewModel.isNameUnique(name, id) }
         )
     } else {
-        ProfileList(
+        InsulinProfileList(
             uiState = uiState,
             onNavigateUp = onNavigateUp,
             onAddProfile = {
@@ -153,8 +153,8 @@ fun ProfileEditorScreen(
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun ProfileList(
-    uiState: ProfileSettingsUiState,
+fun InsulinProfileList(
+    uiState: InsulinProfileSettingsUiState,
     onNavigateUp: () -> Unit,
     onAddProfile: () -> Unit,
     onEditProfile: (InsulinProfile) -> Unit,
@@ -227,7 +227,7 @@ fun ProfileList(
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun ProfileDetailEditor(
+fun InsulinProfileDetailEditor(
     profile: InsulinProfile,
     insulinTypes: List<InsulinType>,
     onSave: (InsulinProfile) -> Unit,
@@ -593,12 +593,12 @@ fun TherapyBlockListEditor(
     }
 
     if (showHelpDialog) {
-        ProfileHelpDialog(onDismiss = { showHelpDialog = false })
+        InsulinProfileHelpDialog(onDismiss = { showHelpDialog = false })
     }
 }
 
 @Composable
-fun ProfileHelpDialog(onDismiss: () -> Unit) {
+fun InsulinProfileHelpDialog(onDismiss: () -> Unit) {
     AlertDialog(
         onDismissRequest = onDismiss,
         title = { Text(stringResource(id = R.string.profile_editor_help_title)) },

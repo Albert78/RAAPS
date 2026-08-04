@@ -4,11 +4,11 @@
     <string name="dashboard_screen_title">RAAPS</string>
     <string name="menu_item_permissions_label">App-Berechtigungen</string>
     <string name="menu_item_preferences_label">Einstellungen</string>
-    <string name="menu_item_profile_editor_label">Profile</string>
-    <string name="profile_editor_screen_title">Profile verwalten</string>
-    <string name="profile_editor_new_profile">Neues Profil</string>
-    <string name="profile_editor_edit_profile">Profil bearbeiten</string>
-    <string name="profile_editor_name_label">Profilname</string>
+    <string name="menu_item_profile_editor_label">Insulin-Profile</string>
+    <string name="profile_editor_screen_title">Insulin-Profile verwalten</string>
+    <string name="profile_editor_new_profile">Neues Insulin-Profil</string>
+    <string name="profile_editor_edit_profile">Insulin-Profil bearbeiten</string>
+    <string name="profile_editor_name_label">Name des Insulin-Profils</string>
     <string name="profile_editor_tab_basal">Basal</string>
     <string name="profile_editor_tab_isf">ISF</string>
     <string name="profile_editor_tab_cr">CR</string>
@@ -20,7 +20,7 @@
     <string name="profile_editor_cr_title">CR (Kohlenhydrat-Insulin-Verhältnis)</string>
     <string name="profile_editor_cr_desc">Gibt an, wie viele Gramm Kohlenhydrate durch eine Einheit Insulin abgedeckt werden (Einheit: g/U).</string>
     <string name="profile_editor_help_title">Anleitung: 24h-Profil</string>
-    <string name="profile_editor_help_message">Jeder Block definiert den Wert ab der gewählten Uhrzeit bis zum Start des nächsten Blocks.\n\n• Der erste Block beginnt immer um 00:00 Uhr.\n• Nutze das [+], um neue Zeitabschnitte einzufügen.\n• Die Uhrzeit eines Blocks kann nur zwischen seinen Nachbarn verschoben werden.\n• Am Ende des Tages schließt der letzte Block automatisch um 24:00 Uhr ab.</string>
+    <string name="profile_editor_help_message">Jeder Block definiert den Wert ab der gewählten Uhrzeit bis zum Start des nächsten Blocks.\n\n• Der erste Block beginnt immer um 00:00 Uhr.\n• Nutze das [+], um neue Zeitabschnitte einzufügen.\n• Die Uhrzeit eines Blocks kann nur zwischen seinen Nachbarn verschoben werden.\n• Am Ende des Tages schließt der letzte Block automatisch um 24:00 Uhr ab.\n\nDas Insulin-Profil ist die Basis für deine Therapieberechnungen.</string>
 
     <string name="bg_editor_title">Ziel-BZ &amp; Low-Schwelle</string>
     <string name="bg_editor_desc">Der angestrebte Blutzucker und die Schwelle für niedrige Werte (Einheit: mg/dL).</string>
@@ -29,11 +29,11 @@
     <string name="profile_editor_discard_message">Es gibt ungespeicherte Änderungen. Möchtest du den Editor wirklich verlassen?</string>
     <string name="profile_editor_discard_confirm">Verwerfen</string>
     <string name="profile_editor_discard_dismiss">Bleiben</string>
-    <string name="cd_edit_profile">Profil bearbeiten</string>
-    <string name="invalid_profile">Ungültiges Profil</string>
-    <string name="cd_add_profile">Profil hinzufügen</string>
-    <string name="cd_save_profile">Profil speichern</string>
-    <string name="cd_delete_profile">Profil löschen</string>
+    <string name="cd_edit_profile">Insulin-Profil bearbeiten</string>
+    <string name="invalid_profile">Ungültiges Insulin-Profil</string>
+    <string name="cd_add_profile">Insulin-Profil hinzufügen</string>
+    <string name="cd_save_profile">Insulin-Profil speichern</string>
+    <string name="cd_delete_profile">Insulin-Profil löschen</string>
     <string name="cd_insert_block">Einfügen</string>
     <string name="cd_decrease_value">Weniger</string>
     <string name="cd_increase_value">Mehr</string>
@@ -87,8 +87,8 @@
 
     <string name="history_screen_title">Historie</string>
     <string name="current_therapy_settings_screen_title">Aktuelle Therapie</string>
-    <string name="current_therapy_active_profile_label">Aktives Profil</string>
-    <string name="current_therapy_available_profiles_label">Verfügbare Profile</string>
+    <string name="current_therapy_active_insulin_profile_label">Insulin-Profil</string>
+    <string name="current_therapy_available_profiles_label">Verfügbare Insulin-Profile</string>
     <string name="current_therapy_target_label_singular">Zielwert</string>
     <string name="current_therapy_target_label_plural">Zielwerte</string>
     <string name="current_therapy_bg_title">Ziel-BZ &amp; Low-Schwelle</string>
