@@ -2,6 +2,7 @@ package de.dh.raaps.common.model.calculation
 
 import de.dh.raaps.common.model.InsulinType
 import de.dh.raaps.common.model.data.Minutes
+import java.util.concurrent.ConcurrentHashMap
 import kotlin.math.exp
 
 /**
@@ -103,7 +104,7 @@ class SampledInsulinCalculationCache(
      * Cached sampled cumulative remaining insulin fraction values at each interval start, per action profile.
      * The length of the arrays are different and depend on the declared dia time.
      */
-    val remainingFractionSamples: MutableMap<InsulinActionKey, DoubleArray> = mutableMapOf()
+    val remainingFractionSamples: MutableMap<InsulinActionKey, DoubleArray> = ConcurrentHashMap()
 
     /**
      * Samples the remaining fraction of insulin for the given insulin type to an array of activity values per interval.

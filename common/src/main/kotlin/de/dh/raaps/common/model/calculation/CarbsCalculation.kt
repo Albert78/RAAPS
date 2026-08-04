@@ -2,6 +2,7 @@ package de.dh.raaps.common.model.calculation
 
 import de.dh.raaps.common.model.MealType
 import de.dh.raaps.common.model.data.Minutes
+import java.util.concurrent.ConcurrentHashMap
 import kotlin.math.exp
 
 /**
@@ -90,7 +91,7 @@ class SampledCarbsCalculationCache(
      * The length of the arrays are different and depend on the declared carbs absorption time
      * for each meal type.
      */
-    val absorbedFractionSamples: MutableMap<MealType, DoubleArray> = mutableMapOf()
+    val absorbedFractionSamples: MutableMap<MealType, DoubleArray> = ConcurrentHashMap()
 
     /**
      * Samples the absorbed fraction of carbs for the given meal type to an array of activity values per interval.

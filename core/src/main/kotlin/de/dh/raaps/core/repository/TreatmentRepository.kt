@@ -15,6 +15,8 @@ import de.dh.raaps.core.repository.db.toEntity
 import de.dh.raaps.core.repository.db.toModel
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 
 /**
  * Repository for active metabolic treatments (Insulin and Meals).
@@ -29,11 +31,12 @@ class TreatmentRepository(
     appDatabase: AppDatabase
 ) {
     private val metabolicEventsDao: MetabolicEventsDao = appDatabase.metabolicEventsDao()
+    private val mutex = Mutex()
 
-    var mealsHistory: MutableList<MealEntry> = mutableListOf()
-    var insulinHistory: MutableList<InsulinApplication> = mutableListOf()
-    var mealTypes: List<MealType> = emptyList()
-    var insulinTypes: List<InsulinType> = emptyList()
+    private var mealsHistory: MutableList<MealEntry> = mutableListOf()
+    private var insulinHistory: MutableList<InsulinApplication> = mutableListOf()
+    private var mealTypes: List<MealType> = emptyList()
+    private var insulinTypes: List<InsulinType> = emptyList()
 
     fun observeMeals(): Flow<List<MealEntry>> = metabolicEventsDao.observeAllMeals()
         .map { entities ->
@@ -61,7 +64,7 @@ class TreatmentRepository(
     /**
      * Loads the history from the database into the in-memory cache.
      */
-    suspend fun load() {
+    suspend fun load() = mutex.withLock {
         val historyStart = Timestamp.now() - historySize
 
         // Load Meal Types
@@ -92,7 +95,7 @@ class TreatmentRepository(
     /**
      * Removes entries from the in-memory cache that are older than the history size.
      */
-    fun prune() {
+    suspend fun prune() = mutex.withLock {
         val historyStart = historyStart()
         mealsHistory.removeIf { it.timestamp < historyStart }
         insulinHistory.removeIf { it.timestamp < historyStart }
@@ -123,9 +126,11 @@ class TreatmentRepository(
         // 2. In-memory sync
         if (to >= historyStart) {
             val effectiveFrom = if (from < historyStart) historyStart else from
-            insulinHistory.removeIf { it.origin == InsulinOrigin.Pump && it.timestamp >= effectiveFrom && it.timestamp <= to }
-            insulinHistory.addAll(newApplications.filter { it.timestamp >= historyStart })
-            insulinHistory.sortBy { it.timestamp }
+            mutex.withLock {
+                insulinHistory.removeIf { it.origin == InsulinOrigin.Pump && it.timestamp >= effectiveFrom && it.timestamp <= to }
+                insulinHistory.addAll(newApplications.filter { it.timestamp >= historyStart })
+                insulinHistory.sortBy { it.timestamp }
+            }
         }
     }
 
@@ -135,10 +140,12 @@ class TreatmentRepository(
      */
     suspend fun addMealEntry(mealEntry: MealEntry) {
         val historyStart = historyStart()
-        if (mealEntry.timestamp >= historyStart) {
-            mealsHistory.removeIf { it.timestamp == mealEntry.timestamp }
-            mealsHistory.add(mealEntry)
-            mealsHistory.sortBy { it.timestamp }
+        mutex.withLock {
+            if (mealEntry.timestamp >= historyStart) {
+                mealsHistory.removeIf { it.timestamp == mealEntry.timestamp }
+                mealsHistory.add(mealEntry)
+                mealsHistory.sortBy { it.timestamp }
+            }
         }
 
         metabolicEventsDao.deleteMealsInRange(mealEntry.timestamp.ms, mealEntry.timestamp.ms)
@@ -152,7 +159,9 @@ class TreatmentRepository(
      * Deletes a meal entry from the cache and database.
      */
     suspend fun removeMealEntry(mealEntry: MealEntry) {
-        mealsHistory.remove(mealEntry)
+        mutex.withLock {
+            mealsHistory.remove(mealEntry)
+        }
         metabolicEventsDao.deleteMeal(mealEntry.id)
     }
 
@@ -162,10 +171,12 @@ class TreatmentRepository(
      */
     suspend fun addInsulinApplication(insulinApplication: InsulinApplication) {
         val historyStart = historyStart()
-        if (insulinApplication.timestamp >= historyStart) {
-            insulinHistory.removeIf { it.timestamp == insulinApplication.timestamp && it.origin == insulinApplication.origin }
-            insulinHistory.add(insulinApplication)
-            insulinHistory.sortBy { it.timestamp }
+        mutex.withLock {
+            if (insulinApplication.timestamp >= historyStart) {
+                insulinHistory.removeIf { it.timestamp == insulinApplication.timestamp && it.origin == insulinApplication.origin }
+                insulinHistory.add(insulinApplication)
+                insulinHistory.sortBy { it.timestamp }
+            }
         }
         metabolicEventsDao.deleteInsulinApplicationsInRange(
             insulinApplication.timestamp.ms,
@@ -182,26 +193,28 @@ class TreatmentRepository(
      * Deletes an insulin application from the cache and database.
      */
     suspend fun removeInsulinApplication(insulinApplication: InsulinApplication) {
-        insulinHistory.remove(insulinApplication)
+        mutex.withLock {
+            insulinHistory.remove(insulinApplication)
+        }
         metabolicEventsDao.deleteInsulinApplication(insulinApplication.id)
     }
 
     /**
      * Returns a flattened list of meal entries within the optional timestamp range from the cache.
      */
-    fun getMeals(from: Timestamp? = null, to: Timestamp? = null): List<MealEntry> {
+    suspend fun getMeals(from: Timestamp? = null, to: Timestamp? = null): List<MealEntry> = mutex.withLock {
         return mealsHistory.filter { meal ->
             (from == null || meal.timestamp >= from) && (to == null || meal.timestamp <= to)
-        }
+        }.toList()
     }
 
     /**
      * Returns a flattened list of insulin applications within the optional timestamp range from the cache.
      */
-    fun getInsulinApplications(from: Timestamp? = null, to: Timestamp? = null): List<InsulinApplication> {
+    suspend fun getInsulinApplications(from: Timestamp? = null, to: Timestamp? = null): List<InsulinApplication> = mutex.withLock {
         return insulinHistory.filter { insulin ->
             (from == null || insulin.timestamp >= from) && (to == null || insulin.timestamp <= to)
-        }
+        }.toList()
     }
 
     // --- Meal Types ---
@@ -209,8 +222,8 @@ class TreatmentRepository(
     /**
      * Returns all available meal types.
      */
-    fun getAllMealTypes(): List<MealType> {
-        return mealTypes
+    suspend fun getAllMealTypes(): List<MealType> = mutex.withLock {
+        return mealTypes.toList()
     }
 
     /**
@@ -218,7 +231,9 @@ class TreatmentRepository(
      */
     suspend fun insertMealType(mealType: MealType) {
         metabolicEventsDao.insertMealType(mealType.toEntity())
-        mealTypes = (mealTypes.filter { it.id != mealType.id } + mealType).sortedBy { it.name }
+        mutex.withLock {
+            mealTypes = (mealTypes.filter { it.id != mealType.id } + mealType).sortedBy { it.name }
+        }
     }
 
     /**
@@ -226,7 +241,9 @@ class TreatmentRepository(
      */
     suspend fun deleteMealType(mealType: MealType) {
         metabolicEventsDao.deleteMealType(mealType.id)
-        mealTypes = mealTypes.filter { it.id != mealType.id }
+        mutex.withLock {
+            mealTypes = mealTypes.filter { it.id != mealType.id }
+        }
     }
 
     // --- Insulin Types ---
@@ -234,8 +251,8 @@ class TreatmentRepository(
     /**
      * Returns all available insulin types.
      */
-    fun getAllInsulinTypes(): List<InsulinType> {
-        return insulinTypes
+    suspend fun getAllInsulinTypes(): List<InsulinType> = mutex.withLock {
+        return insulinTypes.toList()
     }
 
     /**
@@ -243,7 +260,9 @@ class TreatmentRepository(
      */
     suspend fun insertInsulinType(insulinType: InsulinType) {
         metabolicEventsDao.insertInsulinType(insulinType.toEntity())
-        insulinTypes = (insulinTypes.filter { it.id != insulinType.id } + insulinType).sortedBy { it.name }
+        mutex.withLock {
+            insulinTypes = (insulinTypes.filter { it.id != insulinType.id } + insulinType).sortedBy { it.name }
+        }
     }
 
     /**
@@ -251,6 +270,8 @@ class TreatmentRepository(
      */
     suspend fun deleteInsulinType(insulinType: InsulinType) {
         metabolicEventsDao.deleteInsulinType(insulinType.id)
-        insulinTypes = insulinTypes.filter { it.id != insulinType.id }
+        mutex.withLock {
+            insulinTypes = insulinTypes.filter { it.id != insulinType.id }
+        }
     }
 }
