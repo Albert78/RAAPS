@@ -2,18 +2,13 @@ package de.dh.raaps.core.aps
 
 import de.dh.raaps.AppPreferencesRepository
 import de.dh.raaps.common.model.ApsMode
-import de.dh.raaps.common.model.DEFAULT_CR_GRAM_PER_UNIT
-import de.dh.raaps.common.model.DEFAULT_ISF_MGDL_PER_UNIT
-import de.dh.raaps.common.model.DEFAULT_BG_TARGET_MGDL
-import de.dh.raaps.common.model.DEFAULT_BG_LOW_THRESHOLD_MGDL
 import de.dh.raaps.common.model.InsulinAmount
-import de.dh.raaps.common.model.InsulinType
 import de.dh.raaps.common.model.InsulinHistory
-import de.dh.raaps.common.model.data.BgDelta
+import de.dh.raaps.common.model.InsulinType
 import de.dh.raaps.common.model.data.BgBlock
+import de.dh.raaps.common.model.data.BgDelta
 import de.dh.raaps.common.model.data.BgValue
 import de.dh.raaps.common.model.data.CurrentTherapySettings
-import de.dh.raaps.common.model.data.Minutes
 import de.dh.raaps.common.model.data.InsulinProfile
 import de.dh.raaps.common.model.data.Timestamp
 import de.dh.raaps.common.model.data.getAmountForMinute
@@ -34,6 +29,9 @@ import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlin.time.Duration.Companion.seconds
 
+/**
+ * Recommendations for manual treatments, which are displayed as notifications to the user.
+ */
 sealed class ApsRecommendation {
     data class Carbs(val amountInGram: Int) : ApsRecommendation()
     data class Bolus(val amount: InsulinAmount) : ApsRecommendation()
@@ -221,10 +219,10 @@ class TherapyManager(
         }
     }
 
-    fun deliverBolus(amount: InsulinAmount) {
+    fun issueBolus(amount: InsulinAmount) {
         when (appModeManager.apsMode.value) {
             ApsMode.Suspend -> return
-            ApsMode.BasalOnly -> issueBolusHint(amount)
+            ApsMode.BasalOnly -> recommendBolus(amount)
             ApsMode.AutoCorrection -> {
                 scope.launch {
                     pumpManager.issueCommand(
@@ -262,11 +260,11 @@ class TherapyManager(
         }
     }
 
-    fun issueCarbHint(amountInGram: Int) {
+    fun recommendCarbs(amountInGram: Int) {
         _recommendations.value += ApsRecommendation.Carbs(amountInGram)
     }
 
-    fun issueBolusHint(amount: InsulinAmount) {
+    fun recommendBolus(amount: InsulinAmount) {
         _recommendations.value += ApsRecommendation.Bolus(amount)
     }
 

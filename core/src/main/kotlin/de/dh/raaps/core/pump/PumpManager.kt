@@ -2,25 +2,28 @@ package de.dh.raaps.core.pump
 
 import de.dh.raaps.common.model.InsulinHistory
 import de.dh.raaps.common.model.InsulinPump
-import de.dh.raaps.core.system.WakeupHandler
 import kotlinx.coroutines.flow.StateFlow
 
 /**
- * Central manager for insulin pump interactions and status monitoring.
+ * Central manager for insulin pump interactions and status monitoring. Pump manager and [PumpCoordinator]
+ * have a similar job but [PumpCoordinator] is bound to a pump connection, while [PumpManager]
+ * is the system-wide service which even exists if no pump is configured in the system.
  */
-interface PumpManager : WakeupHandler {
+interface PumpManager {
     /**
      * Active issues preventing the pump from working correctly.
      */
     val pumpIssues: StateFlow<Set<PumpIssue>>
 
     /**
-     * The current insulin pump device. Setting this will initiate a new connection.
+     * The current insulin pump device. Setting this will initiate a new connection and a [pumpCoordinator]
+     * to be created.
      */
     var insulinPump: InsulinPump?
 
     /**
-     * Provides access to the underlying coordinator.
+     * Provides access to the underlying coordinator. The pump coordinator is null if no pump
+     * is present.
      * Note: Prefer using high-level methods of this manager.
      */
     val pumpCoordinator: PumpCoordinator?

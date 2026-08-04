@@ -6,6 +6,7 @@ import de.dh.raaps.common.model.InsulinHistory
 import de.dh.raaps.common.model.InsulinPump
 import de.dh.raaps.common.model.data.Timestamp
 import de.dh.raaps.core.system.SystemWakeService
+import de.dh.raaps.core.system.WakeupHandler
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -19,8 +20,7 @@ import kotlinx.coroutines.launch
 class PumpManagerImpl(
     private val scope: CoroutineScope,
     private val wakeService: SystemWakeService
-) : PumpManager {
-
+) : PumpManager, WakeupHandler {
     private val _pumpIssues = MutableStateFlow<Set<PumpIssue>>(emptySet())
     override val pumpIssues: StateFlow<Set<PumpIssue>> = _pumpIssues.asStateFlow()
 
