@@ -24,6 +24,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.HelpOutline
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.ContentCopy
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Remove
@@ -279,6 +280,18 @@ fun InsulinProfileDetailEditor(
         }
     }
 
+    fun saveChanges() {
+        onSave(profile.copy(
+            name = name.trim(),
+            basalBlocks = basalBlocks,
+            isfBlocks = isfBlocks,
+            crBlocks = crBlocks,
+            insulinType = insulinType,
+            dia = Minutes(diaValue.toShort()),
+            peak = Minutes(peakValue.toShort())
+        ))
+    }
+
     BackHandler(onBack = ::handleBack)
 
     Scaffold(
@@ -288,24 +301,17 @@ fun InsulinProfileDetailEditor(
                 navigationIcon = {
                     IconButton(onClick = ::handleBack) {
                         Icon(
-                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = stringResource(id = de.dh.raaps.common.R.string.cd_cancel)
+                            imageVector = if (hasChanges) Icons.Default.Close else Icons.AutoMirrored.Filled.ArrowBack,
+                            contentDescription = stringResource(
+                                id = if (hasChanges) de.dh.raaps.common.R.string.cd_cancel
+                                else de.dh.raaps.common.R.string.cd_navigate_up
+                            )
                         )
                     }
                 },
                 actions = {
                     IconButton(
-                        onClick = {
-                            onSave(profile.copy(
-                                name = name.trim(),
-                                basalBlocks = basalBlocks,
-                                isfBlocks = isfBlocks,
-                                crBlocks = crBlocks,
-                                insulinType = insulinType,
-                                dia = Minutes(diaValue.toShort()),
-                                peak = Minutes(peakValue.toShort())
-                            ))
-                        },
+                        onClick = ::saveChanges,
                         enabled = isNameValid && diaValue > 0 && peakValue > 0
                     ) {
                         Icon(
@@ -400,16 +406,22 @@ fun InsulinProfileDetailEditor(
             title = { Text(stringResource(id = R.string.insulin_profile_editor_discard_title)) },
             text = { Text(stringResource(id = R.string.insulin_profile_editor_discard_message)) },
             confirmButton = {
+                TextButton(
+                    onClick = {
+                        showDiscardConfirmation = false
+                        saveChanges()
+                    },
+                    enabled = isNameValid && diaValue > 0 && peakValue > 0
+                ) {
+                    Text(stringResource(id = de.dh.raaps.common.R.string.action_save))
+                }
+            },
+            dismissButton = {
                 TextButton(onClick = {
                     showDiscardConfirmation = false
                     onCancel()
                 }) {
                     Text(stringResource(id = R.string.discard_confirm_button))
-                }
-            },
-            dismissButton = {
-                TextButton(onClick = { showDiscardConfirmation = false }) {
-                    Text(stringResource(id = R.string.discard_dismiss_button))
                 }
             }
         )

@@ -281,6 +281,14 @@ private fun BgBlockList(
                             verticalArrangement = Arrangement.spacedBy(4.dp)
                         ) {
                             Row(verticalAlignment = Alignment.CenterVertically) {
+                                Icon(
+                                    imageVector = Icons.Default.Adjust,
+                                    contentDescription = null,
+                                    modifier = Modifier
+                                        .padding(start = 8.dp, end = 16.dp)
+                                        .size(16.dp),
+                                    tint = MaterialTheme.colorScheme.primary
+                                )
                                 ValueAdjuster(
                                     value = block.target.mgdl.toDouble(),
                                     onValueChanged = { newVal ->
@@ -294,16 +302,16 @@ private fun BgBlockList(
                                     minValue = TARGET_MIN.toDouble(),
                                     maxValue = TARGET_MAX.toDouble()
                                 )
+                            }
+                            Row(verticalAlignment = Alignment.CenterVertically) {
                                 Icon(
-                                    imageVector = Icons.Default.Adjust,
+                                    imageVector = Icons.Default.VerticalAlignBottom,
                                     contentDescription = null,
                                     modifier = Modifier
-                                        .padding(horizontal = 16.dp)
+                                        .padding(start = 8.dp, end = 16.dp)
                                         .size(16.dp),
                                     tint = MaterialTheme.colorScheme.primary
                                 )
-                            }
-                            Row(verticalAlignment = Alignment.CenterVertically) {
                                 ValueAdjuster(
                                     value = block.lowThreshold.mgdl.toDouble(),
                                     onValueChanged = { newVal ->
@@ -316,14 +324,6 @@ private fun BgBlockList(
                                     modifier = Modifier.weight(1f),
                                     minValue = TARGET_MIN.toDouble(),
                                     maxValue = TARGET_MAX.toDouble()
-                                )
-                                Icon(
-                                    imageVector = Icons.Default.VerticalAlignBottom,
-                                    contentDescription = null,
-                                    modifier = Modifier
-                                        .padding(horizontal = 16.dp)
-                                        .size(16.dp),
-                                    tint = MaterialTheme.colorScheme.primary
                                 )
                             }
                         }
