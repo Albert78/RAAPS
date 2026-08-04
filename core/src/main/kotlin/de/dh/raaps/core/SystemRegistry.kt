@@ -7,6 +7,7 @@ import de.dh.raaps.common.model.PluginManager
 import de.dh.raaps.common.model.calculation.CarbsInsulinCalculationModel
 import de.dh.raaps.common.model.data.TimeService
 import de.dh.raaps.core.aps.APS
+import de.dh.raaps.core.aps.AppModeManager
 import de.dh.raaps.core.aps.TherapyManager
 import de.dh.raaps.core.pump.PumpManager
 import de.dh.raaps.core.repository.DeviceManagementRepository
@@ -48,6 +49,7 @@ interface SystemRegistry {
     // Logical Managers and Services
     val therapyManager: TherapyManager
     val aps: APS
+    val appModeManager: AppModeManager
     val pluginManager: PluginManager
     val wakeService: SystemWakeService
     val timeService: TimeService

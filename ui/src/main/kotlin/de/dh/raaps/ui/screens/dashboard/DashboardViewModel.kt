@@ -28,12 +28,12 @@ data class DashboardUiState(
 class DashboardViewModel(
     private val systemRegistry: SystemRegistry
 ) : ViewModel() {
-    private val aps = systemRegistry.aps
+    private val appModeManager = systemRegistry.appModeManager
     private val _uiState = MutableStateFlow(DashboardUiState())
 
     val uiState: StateFlow<DashboardUiState> = combine(
         _uiState,
-        aps.apsMode
+        appModeManager.apsMode
     ) { state, mode ->
         state.copy(apsMode = mode)
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), DashboardUiState())
@@ -66,7 +66,7 @@ class DashboardViewModel(
     }
 
     fun setApsMode(mode: ApsMode) {
-        aps.setApsMode(mode)
+        appModeManager.setApsMode(mode)
     }
 
     companion object {

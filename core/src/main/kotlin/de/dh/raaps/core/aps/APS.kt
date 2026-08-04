@@ -60,10 +60,10 @@ sealed class ApsRecommendation {
 class APS(
     val glucoseRepository: GlucoseRepository,
     val therapyRepository: TherapyRepository,
-    val settingsRepository: SettingsRepository,
     val treatmentRepository: TreatmentRepository,
     val appPreferencesRepository: AppPreferencesRepository,
     val therapyManager: TherapyManager,
+    val appModeManager: AppModeManager,
     val wakeService: SystemWakeService,
     val timeService: TimeService,
     val pumpManager: PumpManager,
@@ -132,9 +132,6 @@ class APS(
      */
     val coreState: StateFlow<CoreState> = _coreState.asStateFlow()
 
-    private val _apsMode = MutableStateFlow(ApsMode.Suspend)
-    val apsMode: StateFlow<ApsMode> = _apsMode.asStateFlow()
-
     private val _apsIssues = MutableStateFlow<Set<ApsIssue>>(emptySet())
     /**
      * Active issues of the APS.
@@ -187,10 +184,8 @@ class APS(
             core.initialize()
 
             launch {
-                settingsRepository.observeCurrentSettings().collect { settings ->
-                    if (settings == null) return@collect
-                    _apsMode.value = settings.apsMode
-                    if (settings.apsMode != ApsMode.Suspend) {
+                appModeManager.apsMode.collect { mode ->
+                    if (mode != ApsMode.Suspend) {
                         core.activate()
                     } else {
                         core.suspend()
@@ -268,26 +263,8 @@ class APS(
         _coreState.emit(core.coreState)
     }
 
-    fun setApsMode(mode: ApsMode) = inAPSThread {
-        _apsMode.value = mode
-        when {
-            mode == ApsMode.Suspend -> {
-                core.suspend()
-            }
-            else -> {
-                core.activate()
-            }
-        }
-
-        // Persist mode
-        val currentSettings = settingsRepository.getCurrentSettings()
-        if (currentSettings != null) {
-            settingsRepository.updateCurrentSettings(currentSettings.copy(apsMode = mode))
-        }
-    }
-
     fun coreCancelInsulinJobs() {
-        when (apsMode.value) {
+        when (appModeManager.apsMode.value) {
             ApsMode.Suspend -> return
             ApsMode.BasalOnly -> return
             ApsMode.AutoCorrection -> {
@@ -297,7 +274,7 @@ class APS(
     }
 
     fun deliverBolus(amount: InsulinAmount) {
-        when (apsMode.value) {
+        when (appModeManager.apsMode.value) {
             ApsMode.Suspend -> return
             ApsMode.BasalOnly -> issueBolusHint(amount)
             ApsMode.AutoCorrection -> {
@@ -312,7 +289,7 @@ class APS(
     }
 
     fun canIssueZeroTemp(): Boolean {
-        return when (apsMode.value) {
+        return when (appModeManager.apsMode.value) {
             ApsMode.Suspend -> false
             ApsMode.BasalOnly -> false
             ApsMode.AutoCorrection -> true // TODO: Check if pump supports zero temp
@@ -320,7 +297,7 @@ class APS(
     }
 
     fun issueZeroTemp(durationInHours: Int) {
-        when (apsMode.value) {
+        when (appModeManager.apsMode.value) {
             ApsMode.Suspend -> return
             ApsMode.BasalOnly -> return
             ApsMode.AutoCorrection -> {
@@ -351,7 +328,7 @@ class APS(
             pumpManager.waitForIdle()
             delay(10.seconds)
         }
-        if (apsMode.value == ApsMode.AutoCorrection) {
+        if (appModeManager.apsMode.value == ApsMode.AutoCorrection) {
             if (pumpManager.hasPendingJobs()) {
                 // This issue will now be handled by PumpManager
                 pumpManager.cancelJobs({ it.isCancelableAPSCommand })

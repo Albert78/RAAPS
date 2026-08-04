@@ -9,6 +9,8 @@ import de.dh.raaps.common.model.calculation.CarbsInsulinCalculationModel
 import de.dh.raaps.common.model.data.Minutes
 import de.dh.raaps.common.model.data.TimeService
 import de.dh.raaps.core.aps.APS
+import de.dh.raaps.core.aps.AppModeManager
+import de.dh.raaps.core.aps.AppModeManagerImpl
 import de.dh.raaps.core.aps.Core
 import de.dh.raaps.core.aps.TherapyManager
 import de.dh.raaps.core.pump.PumpManager
@@ -44,6 +46,7 @@ class SystemRegistryImpl(
     override val appPreferencesRepository: AppPreferencesRepository,
     override val therapyManager: TherapyManager,
     override val aps: APS,
+    override val appModeManager: AppModeManager,
     override val pluginManager: PluginManager,
     override val wakeService: SystemWakeService,
     override val timeService: TimeService,
@@ -101,13 +104,18 @@ class SystemRegistryImpl(
 
             therapyManager.startInitialization()
 
+            val appModeManager = AppModeManagerImpl(
+                settingsRepository = settingsRepository,
+                scope = scope
+            )
+
             val aps = APS(
                 glucoseRepository = glucoseRepository,
                 therapyRepository = therapyRepository,
-                settingsRepository = settingsRepository,
                 treatmentRepository = treatmentRepository,
                 appPreferencesRepository = appPreferencesRepository,
                 therapyManager = therapyManager,
+                appModeManager = appModeManager,
                 wakeService = wakeService,
                 timeService = timeService,
                 pumpManager = pumpManager,
@@ -133,6 +141,7 @@ class SystemRegistryImpl(
                 appPreferencesRepository = appPreferencesRepository,
                 therapyManager = therapyManager,
                 aps = aps,
+                appModeManager = appModeManager,
                 pluginManager = pluginManager,
                 wakeService = wakeService,
                 timeService = timeService,
