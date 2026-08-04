@@ -167,7 +167,7 @@ fun EditableValueStepper(
                     Spacer(Modifier.width(4.dp))
                     Text(
                         text = suffix.trim(),
-                        style = MaterialTheme.typography.titleLarge
+                        style = MaterialTheme.typography.titleSmall
                     )
                 }
             }
