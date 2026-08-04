@@ -35,6 +35,7 @@ import de.dh.raaps.ui.controls.profile.CurrentTherapyViewModel
 import de.dh.raaps.ui.controls.profile.InsulinProfileSettingsViewModel
 import de.dh.raaps.ui.screens.alarms.AlarmsScreen
 import de.dh.raaps.ui.screens.bolushistory.BolusHistoryScreen
+import de.dh.raaps.ui.screens.bolushistory.BolusHistoryViewModel
 import de.dh.raaps.ui.screens.dashboard.DashboardScreen
 import de.dh.raaps.ui.screens.dashboard.DashboardViewModel
 import de.dh.raaps.ui.screens.history.HistoryScreen
@@ -67,8 +68,6 @@ class MainFeatureNavGraph(
     private val extraDashboardContent: @Composable () -> Unit = {}
 ) : FeatureNavGraph {
     override fun getEntry(key: NavKey): NavEntry<NavKey>? {
-        val application = activity.application
-
         return when (key) {
             is DashboardRoute -> NavEntry(key) {
                 val vm: DashboardViewModel =
@@ -238,7 +237,13 @@ class MainFeatureNavGraph(
             }
 
             is BolusHistoryRoute -> NavEntry(key) {
-                BolusHistoryScreen(onNavigateUp = { navViewModel.pop() })
+                val vm: BolusHistoryViewModel = viewModel(
+                    factory = BolusHistoryViewModel.Companion.Factory(registry)
+                )
+                BolusHistoryScreen(
+                    viewModel = vm,
+                    onNavigateUp = { navViewModel.pop() }
+                )
             }
 
             is SystemControlRoute -> NavEntry(key) {

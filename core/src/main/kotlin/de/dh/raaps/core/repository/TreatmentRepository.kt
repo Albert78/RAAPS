@@ -205,6 +205,21 @@ class TreatmentRepository(
     }
 
     /**
+     * Updates an existing insulin application in the cache and database.
+     */
+    suspend fun updateInsulinApplication(insulinApplication: InsulinApplication) {
+        val historyStart = historyStart()
+        mutex.withLock {
+            if (insulinApplication.timestamp >= historyStart) {
+                insulinHistory.removeIf { it.id == insulinApplication.id }
+                insulinHistory.add(insulinApplication)
+                insulinHistory.sortBy { it.timestamp }
+            }
+        }
+        metabolicEventsDao.updateInsulinApplication(insulinApplication.toEntity())
+    }
+
+    /**
      * Deletes an insulin application from the cache and database.
      */
     suspend fun removeInsulinApplication(insulinApplication: InsulinApplication) {

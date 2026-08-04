@@ -143,8 +143,8 @@ fun MealsContent(
                     .padding(innerPadding)
             ) {
                 items(uiState.meals.sortedByDescending { it.timestamp }) { meal ->
-                    val isEditable = remember(meal.timestamp) {
-                        meal.timestamp >= Timestamp.now().minusHours(4)
+                    val isEditable = remember(meal.timestamp, uiState.editThresholdHours) {
+                        meal.timestamp >= Timestamp.now().minusHours(uiState.editThresholdHours)
                     }
 
                     MealItem(
@@ -192,7 +192,7 @@ fun MealItem(
                     Spacer(Modifier.width(8.dp))
                     Icon(
                         imageVector = Icons.Default.Edit,
-                        contentDescription = "Edit",
+                        contentDescription = stringResource(id = R.string.cd_edit),
                         tint = MaterialTheme.colorScheme.primary,
                         modifier = Modifier.size(16.dp)
                     )

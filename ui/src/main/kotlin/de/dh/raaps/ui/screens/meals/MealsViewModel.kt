@@ -3,6 +3,7 @@ package de.dh.raaps.ui.screens.meals
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
+import de.dh.raaps.common.model.MEAL_EDIT_THRESHOLD_HOURS
 import de.dh.raaps.common.model.MealEntry
 import de.dh.raaps.core.SystemRegistry
 import kotlinx.coroutines.flow.SharingStarted
@@ -11,7 +12,8 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 
 data class MealsUiState(
-    val meals: List<MealEntry> = emptyList()
+    val meals: List<MealEntry> = emptyList(),
+    val editThresholdHours: Int = MEAL_EDIT_THRESHOLD_HOURS
 )
 
 class MealsViewModel(
@@ -21,7 +23,12 @@ class MealsViewModel(
     private val treatmentRepository = registry.treatmentRepository
 
     val uiState: StateFlow<MealsUiState> = treatmentRepository.observeMeals()
-        .map { meals -> MealsUiState(meals = meals.sortedByDescending { it.timestamp }) }
+        .map { meals ->
+            MealsUiState(
+                meals = meals.sortedByDescending { it.timestamp },
+                editThresholdHours = MEAL_EDIT_THRESHOLD_HOURS
+            )
+        }
         .stateIn(
             scope = viewModelScope,
             started = SharingStarted.WhileSubscribed(5000),

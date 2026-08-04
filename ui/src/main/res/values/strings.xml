@@ -209,6 +209,13 @@
     <string name="meal_entry_grams_format">%1$.1f g KH</string>
 
     <string name="bolus_history_screen_title">Bolus-History</string>
+    <string name="bolus_history_empty_list">Keine Bolus-Einträge vorhanden</string>
+    <string name="bolus_history_add_manual_title">Pen-Bolus</string>
+    <string name="bolus_history_edit_manual_title">Bolus bearbeiten</string>
+    <string name="bolus_history_add_manual_desc">Gib hier einen Bolus ein, den du dir manuell (Pen, Spritze) und nicht mit der Pumpe verabreicht hast.</string>
+    <string name="bolus_origin_pump">Pumpe</string>
+    <string name="bolus_origin_manual">Manuell</string>
+    <string name="cd_edit">Bearbeiten</string>
     <string name="system_control_screen_title">Systemsteuerung</string>
     <string name="alarms_screen_title">Warnungen und Alarme</string>
 </resources>
