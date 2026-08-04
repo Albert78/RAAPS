@@ -116,10 +116,12 @@ data class HistoryAndImpactDiagramData(
                 val timestamp = Timestamp(baseTimestamp + (x * MS_PER_MINUTE).toLong())
 
                 insulinX.add(x)
+                // TODO: Correct scale to match axis labels
                 // Scaled so 10 units (standard insulin) peak at ~100 mg/dL
                 insulinY.add(calcModel.effectiveInsulin(insulinApplications, timestamp) * 222.2)
 
                 carbX.add(x)
+                // TODO: Correct scale to match axis labels
                 // Scaled so 100g (standard meal) peak at ~55 mg/dL
                 carbY.add(calcModel.carbAbsorption(meals, timestamp) * 12.2)
             }
