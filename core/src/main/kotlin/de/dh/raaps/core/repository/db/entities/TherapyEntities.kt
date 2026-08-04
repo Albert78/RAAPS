@@ -45,5 +45,7 @@ data class CurrentTherapySettingsEntity(
     val id: Long = ID_UNDEFINED,
     val insulin_profile_id: Long,
     val default_bg_blocks: List<DBBgBlock>,
-    val adjustment_percentage: Int,
+    val insulin_adjustment_percentage: Int,
+    val target_bg_override: Short? = null,
+    val low_threshold_override: Short? = null,
 )

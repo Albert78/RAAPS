@@ -67,7 +67,7 @@ fun ApsControlCard(
     selectedMode: ApsMode,
     availableModes: List<ApsMode>,
     onModeChange: (ApsMode) -> Unit,
-    adjustmentPercentage: Int,
+    insulinAdjustmentPercentage: Int,
     onAdjustmentClick: () -> Unit,
     onProfileClick: () -> Unit
 ) {
@@ -100,8 +100,8 @@ fun ApsControlCard(
                 verticalArrangement = Arrangement.spacedBy(4.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                val nameText = if (adjustmentPercentage != 0) {
-                    "${profileUiState.name} (${displayStrategy.format(adjustmentPercentage)})"
+                val nameText = if (insulinAdjustmentPercentage != 0) {
+                    "${profileUiState.name} (${displayStrategy.format(insulinAdjustmentPercentage)})"
                 } else {
                     profileUiState.name
                 }
@@ -250,7 +250,7 @@ fun ApsControlCard(
                 }
 
                 // Adjustment Button
-                val isNeutral = adjustmentPercentage == 0
+                val isNeutral = insulinAdjustmentPercentage == 0
                 if (isNeutral) {
                     OutlinedButton(
                         onClick = onAdjustmentClick,
@@ -261,7 +261,7 @@ fun ApsControlCard(
                     ) {
                         Icon(Icons.Default.UnfoldMore, null, modifier = Modifier.size(18.dp))
                         Spacer(Modifier.width(8.dp))
-                        Text(displayStrategy.format(adjustmentPercentage), style = MaterialTheme.typography.titleMedium)
+                        Text(displayStrategy.format(insulinAdjustmentPercentage), style = MaterialTheme.typography.titleMedium)
                     }
                 } else {
                     Button(
@@ -270,14 +270,14 @@ fun ApsControlCard(
                         modifier = Modifier.fillMaxWidth(),
                         shape = MaterialTheme.shapes.small,
                         colors = ButtonDefaults.buttonColors(
-                            containerColor = displayStrategy.color(adjustmentPercentage)
+                            containerColor = displayStrategy.color(insulinAdjustmentPercentage)
                         ),
                         contentPadding = PaddingValues(horizontal = 8.dp, vertical = 8.dp)
                     ) {
                         Icon(Icons.Default.UnfoldMore, null, modifier = Modifier.size(18.dp))
                         Spacer(Modifier.width(8.dp))
                         Text(
-                            displayStrategy.format(adjustmentPercentage),
+                            displayStrategy.format(insulinAdjustmentPercentage),
                             style = MaterialTheme.typography.titleMedium
                         )
                     }
@@ -310,14 +310,16 @@ private fun PreviewApsControlCard() {
                     basal = 0.8,
                     cr = 12.0,
                     isf = BgDelta.fromMgDl(50),
-                    adjustmentPercentage = 0,
+                    insulinAdjustmentPercentage = 0,
+                    targetBgOverride = null,
+                    lowThresholdOverride = null,
                     dia = Minutes(300),
                     peak = Minutes(75)
                 ),
                 selectedMode = ApsMode.AutoCorrection,
                 availableModes = ApsMode.entries,
                 onModeChange = {},
-                adjustmentPercentage = 0,
+                insulinAdjustmentPercentage = 0,
                 onAdjustmentClick = {},
                 onProfileClick = {}
             )

@@ -92,7 +92,7 @@ fun CurrentTherapySettingsScreen(
         onNavigateToInsulinProfileEditor = onNavigateToInsulinProfileEditor,
         onSelectProfile = { viewModel.selectInsulinProfile(it) },
         onUpdateDefaultBgBlocks = { viewModel.updateDefaultBgBlocks(it) },
-        onUpdateAdjustmentPercentage = { viewModel.setAdjustmentPercentage(it) }
+        onUpdateInsulinAdjustmentPercentage = { viewModel.setInsulinAdjustmentPercentage(it) }
     )
 }
 
@@ -104,7 +104,7 @@ fun CurrentTherapySettingsContent(
     onNavigateToInsulinProfileEditor: () -> Unit,
     onSelectProfile: (InsulinProfile) -> Unit,
     onUpdateDefaultBgBlocks: (List<BgBlock>) -> Unit,
-    onUpdateAdjustmentPercentage: (Int) -> Unit
+    onUpdateInsulinAdjustmentPercentage: (Int) -> Unit
 ) {
     var showInsulinProfileDialog by remember { mutableStateOf(false) }
     var showBgEditorDialog by remember { mutableStateOf(false) }
@@ -199,10 +199,10 @@ fun CurrentTherapySettingsContent(
 
     if (showAdjustmentDialog) {
         InsulinAdjustmentDialog(
-            currentValue = uiState.activeProfile.adjustmentPercentage,
+            currentValue = uiState.activeProfile.insulinAdjustmentPercentage,
             presets = uiState.therapyAdjustmentPresets,
             onValueChange = {
-                onUpdateAdjustmentPercentage(it)
+                onUpdateInsulinAdjustmentPercentage(it)
             },
             onDismissRequest = { showAdjustmentDialog = false }
         )
@@ -396,29 +396,29 @@ private fun ActiveInsulinProfileCard(
                 )
 
                 Surface(
-                    color = if (profile.adjustmentPercentage == 0) {
+                    color = if (profile.insulinAdjustmentPercentage == 0) {
                         MaterialTheme.colorScheme.surfaceVariant
                     } else {
-                        displayStrategy.color(profile.adjustmentPercentage).copy(alpha = 0.15f)
+                        displayStrategy.color(profile.insulinAdjustmentPercentage).copy(alpha = 0.15f)
                     },
                     shape = RoundedCornerShape(8.dp),
                     border = BorderStroke(
                         width = 1.dp,
-                        color = if (profile.adjustmentPercentage == 0) {
+                        color = if (profile.insulinAdjustmentPercentage == 0) {
                             MaterialTheme.colorScheme.outlineVariant
                         } else {
-                            displayStrategy.color(profile.adjustmentPercentage)
+                            displayStrategy.color(profile.insulinAdjustmentPercentage)
                         }
                     )
                 ) {
                     Text(
-                        text = displayStrategy.format(profile.adjustmentPercentage),
+                        text = displayStrategy.format(profile.insulinAdjustmentPercentage),
                         style = MaterialTheme.typography.labelMedium,
                         fontWeight = FontWeight.Bold,
-                        color = if (profile.adjustmentPercentage == 0) {
+                        color = if (profile.insulinAdjustmentPercentage == 0) {
                             MaterialTheme.colorScheme.onSurfaceVariant
                         } else {
-                            displayStrategy.color(profile.adjustmentPercentage)
+                            displayStrategy.color(profile.insulinAdjustmentPercentage)
                         },
                         modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp)
                     )
@@ -689,7 +689,9 @@ fun CurrentTherapySettingsPreview() {
             basal = 0.5,
             target = BgValue.fromMgDl(100),
             lowThreshold = BgValue.fromMgDl(70),
-            adjustmentPercentage = 0,
+            insulinAdjustmentPercentage = 0,
+            targetBgOverride = null,
+            lowThresholdOverride = null,
             dia = Minutes(300),
             peak = Minutes(75)
         ),
@@ -710,7 +712,7 @@ fun CurrentTherapySettingsPreview() {
             onNavigateToInsulinProfileEditor = {},
             onSelectProfile = {},
             onUpdateDefaultBgBlocks = {},
-            onUpdateAdjustmentPercentage = {}
+            onUpdateInsulinAdjustmentPercentage = {}
         )
     }
 }

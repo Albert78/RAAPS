@@ -38,7 +38,7 @@ class TherapyManager(
         val settings = getActiveTherapySettings()
         val profile = settings.insulinProfile
         val baseBasal = profile.basalBlocks.getAmountForMinute(timestamp.minutesSinceMidnight())
-        val factor = (100.0 + settings.adjustmentPercentage) / 100.0
+        val factor = (100.0 + settings.insulinAdjustmentPercentage) / 100.0
         return baseBasal * factor
     }
 
@@ -51,7 +51,7 @@ class TherapyManager(
         val settings = getActiveTherapySettings()
         val profile = settings.insulinProfile
         val baseCr = profile.crBlocks.getAmountForMinute(timestamp.minutesSinceMidnight())
-        val factor = (100.0 + settings.adjustmentPercentage) / 100.0
+        val factor = (100.0 + settings.insulinAdjustmentPercentage) / 100.0
         return baseCr / factor
     }
 
@@ -65,13 +65,17 @@ class TherapyManager(
         val settings = getActiveTherapySettings()
         val profile = settings.insulinProfile
         val amount = profile.isfBlocks.getAmountForMinute(timestamp.minutesSinceMidnight())
-        val factor = (100.0 + settings.adjustmentPercentage) / 100.0
+        val factor = (100.0 + settings.insulinAdjustmentPercentage) / 100.0
         return BgDelta.fromMgDl((amount / factor).toInt())
     }
 
     suspend fun getBgSettings(): Pair<BgValue, BgValue> {
         val settings = getActiveTherapySettings()
-        return settings.defaultBgBlocks.getBgForMinute(Timestamp.now().minutesSinceMidnight())
+        val defaultBg = settings.defaultBgBlocks.getBgForMinute(Timestamp.now().minutesSinceMidnight())
+        return Pair(
+            settings.targetBgOverride ?: defaultBg.first,
+            settings.lowThresholdOverride ?: defaultBg.second
+        )
     }
 
     suspend fun updateDefaultBgBlocks(blocks: List<BgBlock>) {
@@ -108,11 +112,31 @@ class TherapyManager(
         }
     }
 
-    suspend fun setAdjustmentPercentage(percentage: Int) {
+    suspend fun setInsulinAdjustmentPercentage(percentage: Int) {
         mutex.withLock {
             val currentSettings = getActiveTherapySettings()
             val newSettings = currentSettings.copy(
-                adjustmentPercentage = percentage
+                insulinAdjustmentPercentage = percentage
+            )
+            therapyRepository.updateCurrentTherapySettings(newSettings)
+        }
+    }
+
+    suspend fun setTargetBgOverride(target: BgValue?) {
+        mutex.withLock {
+            val currentSettings = getActiveTherapySettings()
+            val newSettings = currentSettings.copy(
+                targetBgOverride = target
+            )
+            therapyRepository.updateCurrentTherapySettings(newSettings)
+        }
+    }
+
+    suspend fun setLowThresholdOverride(threshold: BgValue?) {
+        mutex.withLock {
+            val currentSettings = getActiveTherapySettings()
+            val newSettings = currentSettings.copy(
+                lowThresholdOverride = threshold
             )
             therapyRepository.updateCurrentTherapySettings(newSettings)
         }

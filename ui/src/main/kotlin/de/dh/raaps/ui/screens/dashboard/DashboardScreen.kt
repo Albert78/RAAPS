@@ -88,9 +88,9 @@ fun DashboardScreen(
 
     if (showAdjustmentDialog) {
         InsulinAdjustmentDialog(
-            currentValue = currentTherapyUiState.activeProfile.adjustmentPercentage,
+            currentValue = currentTherapyUiState.activeProfile.insulinAdjustmentPercentage,
             presets = currentTherapyUiState.therapyAdjustmentPresets,
-            onValueChange = { currentTherapyViewModel.setAdjustmentPercentage(it) },
+            onValueChange = { currentTherapyViewModel.setInsulinAdjustmentPercentage(it) },
             onDismissRequest = { showAdjustmentDialog = false }
         )
     }
@@ -252,7 +252,7 @@ fun DashboardContent(
                 selectedMode = dashboardUiState.apsMode,
                 availableModes = dashboardUiState.availableApsModes,
                 onModeChange = onApsModeSelect,
-                adjustmentPercentage = currentTherapyUiState.activeProfile.adjustmentPercentage,
+                insulinAdjustmentPercentage = currentTherapyUiState.activeProfile.insulinAdjustmentPercentage,
                 onAdjustmentClick = onAdjustmentClick,
                 onProfileClick = onNavigateToTherapySettings
             )
@@ -286,7 +286,9 @@ fun DashboardPreview() {
                     basal = 0.5,
                     target = BgValue.fromMgDl(110),
                     lowThreshold = BgValue.fromMgDl(70),
-                    adjustmentPercentage = 0,
+                    insulinAdjustmentPercentage = 0,
+                    targetBgOverride = null,
+                    lowThresholdOverride = null,
                     dia = Minutes(300),
                     peak = Minutes(75)
                 ),
@@ -332,7 +334,9 @@ fun DashboardPermissionsWarningPreview() {
                     basal = 0.5,
                     target = BgValue.fromMgDl(110),
                     lowThreshold = BgValue.fromMgDl(70),
-                    adjustmentPercentage = 0,
+                    insulinAdjustmentPercentage = 0,
+                    targetBgOverride = null,
+                    lowThresholdOverride = null,
                     dia = Minutes(300),
                     peak = Minutes(75)
                 ),

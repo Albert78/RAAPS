@@ -10,5 +10,7 @@ data class CurrentTherapySettings(
     var id: Long = ID_UNDEFINED,
     val insulinProfile: InsulinProfile,
     val defaultBgBlocks: List<BgBlock> = emptyList(),
-    val adjustmentPercentage: Int = 0,
+    val insulinAdjustmentPercentage: Int = 0,
+    val targetBgOverride: BgValue? = null,
+    val lowThresholdOverride: BgValue? = null,
 )
