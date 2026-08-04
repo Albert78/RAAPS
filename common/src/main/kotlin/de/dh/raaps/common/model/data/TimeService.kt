@@ -21,6 +21,7 @@ object TickPriority {
 
 /**
  * Central service for time and ticking in the system.
+ * This service synchronizes its ticking grid with an external reference.
  */
 interface TimeService {
     /**
@@ -29,7 +30,7 @@ interface TimeService {
     val tickInterval: Minutes
 
     /**
-     * The current tick based on the system time.
+     * The current tick based on the system time and current synchronization.
      */
     val currentTick: Tick
 
@@ -39,7 +40,7 @@ interface TimeService {
     val currentTime: Timestamp
 
     /**
-     * A [Timeline] instance based on the current [tickInterval].
+     * A [Timeline] instance that reflects the current synchronization offset.
      */
     val timeline: Timeline
 
@@ -51,6 +52,7 @@ interface TimeService {
     /**
      * Registers a [TickHandler] to be called on every tick.
      * Handlers are called sequentially in order of their [priority].
+     * Use default [TickPriority] values.
      */
     fun registerTickHandler(priority: Int, handler: TickHandler)
 
@@ -58,4 +60,10 @@ interface TimeService {
      * Unregisters a previously registered [TickHandler].
      */
     fun unregisterTickHandler(handler: TickHandler)
+
+    /**
+     * Synchronizes the internal ticking grid with an external reference.
+     * @param synchronizationTimestamp The desired point in time for the current or next tick to align with.
+     */
+    fun synchronize(synchronizationTimestamp: Timestamp)
 }

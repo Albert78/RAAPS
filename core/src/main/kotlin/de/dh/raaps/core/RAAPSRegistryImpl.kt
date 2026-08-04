@@ -9,9 +9,6 @@ import de.dh.raaps.common.model.data.TimeService
 import de.dh.raaps.core.aps.APS
 import de.dh.raaps.core.aps.Core
 import de.dh.raaps.core.aps.TherapyManager
-import de.dh.raaps.core.system.SystemTimeService
-import de.dh.raaps.core.system.SystemWakeService
-import de.dh.raaps.core.system.SystemWakeServiceImpl
 import de.dh.raaps.core.pump.PumpCoordinator
 import de.dh.raaps.core.repository.DatabaseInitializer
 import de.dh.raaps.core.repository.DeviceManagementRepository
@@ -21,6 +18,9 @@ import de.dh.raaps.core.repository.SettingsRepository
 import de.dh.raaps.core.repository.TherapyRepository
 import de.dh.raaps.core.repository.TreatmentRepository
 import de.dh.raaps.core.repository.db.AppDatabase
+import de.dh.raaps.core.system.SystemWakeService
+import de.dh.raaps.core.system.SystemWakeServiceImpl
+import de.dh.raaps.core.system.TimeServiceImpl
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.runBlocking
 
@@ -76,7 +76,7 @@ class RAAPSRegistryImpl(
             // Initialize Managers
             val therapyManager = TherapyManager(therapyRepository, appPreferencesRepository)
             val wakeService = SystemWakeServiceImpl(application)
-            val timeService = SystemTimeService(scope = scope)
+            val timeService = TimeServiceImpl(scope = scope)
 
             runBlocking {
                 treatmentRepository.load()

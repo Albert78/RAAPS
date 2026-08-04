@@ -154,11 +154,11 @@ class Core(
 
     override suspend fun onTick(tick: Tick) {
         if (coreState !is CoreState.Active) return
-        
+
         Log.d(TAG, "onTick: $tick")
-        
+
         if (isStale()) {
-            // This will be handled by APS facade currently, 
+            // This will be handled by APS facade currently,
             // but we could also emit an event here.
         }
     }
