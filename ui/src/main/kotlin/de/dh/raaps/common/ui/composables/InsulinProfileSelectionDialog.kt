@@ -33,7 +33,7 @@ fun InsulinProfileSelectionDialog(
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Text(stringResource(id = R.string.therapy_profile_selection_title))
+                Text(stringResource(id = R.string.therapy_insulin_profile_selection_title))
             }
         },
         text = {

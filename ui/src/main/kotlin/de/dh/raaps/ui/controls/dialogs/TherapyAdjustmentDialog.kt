@@ -8,13 +8,17 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Adjust
+import androidx.compose.material.icons.filled.Tune
+import androidx.compose.material.icons.filled.UnfoldMore
 import androidx.compose.material.icons.filled.VerticalAlignBottom
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ElevatedCard
@@ -32,6 +36,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
@@ -88,6 +93,7 @@ fun TherapyAdjustmentDialogContent(
     ) {
         // Insulin Adjustment Section
         AdjustmentSection(
+            icon = Icons.Default.UnfoldMore,
             title = stringResource(R.string.aps_control_therapy_adjustment_dialog_insulin_adjustment_label),
             description = stringResource(R.string.aps_control_therapy_adjustment_dialog_insulin_adjustment_description)
         ) {
@@ -104,6 +110,7 @@ fun TherapyAdjustmentDialogContent(
 
         // BG Override Section
         AdjustmentSection(
+            icon = Icons.Default.Adjust,
             title = stringResource(R.string.aps_control_therapy_adjustment_dialog_bg_adjustment_label),
             description = stringResource(R.string.aps_control_therapy_adjustment_dialog_bg_adjustment_description)
         ) {
@@ -233,16 +240,26 @@ fun TherapyAdjustmentDialogContent(
 
 @Composable
 private fun AdjustmentSection(
+    icon: ImageVector,
     title: String,
     description: String,
     content: @Composable () -> Unit
 ) {
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        Text(
-            text = title,
-            style = MaterialTheme.typography.titleSmall,
-            fontWeight = androidx.compose.ui.text.font.FontWeight.Bold
-        )
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Icon(
+                imageVector = icon,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.size(20.dp)
+            )
+            Spacer(modifier = Modifier.width(8.dp))
+            Text(
+                text = title,
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = androidx.compose.ui.text.font.FontWeight.Bold
+            )
+        }
         Text(
             text = description,
             style = MaterialTheme.typography.bodySmall,
@@ -331,9 +348,7 @@ fun TherapyAdjustmentDialogPreview() {
                     TherapyAdjustment("Wandern", -20, 140, 90),
                     TherapyAdjustment("Fahrrad fahren", -30, 150, 100),
                     TherapyAdjustment("Klettern", -40, 160, 110),
-                    TherapyAdjustment("Schwimmen", -50, 180, 120),
                     TherapyAdjustment("Laufen", -25, 130, 95),
-                    TherapyAdjustment("Schlafen", 10, 110, 85),
                     TherapyAdjustment("Krank", 30, 100, 70),
                     TherapyAdjustment("Stress", 20, 115, 75)
                 )

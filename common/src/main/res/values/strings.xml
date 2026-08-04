@@ -35,7 +35,7 @@
     <string name="meal_type_slow_meal_name">Langsame Mahlzeit</string>
     <string name="profile_default_normal_name">Normal</string>
 
-    <string name="therapy_profile_selection_title">Profil auswählen</string>
+    <string name="therapy_insulin_profile_selection_title">Insulinprofil wählen</string>
     <string name="therapy_target_label">Zielwert</string>
     <string name="therapy_low_threshold_label">Low-Schwelle</string>
     <string name="therapy_basal_label">Basalrate</string>
