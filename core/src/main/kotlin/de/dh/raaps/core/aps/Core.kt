@@ -1,7 +1,6 @@
 package de.dh.raaps.core.aps
 
 import android.util.Log
-import de.dh.raaps.AppPreferencesRepository
 import de.dh.raaps.common.model.InsulinAmount
 import de.dh.raaps.common.model.calculation.CarbsInsulinCalculationModel
 import de.dh.raaps.common.model.data.BgReading
@@ -12,11 +11,9 @@ import de.dh.raaps.common.model.data.TickHandler
 import de.dh.raaps.common.model.data.TickPriority
 import de.dh.raaps.common.model.data.TimeService
 import de.dh.raaps.common.model.data.Timestamp
-import de.dh.raaps.core.repository.GlucoseRepository
 import de.dh.raaps.core.repository.TreatmentRepository
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
-import kotlin.math.abs
 
 sealed interface CoreState {
     /**
@@ -60,10 +57,9 @@ sealed interface CoreState {
 class Core(
     val treatmentRepository: TreatmentRepository,
     val therapyManager: TherapyManager,
-    private val glucoseRepository: GlucoseRepository,
-    private val appPreferencesRepository: AppPreferencesRepository,
     private val timeService: TimeService,
     private val carbsInsulinCalculationModel: CarbsInsulinCalculationModel,
+    private val glucoseSourceManager: GlucoseSourceManager,
 
     private val onDataUpdated: () -> Unit,
     private val onCoreStateChanged: () -> Unit,
@@ -89,8 +85,8 @@ class Core(
     var coreState: CoreState = CoreState.Uninitialized
         private set
 
-    suspend fun nextBgStaleCheckAt(): Timestamp? = calculationAlgorithm.nextBgStaleCheckAt()
-    suspend fun isStale(): Boolean = calculationAlgorithm.isStale()
+    suspend fun nextBgStaleCheckAt(): Timestamp? = glucoseSourceManager.nextBgStaleCheckAt()
+    suspend fun isStale(): Boolean = glucoseSourceManager.isStale()
 
     /**
      * Lock which is acquired in situations where a suspend function
@@ -157,18 +153,13 @@ class Core(
                 Log.d(TAG, "Initializing...")
                 setCoreState(CoreState.Initializing)
 
-                // Not so nice, in fact, the readings history is part of the ApsAlgorithmImpl and should
-                // be built there. But for the moment, I want to keep ApsAlgorithmImpl free of dataRepository,
-                // lets see if we change that in the future.
-                val readingsHistory = glucoseRepository.loadBgReadings(from = Timestamp.now().minus(
-                    ApsAlgorithmImpl.DEVIATION_TIME_BASE))
+                val readingsHistory = glucoseSourceManager.history.toList()
 
                 currentBg = readingsHistory.lastOrNull()
                 lastBg = if (readingsHistory.size >= 2) readingsHistory[readingsHistory.size - 2] else null
 
                 calculationAlgorithm = ApsAlgorithmImpl.create(
                     treatmentRepository,
-                    readingsHistory,
                     therapyManager,
                     onCancelInsulinJobs = onCancelInsulinJobs,
                     onDeliverBolus = onDeliverBolus,
@@ -211,13 +202,10 @@ class Core(
                     currentBg = bg
                 }
 
-                val isRecentBg = abs(bg.timestamp.ms - Timestamp.now().ms) < RECENT_BG_THRESHOLD.inMs()
                 val alg = calculationAlgorithm
                 onWaitForAndResetInsulinJobs()
-                if (isRecentBg || isPredictionsStale) {
-                    alg.recalculateForNewBgValue(bg)
-                    isPredictionsStale = false
-                }
+                glucoseSourceManager.sampledBgReadings.sampleAvgValues()
+                alg.recalculate(glucoseSourceManager.sampledBgReadings)
             }
             onDataUpdated()
         }
@@ -247,11 +235,10 @@ class Core(
 
         fun createProductiveCore(
             therapyManager: TherapyManager,
-            glucoseRepository: GlucoseRepository,
             treatmentRepository: TreatmentRepository,
-            appPreferencesRepository: AppPreferencesRepository,
             timeService: TimeService,
             carbsInsulinCalculationModel: CarbsInsulinCalculationModel,
+            glucoseSourceManager: GlucoseSourceManager,
 
             onDataUpdated: () -> Unit,
             onCoreStateChanged: () -> Unit,
@@ -268,10 +255,9 @@ class Core(
             return Core(
                 treatmentRepository = treatmentRepository,
                 therapyManager = therapyManager,
-                glucoseRepository = glucoseRepository,
-                appPreferencesRepository = appPreferencesRepository,
                 timeService = timeService,
                 carbsInsulinCalculationModel = carbsInsulinCalculationModel,
+                glucoseSourceManager = glucoseSourceManager,
 
                 onDataUpdated = onDataUpdated,
                 onCoreStateChanged = onCoreStateChanged,

@@ -5,7 +5,7 @@ import de.dh.raaps.common.model.data.Timestamp
 
 interface ApsAlgorithm {
     suspend fun updateMealsAndInsulin()
-    suspend fun recalculateForNewBgValue(currentBG: BgReading)
+    suspend fun recalculate(readings: SampledBgReadings)
     suspend fun nextBgStaleCheckAt(): Timestamp?
     suspend fun isStale(): Boolean
 }
@@ -15,7 +15,7 @@ class NoopAlgorithm: ApsAlgorithm {
         // Do nothing
     }
 
-    override suspend fun recalculateForNewBgValue(currentBG: BgReading) {
+    override suspend fun recalculate(readings: SampledBgReadings) {
         // Do nothing
     }
 

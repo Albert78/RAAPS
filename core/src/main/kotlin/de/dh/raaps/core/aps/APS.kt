@@ -2,13 +2,10 @@ package de.dh.raaps.core.aps
 
 import android.content.Context
 import android.content.Intent
-import android.util.Log
 import de.dh.raaps.AppPreferencesRepository
 import de.dh.raaps.common.model.ApsMode
-import de.dh.raaps.common.model.GlucoseSource
 import de.dh.raaps.common.model.calculation.CarbsInsulinCalculationModel
 import de.dh.raaps.common.model.data.BgReading
-import de.dh.raaps.common.model.data.Minutes
 import de.dh.raaps.common.model.data.TimeService
 import de.dh.raaps.common.model.data.Timestamp
 import de.dh.raaps.core.repository.GlucoseRepository
@@ -57,7 +54,8 @@ class APS(
     val wakeService: SystemWakeService,
     val timeService: TimeService,
     val carbsInsulinCalculationModel: CarbsInsulinCalculationModel,
-    val context: Context
+    val context: Context,
+    val glucoseSourceManager: GlucoseSourceManager
 ) : WakeupHandler {
     // Threading: Single background thread to avoid race conditions in the core logic
     private val apsDispatcher = Executors.newSingleThreadExecutor().asCoroutineDispatcher()
@@ -65,6 +63,8 @@ class APS(
 
     init {
         wakeService.registerHandler(WAKE_TAG, this)
+        glucoseSourceManager.setThreading(scope = apsScope, inAPSThread = { block -> inAPSThread(block) })
+        glucoseSourceManager.setOnNewBg { bg -> updateBg(bg) }
     }
 
     // Computation Core: Pure logic and state, completely thread-agnostic
@@ -75,6 +75,7 @@ class APS(
         appPreferencesRepository = appPreferencesRepository,
         timeService = timeService,
         carbsInsulinCalculationModel = carbsInsulinCalculationModel,
+        glucoseSourceManager = glucoseSourceManager,
 
         onDataUpdated = { emitDataUpdateEvent() },
         onCoreStateChanged = { emitCoreStateChangedEvent() },
@@ -88,24 +89,6 @@ class APS(
         onCarbsHint = { amountInGram -> therapyManager.recommendCarbs(amountInGram) },
         onWaitForAndResetInsulinJobs = { therapyManager.waitForAndResetInsulinJobs() }
     )
-
-    // Plugins & Active Jobs
-    private var glucoseJob: Job? = null
-    var glucoseSource: GlucoseSource? = null
-        set(value) {
-            field?.stop()
-            field = value
-            field?.start()
-            restartGlucosePipeline()
-        }
-
-    /**
-     * Time delay between a glucose value in blood and the given Timestamp of the bg reading.
-     * Typically, the bg reading timestamp represents the time of measure of the CGM system, which
-     * is about 5 minutes behind blood glucose.
-     */
-    var glucoseReadingsTimeDelay: Minutes = Minutes(5)
-        private set
 
     // Observers (Updated by the internal core, read by the facade/UI)
     private val _lastDataTime = MutableStateFlow<Timestamp>(Timestamp(0))
@@ -164,6 +147,7 @@ class APS(
      */
     fun startInitialization() {
         inAPSThread {
+            glucoseSourceManager.initialize()
             core.initialize()
 
             launch {
@@ -191,7 +175,6 @@ class APS(
                 }
             }
         }
-        restartGlucosePipeline()
     }
 
     private fun acquireBusyState() {
@@ -200,41 +183,6 @@ class APS(
 
     private fun releaseBusyState() {
         wakeService.releaseBusyState(WAKE_TAG)
-    }
-
-    private fun restartGlucosePipeline() {
-        glucoseJob?.cancel() // Cancel old pipeline if one exists
-        val plugin = glucoseSource ?: return
-
-        glucoseJob = inAPSThread {
-            installGlucosePipeline_ApsThread(plugin)
-        }
-    }
-
-    private suspend fun installGlucosePipeline_ApsThread(plugin: GlucoseSource) {
-        Log.d(TAG, "Installing glucose pipeline")
-
-        val sensorType = glucoseRepository.getOrCreateSensorTypeByName(plugin.getSensorTypeName())
-        val dataProvider =
-            glucoseRepository.getOrCreateDataProviderByName(plugin.name, plugin.dataProviderType)
-
-        glucoseReadingsTimeDelay = plugin.readingsTimeDelay
-
-        // Persist values
-        val persistedValues = plugin.getValues()
-            .persist(glucoseRepository, dataProvider, sensorType)
-
-        // Collect for core calculation
-        persistedValues
-            // Threading notice:
-            // The .collect call will block our coroutine, so it must be the last action in this method.
-            // But since we're in a coroutine, the call won't block our (single) thread while
-            // waiting for new values; instead, it will just suspend and free the thread for other work.
-            .collect { bg ->
-                core.updateBg(bg)
-                // Synchronize our internal ticking grid to fire 20s after the BG reading.
-                timeService.synchronize(Timestamp.now().plusSeconds(20))
-            }
     }
 
     private fun emitDataUpdateEvent() = inExternalDispatcher {
@@ -266,7 +214,7 @@ class APS(
     override fun onWakeup(wakeupId: UInt?, intent: Intent?) {
         inAPSThread {
             if (wakeupId == WAKEUP_STALE_CHECK) {
-                if (core.isStale()) {
+                if (glucoseSourceManager.isStale()) {
                     addIssue(ApsIssue.StaleBG)
                 } else {
                     removeIssue(ApsIssue.StaleBG)
@@ -279,10 +227,7 @@ class APS(
      * Gracefully stops the APS system and releases all background resources.
      */
     fun stop() {
-        glucoseSource?.let {
-            it.stop()
-            glucoseSource = null
-        }
+        glucoseSourceManager.stop()
         apsScope.cancel()
         apsDispatcher.close()
     }

@@ -1,5 +1,6 @@
 package de.dh.raaps.core.aps
 
+import de.dh.raaps.common.model.data.BgReading
 import de.dh.raaps.common.model.data.BgValue
 import de.dh.raaps.common.model.data.Tick
 import de.dh.raaps.common.model.data.Timeline
@@ -40,6 +41,14 @@ class SampledBgReadings(
             )
             buffer[i] = avg?.mgdl ?: 0
         }
+    }
+
+    fun calculatePTWMA(decayFactor: Double): BgValue {
+        return history.calculatePTWMA(decayFactor)
+    }
+
+    fun lastReading(): BgReading? {
+        return history.last()
     }
 
     fun calculateSavitzkyGolayEndBorder3(): BgValue {

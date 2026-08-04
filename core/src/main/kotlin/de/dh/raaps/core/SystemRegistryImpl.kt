@@ -9,6 +9,7 @@ import de.dh.raaps.common.model.calculation.CarbsInsulinCalculationModel
 import de.dh.raaps.common.model.data.Minutes
 import de.dh.raaps.common.model.data.TimeService
 import de.dh.raaps.core.aps.APS
+import de.dh.raaps.core.aps.GlucoseSourceManager
 import de.dh.raaps.core.aps.SystemManager
 import de.dh.raaps.core.aps.SystemManagerImpl
 import de.dh.raaps.core.aps.Core
@@ -45,6 +46,7 @@ class SystemRegistryImpl(
     override val settingsRepository: SettingsRepository,
     override val appPreferencesRepository: AppPreferencesRepository,
     override val therapyManager: TherapyManager,
+    override val glucoseSourceManager: GlucoseSourceManager,
     override val aps: APS,
     override val systemManager: SystemManager,
     override val pluginManager: PluginManager,
@@ -104,6 +106,11 @@ class SystemRegistryImpl(
             )
             val carbsInsulinCalculationModel = CarbsInsulinCalculationModel(timeService.tickInterval)
 
+            val glucoseSourceManager = GlucoseSourceManager(
+                glucoseRepository = glucoseRepository,
+                timeService = timeService
+            )
+
             runBlocking {
                 treatmentRepository.load()
                 DatabaseInitializer.initialize(application, treatmentRepository, therapyRepository, settingsRepository)
@@ -121,7 +128,8 @@ class SystemRegistryImpl(
                 wakeService = wakeService,
                 timeService = timeService,
                 carbsInsulinCalculationModel = carbsInsulinCalculationModel,
-                context = application
+                context = application,
+                glucoseSourceManager = glucoseSourceManager
             )
             aps.startInitialization()
             notificationManager.startInitialization(scope, aps, therapyManager)
@@ -141,6 +149,7 @@ class SystemRegistryImpl(
                 settingsRepository = settingsRepository,
                 appPreferencesRepository = appPreferencesRepository,
                 therapyManager = therapyManager,
+                glucoseSourceManager = glucoseSourceManager,
                 aps = aps,
                 systemManager = systemManager,
                 pluginManager = pluginManager,
