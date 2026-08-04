@@ -97,20 +97,20 @@ data class InsulinHistory(
     val points: List<InsulinHistoryPoint>
 )
 
-fun convertToCarbsFromBgDelta(bgDelta: BgDelta, isf: BgDelta, cr: Double): Double =
+inline fun convertToCarbsFromBgDelta(bgDelta: BgDelta, isf: BgDelta, cr: Double): Double =
     bgDelta.mgdl.toDouble() / isf.mgdl.toDouble() * cr
 
-fun convertToUnitsFromBgDelta(bgDelta: BgDelta, isf: BgDelta): Double =
+inline fun convertToUnitsFromBgDelta(bgDelta: BgDelta, isf: BgDelta): Double =
     bgDelta.mgdl.toDouble() / isf.mgdl.toDouble()
 
-fun convertToBgDeltaFromUnits(units: Double, isf: BgDelta): BgDelta =
+inline fun convertToBgDeltaFromUnits(units: Double, isf: BgDelta): BgDelta =
     BgDelta.fromMgDl((units * isf.mgdl.toDouble()).toInt())
 
-fun convertToBgDeltaFromCarbs(carbs: Double, isf: BgDelta, cr: Double): BgDelta =
+inline fun convertToBgDeltaFromCarbs(carbs: Double, isf: BgDelta, cr: Double): BgDelta =
     BgDelta.fromMgDl((carbs / cr * isf.mgdl.toDouble()).toInt())
 
-fun convertToUnitsFromCarbs(carbs: Double, cr: Double): Double =
+inline fun convertToUnitsFromCarbs(carbs: Double, cr: Double): Double =
     carbs / cr
 
-fun convertToCarbsFromUnits(units: Double, cr: Double): Double =
+inline fun convertToCarbsFromUnits(units: Double, cr: Double): Double =
     units * cr

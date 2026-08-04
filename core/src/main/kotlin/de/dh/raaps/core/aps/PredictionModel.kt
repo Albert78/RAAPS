@@ -1,6 +1,7 @@
 package de.dh.raaps.core.aps
 
 import de.dh.raaps.common.model.calculation.CarbsInsulinCalculationModel
+import de.dh.raaps.common.model.convertToUnitsFromCarbs
 import de.dh.raaps.common.model.data.BgDelta
 import de.dh.raaps.common.model.data.BgValue
 import de.dh.raaps.common.model.data.Tick
@@ -54,6 +55,14 @@ class PredictionModel(
         }
     }
 
+    inline fun invalidateTherapySettingsCache() {
+        forEach { _, tickState ->
+            tickState.isf = null
+            tickState.cr = null
+            tickState.basalRateUph = null
+        }
+    }
+
     /**
      * Calculates the "prediction stages" 2-4 of the future ticks in our prediction model.
      * @return `true` if values have changed compared to the previous settings; next stages must be
@@ -91,21 +100,18 @@ class PredictionModel(
                 )
             }
             val timestamp = timeline.timestamp(tick)
-            val isf = therapyManager.getIsfFactor(timestamp)
-            val cr = therapyManager.getCrFactor(timestamp)
-            val basalPerHour = therapyManager.getBasalPerHour(timestamp)
 
-            if (isf != state.isf || cr != state.cr || basalPerHour != state.basalRateUph) {
-                state.isf = isf
-                state.cr = cr
-                state.basalRateUph = basalPerHour
+            if (state.isf == null || state.cr == null || state.basalRateUph == null) {
+                state.isf = therapyManager.getIsfFactor(timestamp)
+                state.cr = therapyManager.getCrFactor(timestamp)
+                state.basalRateUph = therapyManager.getBasalPerHour(timestamp)
             }
 
-            val insulinEquivalentOfCarbs = state.effectiveCarbs!! / state.cr
+            val insulinEquivalentOfCarbs = convertToUnitsFromCarbs(state.effectiveCarbs!!, state.cr!!)
             // Absolute BGI: Carbs - Insulin + Basal Requirement
             // Basal rate is converted to units per tick.
-            val basalUnitsPerTick = state.basalRateUph / timeline.ticksPerHour()
-            val bgi = (insulinEquivalentOfCarbs - state.effectiveInsulin!! + basalUnitsPerTick) * state.isf
+            val basalUnitsPerTick = state.basalRateUph!! / timeline.ticksPerHour()
+            val bgi = (insulinEquivalentOfCarbs - state.effectiveInsulin!! + basalUnitsPerTick) * state.isf!!
 
             if (bgi != state.bgi) {
                 state.bgi = bgi
@@ -114,7 +120,6 @@ class PredictionModel(
             // Ease out the deviation
             deviationPerTick *= DEVIATION_DECAY_FACTOR_PER_TICK
 
-            val isInNext30Minutes = timestamp <= timestampIn30Minutes
             bg = bg + state.bgi + deviationPerTick
             state.predictedBg = bg
         }

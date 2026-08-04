@@ -23,6 +23,7 @@ class ApsAlgorithmImpl(
     val onCancelInsulinJobs: () -> Unit,
     val onDeliverBolus: (amount: InsulinAmount) -> Unit,
     val onSetTempBasal: (durationInHours: Int, unitsPerHour: Double) -> Unit,
+    val onClearTempBasal: () -> Unit,
     val onCarbsHint: (Int) -> Unit,
 ): ApsAlgorithm {
     // --- Time-based extensions for Tick to provide a Timestamp-like API ---
@@ -33,6 +34,13 @@ class ApsAlgorithmImpl(
     private fun Tick.minusMs(ms: Long): Tick = this - (ms / timeline.tickSizeMs).toInt()
     private fun Tick.minus(minutes: Minutes): Tick = minusMinutes(minutes.value.toInt())
     private val Tick.timestamp get() = timeline.timestamp(this)
+
+    /**
+     * Called when therapy settings changed.
+     */
+    override suspend fun updateTherapySettings() {
+        predictionModel.invalidateTherapySettingsCache()
+    }
 
     /**
      * Called when meals occurred. This invalidates the cached effective carbs, which will be
@@ -78,7 +86,49 @@ class ApsAlgorithmImpl(
         return BgDelta.fromMgDl((sumDeviationsMgdl / numValues).toInt())
     }
 
+    data class TempBasalResult(
+        val unitsPerHour: Double,
+        val durationInHours: Int
+    )
+
+    data class CalculationResult(
+        val carbsHint: Int?,
+        val tempBasal: TempBasalResult?,
+        val clearTempBasal: Boolean,
+        val bolus: InsulinAmount?
+    )
+
     override suspend fun recalculate() {
+        therapyManager.tryAcquire(TAG) {
+            onCancelInsulinJobs()
+
+            val result = doRecalculate()
+            if (result.carbsHint != null) {
+                onCarbsHint(result.carbsHint)
+            }
+            if (result.tempBasal != null) {
+                onSetTempBasal(result.tempBasal.durationInHours, result.tempBasal.unitsPerHour)
+            }
+            if (result.clearTempBasal) {
+                onClearTempBasal()
+            }
+            if (result.bolus != null) {
+                onDeliverBolus(result.bolus)
+            }
+        }
+    }
+
+    suspend fun doRecalculate(): CalculationResult {
+        val nowTick = timeline.getNowTick()
+        val now = Timestamp.now()
+
+        // Move the prediction window forward. It always covers roughly our BG readings history cache
+        // to be able to calculate deviations between the static predictions and the actual readings.
+        predictionModel.advanceToTick(nowTick.minus(PRESERVE_PREDICTIONS_PAST_TIME))
+
+        // Default basal rate to be adapted by the following code
+        var basal = therapyManager.getBasalPerHour(now)
+
         // Filter BG values to avoid big jumps caused by measurement errors.
         // If we have enough input values, we can use the better SavitzkyGolay filter, else fallback to PTWMA
         var currentBgFiltered = sampledBgReadings.calculateSavitzkyGolayEndBorder3()
@@ -89,7 +139,12 @@ class ApsAlgorithmImpl(
         if (currentBgFiltered.isInvalid()) {
             // We cannot make any new predictions if we don't have fresh values.
             // So we'll stick with the old ones.
-            return
+            return CalculationResult(
+                carbsHint = null,
+                tempBasal = null,
+                clearTempBasal = false,
+                bolus = null
+            )
         }
 
         // Most of our calculations below are based on a static prediction model for insulin and carbs.
@@ -99,18 +154,17 @@ class ApsAlgorithmImpl(
         val avgCurrentDeviationPerTick = calcAvgDeviationPerTick(DEVIATION_TIME_BASE)
         // Assumption: That deviation will be continued in the future but will fade away
 
-        val nowTick = timeline.getNowTick()
-        val now = Timestamp.now()
-
-        // Move the prediction window forward. It always covers roughly our BG readings history cache
-        // to be able to calculate deviations between the static predictions and the actual readings.
-        predictionModel.advanceToTick(nowTick.minus(PRESERVE_PREDICTIONS_PAST_TIME))
-
         // Stage 1: Influence of meals and insulin - This is updated when metabolic events occur,
         // the data is reused in succeeding calculation calls until another metabolic event occurs.
 
         // Materialize assumed ISF and CR values, update predicted BGI if changed, update BG if changed
-        predictionModel.calculate(currentBgFiltered, avgCurrentDeviationPerTick, therapyManager)
+        predictionModel.calculate(
+            currentBgFiltered,
+            avgCurrentDeviationPerTick,
+            treatmentRepository,
+            therapyManager,
+            carbsInsulinCalculationModel
+        )
 
         // We cancel all insulin jobs including temporary basal rate - this means, the following code
         // must calculate:
@@ -118,7 +172,6 @@ class ApsAlgorithmImpl(
         // - Deferred meal boluses
         // - Currection boluses
         // - Basal
-        onCancelInsulinJobs()
 
         val bgSettings = therapyManager.getBgSettings()
         val targetBg = bgSettings.first
@@ -161,9 +214,6 @@ class ApsAlgorithmImpl(
             currentBgFiltered - bgMinus15
         else
             BgDelta(0)
-
-        // Default basal rate to be adapted by the following code
-        var basal = therapyManager.getBasalPerHour(now)
 
             // Step 2: Prevent further falling BG
         if (currentBgFiltered < targetBg && bg15Trend < BgDelta(0)) {
@@ -246,6 +296,8 @@ class ApsAlgorithmImpl(
     }
 
     companion object {
+        val TAG = ApsAlgorithmImpl::class.simpleName!!
+
         const val PREDICTION_WINDOW_HOURS = 10
         val DEVIATION_TIME_BASE = Minutes(30)
         val PRESERVE_PREDICTIONS_PAST_TIME = DEVIATION_TIME_BASE
@@ -261,6 +313,7 @@ class ApsAlgorithmImpl(
             onCancelInsulinJobs: () -> Unit,
             onDeliverBolus: (amount: InsulinAmount) -> Unit,
             onSetTempBasal: (durationInHours: Int, unitsPerHour: Double) -> Unit,
+            onClearTempBasal: () -> Unit,
             onCarbsHint: (Int) -> Unit,
             tickInterval: Minutes,
             carbsInsulinCalculationModel: CarbsInsulinCalculationModel,
@@ -281,6 +334,7 @@ class ApsAlgorithmImpl(
                 therapyManager = therapyManager,
                 onCancelInsulinJobs = onCancelInsulinJobs,
                 onSetTempBasal = onSetTempBasal,
+                onClearTempBasal = onClearTempBasal,
                 onCarbsHint = onCarbsHint,
                 onDeliverBolus = onDeliverBolus,
             )

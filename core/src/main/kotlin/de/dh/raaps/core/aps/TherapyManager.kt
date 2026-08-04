@@ -258,6 +258,21 @@ class TherapyManager(
         }
     }
 
+    fun clearTempBasal() {
+        when (systemManager.apsMode.value) {
+            ApsMode.Suspend -> return
+            ApsMode.BasalOnly -> return
+            ApsMode.AutoCorrection -> {
+                scope.launch {
+                    pumpManager.issueCommand(
+                        PumpCommand.CancelTempBasal,
+                        isCancelableAPSCommand = true
+                    )
+                }
+            }
+        }
+    }
+
     fun clearRecommendations() {
         _recommendations.value = emptyList()
     }

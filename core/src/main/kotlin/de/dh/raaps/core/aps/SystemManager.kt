@@ -169,6 +169,7 @@ class SystemManagerImpl(
             onCancelInsulinJobs = { therapyManager.coreCancelInsulinJobs() },
             onDeliverBolus = { amount -> therapyManager.issueBolus(amount) },
             onSetTempBasal = { durationInHours, unitsPerHour -> therapyManager.setTempBasal(durationInHours, unitsPerHour) },
+            onClearTempBasal = { therapyManager.clearTempBasal() },
             onCarbsHint = { amountInGram -> therapyManager.recommendCarbs(amountInGram) },
             onClearRecommendations = { therapyManager.clearRecommendations() },
             onWaitForAndResetInsulinJobs = { therapyManager.waitForAndResetInsulinJobs() }
