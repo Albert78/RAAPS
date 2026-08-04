@@ -12,6 +12,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
@@ -73,6 +74,7 @@ fun DashboardScreen(
     onNavigateToPreferences: () -> Unit,
     onNavigateToProfileEditor: () -> Unit,
     onNavigateToTherapySettings: () -> Unit,
+    onNavigateToMealBolus: () -> Unit,
     onHistoryChartClick: () -> Unit,
     extraContent: @Composable () -> Unit = {}
 ) {
@@ -112,6 +114,7 @@ fun DashboardScreen(
         onNavigateToPreferences = onNavigateToPreferences,
         onNavigateToProfileEditor = onNavigateToProfileEditor,
         onNavigateToTherapySettings = onNavigateToTherapySettings,
+        onNavigateToMealBolus = onNavigateToMealBolus,
         onHistoryChartClick = onHistoryChartClick,
         onApsModeSelect = { viewModel.setApsMode(it) },
         onAdjustmentClick = { showAdjustmentDialog = true },
@@ -135,6 +138,7 @@ fun DashboardContent(
     onNavigateToPreferences: () -> Unit,
     onNavigateToProfileEditor: () -> Unit,
     onNavigateToTherapySettings: () -> Unit,
+    onNavigateToMealBolus: () -> Unit,
     onHistoryChartClick: (() -> Unit)?,
     onApsModeSelect: (ApsMode) -> Unit,
     onAdjustmentClick: () -> Unit,
@@ -261,6 +265,18 @@ fun DashboardContent(
                 onProfileClick = onNavigateToTherapySettings
             )
 
+            Spacer(modifier = Modifier.height(24.dp))
+
+            Button(
+                onClick = onNavigateToMealBolus,
+                modifier = Modifier.fillMaxWidth(),
+                shape = MaterialTheme.shapes.small
+            ) {
+                Text(
+                    text = stringResource(R.string.dashboard_meal_bolus_button),
+                    style = MaterialTheme.typography.titleMedium
+                )
+            }
 
             Spacer(modifier = Modifier.height(40.dp))
 
@@ -316,7 +332,8 @@ fun DashboardPreview() {
             onNavigateToTherapySettings = {},
             onHistoryChartClick = {},
             onApsModeSelect = {},
-            onAdjustmentClick = {}
+            onAdjustmentClick = {},
+            onNavigateToMealBolus = {}
         )
     }
 }
@@ -368,7 +385,8 @@ fun DashboardPermissionsWarningPreview() {
             onNavigateToTherapySettings = {},
             onHistoryChartClick = {},
             onApsModeSelect = {},
-            onAdjustmentClick = {}
+            onAdjustmentClick = {},
+            onNavigateToMealBolus = {}
         )
     }
 }

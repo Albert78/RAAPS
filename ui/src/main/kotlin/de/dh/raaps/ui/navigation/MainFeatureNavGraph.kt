@@ -18,6 +18,7 @@ import de.dh.raaps.common.navigation.DashboardRoute
 import de.dh.raaps.common.navigation.FeatureNavGraph
 import de.dh.raaps.common.navigation.HistoryRoute
 import de.dh.raaps.common.navigation.InsulinProfileEditorRoute
+import de.dh.raaps.common.navigation.MealBolusRoute
 import de.dh.raaps.common.navigation.NavigationViewModel
 import de.dh.raaps.common.navigation.PermissionsRoute
 import de.dh.raaps.common.navigation.PreferencesMainRoute
@@ -29,6 +30,8 @@ import de.dh.raaps.ui.controls.profile.InsulinProfileSettingsViewModel
 import de.dh.raaps.ui.screens.dashboard.DashboardScreen
 import de.dh.raaps.ui.screens.dashboard.DashboardViewModel
 import de.dh.raaps.ui.screens.history.HistoryScreen
+import de.dh.raaps.ui.screens.mealbolus.MealBolusScreen
+import de.dh.raaps.ui.screens.mealbolus.MealBolusViewModel
 import de.dh.raaps.ui.screens.permissions.PermissionsScreen
 import de.dh.raaps.ui.screens.permissions.PermissionsViewModel
 import de.dh.raaps.ui.screens.permissions.isPermissionsMissing
@@ -77,6 +80,7 @@ class MainFeatureNavGraph(
                     onNavigateToPreferences = { navViewModel.push(PreferencesMainRoute) },
                     onNavigateToProfileEditor = { navViewModel.push(InsulinProfileEditorRoute) },
                     onNavigateToTherapySettings = { navViewModel.push(CurrentTherapySettingsRoute) },
+                    onNavigateToMealBolus = { navViewModel.push(MealBolusRoute) },
                     onHistoryChartClick = { navViewModel.push(HistoryRoute) },
                     extraContent = extraDashboardContent
                 )
@@ -110,6 +114,16 @@ class MainFeatureNavGraph(
 
                 HistoryScreen(
                     historyViewModel = historyVM
+                )
+            }
+
+            is MealBolusRoute -> NavEntry(key) {
+                val vm: MealBolusViewModel =
+                    viewModel(factory = MealBolusViewModel.Companion.Factory(registry))
+
+                MealBolusScreen(
+                    viewModel = vm,
+                    onNavigateUp = { navViewModel.pop() }
                 )
             }
 
