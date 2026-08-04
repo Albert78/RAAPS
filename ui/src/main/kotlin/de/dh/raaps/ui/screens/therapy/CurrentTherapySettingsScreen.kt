@@ -435,7 +435,7 @@ private fun TemporaryAdjustmentCard(
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
                 Text(
-                    text = profile.adjustmentHint ?: stringResource(R.string.aps_control_therapy_adjustment_label),
+                    text = profile.adjustmentHint ?: stringResource(R.string.aps_control_therapy_adjustment_custom),
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold,
                     color = if (profile.adjustmentHint != null) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
@@ -471,7 +471,7 @@ private fun TemporaryAdjustmentCard(
                 // Target BG Override
                 AdjustmentItem(
                     icon = Icons.Default.Adjust,
-                    label = stringResource(R.string.current_therapy_target_label_singular),
+                    label = stringResource(R.string.current_therapy_target_label),
                     value = if (profile.targetBgOverride != null)
                         profile.targetBgOverride.mgdl.toString()
                     else
@@ -487,7 +487,7 @@ private fun TemporaryAdjustmentCard(
                 // Low Threshold Override
                 AdjustmentItem(
                     icon = Icons.Default.VerticalAlignBottom,
-                    label = stringResource(R.string.current_therapy_low_threshold_label_singular),
+                    label = stringResource(R.string.current_therapy_low_threshold_label),
                     value = if (profile.lowThresholdOverride != null)
                         profile.lowThresholdOverride.mgdl.toString()
                     else
@@ -676,7 +676,7 @@ private fun BgTargetCard(
 
                 Column {
                     Text(
-                        text = stringResource(id = R.string.current_therapy_target_label_singular),
+                        text = stringResource(id = R.string.current_therapy_target_label),
                         style = MaterialTheme.typography.labelMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -721,7 +721,7 @@ private fun BgTargetCard(
 
                 Column {
                     Text(
-                        text = stringResource(id = R.string.current_therapy_low_threshold_label_singular),
+                        text = stringResource(id = R.string.current_therapy_low_threshold_wrap_label),
                         style = MaterialTheme.typography.labelMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )

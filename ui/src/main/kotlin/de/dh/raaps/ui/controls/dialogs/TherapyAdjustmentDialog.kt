@@ -58,7 +58,7 @@ fun TherapyAdjustmentDialogContent(
 ) {
     val steppingStrategyInsulin = remember { ModuloSteppingStrategy(5) }
     val steppingStrategyBg = remember { ModuloSteppingStrategy(5) }
-    
+
     val displayStrategyInsulin = ConfigurableDisplayStrategy(
         positiveColor = SoftRed,
         negativeColor = SoftBlue,
@@ -115,13 +115,13 @@ fun TherapyAdjustmentDialogContent(
                         tint = MaterialTheme.colorScheme.primary
                     )
                     Text(
-                        text = stringResource(R.string.current_therapy_target_label_singular),
+                        text = stringResource(R.string.current_therapy_target_label),
                         style = MaterialTheme.typography.labelMedium,
                         modifier = Modifier.width(100.dp)
                     )
                     EditableValueStepper(
                         currentValue = currentTarget?.mgdl?.toInt() ?: 0,
-                        onValueChange = { 
+                        onValueChange = {
                             val newValue = if (it == 0) null else BgValue.fromMgDl(it)
                             onValuesChange(currentPercentage, newValue, currentLow, null)
                         },
@@ -142,13 +142,13 @@ fun TherapyAdjustmentDialogContent(
                         tint = MaterialTheme.colorScheme.error
                     )
                     Text(
-                        text = stringResource(R.string.current_therapy_low_threshold_label_singular),
+                        text = stringResource(R.string.current_therapy_low_threshold_label),
                         style = MaterialTheme.typography.labelMedium,
                         modifier = Modifier.width(100.dp)
                     )
                     EditableValueStepper(
                         currentValue = currentLow?.mgdl?.toInt() ?: 0,
-                        onValueChange = { 
+                        onValueChange = {
                             val newValue = if (it == 0) null else BgValue.fromMgDl(it)
                             onValuesChange(currentPercentage, currentTarget, newValue, null)
                         },

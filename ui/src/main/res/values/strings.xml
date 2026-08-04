@@ -93,11 +93,10 @@
     <string name="current_therapy_settings_screen_title">Aktuelle Therapie</string>
     <string name="current_therapy_active_insulin_profile_label">Insulin-Profil</string>
     <string name="current_therapy_available_profiles_label">Verfügbare Insulin-Profile</string>
-    <string name="current_therapy_target_label_singular">Zielwert</string>
-    <string name="current_therapy_target_label_plural">Zielwerte</string>
+    <string name="current_therapy_target_label">Zielwert</string>
     <string name="current_therapy_bg_title">Ziel-BZ &amp; Low-Schwelle</string>
-    <string name="current_therapy_low_threshold_label_singular">Niedrig-&#173;Schwelle</string>
-    <string name="current_therapy_low_threshold_label_plural">Niedrig-&#173;Schwellen</string>
+    <string name="current_therapy_low_threshold_label">Niedrig-Schwelle</string>
+    <string name="current_therapy_low_threshold_wrap_label">Niedrig-\nSchwelle</string>
     <string name="current_therapy_active_badge">Aktiv</string>
     <string name="current_therapy_switch_profile_button">Profil wechseln</string>
     <string name="current_therapy_manage_profile_button">Verwalten</string>
@@ -132,6 +131,7 @@
 
     <string name="aps_control_therapy_adjustment_label">Temporäre Anpassung</string>
     <string name="aps_control_therpay_adjustment_dialog_title">Temporäre Therapie-Anpassung</string>
+    <string name="aps_control_therapy_adjustment_custom">Individuell</string>
     <string name="aps_control_therapy_adjustment_dialog_insulin_adjustment_label">Insulin-Anpassung</string>
     <string name="aps_control_therapy_adjustment_dialog_insulin_adjustment_description">Passe die abgegebene Insulinmenge für einen begrenzten Zeitraum prozentual an.</string>
     <string name="aps_control_therapy_adjustment_dialog_bg_adjustment_label">Werte-Anpassung</string>
