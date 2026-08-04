@@ -224,7 +224,13 @@ private fun TherapySettingsHelpDialog(
             Text(text = stringResource(id = R.string.therapy_settings_help_title))
         },
         text = {
-            Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
+            val scrollState = rememberScrollState()
+            Column(
+                modifier = Modifier
+                    .contentScrollIndicator(scrollState)
+                    .verticalScroll(scrollState),
+                verticalArrangement = Arrangement.spacedBy(16.dp)
+            ) {
                 HelpSection(
                     title = stringResource(id = R.string.therapy_settings_help_insulin_title),
                     description = stringResource(id = R.string.therapy_settings_help_insulin_desc)
