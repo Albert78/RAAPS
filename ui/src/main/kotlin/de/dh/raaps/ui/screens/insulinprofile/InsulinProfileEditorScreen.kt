@@ -27,7 +27,6 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.ContentCopy
 import androidx.compose.material.icons.filled.Delete
-import androidx.compose.material.icons.filled.Remove
 import androidx.compose.material.icons.filled.Save
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.CircularProgressIndicator
@@ -81,6 +80,10 @@ import de.dh.raaps.common.model.InsulinType
 import de.dh.raaps.common.model.data.Block
 import de.dh.raaps.common.model.data.InsulinProfile
 import de.dh.raaps.common.model.data.Minutes
+import de.dh.raaps.common.ui.DefaultSteppingStrategy
+import de.dh.raaps.common.ui.ValueDisplayStrategy
+import de.dh.raaps.common.ui.composables.EditableValueStepper
+import de.dh.raaps.common.ui.composables.StepperDefaults
 import de.dh.raaps.common.ui.composables.TimeHourSelector
 import de.dh.raaps.common.ui.composables.contentScrollIndicator
 import de.dh.raaps.common.ui.composables.screenTitle
@@ -672,14 +675,19 @@ fun BlockRow(
                 modifier = Modifier.width(100.dp)
             )
 
-            ValueAdjuster(
-                value = value,
-                onValueChanged = onValueChanged,
-                step = step,
-                format = format,
+            val locale = LocalLocale.current
+            EditableValueStepper(
+                currentValue = value,
+                onValueChange = onValueChanged,
                 modifier = Modifier.weight(1f),
                 minValue = minValue,
-                maxValue = maxValue
+                maxValue = maxValue,
+                steppingStrategy = DefaultSteppingStrategy(step = step),
+                displayStrategy = object : ValueDisplayStrategy {
+                    override fun format(value: Double): String = String.format(locale.platformLocale, format, value)
+                    override fun color(value: Double): androidx.compose.ui.graphics.Color = androidx.compose.ui.graphics.Color.Unspecified
+                },
+                style = StepperDefaults.compactStyle().copy(suffixBelowValue = false, valueWidth = 64.dp)
             )
 
             if (onDelete != null) {
@@ -727,43 +735,6 @@ fun InsertButton(canInsert: Boolean, onClick: () -> Unit) {
                 modifier = Modifier.size(16.dp),
                 tint = iconTint
             )
-        }
-    }
-}
-
-@Composable
-fun ValueAdjuster(
-    value: Double,
-    onValueChanged: (Double) -> Unit,
-    step: Double,
-    format: String,
-    modifier: Modifier = Modifier,
-    minValue: Double,
-    maxValue: Double
-) {
-    Row(
-        verticalAlignment = Alignment.CenterVertically,
-        modifier = modifier
-    ) {
-        IconButton(
-            onClick = { onValueChanged((value - step).coerceIn(minValue, maxValue)) },
-            enabled = value > minValue
-        ) {
-            Icon(Icons.Default.Remove, contentDescription = stringResource(id = R.string.cd_decrease_value))
-        }
-
-        Text(
-            text = String.format(LocalLocale.current.platformLocale, format, value),
-            modifier = Modifier.weight(1f),
-            style = MaterialTheme.typography.bodyLarge,
-            textAlign = TextAlign.Center
-        )
-
-        IconButton(
-            onClick = { onValueChanged((value + step).coerceIn(minValue, maxValue)) },
-            enabled = value < maxValue
-        ) {
-            Icon(Icons.Default.Add, contentDescription = stringResource(id = R.string.cd_increase_value))
         }
     }
 }

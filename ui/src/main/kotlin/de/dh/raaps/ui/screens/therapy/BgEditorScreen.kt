@@ -49,6 +49,9 @@ import de.dh.raaps.common.model.TARGET_MIN
 import de.dh.raaps.common.model.data.BgBlock
 import de.dh.raaps.common.model.data.BgValue
 import de.dh.raaps.common.model.data.Minutes
+import de.dh.raaps.common.ui.DefaultSteppingStrategy
+import de.dh.raaps.common.ui.composables.EditableValueStepper
+import de.dh.raaps.common.ui.composables.StepperDefaults
 import de.dh.raaps.common.ui.composables.TimeHourSelector
 import de.dh.raaps.common.ui.composables.contentScrollIndicator
 import de.dh.raaps.common.ui.composables.screenTitle
@@ -56,7 +59,6 @@ import de.dh.raaps.ui.R
 import de.dh.raaps.common.ui.theme.AppTheme
 import de.dh.raaps.ui.controls.profile.CurrentTherapyViewModel
 import de.dh.raaps.ui.screens.insulinprofile.InsertButton
-import de.dh.raaps.ui.screens.insulinprofile.ValueAdjuster
 import kotlin.math.roundToInt
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -289,18 +291,18 @@ private fun BgBlockList(
                                         .size(16.dp),
                                     tint = MaterialTheme.colorScheme.primary
                                 )
-                                ValueAdjuster(
-                                    value = block.target.mgdl.toDouble(),
-                                    onValueChanged = { newVal ->
+                                EditableValueStepper(
+                                    currentValue = block.target.mgdl.toDouble(),
+                                    onValueChange = { newVal ->
                                         val updated = blocks.toMutableList()
                                         updated[index] = block.copy(target = BgValue(newVal.roundToInt().toShort()))
                                         onBlocksChanged(updated)
                                     },
-                                    step = 5.0,
-                                    format = "%.0f",
                                     modifier = Modifier.weight(1f),
                                     minValue = TARGET_MIN.toDouble(),
-                                    maxValue = TARGET_MAX.toDouble()
+                                    maxValue = TARGET_MAX.toDouble(),
+                                    steppingStrategy = DefaultSteppingStrategy(step = 5.0),
+                                    style = StepperDefaults.compactStyle().copy(suffixBelowValue = false, valueWidth = 64.dp)
                                 )
                             }
                             Row(verticalAlignment = Alignment.CenterVertically) {
@@ -312,18 +314,18 @@ private fun BgBlockList(
                                         .size(16.dp),
                                     tint = MaterialTheme.colorScheme.primary
                                 )
-                                ValueAdjuster(
-                                    value = block.lowThreshold.mgdl.toDouble(),
-                                    onValueChanged = { newVal ->
+                                EditableValueStepper(
+                                    currentValue = block.lowThreshold.mgdl.toDouble(),
+                                    onValueChange = { newVal ->
                                         val updated = blocks.toMutableList()
                                         updated[index] = block.copy(lowThreshold = BgValue(newVal.roundToInt().toShort()))
                                         onBlocksChanged(updated)
                                     },
-                                    step = 5.0,
-                                    format = "%.0f",
                                     modifier = Modifier.weight(1f),
                                     minValue = TARGET_MIN.toDouble(),
-                                    maxValue = TARGET_MAX.toDouble()
+                                    maxValue = TARGET_MAX.toDouble(),
+                                    steppingStrategy = DefaultSteppingStrategy(step = 5.0),
+                                    style = StepperDefaults.compactStyle().copy(suffixBelowValue = false, valueWidth = 64.dp)
                                 )
                             }
                         }
