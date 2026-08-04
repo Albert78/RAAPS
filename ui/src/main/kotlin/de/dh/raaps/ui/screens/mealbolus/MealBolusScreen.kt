@@ -39,6 +39,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
@@ -170,250 +171,289 @@ fun MealBolusContent(
                 .fillMaxSize()
                 .padding(innerPadding)
                 .contentScrollIndicator(scrollState)
-                .verticalScroll(scrollState)
-                .padding(16.dp),
+                .verticalScroll(scrollState),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(24.dp)
         ) {
-            // Header with BG, IOB, COB
-            Column(
+            // Header with BG, IOB, COB (Full width background)
+            Surface(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalAlignment = Alignment.CenterHorizontally
+                color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
             ) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(4.dp)
-                ) {
-                    val bgText = currentBgValue?.bgValue?.toString(currentBgValue.glucoseUnit) ?: "?"
-                    val textColor = if (currentBgValue == null || (currentBgValue.isValueOld)) {
-                        Color.Gray
-                    } else when {
-                        currentBgValue.bgValue.mgdl < 70 -> Red
-                        currentBgValue.bgValue.mgdl < 180 -> LightGreenA700
-                        else -> Yellow
-                    }
-                    Text(
-                        text = bgText,
-                        style = MaterialTheme.typography.displayMedium.copy(fontWeight = FontWeight.Bold),
-                        color = textColor
-                    )
-                    Text(
-                        text = stringResource(R.string.glucose_unit_mgdl),
-                        style = MaterialTheme.typography.titleMedium,
-                        color = Color.Gray,
-                        modifier = Modifier.align(Alignment.Bottom).padding(bottom = 12.dp)
-                    )
-                    if (currentBgValue?.trend != null && currentBgValue.trend != BgTrend.NotComputable) {
-                        val trendRotation = when (currentBgValue.trend) {
-                            BgTrend.DoubleUp, BgTrend.SingleUp -> -90f
-                            BgTrend.FortyFiveUp -> -45f
-                            BgTrend.Flat -> 0f
-                            BgTrend.FortyFiveDown -> 45f
-                            BgTrend.SingleDown, BgTrend.DoubleDown -> 90f
-                            BgTrend.NotComputable -> 0f
-                        }
-                        Icon(
-                            imageVector = Icons.AutoMirrored.Filled.ArrowForward,
-                            contentDescription = null,
-                            modifier = Modifier
-                                .size(48.dp)
-                                .rotate(trendRotation),
-                            tint = MaterialTheme.colorScheme.onSurface
-                        )
-                    }
-                }
-                Spacer(Modifier.height(8.dp))
-                Text(
-                    text = "Aktive Kohlenhydrate: " + stringResource(R.string.cob_format).format(cob),
-                    style = MaterialTheme.typography.bodyLarge,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-                Text(
-                    text = "Aktives Insulin: " + stringResource(R.string.iob_format).format(iob),
-                    style = MaterialTheme.typography.bodyLarge,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-            }
-
-            HorizontalDivider()
-
-            if (uiState.lockError) {
-                Card(
-                    modifier = Modifier.fillMaxWidth(),
-                    colors = CardDefaults.cardColors(
-                        containerColor = MaterialTheme.colorScheme.errorContainer
-                    )
-                ) {
-                    Column(
-                        modifier = Modifier.padding(16.dp),
-                        horizontalAlignment = Alignment.CenterHorizontally
-                    ) {
-                        Text(
-                            text = "Das System ist aktuell belegt (${uiState.lockBusyOwner}). Bitte probieren Sie es später noch einmal.",
-                            style = MaterialTheme.typography.bodyLarge,
-                            textAlign = TextAlign.Center,
-                            color = MaterialTheme.colorScheme.onErrorContainer
-                        )
-                        Spacer(Modifier.height(16.dp))
-                        Button(onClick = onNavigateUp) {
-                            Text("Zurück")
-                        }
-                    }
-                }
-                return@Column
-            }
-
-            if (uiState.isEditMode) {
-                Card(
-                    modifier = Modifier.fillMaxWidth(),
-                    colors = CardDefaults.cardColors(
-                        containerColor = MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.5f)
-                    )
-                ) {
-                    Text(
-                        text = stringResource(R.string.meal_edit_warning_bolus),
-                        modifier = Modifier.padding(16.dp),
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onErrorContainer
-                    )
-                }
-            }
-
-            // KE Stepper
-            Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                Text(
-                    text = stringResource(R.string.meal_bolus_carbs_label),
-                    style = MaterialTheme.typography.titleMedium
-                )
-                Spacer(Modifier.height(8.dp))
-                EditableValueStepper(
-                    currentValue = uiState.carbsKe,
-                    onValueChange = onCarbsChange,
-                    minValue = CARBS_KE_MIN,
-                    maxValue = CARBS_KE_MAX,
-                    steppingStrategy = DefaultSteppingStrategy(0.5), // 0.5 KE steps
-                    displayStrategy = object : ValueDisplayStrategy {
-                        override fun format(value: Double): String = String.format(Locale.getDefault(), "%.1f", value)
-                        override fun color(value: Double): Color = Color.Unspecified
-                    },
-                    suffix = " KE"
-                )
-            }
-
-            // Food Type Collapsible Selector
-            FoodTypeSelector(
-                mealTypes = uiState.mealTypes,
-                selectedType = uiState.selectedMealType,
-                onTypeSelected = onMealTypeChange
-            )
-
-            // Calculation Details
-            Card(modifier = Modifier.fillMaxWidth()) {
                 Column(
                     modifier = Modifier.padding(16.dp),
-                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                    horizontalAlignment = Alignment.CenterHorizontally
                 ) {
-                    Text(
-                        text = stringResource(R.string.meal_bolus_calculation_title),
-                        style = MaterialTheme.typography.labelLarge,
-                        fontWeight = FontWeight.Bold
-                    )
-                    HorizontalDivider()
-                    Text(stringResource(R.string.meal_bolus_calc_bg_label, uiState.currentBg ?: uiState.targetBg))
-                    Text(stringResource(R.string.meal_bolus_calc_factors_label, uiState.isf, uiState.cr))
-
-                    Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(4.dp)
+                    ) {
+                        val bgText = currentBgValue?.bgValue?.toString(currentBgValue.glucoseUnit) ?: "?"
+                        val textColor = if (currentBgValue == null || (currentBgValue.isValueOld)) {
+                            Color.Gray
+                        } else when {
+                            currentBgValue.bgValue.mgdl < 70 -> Red
+                            currentBgValue.bgValue.mgdl < 180 -> LightGreenA700
+                            else -> Yellow
+                        }
                         Text(
-                            text = stringResource(R.string.meal_bolus_calc_meal_part, uiState.mealPart),
-                            style = MaterialTheme.typography.bodySmall
+                            text = bgText,
+                            style = MaterialTheme.typography.displayMedium.copy(fontWeight = FontWeight.Bold),
+                            color = textColor
                         )
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Text(
-                                text = stringResource(R.string.meal_bolus_calc_correction_part, uiState.correctionPart),
-                                style = MaterialTheme.typography.bodySmall,
-                                color = if (uiState.isAutomaticMode)
-                                    MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.38f)
-                                else
-                                    MaterialTheme.colorScheme.onSurfaceVariant
+                        Text(
+                            text = stringResource(R.string.glucose_unit_mgdl),
+                            style = MaterialTheme.typography.titleMedium,
+                            color = Color.Gray,
+                            modifier = Modifier
+                                .align(Alignment.Bottom)
+                                .padding(bottom = 12.dp)
+                        )
+                        if (currentBgValue?.trend != null && currentBgValue.trend != BgTrend.NotComputable) {
+                            val trendRotation = when (currentBgValue.trend) {
+                                BgTrend.DoubleUp, BgTrend.SingleUp -> -90f
+                                BgTrend.FortyFiveUp -> -45f
+                                BgTrend.Flat -> 0f
+                                BgTrend.FortyFiveDown -> 45f
+                                BgTrend.SingleDown, BgTrend.DoubleDown -> 90f
+                                BgTrend.NotComputable -> 0f
+                            }
+                            Icon(
+                                imageVector = Icons.AutoMirrored.Filled.ArrowForward,
+                                contentDescription = null,
+                                modifier = Modifier
+                                    .size(48.dp)
+                                    .rotate(trendRotation),
+                                tint = MaterialTheme.colorScheme.onSurface
                             )
-                            if (uiState.isAutomaticMode) {
-                                Spacer(Modifier.width(20.dp))
-                                Icon(
-                                    imageVector = Icons.Default.Info,
-                                    contentDescription = null,
-                                    modifier = Modifier.size(16.dp),
-                                    tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.38f)
-                                )
-                                Spacer(Modifier.width(4.dp))
+                        }
+                    }
+                    Spacer(Modifier.height(8.dp))
+                    Text(
+                        text = "Aktive Kohlenhydrate: " + stringResource(R.string.cob_format).format(cob),
+                        style = MaterialTheme.typography.bodyLarge,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    Text(
+                        text = "Aktives Insulin: " + stringResource(R.string.iob_format).format(iob),
+                        style = MaterialTheme.typography.bodyLarge,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+            }
+
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(24.dp)
+            ) {
+                if (uiState.lockError) {
+                    Card(
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = CardDefaults.cardColors(
+                            containerColor = MaterialTheme.colorScheme.errorContainer
+                        )
+                    ) {
+                        Column(
+                            modifier = Modifier.padding(16.dp),
+                            horizontalAlignment = Alignment.CenterHorizontally
+                        ) {
+                            Text(
+                                text = "Das System ist aktuell belegt (${uiState.lockBusyOwner}). Bitte probieren Sie es später noch einmal.",
+                                style = MaterialTheme.typography.bodyLarge,
+                                textAlign = TextAlign.Center,
+                                color = MaterialTheme.colorScheme.onErrorContainer
+                            )
+                            Spacer(Modifier.height(16.dp))
+                            Button(onClick = onNavigateUp) {
+                                Text("Zurück")
+                            }
+                        }
+                    }
+                    return@Column
+                }
+
+                if (uiState.isEditMode) {
+                    Card(
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = CardDefaults.cardColors(
+                            containerColor = MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.5f)
+                        )
+                    ) {
+                        Text(
+                            text = stringResource(R.string.meal_edit_warning_bolus),
+                            modifier = Modifier.padding(16.dp),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onErrorContainer
+                        )
+                    }
+                }
+
+                // Mahlzeit Card (Carbs + Food Type)
+                Card(modifier = Modifier.fillMaxWidth()) {
+                    Column(
+                        modifier = Modifier.padding(16.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.spacedBy(16.dp)
+                    ) {
+                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                            Text(
+                                text = stringResource(R.string.meal_bolus_carbs_label),
+                                style = MaterialTheme.typography.titleMedium
+                            )
+                            Spacer(Modifier.height(8.dp))
+                            EditableValueStepper(
+                                currentValue = uiState.carbsKe,
+                                onValueChange = onCarbsChange,
+                                minValue = CARBS_KE_MIN,
+                                maxValue = CARBS_KE_MAX,
+                                steppingStrategy = DefaultSteppingStrategy(0.5), // 0.5 KE steps
+                                displayStrategy = object : ValueDisplayStrategy {
+                                    override fun format(value: Double): String =
+                                        String.format(Locale.getDefault(), "%.1f", value)
+
+                                    override fun color(value: Double): Color = Color.Unspecified
+                                },
+                                suffix = " KE"
+                            )
+                        }
+
+                        FoodTypeSelector(
+                            mealTypes = uiState.mealTypes,
+                            selectedType = uiState.selectedMealType,
+                            onTypeSelected = onMealTypeChange
+                        )
+                    }
+                }
+
+                // Calculation Details
+                Card(modifier = Modifier.fillMaxWidth()) {
+                    Column(
+                        modifier = Modifier.padding(16.dp),
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        Text(
+                            text = stringResource(R.string.meal_bolus_calculation_title),
+                            style = MaterialTheme.typography.labelLarge,
+                            fontWeight = FontWeight.Bold
+                        )
+                        HorizontalDivider()
+                        Text(
+                            stringResource(
+                                R.string.meal_bolus_calc_bg_label,
+                                uiState.currentBg ?: uiState.targetBg
+                            )
+                        )
+                        Text(stringResource(R.string.meal_bolus_calc_factors_label, uiState.isf, uiState.cr))
+
+                        Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                            Text(
+                                text = stringResource(R.string.meal_bolus_calc_meal_part, uiState.mealPart),
+                                style = MaterialTheme.typography.bodySmall
+                            )
+                            Row(verticalAlignment = Alignment.CenterVertically) {
                                 Text(
-                                    text = "Algorithmus",
+                                    text = stringResource(
+                                        R.string.meal_bolus_calc_correction_part,
+                                        uiState.correctionPart
+                                    ),
                                     style = MaterialTheme.typography.bodySmall,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.38f)
+                                    color = if (uiState.isAutomaticMode)
+                                        MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.38f)
+                                    else
+                                        MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                                if (uiState.isAutomaticMode) {
+                                    Spacer(Modifier.width(20.dp))
+                                    Icon(
+                                        imageVector = Icons.Default.Info,
+                                        contentDescription = null,
+                                        modifier = Modifier.size(16.dp),
+                                        tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.38f)
+                                    )
+                                    Spacer(Modifier.width(4.dp))
+                                    Text(
+                                        text = "Algorithmus",
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.38f)
+                                    )
+                                }
+                            }
+                            if (uiState.iobPart > 0) {
+                                Text(
+                                    text = stringResource(R.string.meal_bolus_calc_iob_part, uiState.iobPart),
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.error
+                                )
+                            }
+                            if (uiState.cobPart > 0) {
+                                Text(
+                                    text = stringResource(R.string.meal_bolus_calc_cob_part, uiState.cobPart),
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.primary
                                 )
                             }
                         }
-                        if (uiState.iobPart > 0) {
+
+                        HorizontalDivider()
+                        Text(
+                            text = stringResource(R.string.meal_bolus_calc_result_label, uiState.proposedBolus),
+                            style = MaterialTheme.typography.bodyLarge,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.primary
+                        )
+                    }
+                }
+
+                // Insulin Card (Final Insulin Stepper)
+                if (!uiState.isEditMode) {
+                    Card(modifier = Modifier.fillMaxWidth()) {
+                        Column(
+                            modifier = Modifier.padding(16.dp),
+                            horizontalAlignment = Alignment.CenterHorizontally
+                        ) {
                             Text(
-                                text = stringResource(R.string.meal_bolus_calc_iob_part, uiState.iobPart),
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.error
+                                text = stringResource(R.string.meal_bolus_insulin_label),
+                                style = MaterialTheme.typography.titleMedium
                             )
-                        }
-                        if (uiState.cobPart > 0) {
-                            Text(
-                                text = stringResource(R.string.meal_bolus_calc_cob_part, uiState.cobPart),
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.primary
+                            Spacer(Modifier.height(8.dp))
+                            EditableValueStepper(
+                                currentValue = uiState.manualBolus,
+                                onValueChange = onManualBolusChange,
+                                minValue = BOLUS_MIN,
+                                maxValue = BOLUS_MAX,
+                                steppingStrategy = DefaultSteppingStrategy(0.1), // 0.1 U steps
+                                displayStrategy = object : ValueDisplayStrategy {
+                                    override fun format(value: Double): String =
+                                        String.format(Locale.getDefault(), "%.2f", value)
+
+                                    override fun color(value: Double): Color = Color.Unspecified
+                                },
+                                suffix = " U"
                             )
                         }
                     }
+                }
 
-                    HorizontalDivider()
+                // Bottom Button
+                val isInputValid = uiState.carbsKe > 0.0 || uiState.manualBolus > 0.0
+                Button(
+                    onClick = onSubmit,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(bottom = 16.dp),
+                    enabled = !uiState.isSubmitting && isInputValid
+                ) {
                     Text(
-                        text = stringResource(R.string.meal_bolus_calc_result_label, uiState.proposedBolus),
-                        style = MaterialTheme.typography.bodyLarge,
-                        fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.primary
+                        if (uiState.manualBolus > 0.0) {
+                            stringResource(R.string.meal_bolus_administer_button)
+                        } else {
+                            stringResource(R.string.meal_edit_save_button)
+                        }
                     )
                 }
-            }
-
-            // Final Insulin Stepper
-            if (!uiState.isEditMode) {
-                Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    Text(
-                        text = stringResource(R.string.meal_bolus_insulin_label),
-                        style = MaterialTheme.typography.titleMedium
-                    )
-                    Spacer(Modifier.height(8.dp))
-                    EditableValueStepper(
-                        currentValue = uiState.manualBolus,
-                        onValueChange = onManualBolusChange,
-                        minValue = BOLUS_MIN,
-                        maxValue = BOLUS_MAX,
-                        steppingStrategy = DefaultSteppingStrategy(0.1), // 0.1 U steps
-                        displayStrategy = object : ValueDisplayStrategy {
-                            override fun format(value: Double): String = String.format(Locale.getDefault(), "%.2f", value)
-                            override fun color(value: Double): Color = Color.Unspecified
-                        },
-                        suffix = " U"
-                    )
-                }
-            }
-
-            // Bottom Button
-            Button(
-                onClick = onSubmit,
-                modifier = Modifier.fillMaxWidth(),
-                enabled = !uiState.isSubmitting
-            ) {
-                Text(
-                    if (uiState.manualBolus > 0.0) {
-                        stringResource(R.string.meal_bolus_administer_button)
-                    } else {
-                        stringResource(R.string.meal_edit_save_button)
-                    }
-                )
             }
         }
     }
@@ -431,9 +471,9 @@ fun FoodTypeSelector(
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = MaterialTheme.shapes.medium,
-        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.secondary.copy(alpha = 0.2f)),
         colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.2f)
+            containerColor = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.4f)
         )
     ) {
         Column(
