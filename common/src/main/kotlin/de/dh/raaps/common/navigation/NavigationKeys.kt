@@ -14,6 +14,7 @@ import kotlinx.serialization.Serializable
 @Serializable object MealTypesRoute : NavKey
 @Serializable data class MealTypeEditorRoute(val mealTypeId: String? = null) : NavKey
 @Serializable object BolusHistoryRoute : NavKey
+@Serializable object FoodDatabaseRoute : NavKey
 @Serializable object BgEditorRoute : NavKey
 @Serializable object TherapyAdjustmentRoute : NavKey
 @Serializable object SystemControlRoute : NavKey

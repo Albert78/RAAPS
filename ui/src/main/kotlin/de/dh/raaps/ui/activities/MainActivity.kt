@@ -55,6 +55,7 @@ import androidx.navigation3.ui.NavDisplay
 import de.dh.raaps.common.navigation.BolusHistoryRoute
 import de.dh.raaps.common.navigation.DashboardRoute
 import de.dh.raaps.common.navigation.FeatureNavGraph
+import de.dh.raaps.common.navigation.FoodDatabaseRoute
 import de.dh.raaps.common.navigation.MealsRoute
 import de.dh.raaps.common.navigation.NavigationViewModel
 import de.dh.raaps.common.navigation.SystemControlRoute
@@ -216,6 +217,15 @@ class MainActivity : ComponentActivity() {
                                     onClick = {
                                         scope.launch { drawerState.close() }
                                         navViewModel.push(BolusHistoryRoute)
+                                    },
+                                    modifier = Modifier.padding(NavigationDrawerItemDefaults.ItemPadding)
+                                )
+                                NavigationDrawerItem(
+                                    label = { Text(stringResource(id = R.string.menu_food_database_label)) },
+                                    selected = currentRoute == FoodDatabaseRoute,
+                                    onClick = {
+                                        scope.launch { drawerState.close() }
+                                        navViewModel.push(FoodDatabaseRoute)
                                     },
                                     modifier = Modifier.padding(NavigationDrawerItemDefaults.ItemPadding)
                                 )

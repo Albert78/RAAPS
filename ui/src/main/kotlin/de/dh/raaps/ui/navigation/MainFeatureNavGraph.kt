@@ -19,6 +19,7 @@ import de.dh.raaps.common.navigation.BolusHistoryRoute
 import de.dh.raaps.common.navigation.CurrentTherapySettingsRoute
 import de.dh.raaps.common.navigation.DashboardRoute
 import de.dh.raaps.common.navigation.FeatureNavGraph
+import de.dh.raaps.common.navigation.FoodDatabaseRoute
 import de.dh.raaps.common.navigation.HistoryRoute
 import de.dh.raaps.common.navigation.InsulinProfileEditorRoute
 import de.dh.raaps.common.navigation.MealBolusRoute
@@ -40,6 +41,7 @@ import de.dh.raaps.ui.screens.bolushistory.BolusHistoryScreen
 import de.dh.raaps.ui.screens.bolushistory.BolusHistoryViewModel
 import de.dh.raaps.ui.screens.dashboard.DashboardScreen
 import de.dh.raaps.ui.screens.dashboard.DashboardViewModel
+import de.dh.raaps.ui.screens.fooddatabase.FoodDatabaseScreen
 import de.dh.raaps.ui.screens.history.HistoryScreen
 import de.dh.raaps.ui.screens.insulinprofile.InsulinProfileEditorScreen
 import de.dh.raaps.ui.screens.mealbolus.MealBolusScreen
@@ -272,6 +274,10 @@ class MainFeatureNavGraph(
                     viewModel = vm,
                     onNavigateUp = { navViewModel.pop() }
                 )
+            }
+
+            is FoodDatabaseRoute -> NavEntry(key) {
+                FoodDatabaseScreen(onNavigateUp = { navViewModel.pop() })
             }
 
             is SystemControlRoute -> NavEntry(key) {
