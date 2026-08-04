@@ -37,6 +37,11 @@ sealed class ApsRecommendation {
     data class Bolus(val amount: InsulinAmount) : ApsRecommendation()
 }
 
+sealed class ExecutionResult {
+    data object Success : ExecutionResult()
+    data class Busy(val owner: String) : ExecutionResult()
+}
+
 data class DeferredBolus(
     val amount : InsulinAmount,
     val timestamp : Timestamp
@@ -51,6 +56,8 @@ class TherapyManager(
     private val scope: CoroutineScope
 ) {
     private val mutex = Mutex()
+    private val executionMutex = Mutex()
+    private var currentExecutionOwner: String? = null
 
     private val _recommendations = MutableStateFlow<List<ApsRecommendation>>(emptyList())
     val recommendations: StateFlow<List<ApsRecommendation>> = _recommendations.asStateFlow()
@@ -286,6 +293,25 @@ class TherapyManager(
                 // This issue will now be handled by PumpManager
                 pumpManager.cancelJobs({ it.isCancelableAPSCommand })
             }
+        }
+    }
+
+    /**
+     * Tries to acquire a lock for a specific execution block.
+     * If the lock is already held by another system part, returns [ExecutionResult.Busy].
+     * Otherwise, executes the block and returns [ExecutionResult.Success].
+     */
+    suspend fun tryAcquire(tag: String, block: suspend () -> Unit): ExecutionResult {
+        if (!executionMutex.tryLock()) {
+            return ExecutionResult.Busy(currentExecutionOwner ?: "Unknown")
+        }
+        currentExecutionOwner = tag
+        return try {
+            block()
+            ExecutionResult.Success
+        } finally {
+            currentExecutionOwner = null
+            executionMutex.unlock()
         }
     }
 }
