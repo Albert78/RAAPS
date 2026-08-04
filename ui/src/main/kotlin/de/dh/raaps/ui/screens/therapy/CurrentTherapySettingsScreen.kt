@@ -235,14 +235,14 @@ private fun SectionHeader(
         Icon(
             imageVector = icon,
             contentDescription = null,
-            tint = MaterialTheme.colorScheme.primary,
+            tint = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier.size(20.dp)
         )
         Spacer(modifier = Modifier.width(8.dp))
         Text(
             text = title,
             style = MaterialTheme.typography.titleMedium,
-            color = MaterialTheme.colorScheme.primary,
+            color = MaterialTheme.colorScheme.onSurface,
             fontWeight = FontWeight.Bold
         )
     }
@@ -278,9 +278,9 @@ private fun ActiveInsulinProfileCard(
                 ) {
                     Text(
                         text = profile.name.ifBlank { stringResource(id = R.string.aps_control_no_insulin_profile) },
-                        style = MaterialTheme.typography.headlineSmall,
+                        style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.onSurface,
+                        color = MaterialTheme.colorScheme.primary,
                         modifier = Modifier.weight(1f),
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis
@@ -574,7 +574,7 @@ private fun TemporaryAdjustmentCard(
                     text = insulinProfile.adjustmentHint ?: stringResource(R.string.aps_control_therapy_adjustment_custom),
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold,
-                    color = if (insulinProfile.adjustmentHint != null) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
+                    color = MaterialTheme.colorScheme.primary
                 )
 
                 Icon(
