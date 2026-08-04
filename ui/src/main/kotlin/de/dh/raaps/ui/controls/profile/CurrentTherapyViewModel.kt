@@ -123,9 +123,7 @@ class CurrentTherapyViewModel(
         val crValues = currentSettings.insulinProfile.crBlocks.map { it.amount }
         val isfValues = currentSettings.insulinProfile.isfBlocks.map { it.amount }
 
-        val activeProfileName = currentSettings.insulinProfile.id.let { pid ->
-            profiles.find { it.id == pid }?.name
-        } ?: "Manual Override"
+        val activeProfileName = currentSettings.insulinProfile.name
         val profileUiState = InsulinProfileUiState(
             name = activeProfileName,
             activeProfileId = currentSettings.insulinProfile.id,

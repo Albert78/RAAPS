@@ -14,6 +14,7 @@ import de.dh.raaps.core.repository.db.TherapyDao
 import de.dh.raaps.core.repository.db.toEntity
 import de.dh.raaps.core.repository.db.toModel
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.mapNotNull
 
@@ -85,8 +86,12 @@ class TherapyRepository(
 
     // --- Current Therapy Settings Operations ---
 
-    fun observeCurrentTherapySettings(): Flow<CurrentTherapySettings> = therapyDao.observeCurrentTherapySettings()
-        .mapNotNull { getCurrentTherapySettingsOrNull() }
+    fun observeCurrentTherapySettings(): Flow<CurrentTherapySettings> = combine(
+        therapyDao.observeCurrentTherapySettings(),
+        therapyDao.observeAllInsulinProfiles()
+    ) { _, _ ->
+        getCurrentTherapySettingsOrNull()
+    }.mapNotNull { it }
 
     suspend fun getCurrentTherapySettings(): CurrentTherapySettings {
         return getCurrentTherapySettingsOrNull()
