@@ -52,7 +52,7 @@ class TherapyManager(
     private val treatmentRepository: TreatmentRepository,
     private val appPreferencesRepository: AppPreferencesRepository,
     private val pumpManager: PumpManager,
-    private val appModeManager: AppModeManager,
+    private val systemManager: SystemManager,
     private val scope: CoroutineScope
 ) {
     private val mutex = Mutex()
@@ -218,7 +218,7 @@ class TherapyManager(
     }
 
     fun issueBolus(amount: InsulinAmount) {
-        when (appModeManager.apsMode.value) {
+        when (systemManager.apsMode.value) {
             ApsMode.Suspend -> return
             ApsMode.BasalOnly -> recommendBolus(amount)
             ApsMode.AutoCorrection -> {
@@ -233,15 +233,15 @@ class TherapyManager(
     }
 
     fun canSetTemp(): Boolean {
-        return when (appModeManager.apsMode.value) {
+        return when (systemManager.apsMode.value) {
             ApsMode.Suspend -> false
             ApsMode.BasalOnly -> false
-            ApsMode.AutoCorrection -> true // TODO: Check if pump supports zero temp
+            ApsMode.AutoCorrection -> true // TODO: Check if pump supports setting temp
         }
     }
 
     fun setTempBasal(durationInHours: Int, unitsPerHour: Double) {
-        when (appModeManager.apsMode.value) {
+        when (systemManager.apsMode.value) {
             ApsMode.Suspend -> return
             ApsMode.BasalOnly -> return
             ApsMode.AutoCorrection -> {
@@ -273,7 +273,7 @@ class TherapyManager(
     fun getDeferredBoluses(): List<DeferredBolus> = emptyList()
 
     fun coreCancelInsulinJobs() {
-        when (appModeManager.apsMode.value) {
+        when (systemManager.apsMode.value) {
             ApsMode.Suspend -> return
             ApsMode.BasalOnly -> return
             ApsMode.AutoCorrection -> {
@@ -288,7 +288,7 @@ class TherapyManager(
             pumpManager.waitForIdle()
             delay(10.seconds)
         }
-        if (appModeManager.apsMode.value == ApsMode.AutoCorrection) {
+        if (systemManager.apsMode.value == ApsMode.AutoCorrection) {
             if (pumpManager.hasPendingJobs()) {
                 // This issue will now be handled by PumpManager
                 pumpManager.cancelJobs({ it.isCancelableAPSCommand })

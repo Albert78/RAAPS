@@ -53,7 +53,7 @@ class APS(
     val treatmentRepository: TreatmentRepository,
     val appPreferencesRepository: AppPreferencesRepository,
     val therapyManager: TherapyManager,
-    val appModeManager: AppModeManager,
+    val systemManager: SystemManager,
     val wakeService: SystemWakeService,
     val timeService: TimeService,
     val carbsInsulinCalculationModel: CarbsInsulinCalculationModel,
@@ -167,7 +167,7 @@ class APS(
             core.initialize()
 
             launch {
-                appModeManager.apsMode.collect { mode ->
+                systemManager.apsMode.collect { mode ->
                     if (mode == ApsMode.AutoCorrection) {
                         core.activate()
                     } else {

@@ -111,7 +111,7 @@ class MealBolusViewModel(
         }
 
         viewModelScope.launch {
-            systemRegistry.appModeManager.apsMode.collect { mode ->
+            systemRegistry.systemManager.apsMode.collect { mode ->
                 _uiState.update { it.copy(isAutomaticMode = mode == ApsMode.AutoCorrection) }
                 calculateBolus()
             }

@@ -9,8 +9,8 @@ import de.dh.raaps.common.model.calculation.CarbsInsulinCalculationModel
 import de.dh.raaps.common.model.data.Minutes
 import de.dh.raaps.common.model.data.TimeService
 import de.dh.raaps.core.aps.APS
-import de.dh.raaps.core.aps.AppModeManager
-import de.dh.raaps.core.aps.AppModeManagerImpl
+import de.dh.raaps.core.aps.SystemManager
+import de.dh.raaps.core.aps.SystemManagerImpl
 import de.dh.raaps.core.aps.Core
 import de.dh.raaps.core.aps.TherapyManager
 import de.dh.raaps.core.pump.PumpManager
@@ -46,7 +46,7 @@ class SystemRegistryImpl(
     override val appPreferencesRepository: AppPreferencesRepository,
     override val therapyManager: TherapyManager,
     override val aps: APS,
-    override val appModeManager: AppModeManager,
+    override val systemManager: SystemManager,
     override val pluginManager: PluginManager,
     override val wakeService: SystemWakeService,
     override val timeService: TimeService,
@@ -89,7 +89,7 @@ class SystemRegistryImpl(
             val timeService = TimeServiceImpl(scope = scope)
             val pumpManager = PumpManagerImpl(scope = scope, wakeService = wakeService)
 
-            val appModeManager = AppModeManagerImpl(
+            val systemManager = SystemManagerImpl(
                 settingsRepository = settingsRepository,
                 scope = scope
             )
@@ -99,7 +99,7 @@ class SystemRegistryImpl(
                 treatmentRepository = treatmentRepository,
                 appPreferencesRepository = appPreferencesRepository,
                 pumpManager = pumpManager,
-                appModeManager = appModeManager,
+                systemManager = systemManager,
                 scope = scope
             )
             val carbsInsulinCalculationModel = CarbsInsulinCalculationModel(timeService.tickInterval)
@@ -117,7 +117,7 @@ class SystemRegistryImpl(
                 treatmentRepository = treatmentRepository,
                 appPreferencesRepository = appPreferencesRepository,
                 therapyManager = therapyManager,
-                appModeManager = appModeManager,
+                systemManager = systemManager,
                 wakeService = wakeService,
                 timeService = timeService,
                 carbsInsulinCalculationModel = carbsInsulinCalculationModel,
@@ -142,7 +142,7 @@ class SystemRegistryImpl(
                 appPreferencesRepository = appPreferencesRepository,
                 therapyManager = therapyManager,
                 aps = aps,
-                appModeManager = appModeManager,
+                systemManager = systemManager,
                 pluginManager = pluginManager,
                 wakeService = wakeService,
                 timeService = timeService,

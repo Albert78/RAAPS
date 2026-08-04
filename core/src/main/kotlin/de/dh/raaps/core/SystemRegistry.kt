@@ -7,7 +7,7 @@ import de.dh.raaps.common.model.PluginManager
 import de.dh.raaps.common.model.calculation.CarbsInsulinCalculationModel
 import de.dh.raaps.common.model.data.TimeService
 import de.dh.raaps.core.aps.APS
-import de.dh.raaps.core.aps.AppModeManager
+import de.dh.raaps.core.aps.SystemManager
 import de.dh.raaps.core.aps.TherapyManager
 import de.dh.raaps.core.pump.PumpManager
 import de.dh.raaps.core.repository.DeviceManagementRepository
@@ -55,7 +55,7 @@ interface SystemRegistry {
     // Domain Managers and Services
     val therapyManager: TherapyManager
     val aps: APS
-    val appModeManager: AppModeManager
+    val systemManager: SystemManager
     val pumpManager: PumpManager
     val carbsInsulinCalculationModel: CarbsInsulinCalculationModel
 

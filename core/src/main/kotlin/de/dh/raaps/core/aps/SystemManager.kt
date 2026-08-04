@@ -12,7 +12,7 @@ import kotlinx.coroutines.launch
  * Manages the application mode, specifically the [ApsMode].
  * Handles persistence and provides a reactive state for other components to observe.
  */
-interface AppModeManager {
+interface SystemManager {
     /**
      * The current APS mode.
      */
@@ -25,12 +25,12 @@ interface AppModeManager {
 }
 
 /**
- * Implementation of [AppModeManager].
+ * Implementation of [SystemManager].
  */
-class AppModeManagerImpl(
+class SystemManagerImpl(
     private val settingsRepository: SettingsRepository,
     private val scope: CoroutineScope
-) : AppModeManager {
+) : SystemManager {
     private val _apsMode = MutableStateFlow(ApsMode.Suspend)
     override val apsMode: StateFlow<ApsMode> = _apsMode.asStateFlow()
 
