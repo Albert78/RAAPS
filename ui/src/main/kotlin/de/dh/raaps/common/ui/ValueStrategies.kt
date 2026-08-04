@@ -5,27 +5,27 @@ import kotlin.math.ceil
 import kotlin.math.floor
 
 interface SteppingStrategy {
-    fun stepUp(currentValue: Int): Int
-    fun stepDown(currentValue: Int): Int
+    fun stepUp(currentValue: Double): Double
+    fun stepDown(currentValue: Double): Double
 }
 
 interface ValueDisplayStrategy {
-    fun format(value: Int): String
-    fun color(value: Int): Color
+    fun format(value: Double): String
+    fun color(value: Double): Color
 }
 
-class DefaultSteppingStrategy(private val step: Int = 1) : SteppingStrategy {
-    override fun stepUp(currentValue: Int): Int = currentValue + step
-    override fun stepDown(currentValue: Int): Int = currentValue - step
+class DefaultSteppingStrategy(private val step: Double = 1.0) : SteppingStrategy {
+    override fun stepUp(currentValue: Double): Double = currentValue + step
+    override fun stepDown(currentValue: Double): Double = currentValue - step
 }
 
-class ModuloSteppingStrategy(private val step: Int = 5) : SteppingStrategy {
-    override fun stepUp(currentValue: Int): Int {
-        return (floor(currentValue / step.toDouble()).toInt() + 1) * step
+class ModuloSteppingStrategy(private val step: Double = 5.0) : SteppingStrategy {
+    override fun stepUp(currentValue: Double): Double {
+        return (floor(currentValue / step).toInt() + 1) * step
     }
 
-    override fun stepDown(currentValue: Int): Int {
-        return (ceil(currentValue / step.toDouble()).toInt() - 1) * step
+    override fun stepDown(currentValue: Double): Double {
+        return (ceil(currentValue / step).toInt() - 1) * step
     }
 }
 
@@ -37,13 +37,15 @@ class ConfigurableDisplayStrategy(
     private val suffix: String = "",
     private val neutralLabel: String? = null
 ) : ValueDisplayStrategy {
-    override fun format(value: Int): String {
-        if (value == 0 && neutralLabel != null) return neutralLabel
+    override fun format(value: Double): String {
+        if (value == 0.0 && neutralLabel != null) return neutralLabel
         val prefix = if (value > 0) positivePrefix else ""
-        return "$prefix$value$suffix"
+        // Use precision based on whether it has decimals
+        val formattedValue = if (value % 1.0 == 0.0) value.toInt().toString() else value.toString()
+        return "$prefix$formattedValue$suffix"
     }
 
-    override fun color(value: Int): Color {
+    override fun color(value: Double): Color {
         return when {
             value > 0 -> positiveColor
             value < 0 -> negativeColor
@@ -53,6 +55,8 @@ class ConfigurableDisplayStrategy(
 }
 
 class DefaultValueDisplayStrategy(private val color: Color = Color.Unspecified) : ValueDisplayStrategy {
-    override fun format(value: Int): String = value.toString()
-    override fun color(value: Int): Color = color
+    override fun format(value: Double): String {
+        return if (value % 1.0 == 0.0) value.toInt().toString() else value.toString()
+    }
+    override fun color(value: Double): Color = color
 }

@@ -112,14 +112,13 @@ fun MealBolusScreen(
                     style = MaterialTheme.typography.titleMedium
                 )
                 Spacer(Modifier.height(8.dp))
-                // Convert to Int (10x) for EditableValueStepper
                 EditableValueStepper(
-                    currentValue = (uiState.carbsKe * 10).toInt(),
-                    onValueChange = { viewModel.onCarbsChange(it / 10.0) },
-                    steppingStrategy = DefaultSteppingStrategy(5), // 0.5 KE steps
+                    currentValue = uiState.carbsKe,
+                    onValueChange = { viewModel.onCarbsChange(it) },
+                    steppingStrategy = DefaultSteppingStrategy(0.5), // 0.5 KE steps
                     displayStrategy = object : de.dh.raaps.common.ui.ValueDisplayStrategy {
-                        override fun format(value: Int): String = String.format("%.1f", value / 10.0)
-                        override fun color(value: Int): androidx.compose.ui.graphics.Color = androidx.compose.ui.graphics.Color.Unspecified
+                        override fun format(value: Double): String = String.format("%.1f", value)
+                        override fun color(value: Double): androidx.compose.ui.graphics.Color = androidx.compose.ui.graphics.Color.Unspecified
                     }
                 )
             }
@@ -197,12 +196,12 @@ fun MealBolusScreen(
                     )
                     Spacer(Modifier.height(8.dp))
                     EditableValueStepper(
-                        currentValue = (uiState.manualBolus * 100).toInt(),
-                        onValueChange = { viewModel.onManualBolusChange(it / 100.0) },
-                        steppingStrategy = DefaultSteppingStrategy(10), // 0.1 U steps
+                        currentValue = uiState.manualBolus,
+                        onValueChange = { viewModel.onManualBolusChange(it) },
+                        steppingStrategy = DefaultSteppingStrategy(0.1), // 0.1 U steps
                         displayStrategy = object : de.dh.raaps.common.ui.ValueDisplayStrategy {
-                            override fun format(value: Int): String = String.format("%.2f", value / 100.0)
-                            override fun color(value: Int): androidx.compose.ui.graphics.Color = androidx.compose.ui.graphics.Color.Unspecified
+                            override fun format(value: Double): String = String.format("%.2f", value)
+                            override fun color(value: Double): androidx.compose.ui.graphics.Color = androidx.compose.ui.graphics.Color.Unspecified
                         }
                     )
                 }

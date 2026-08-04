@@ -63,8 +63,8 @@ fun TherapyAdjustmentDialogContent(
     onDismissRequest: (() -> Unit)? = null,
     presets: List<TherapyAdjustment> = emptyList()
 ) {
-    val steppingStrategyInsulin = remember { ModuloSteppingStrategy(5) }
-    val steppingStrategyBg = remember { ModuloSteppingStrategy(5) }
+    val steppingStrategyInsulin = remember { ModuloSteppingStrategy(5.0) }
+    val steppingStrategyBg = remember { ModuloSteppingStrategy(5.0) }
 
     val displayStrategyInsulin = ConfigurableDisplayStrategy(
         positiveColor = SoftRed,
@@ -98,8 +98,8 @@ fun TherapyAdjustmentDialogContent(
             description = stringResource(R.string.aps_control_therapy_adjustment_dialog_insulin_adjustment_description)
         ) {
             EditableValueStepper(
-                currentValue = currentPercentage,
-                onValueChange = { onValuesChange(it, currentTarget, currentLow, null) },
+                currentValue = currentPercentage.toDouble(),
+                onValueChange = { onValuesChange(it.toInt(), currentTarget, currentLow, null) },
                 steppingStrategy = steppingStrategyInsulin,
                 displayStrategy = displayStrategyInsulin,
                 suffix = "%"
@@ -139,9 +139,9 @@ fun TherapyAdjustmentDialogContent(
                         )
                     }
                     EditableValueStepper(
-                        currentValue = currentTarget?.mgdl?.toInt() ?: 0,
+                        currentValue = currentTarget?.mgdl?.toDouble() ?: 0.0,
                         onValueChange = {
-                            val newValue = if (it == 0) null else BgValue.fromMgDl(it)
+                            val newValue = if (it == 0.0) null else BgValue.fromMgDl(it.toInt())
                             onValuesChange(currentPercentage, newValue, currentLow, null)
                         },
                         steppingStrategy = steppingStrategyBg,
@@ -170,9 +170,9 @@ fun TherapyAdjustmentDialogContent(
                         )
                     }
                     EditableValueStepper(
-                        currentValue = currentLow?.mgdl?.toInt() ?: 0,
+                        currentValue = currentLow?.mgdl?.toDouble() ?: 0.0,
                         onValueChange = {
-                            val newValue = if (it == 0) null else BgValue.fromMgDl(it)
+                            val newValue = if (it == 0.0) null else BgValue.fromMgDl(it.toInt())
                             onValuesChange(currentPercentage, currentTarget, newValue, null)
                         },
                         steppingStrategy = steppingStrategyBg,
@@ -216,9 +216,9 @@ fun TherapyAdjustmentDialogContent(
                                     )
                                     Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
                                         Text(
-                                            text = displayStrategyInsulin.format(preset.percentage),
+                                            text = displayStrategyInsulin.format(preset.percentage.toDouble()),
                                             style = MaterialTheme.typography.labelSmall,
-                                            color = displayStrategyInsulin.color(preset.percentage)
+                                            color = displayStrategyInsulin.color(preset.percentage.toDouble())
                                         )
                                         if (preset.targetBgMgDl != null) {
                                             Text(

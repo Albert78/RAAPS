@@ -593,11 +593,11 @@ private fun TemporaryAdjustmentCard(
                 AdjustmentItem(
                     icon = Icons.Default.UnfoldMore,
                     label = stringResource(R.string.aps_control_therapy_adjustment_dialog_insulin_adjustment_label),
-                    value = displayStrategy.format(insulinProfile.insulinAdjustmentPercentage),
+                    value = displayStrategy.format(insulinProfile.insulinAdjustmentPercentage.toDouble()),
                     valueColor = if (insulinProfile.insulinAdjustmentPercentage == 0)
                         MaterialTheme.colorScheme.onSurfaceVariant
                     else
-                        displayStrategy.color(insulinProfile.insulinAdjustmentPercentage),
+                        displayStrategy.color(insulinProfile.insulinAdjustmentPercentage.toDouble()),
                     status = if (insulinProfile.insulinAdjustmentPercentage == 0)
                         stringResource(R.string.aps_control_adjustment_neutral)
                     else

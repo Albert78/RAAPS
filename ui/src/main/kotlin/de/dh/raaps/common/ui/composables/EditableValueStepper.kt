@@ -48,8 +48,8 @@ import de.dh.raaps.common.ui.theme.AppTheme
 
 @Composable
 fun EditableValueStepper(
-    currentValue: Int,
-    onValueChange: (Int) -> Unit,
+    currentValue: Double,
+    onValueChange: (Double) -> Unit,
     steppingStrategy: SteppingStrategy = DefaultSteppingStrategy(),
     displayStrategy: ValueDisplayStrategy = DefaultValueDisplayStrategy(),
     suffix: String = ""
@@ -58,8 +58,10 @@ fun EditableValueStepper(
     // Track if the field actually gained focus to avoid closing immediately on mount
     var hasGainedFocus by remember { mutableStateOf(false) }
 
-    var textFieldValue by remember {
-        mutableStateOf(TextFieldValue(currentValue.toString()))
+    var textFieldValue by remember(isEditing) {
+        val initialText = if (currentValue % 1.0 == 0.0) currentValue.toInt().toString() else currentValue.toString()
+        val selection = if (isEditing) TextRange(0, initialText.length) else TextRange.Zero
+        mutableStateOf(TextFieldValue(initialText, selection = selection))
     }
     val focusManager = LocalFocusManager.current
     val focusRequester = remember { FocusRequester() }
@@ -113,9 +115,10 @@ fun EditableValueStepper(
                     value = textFieldValue,
                     onValueChange = { newValue ->
                         textFieldValue = newValue
-                        // Immediate update of current value, ignore if it contains non-digits
-                        if (newValue.text.all { it.isDigit() }) {
-                            newValue.text.toIntOrNull()?.let { onValueChange(it) }
+                        // Immediate update of current value, ignore if it contains non-digits/decimal
+                        val cleanedText = newValue.text.replace(',', '.')
+                        if (cleanedText.isEmpty() || cleanedText.all { it.isDigit() || it == '.' }) {
+                            cleanedText.toDoubleOrNull()?.let { onValueChange(it) }
                         }
                     },
                     modifier = Modifier
@@ -130,7 +133,7 @@ fun EditableValueStepper(
                         },
                     textStyle = MaterialTheme.typography.titleLarge.copy(textAlign = TextAlign.Center),
                     keyboardOptions = KeyboardOptions(
-                        keyboardType = KeyboardType.Number,
+                        keyboardType = KeyboardType.Decimal,
                         imeAction = ImeAction.Done
                     ),
                     keyboardActions = KeyboardActions(
@@ -159,11 +162,6 @@ fun EditableValueStepper(
                     .width(120.dp)
                     .clickable {
                         isEditing = true
-                        val text = currentValue.toString()
-                        textFieldValue = TextFieldValue(
-                            text = text,
-                            selection = TextRange(0, text.length)
-                        )
                     },
                 textAlign = TextAlign.Center
             )
@@ -184,7 +182,7 @@ fun EditableValueStepper(
 @Preview(showBackground = true, uiMode = Configuration.UI_MODE_NIGHT_YES)
 @Composable
 fun EditableValueStepperPreview() {
-    var value by remember { mutableStateOf(100) }
+    var value by remember { mutableStateOf(100.0) }
     AppTheme {
         Surface {
             EditableValueStepper(

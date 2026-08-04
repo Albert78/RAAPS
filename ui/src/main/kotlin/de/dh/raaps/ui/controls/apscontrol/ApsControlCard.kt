@@ -100,7 +100,7 @@ fun ApsControlCard(
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 val nameText = if (insulinAdjustmentPercentage != 0) {
-                    "${insulinProfileUiState.name} (${displayStrategy.format(insulinAdjustmentPercentage)})"
+                    "${insulinProfileUiState.name} (${displayStrategy.format(insulinAdjustmentPercentage.toDouble())})"
                 } else {
                     insulinProfileUiState.name
                 }
@@ -250,7 +250,7 @@ fun ApsControlCard(
                         append(adjustmentHint)
                         append(" (")
                     }
-                    append(displayStrategy.format(insulinAdjustmentPercentage))
+                    append(displayStrategy.format(insulinAdjustmentPercentage.toDouble()))
                     if (adjustmentHint != null) {
                         append(")")
                     }
@@ -275,7 +275,7 @@ fun ApsControlCard(
                         modifier = Modifier.fillMaxWidth(),
                         shape = MaterialTheme.shapes.small,
                         colors = ButtonDefaults.buttonColors(
-                            containerColor = displayStrategy.color(insulinAdjustmentPercentage)
+                            containerColor = displayStrategy.color(insulinAdjustmentPercentage.toDouble())
                         ),
                         contentPadding = PaddingValues(horizontal = 8.dp, vertical = 8.dp)
                     ) {
