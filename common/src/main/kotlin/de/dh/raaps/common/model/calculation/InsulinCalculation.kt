@@ -1,6 +1,5 @@
 package de.dh.raaps.common.model.calculation
 
-import de.dh.raaps.common.model.InsulinType
 import de.dh.raaps.common.model.data.Minutes
 import java.util.concurrent.ConcurrentHashMap
 import kotlin.math.exp
@@ -39,9 +38,9 @@ data class InsulinCurve(
 ) {
 
     init {
-        require(diaMinutes > 0.0)
-        require(peakMinutes > 0.0)
-        require(peakMinutes < diaMinutes)
+        require(diaMinutes > 0.0, { "Insulin curve DIA must be > 0 (currently: $diaMinutes)" })
+        require(peakMinutes > 0.0, { "Insulin curve Peak must be > 0 (currently: $peakMinutes)" })
+        require(peakMinutes < diaMinutes, { "Insulin curve Peak must be < DIA (currently: DIA = $diaMinutes, Peak = $peakMinutes)" })
     }
 
     private val alpha = 2.0

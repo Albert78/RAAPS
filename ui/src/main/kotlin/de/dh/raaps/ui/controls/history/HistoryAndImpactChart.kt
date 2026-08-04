@@ -61,11 +61,12 @@ import de.dh.raaps.common.model.MS_PER_HOUR
 import de.dh.raaps.common.model.MS_PER_MINUTE
 import de.dh.raaps.common.model.MealEntry
 import de.dh.raaps.common.model.MealType
-import de.dh.raaps.common.model.calculation.CarbsInsulinCalculationModel
+import de.dh.raaps.common.model.calculation.CarbCurveComponent
 import de.dh.raaps.common.model.calculation.InsulinCurve
 import de.dh.raaps.common.model.data.BgReading
 import de.dh.raaps.common.model.data.BgSampleKind
 import de.dh.raaps.common.model.data.Minutes
+import de.dh.raaps.common.model.data.Timeline
 import de.dh.raaps.common.model.data.Timestamp
 import de.dh.raaps.common.ui.theme.AppTheme
 import de.dh.raaps.common.ui.theme.ColorBg
@@ -95,10 +96,16 @@ data class HistoryAndImpactDiagramData(
             readings: List<BgReading>,
             insulinApplications: List<InsulinApplication> = emptyList(),
             meals: List<MealEntry> = emptyList(),
-            calculationModel: CarbsInsulinCalculationModel,
             dia: Minutes = Minutes(DEFAULT_DIA_MINUTES.toShort()),
             peak: Minutes = Minutes(DEFAULT_PEAK_MINUTES.toShort())
         ): HistoryAndImpactDiagramData? {
+            /**
+             * Axis scales:
+             * X-Axis: 1 unit = 1 minute
+             * Y-Axis (BG): mg/dL
+             * Y-Axis (Impact): Insulin Activity (I.E.) or Carb Absorption (KE)
+             * The calculation interval is based on the default system tick interval to match BG data density.
+             */
             val validReadings = readings.filter { it.sampleKind == BgSampleKind.Value }
             if (validReadings.isEmpty()) return null
 
@@ -116,17 +123,44 @@ data class HistoryAndImpactDiagramData(
             val carbX = mutableListOf<Double>()
             val carbY = mutableListOf<Double>()
 
-            for (i in 0..maxX.toInt() step 5) {
+            val insulinCurve = InsulinCurve(dia.value.toDouble(), peak.value.toDouble())
+
+            // Optimization: Pre-calculate meal curves
+            val mealCurves = meals.map { it.mealType }.distinct().associateWith { mealType ->
+                mealType.components.map { comp ->
+                    CarbCurveComponent(comp.peakMinutes.value.toDouble()) to comp.weight.toDouble() / 100.0
+                }
+            }
+
+            val interval = Timeline.DEFAULT_TICK_INTERVAL.value.toDouble()
+            for (i in 0..maxX.toInt() step Timeline.DEFAULT_TICK_INTERVAL.value.toInt()) {
                 val x = i.toDouble()
-                val timestamp = Timestamp(baseTimestamp + (x * MS_PER_MINUTE).toLong())
-
                 insulinX.add(x)
-                // Real activity in I.E./interval
-                insulinY.add(calculationModel.effectiveInsulin(insulinApplications, timestamp, dia, peak))
-
                 carbX.add(x)
-                // Real absorption in KE/interval (1 KE = 10g)
-                carbY.add(calculationModel.carbAbsorption(meals, timestamp) / 10.0)
+
+                var totalInsulinActivity = 0.0
+                for (app in insulinApplications) {
+                    val xStart = (app.timestamp.ms - baseTimestamp).toDouble() / MS_PER_MINUTE
+                    val timeSinceApp = x - xStart
+                    // normalizedActivity * interval gives activity in the specified time interval
+                    totalInsulinActivity += app.amount * insulinCurve.normalizedActivity(timeSinceApp) * interval
+                }
+                insulinY.add(totalInsulinActivity)
+
+                var totalCarbAbsorption = 0.0
+                for (meal in meals) {
+                    val xStart = (meal.timestamp.ms - baseTimestamp).toDouble() / MS_PER_MINUTE
+                    val timeSinceMeal = x - xStart
+                    if (timeSinceMeal >= 0) {
+                        val components = mealCurves[meal.mealType] ?: emptyList()
+                        var mealAbsorptionRate = 0.0
+                        for ((curve, weight) in components) {
+                            mealAbsorptionRate += curve.normalizedActivity(timeSinceMeal) * weight
+                        }
+                        totalCarbAbsorption += (meal.carbGrams * mealAbsorptionRate * interval) / 10.0
+                    }
+                }
+                carbY.add(totalCarbAbsorption)
             }
 
             return HistoryAndImpactDiagramData(
@@ -535,7 +569,6 @@ fun HistoryAndImpactChart(
 fun createSampleImpactDiagramData(): HistoryAndImpactDiagramData {
     val readings = createSampleReadings(120, 5)
     val baseTs = readings.first().timestamp.ms
-    val calcModel = CarbsInsulinCalculationModel(Minutes(5))
 
     val sampleMealType = MealType(
         id = "1",
@@ -560,7 +593,6 @@ fun createSampleImpactDiagramData(): HistoryAndImpactDiagramData {
         readings = readings,
         insulinApplications = insulinApplications,
         meals = meals,
-        calculationModel = calcModel,
         dia = Minutes(300),
         peak = Minutes(60)
     )!!.let { it.copy(dataSignature = "impact_${it.dataSignature}") }

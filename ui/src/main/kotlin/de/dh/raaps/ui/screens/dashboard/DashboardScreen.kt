@@ -37,7 +37,6 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import de.dh.raaps.common.model.ApsMode
-import de.dh.raaps.common.model.calculation.CarbsInsulinCalculationModel
 import de.dh.raaps.common.model.data.BgDelta
 import de.dh.raaps.common.model.data.BgValue
 import de.dh.raaps.common.model.data.Minutes
@@ -106,7 +105,6 @@ fun DashboardScreen(
         historyUiState = historyUiState,
         iob = iob,
         cob = cob,
-        calculationModel = historyViewModel.calculationModel,
         currentTherapyUiState = currentTherapyUiState,
         permissionsUiState = permissionsUiState,
         onFixPermissionsClick = onFixPermissions,
@@ -130,7 +128,6 @@ fun DashboardContent(
     historyUiState: HistoryUiState,
     iob: Double,
     cob: Double,
-    calculationModel: CarbsInsulinCalculationModel,
     currentTherapyUiState: CurrentTherapyUiState,
     permissionsUiState: PermissionsUiModel,
     onFixPermissionsClick: () -> Unit,
@@ -239,7 +236,6 @@ fun DashboardContent(
                             readings = historyUiState.readings,
                             insulinApplications = historyUiState.insulinApplications,
                             meals = historyUiState.meals,
-                            calculationModel = calculationModel,
                             dia = currentTherapyUiState.activeProfile.dia,
                             peak = currentTherapyUiState.activeProfile.peak
                         ),
@@ -296,7 +292,6 @@ fun DashboardPreview() {
             historyUiState = createSampleHistoryUiState(),
             iob = 1.57,
             cob = 12.0,
-            calculationModel = CarbsInsulinCalculationModel(Minutes(5)),
             currentTherapyUiState = CurrentTherapyUiState(
                 activeProfile = InsulinProfileUiState(
                     name = "Normal",
@@ -349,7 +344,6 @@ fun DashboardPermissionsWarningPreview() {
             historyUiState = createSampleHistoryUiState(),
             iob = 1.57,
             cob = 12.0,
-            calculationModel = CarbsInsulinCalculationModel(Minutes(5)),
             currentTherapyUiState = CurrentTherapyUiState(
                 activeProfile = InsulinProfileUiState(
                     name = "Normal",
