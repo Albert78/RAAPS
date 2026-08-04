@@ -7,6 +7,7 @@ import androidx.lifecycle.viewmodel.CreationExtras
 import de.dh.raaps.common.model.data.BgBlock
 import de.dh.raaps.common.model.data.BgDelta
 import de.dh.raaps.common.model.data.BgValue
+import de.dh.raaps.common.model.data.getBgForMinute
 import de.dh.raaps.common.model.data.CurrentTherapySettings
 import de.dh.raaps.common.model.data.GlucoseUnit
 import de.dh.raaps.common.model.data.InsulinProfile
@@ -33,6 +34,8 @@ data class InsulinProfileUiState(
     val basalRange: String,
     val target: BgValue,
     val lowThreshold: BgValue,
+    val baseTarget: BgValue,
+    val baseLow: BgValue,
     val insulinAdjustmentPercentage: Int,
     val targetBgOverride: BgValue?,
     val lowThresholdOverride: BgValue?,
@@ -52,6 +55,8 @@ data class InsulinProfileUiState(
             basalRange = "",
             target = BgValue.fromMgDl(0),
             lowThreshold = BgValue.fromMgDl(0),
+            baseTarget = BgValue.fromMgDl(0),
+            baseLow = BgValue.fromMgDl(0),
             insulinAdjustmentPercentage = 0,
             targetBgOverride = null,
             lowThresholdOverride = null,
@@ -123,6 +128,9 @@ class CurrentTherapyViewModel(
         val crValues = currentSettings.insulinProfile.crBlocks.map { it.amount }
         val isfValues = currentSettings.insulinProfile.isfBlocks.map { it.amount }
 
+        val minuteSinceMidnight = now.minutesSinceMidnight()
+        val baseBg = currentSettings.defaultBgBlocks.getBgForMinute(minuteSinceMidnight)
+
         val activeProfileName = currentSettings.insulinProfile.name
         val profileUiState = InsulinProfileUiState(
             name = activeProfileName,
@@ -135,6 +143,8 @@ class CurrentTherapyViewModel(
             basalRange = formatRange(basalValues, "%.2f"),
             target = bgSettings.first,
             lowThreshold = bgSettings.second,
+            baseTarget = baseBg.first,
+            baseLow = baseBg.second,
             insulinAdjustmentPercentage = currentSettings.insulinAdjustmentPercentage,
             targetBgOverride = currentSettings.targetBgOverride,
             lowThresholdOverride = currentSettings.lowThresholdOverride,

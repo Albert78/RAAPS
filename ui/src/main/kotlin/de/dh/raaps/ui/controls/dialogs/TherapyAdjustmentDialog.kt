@@ -27,6 +27,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.SuggestionChip
 import androidx.compose.material3.Surface
+import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -65,6 +66,8 @@ fun TherapyAdjustmentDialogContent(
     currentPercentage: Int,
     currentTarget: BgValue?,
     currentLow: BgValue?,
+    baseTarget: BgValue,
+    baseLow: BgValue,
     onValuesChange: (Int, BgValue?, BgValue?, String?) -> Unit,
     onDismissRequest: (() -> Unit)? = null,
     presets: List<TherapyAdjustment> = emptyList()
@@ -131,31 +134,70 @@ fun TherapyAdjustmentDialogContent(
                     verticalArrangement = Arrangement.spacedBy(4.dp)
                 ) {
                     Row(
+                        modifier = Modifier.fillMaxWidth(),
                         verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        horizontalArrangement = Arrangement.SpaceBetween
                     ) {
-                        Icon(
-                            imageVector = Icons.Default.Adjust,
-                            contentDescription = null,
-                            modifier = Modifier.size(20.dp),
-                            tint = MaterialTheme.colorScheme.primary
-                        )
-                        Text(
-                            text = stringResource(R.string.current_therapy_target_label),
-                            style = MaterialTheme.typography.labelMedium
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Adjust,
+                                contentDescription = null,
+                                modifier = Modifier.size(20.dp),
+                                tint = MaterialTheme.colorScheme.primary
+                            )
+                            Text(
+                                text = stringResource(R.string.current_therapy_target_label),
+                                style = MaterialTheme.typography.labelMedium
+                            )
+                        }
+                        Switch(
+                            checked = currentTarget != null,
+                            onCheckedChange = { active ->
+                                if (active) {
+                                    onValuesChange(currentPercentage, baseTarget, currentLow, null)
+                                } else {
+                                    onValuesChange(currentPercentage, null, currentLow, null)
+                                }
+                            }
                         )
                     }
-                    EditableValueStepper(
-                        currentValue = currentTarget?.mgdl?.toDouble() ?: 0.0,
-                        onValueChange = {
-                            val newValue = if (it == 0.0) null else BgValue.fromMgDl(it.toInt())
-                            onValuesChange(currentPercentage, newValue, currentLow, null)
-                        },
-                        minValue = TARGET_MIN.toDouble(),
-                        maxValue = TARGET_MAX.toDouble(),
-                        steppingStrategy = steppingStrategyBg,
-                        suffix = " mg/dL"
-                    )
+                    if (currentTarget != null) {
+                        EditableValueStepper(
+                            currentValue = currentTarget.mgdl.toDouble(),
+                            onValueChange = {
+                                val newValue = if (it == 0.0) null else BgValue.fromMgDl(it.toInt())
+                                onValuesChange(currentPercentage, newValue, currentLow, null)
+                            },
+                            minValue = TARGET_MIN.toDouble(),
+                            maxValue = TARGET_MAX.toDouble(),
+                            steppingStrategy = steppingStrategyBg,
+                            suffix = " mg/dL"
+                        )
+                    } else {
+                        Row(
+                            modifier = Modifier
+                                .padding(vertical = 8.dp)
+                                .clickable {
+                                    onValuesChange(currentPercentage, baseTarget, currentLow, null)
+                                },
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(4.dp)
+                        ) {
+                            Text(
+                                text = stringResource(R.string.bg_value_single_format, baseTarget.mgdl.toInt()),
+                                style = MaterialTheme.typography.bodyLarge,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
+                            )
+                            Text(
+                                text = "(${stringResource(R.string.aps_control_adjustment_standard)})",
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)
+                            )
+                        }
+                    }
                 }
 
                 // Low Threshold
@@ -164,31 +206,70 @@ fun TherapyAdjustmentDialogContent(
                     verticalArrangement = Arrangement.spacedBy(4.dp)
                 ) {
                     Row(
+                        modifier = Modifier.fillMaxWidth(),
                         verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        horizontalArrangement = Arrangement.SpaceBetween
                     ) {
-                        Icon(
-                            imageVector = Icons.Default.VerticalAlignBottom,
-                            contentDescription = null,
-                            modifier = Modifier.size(20.dp),
-                            tint = MaterialTheme.colorScheme.error
-                        )
-                        Text(
-                            text = stringResource(R.string.current_therapy_low_threshold_label),
-                            style = MaterialTheme.typography.labelMedium
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.VerticalAlignBottom,
+                                contentDescription = null,
+                                modifier = Modifier.size(20.dp),
+                                tint = MaterialTheme.colorScheme.error
+                            )
+                            Text(
+                                text = stringResource(R.string.current_therapy_low_threshold_label),
+                                style = MaterialTheme.typography.labelMedium
+                            )
+                        }
+                        Switch(
+                            checked = currentLow != null,
+                            onCheckedChange = { active ->
+                                if (active) {
+                                    onValuesChange(currentPercentage, currentTarget, baseLow, null)
+                                } else {
+                                    onValuesChange(currentPercentage, currentTarget, null, null)
+                                }
+                            }
                         )
                     }
-                    EditableValueStepper(
-                        currentValue = currentLow?.mgdl?.toDouble() ?: 0.0,
-                        onValueChange = {
-                            val newValue = if (it == 0.0) null else BgValue.fromMgDl(it.toInt())
-                            onValuesChange(currentPercentage, currentTarget, newValue, null)
-                        },
-                        minValue = LOW_THRESHOLD_MIN.toDouble(),
-                        maxValue = LOW_THRESHOLD_MAX.toDouble(),
-                        steppingStrategy = steppingStrategyBg,
-                        suffix = " mg/dL"
-                    )
+                    if (currentLow != null) {
+                        EditableValueStepper(
+                            currentValue = currentLow.mgdl.toDouble(),
+                            onValueChange = {
+                                val newValue = if (it == 0.0) null else BgValue.fromMgDl(it.toInt())
+                                onValuesChange(currentPercentage, currentTarget, newValue, null)
+                            },
+                            minValue = LOW_THRESHOLD_MIN.toDouble(),
+                            maxValue = LOW_THRESHOLD_MAX.toDouble(),
+                            steppingStrategy = steppingStrategyBg,
+                            suffix = " mg/dL"
+                        )
+                    } else {
+                        Row(
+                            modifier = Modifier
+                                .padding(vertical = 8.dp)
+                                .clickable {
+                                    onValuesChange(currentPercentage, currentTarget, baseLow, null)
+                                },
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(4.dp)
+                        ) {
+                            Text(
+                                text = stringResource(R.string.bg_value_single_format, baseLow.mgdl.toInt()),
+                                style = MaterialTheme.typography.bodyLarge,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
+                            )
+                            Text(
+                                text = "(${stringResource(R.string.aps_control_adjustment_standard)})",
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)
+                            )
+                        }
+                    }
                 }
             }
         }
@@ -296,6 +377,8 @@ fun TherapyAdjustmentDialog(
     currentPercentage: Int,
     currentTarget: BgValue?,
     currentLow: BgValue?,
+    baseTarget: BgValue,
+    baseLow: BgValue,
     currentHint: String?,
     presets: List<TherapyAdjustment>,
     onValuesChange: (Int, BgValue?, BgValue?, String?) -> Unit,
@@ -315,6 +398,8 @@ fun TherapyAdjustmentDialog(
                 currentPercentage = localPercentage,
                 currentTarget = localTarget,
                 currentLow = localLow,
+                baseTarget = baseTarget,
+                baseLow = baseLow,
                 onValuesChange = { p, t, l, h ->
                     localPercentage = p
                     localTarget = t
@@ -353,6 +438,8 @@ fun TherapyAdjustmentDialogPreview() {
                 currentPercentage = 10,
                 currentTarget = BgValue.fromMgDl(120),
                 currentLow = BgValue.fromMgDl(80),
+                baseTarget = BgValue.fromMgDl(100),
+                baseLow = BgValue.fromMgDl(70),
                 onValuesChange = { _, _, _, _ -> },
                 presets = listOf(
                     TherapyAdjustment("Normal", 0),

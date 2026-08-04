@@ -323,7 +323,9 @@ private fun PreviewApsControlCard() {
                     lowThresholdOverride = null,
                     adjustmentHint = null,
                     dia = Minutes(300),
-                    peak = Minutes(75)
+                    peak = Minutes(75),
+                    baseLow = BgValue.fromMgDl(70),
+                    baseTarget = BgValue.fromMgDl(110)
                 ),
                 selectedMode = ApsMode.AutoCorrection,
                 availableModes = ApsMode.entries,

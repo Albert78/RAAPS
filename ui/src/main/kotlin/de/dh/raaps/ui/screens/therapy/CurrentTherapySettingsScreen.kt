@@ -212,6 +212,8 @@ fun CurrentTherapySettingsContent(
             currentPercentage = uiState.activeInsulinProfile.insulinAdjustmentPercentage,
             currentTarget = uiState.activeInsulinProfile.targetBgOverride,
             currentLow = uiState.activeInsulinProfile.lowThresholdOverride,
+            baseTarget = uiState.activeInsulinProfile.baseTarget,
+            baseLow = uiState.activeInsulinProfile.baseLow,
             currentHint = uiState.activeInsulinProfile.adjustmentHint,
             presets = uiState.therapyAdjustmentPresets,
             onValuesChange = { p, t, l, h ->
@@ -618,7 +620,7 @@ private fun TemporaryAdjustmentCard(
                     else
                         MaterialTheme.colorScheme.onSurfaceVariant,
                     status = if (insulinProfile.targetBgOverride != null)
-                        if (insulinProfile.targetBgOverride > insulinProfile.target)
+                        if (insulinProfile.targetBgOverride > insulinProfile.baseTarget)
                             stringResource(R.string.label_increased)
                         else
                             stringResource(R.string.label_decreased)
@@ -640,7 +642,7 @@ private fun TemporaryAdjustmentCard(
                     else
                         MaterialTheme.colorScheme.onSurfaceVariant,
                     status = if (insulinProfile.lowThresholdOverride != null)
-                        if (insulinProfile.lowThresholdOverride > insulinProfile.lowThreshold)
+                        if (insulinProfile.lowThresholdOverride > insulinProfile.baseLow)
                             stringResource(R.string.label_increased)
                         else
                             stringResource(R.string.label_decreased)
@@ -779,6 +781,8 @@ fun CurrentTherapySettingsPreview() {
             basalRange = "0.50 - 0.55",
             target = BgValue.fromMgDl(100),
             lowThreshold = BgValue.fromMgDl(70),
+            baseTarget = BgValue.fromMgDl(100),
+            baseLow = BgValue.fromMgDl(70),
             insulinAdjustmentPercentage = -30,
             targetBgOverride = BgValue.fromMgDl(160),
             lowThresholdOverride = BgValue.fromMgDl(90),
