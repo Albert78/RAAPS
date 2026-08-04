@@ -20,11 +20,11 @@ class ApsAlgorithmImpl(
     val predictionModel: PredictionModel,
     val carbsInsulinCalculationModel: CarbsInsulinCalculationModel,
     val therapyManager: TherapyManager,
-    val onCancelInsulinJobs: () -> Unit,
-    val onDeliverBolus: (amount: InsulinAmount) -> Unit,
-    val onSetTempBasal: (durationInHours: Int, unitsPerHour: Double) -> Unit,
-    val onClearTempBasal: () -> Unit,
-    val onCarbsHint: (Int) -> Unit,
+    val onCancelInsulinJobs: (treatmentLock: TreatmentLock) -> Unit,
+    val onDeliverBolus: (treatmentLock: TreatmentLock, amount: InsulinAmount) -> Unit,
+    val onSetTempBasal: (treatmentLock: TreatmentLock, durationInHours: Int, unitsPerHour: Double) -> Unit,
+    val onClearTempBasal: (treatmentLock: TreatmentLock) -> Unit,
+    val onCarbsHint: (treatmentLock: TreatmentLock, Int) -> Unit,
 ): ApsAlgorithm {
     // --- Time-based extensions for Tick to provide a Timestamp-like API ---
     private fun Tick.plusMinutes(minutes: Int): Tick = this + (minutes / timeline.tickDuration.value.toInt())
@@ -98,27 +98,21 @@ class ApsAlgorithmImpl(
         val bolus: InsulinAmount?
     )
 
-    override suspend fun recalculate() {
-        val res = therapyManager.tryAcquire(TAG) {
-            onCancelInsulinJobs()
+    override suspend fun recalculate(treatmentLock: TreatmentLock) {
+        onCancelInsulinJobs(treatmentLock)
 
-            val result = doRecalculate()
-            if (result.carbsHint != null) {
-                onCarbsHint(result.carbsHint)
-            }
-            if (result.tempBasal != null) {
-                onSetTempBasal(result.tempBasal.durationInHours, result.tempBasal.unitsPerHour)
-            }
-            if (result.clearTempBasal) {
-                onClearTempBasal()
-            }
-            if (result.bolus != null) {
-                onDeliverBolus(result.bolus)
-            }
+        val result = doRecalculate()
+        if (result.carbsHint != null) {
+            onCarbsHint(treatmentLock, result.carbsHint)
         }
-        if (res is LockResult.Busy) {
-            // TODO: Show popup to the user about skipping algorithm calculation
-            Log.i(TAG, "Algorithm skipping calculation since therapy manager is busy (user interaction?)")
+        if (result.tempBasal != null) {
+            onSetTempBasal(treatmentLock, result.tempBasal.durationInHours, result.tempBasal.unitsPerHour)
+        }
+        if (result.clearTempBasal) {
+            onClearTempBasal(treatmentLock)
+        }
+        if (result.bolus != null) {
+            onDeliverBolus(treatmentLock, result.bolus)
         }
     }
 
@@ -345,11 +339,11 @@ class ApsAlgorithmImpl(
             treatmentRepository: TreatmentRepository,
             sampledBgReadings: SampledBgReadings,
             therapyManager: TherapyManager,
-            onCancelInsulinJobs: () -> Unit,
-            onDeliverBolus: (amount: InsulinAmount) -> Unit,
-            onSetTempBasal: (durationInHours: Int, unitsPerHour: Double) -> Unit,
-            onClearTempBasal: () -> Unit,
-            onCarbsHint: (Int) -> Unit,
+            onCancelInsulinJobs: (treatmentLock: TreatmentLock) -> Unit,
+            onDeliverBolus: (treatmentLock: TreatmentLock, amount: InsulinAmount) -> Unit,
+            onSetTempBasal: (treatmentLock: TreatmentLock, durationInHours: Int, unitsPerHour: Double) -> Unit,
+            onClearTempBasal: (treatmentLock: TreatmentLock) -> Unit,
+            onCarbsHint: (treatmentLock: TreatmentLock, Int) -> Unit,
             tickInterval: Minutes,
             carbsInsulinCalculationModel: CarbsInsulinCalculationModel,
         ): ApsAlgorithm {

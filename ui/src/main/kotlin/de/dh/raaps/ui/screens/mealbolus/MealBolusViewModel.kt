@@ -15,7 +15,7 @@ import de.dh.raaps.common.model.data.Minutes
 import de.dh.raaps.common.model.data.Timestamp
 import de.dh.raaps.core.SystemRegistry
 import de.dh.raaps.core.aps.LockResult
-import de.dh.raaps.core.pump.PumpCommand
+import de.dh.raaps.core.aps.TreatmentLock
 import kotlinx.coroutines.awaitCancellation
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -65,8 +65,9 @@ class MealBolusViewModel(
     private val therapyManager = systemRegistry.therapyManager
     private val glucoseRepository = systemRegistry.glucoseRepository
     private val treatmentRepository = systemRegistry.treatmentRepository
-    private val pumpManager = systemRegistry.pumpManager
     private val calculationModel = systemRegistry.carbsInsulinCalculationModel
+
+    private var treatmentLock: TreatmentLock? = null
 
     init {
         acquireLock()
@@ -122,9 +123,14 @@ class MealBolusViewModel(
         viewModelScope.launch {
             var retryAttempt = 0
             while (retryAttempt < 2) {
-                val result = systemRegistry.therapyManager.tryAcquire("MealBolusScreen") {
+                val result = therapyManager.tryAcquire("MealBolusScreen") { treatmentLock ->
+                    this@MealBolusViewModel.treatmentLock = treatmentLock
                     _uiState.update { it.copy(isLockAcquired = true, isBusy = false) }
-                    awaitCancellation()
+                    try {
+                        awaitCancellation()
+                    } finally {
+                        this@MealBolusViewModel.treatmentLock = null
+                    }
                 }
 
                 if (result is LockResult.Busy) {
@@ -213,7 +219,8 @@ class MealBolusViewModel(
                 // 2. Deliver Bolus (only if NOT editing)
                 if (!state.isEditMode && state.manualBolus > 0.0) {
                     val amount = InsulinAmount(state.manualBolus)
-                    pumpManager.issueCommand(PumpCommand.DeliverBolus(amount), isCancelableAPSCommand = false)
+                    val lock = treatmentLock ?: throw IllegalStateException("Bolus delivery attempted without holding the lock")
+                    therapyManager.issueBolus(lock, amount)
 
                     // Add to history manually for immediate feedback
                     val insulinType = therapyManager.getPumpInsulinType()

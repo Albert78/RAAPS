@@ -62,13 +62,13 @@ class Core(
     private val onAcquireBusyState: () -> Unit,
     private val onReleaseBusyState: () -> Unit,
 
-    private val onCancelInsulinJobs: () -> Unit,
-    private val onDeliverBolus: (amount: InsulinAmount) -> Unit,
-    private val onSetTempBasal: (durationInHours: Int, unitsPerHour: Double) -> Unit,
-    private val onClearTempBasal: () -> Unit,
-    private val onCarbsHint: (Int) -> Unit,
-    private val onClearRecommendations: () -> Unit,
-    private val onWaitForAndResetInsulinJobs: suspend () -> Unit,
+    private val onCancelInsulinJobs: (treatmentLock: TreatmentLock) -> Unit,
+    private val onDeliverBolus: (treatmentLock: TreatmentLock, amount: InsulinAmount) -> Unit,
+    private val onSetTempBasal: (treatmentLock: TreatmentLock, durationInHours: Int, unitsPerHour: Double) -> Unit,
+    private val onClearTempBasal: (treatmentLock: TreatmentLock) -> Unit,
+    private val onCarbsHint: (treatmentLock: TreatmentLock, Int) -> Unit,
+    private val onClearRecommendations: (treatmentLock: TreatmentLock) -> Unit,
+    private val onWaitForAndResetInsulinJobs: suspend (treatmentLock: TreatmentLock) -> Unit,
 ) : TickHandler {
     private var calculationAlgorithm: ApsAlgorithm = NoopAlgorithm()
 
@@ -156,11 +156,17 @@ class Core(
         if (coreState !is CoreState.Active) return
 
         busyWork {
-            onClearRecommendations()
-            atomic {
-                val alg = calculationAlgorithm
-                onWaitForAndResetInsulinJobs()
-                alg.recalculate()
+            val res = therapyManager.tryAcquire(TAG ?: "Core") { treatmentLock ->
+                onClearRecommendations(treatmentLock)
+                atomic {
+                    val alg = calculationAlgorithm
+                    onWaitForAndResetInsulinJobs(treatmentLock)
+                    alg.recalculate(treatmentLock)
+                }
+            }
+            if (res is LockResult.Busy) {
+                // TODO: Show popup to the user about skipping algorithm calculation
+                Log.i(TAG, "Core skipping tick since therapy manager is busy (lock owner: ${res.owner})")
             }
         }
     }
@@ -208,13 +214,13 @@ class Core(
             onAcquireBusyState: () -> Unit,
             onReleaseBusyState: () -> Unit,
 
-            onCancelInsulinJobs: () -> Unit,
-            onDeliverBolus: (amount: InsulinAmount) -> Unit,
-            onSetTempBasal: (durationInHours: Int, unitsPerHour: Double) -> Unit,
-            onClearTempBasal: () -> Unit,
-            onCarbsHint: (amountInGram: Int) -> Unit,
-            onClearRecommendations: () -> Unit,
-            onWaitForAndResetInsulinJobs: suspend () -> Unit,
+            onCancelInsulinJobs: (treatmentLock: TreatmentLock) -> Unit,
+            onDeliverBolus: (treatmentLock: TreatmentLock, amount: InsulinAmount) -> Unit,
+            onSetTempBasal: (treatmentLock: TreatmentLock, durationInHours: Int, unitsPerHour: Double) -> Unit,
+            onClearTempBasal: (treatmentLock: TreatmentLock) -> Unit,
+            onCarbsHint: (treatmentLock: TreatmentLock, amountInGram: Int) -> Unit,
+            onClearRecommendations: (treatmentLock: TreatmentLock) -> Unit,
+            onWaitForAndResetInsulinJobs: suspend (treatmentLock: TreatmentLock) -> Unit,
         ): Core {
             return Core(
                 treatmentRepository = treatmentRepository,

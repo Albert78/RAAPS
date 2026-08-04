@@ -166,13 +166,13 @@ class SystemManagerImpl(
             onAcquireBusyState = { acquireBusyState() },
             onReleaseBusyState = { releaseBusyState() },
 
-            onCancelInsulinJobs = { therapyManager.coreCancelInsulinJobs() },
-            onDeliverBolus = { amount -> therapyManager.issueBolus(amount) },
-            onSetTempBasal = { durationInHours, unitsPerHour -> therapyManager.setTempBasal(durationInHours, unitsPerHour) },
-            onClearTempBasal = { therapyManager.clearTempBasal() },
-            onCarbsHint = { amountInGram -> therapyManager.recommendCarbs(amountInGram) },
-            onClearRecommendations = { therapyManager.clearRecommendations() },
-            onWaitForAndResetInsulinJobs = { therapyManager.waitForAndResetInsulinJobs() }
+            onCancelInsulinJobs = { treatmentLock -> therapyManager.coreCancelInsulinJobs(treatmentLock) },
+            onDeliverBolus = { treatmentLock, amount -> therapyManager.issueBolus(treatmentLock, amount) },
+            onSetTempBasal = { treatmentLock, durationInHours, unitsPerHour -> therapyManager.setTempBasal(treatmentLock, durationInHours, unitsPerHour) },
+            onClearTempBasal = { treatmentLock -> therapyManager.clearTempBasal(treatmentLock) },
+            onCarbsHint = { treatmentLock, amountInGram -> therapyManager.recommendCarbs(treatmentLock, amountInGram) },
+            onClearRecommendations = { treatmentLock -> therapyManager.clearRecommendations(treatmentLock) },
+            onWaitForAndResetInsulinJobs = { treatmentLock -> therapyManager.waitForAndResetInsulinJobs(treatmentLock) }
         )
 
         inCoreThread {

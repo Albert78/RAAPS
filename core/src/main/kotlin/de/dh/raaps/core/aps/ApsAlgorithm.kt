@@ -4,7 +4,7 @@ interface ApsAlgorithm {
     suspend fun updateTherapySettings()
     suspend fun updateMeals()
     suspend fun updateInsulin()
-    suspend fun recalculate()
+    suspend fun recalculate(treatmentLock: TreatmentLock)
 }
 
 class NoopAlgorithm: ApsAlgorithm {
@@ -20,7 +20,7 @@ class NoopAlgorithm: ApsAlgorithm {
         // Do nothing
     }
 
-    override suspend fun recalculate() {
+    override suspend fun recalculate(treatmentLock: TreatmentLock) {
         // Do nothing
     }
 }

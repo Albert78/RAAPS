@@ -37,6 +37,12 @@ sealed class ApsRecommendation {
     data class Bolus(val amount: InsulinAmount) : ApsRecommendation()
 }
 
+/**
+ * Represents an active lock on therapy-related operations.
+ * This lock must be held and passed to critical functions in [TherapyManager].
+ */
+data class TreatmentLock(val tag: String)
+
 sealed class LockResult {
     data object Success : LockResult()
     data class Busy(val owner: String) : LockResult()
@@ -210,6 +216,16 @@ class TherapyManager(
     }
 
     /**
+     * Verifies that the provided lock matches the current execution owner.
+     * @throws IllegalStateException if the lock is invalid or not held.
+     */
+    private fun checkLock(treatmentLock: TreatmentLock) {
+        if (currentExecutionOwner != treatmentLock.tag) {
+            throw IllegalStateException("Execution lock not held by ${treatmentLock.tag} (current owner: $currentExecutionOwner)")
+        }
+    }
+
+    /**
      * Triggered when the history of actual bolus and basal values was updated.
      */
     suspend fun updatePumpHistory(history: InsulinHistory) {
@@ -217,10 +233,11 @@ class TherapyManager(
         treatmentRepository.mergeInsulinHistory(history, cts.insulinProfile.insulinType)
     }
 
-    fun issueBolus(amount: InsulinAmount) {
+    fun issueBolus(treatmentLock: TreatmentLock, amount: InsulinAmount) {
+        checkLock(treatmentLock)
         when (systemManager.apsMode.value) {
             ApsMode.Suspend -> return
-            ApsMode.BasalOnly -> recommendBolus(amount)
+            ApsMode.BasalOnly -> recommendBolus(treatmentLock, amount)
             ApsMode.AutoCorrection -> {
                 scope.launch {
                     pumpManager.issueCommand(
@@ -232,7 +249,8 @@ class TherapyManager(
         }
     }
 
-    fun setTempBasal(durationInHours: Int, unitsPerHour: Double) {
+    fun setTempBasal(treatmentLock: TreatmentLock, durationInHours: Int, unitsPerHour: Double) {
+        checkLock(treatmentLock)
         when (systemManager.apsMode.value) {
             ApsMode.Suspend -> return
             ApsMode.BasalOnly -> return
@@ -250,7 +268,8 @@ class TherapyManager(
         }
     }
 
-    fun clearTempBasal() {
+    fun clearTempBasal(treatmentLock: TreatmentLock) {
+        checkLock(treatmentLock)
         when (systemManager.apsMode.value) {
             ApsMode.Suspend -> return
             ApsMode.BasalOnly -> return
@@ -265,19 +284,23 @@ class TherapyManager(
         }
     }
 
-    fun clearRecommendations() {
+    fun clearRecommendations(treatmentLock: TreatmentLock) {
+        checkLock(treatmentLock)
         _recommendations.value = emptyList()
     }
 
-    fun recommendCarbs(amountInGram: Int) {
+    fun recommendCarbs(treatmentLock: TreatmentLock, amountInGram: Int) {
+        checkLock(treatmentLock)
         _recommendations.value += ApsRecommendation.Carbs(amountInGram)
     }
 
-    fun recommendBolus(amount: InsulinAmount) {
+    fun recommendBolus(treatmentLock: TreatmentLock, amount: InsulinAmount) {
+        checkLock(treatmentLock)
         _recommendations.value += ApsRecommendation.Bolus(amount)
     }
 
-    fun addDeferredBolus(deferredBolus: DeferredBolus) {
+    fun addDeferredBolus(treatmentLock: TreatmentLock, deferredBolus: DeferredBolus) {
+        checkLock(treatmentLock)
         todo()
     }
 
@@ -286,7 +309,8 @@ class TherapyManager(
         use_management_in_bolus_screen()
     }
 
-    fun coreCancelInsulinJobs() {
+    fun coreCancelInsulinJobs(treatmentLock: TreatmentLock) {
+        checkLock(treatmentLock)
         when (systemManager.apsMode.value) {
             ApsMode.Suspend -> return
             ApsMode.BasalOnly -> return
@@ -296,7 +320,8 @@ class TherapyManager(
         }
     }
 
-    suspend fun waitForAndResetInsulinJobs() {
+    suspend fun waitForAndResetInsulinJobs(treatmentLock: TreatmentLock) {
+        checkLock(treatmentLock)
         if (pumpManager.hasPendingJobs()) {
             pumpManager.wakeup()
             pumpManager.waitForIdle()
@@ -315,13 +340,14 @@ class TherapyManager(
      * If the lock is already held by another system part, returns [LockResult.Busy].
      * Otherwise, executes the block and returns [LockResult.Success].
      */
-    suspend fun tryAcquire(tag: String, block: suspend () -> Unit): LockResult {
+    suspend fun tryAcquire(tag: String, block: suspend (TreatmentLock) -> Unit): LockResult {
         if (!executionMutex.tryLock()) {
             return LockResult.Busy(currentExecutionOwner ?: "Unknown")
         }
+        val treatmentLock = TreatmentLock(tag)
         currentExecutionOwner = tag
         return try {
-            block()
+            block(treatmentLock)
             LockResult.Success
         } finally {
             currentExecutionOwner = null
