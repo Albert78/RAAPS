@@ -29,6 +29,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import de.dh.raaps.common.model.data.BgValue
 import de.dh.raaps.common.model.data.Block
 import de.dh.raaps.common.model.data.Minutes
+import de.dh.raaps.common.ui.theme.AppTheme
 import de.dh.raaps.plugin.simbody.BodyModel
 import de.dh.raaps.plugin.simbody.model.BodyProfile
 import java.util.Locale
@@ -220,7 +221,7 @@ fun SimBodyDashboardCardPreview() {
         }
     }
 
-    MaterialTheme {
+    AppTheme {
         Column(modifier = Modifier.padding(16.dp)) {
             SimBodyDashboardCard(
                 bodyModel = bodyModel,

@@ -64,6 +64,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import de.dh.raaps.common.model.BASAL_MAX
 import de.dh.raaps.common.model.BASAL_MIN
@@ -82,6 +83,7 @@ import de.dh.raaps.common.model.data.Minutes
 import de.dh.raaps.common.ui.composables.TimeHourSelector
 import de.dh.raaps.common.ui.composables.contentScrollIndicator
 import de.dh.raaps.common.ui.composables.screenTitle
+import de.dh.raaps.common.ui.theme.AppTheme
 import de.dh.raaps.ui.R
 import de.dh.raaps.ui.controls.profile.InsulinProfileSettingsUiState
 import de.dh.raaps.ui.controls.profile.InsulinProfileSettingsViewModel
@@ -751,5 +753,72 @@ fun ValueAdjuster(
         ) {
             Icon(Icons.Default.Add, contentDescription = stringResource(id = R.string.cd_increase_value))
         }
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+private fun InsulinProfileListPreview() {
+    val sampleInsulinType = InsulinType(name = "Humalog", dia = Minutes.ofHours(5), peak = Minutes.ofHours(1))
+    val sampleProfiles = listOf(
+        InsulinProfile(
+            id = 1,
+            name = "Normal",
+            basalBlocks = listOf(Block(Minutes.ofHours(24), 0.8)),
+            isfBlocks = listOf(Block(Minutes.ofHours(24), 50.0)),
+            crBlocks = listOf(Block(Minutes.ofHours(24), 10.0)),
+            insulinType = sampleInsulinType,
+            dia = sampleInsulinType.dia,
+            peak = sampleInsulinType.peak
+        ),
+        InsulinProfile(
+            id = 2,
+            name = "Sport",
+            basalBlocks = listOf(Block(Minutes.ofHours(24), 0.5)),
+            isfBlocks = listOf(Block(Minutes.ofHours(24), 80.0)),
+            crBlocks = listOf(Block(Minutes.ofHours(24), 15.0)),
+            insulinType = sampleInsulinType,
+            dia = sampleInsulinType.dia,
+            peak = sampleInsulinType.peak
+        )
+    )
+
+    AppTheme {
+        InsulinProfileList(
+            uiState = InsulinProfileSettingsUiState(profiles = sampleProfiles),
+            onNavigateUp = {},
+            onAddProfile = {},
+            onEditProfile = {},
+            onDeleteProfile = {},
+            onCopyProfile = {}
+        )
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+private fun InsulinProfileDetailEditorPreview() {
+    val sampleInsulinType = InsulinType(name = "Humalog", dia = Minutes.ofHours(5), peak = Minutes.ofHours(1))
+    val sampleProfile = InsulinProfile(
+        id = 1,
+        name = "Normal",
+        basalBlocks = listOf(
+            Block(Minutes.ofHours(8), 0.8),
+            Block(Minutes.ofHours(16), 1.0)
+        ),
+        isfBlocks = listOf(Block(Minutes.ofHours(24), 50.0)),
+        crBlocks = listOf(Block(Minutes.ofHours(24), 10.0)),
+        insulinType = sampleInsulinType,
+        dia = sampleInsulinType.dia,
+        peak = sampleInsulinType.peak
+    )
+
+    AppTheme {
+        InsulinProfileDetailEditor(
+            profile = sampleProfile,
+            insulinTypes = listOf(sampleInsulinType, InsulinType(name = "Novorapid", dia = Minutes.ofHours(5), peak = Minutes.ofHours(1))),
+            onSave = {},
+            onCancel = {}
+        )
     }
 }
