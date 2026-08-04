@@ -19,7 +19,7 @@ import de.dh.raaps.common.R
 import de.dh.raaps.common.model.data.InsulinProfile
 
 @Composable
-fun ProfileSelectionDialog(
+fun InsulinProfileSelectionDialog(
     profiles: List<InsulinProfile>,
     activeProfileId: Long?,
     onProfileSelected: (InsulinProfile) -> Unit,

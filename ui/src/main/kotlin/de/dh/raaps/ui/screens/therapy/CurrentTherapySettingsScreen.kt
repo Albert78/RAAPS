@@ -63,7 +63,7 @@ import de.dh.raaps.common.model.data.Block
 import de.dh.raaps.common.model.data.InsulinProfile
 import de.dh.raaps.common.model.data.Minutes
 import de.dh.raaps.common.ui.ConfigurableDisplayStrategy
-import de.dh.raaps.common.ui.composables.ProfileSelectionDialog
+import de.dh.raaps.common.ui.composables.InsulinProfileSelectionDialog
 import de.dh.raaps.common.ui.composables.screenTitle
 import de.dh.raaps.common.ui.theme.AppTheme
 import de.dh.raaps.common.ui.theme.NeutralGrey
@@ -175,7 +175,7 @@ fun CurrentTherapySettingsContent(
     }
 
     if (showInsulinProfileDialog) {
-        ProfileSelectionDialog(
+        InsulinProfileSelectionDialog(
             profiles = uiState.availableProfiles,
             activeProfileId = uiState.activeProfile.activeProfileId,
             onProfileSelected = {

@@ -24,16 +24,12 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import de.dh.raaps.ui.R
-import de.dh.raaps.common.model.data.BgDelta
-import de.dh.raaps.common.model.data.BgValue
 import de.dh.raaps.common.model.data.GlucoseUnit
 import de.dh.raaps.common.model.data.InsulinProfile
-import de.dh.raaps.common.ui.composables.ProfileSelectionDialog
+import de.dh.raaps.common.ui.composables.InsulinProfileSelectionDialog
 import de.dh.raaps.common.ui.isfValue
-import de.dh.raaps.common.ui.theme.AppTheme
+import de.dh.raaps.ui.R
 import java.util.Locale
 
 @Composable
@@ -102,7 +98,7 @@ fun CurrentTherapyView(
     }
 
     if (showProfileDialog) {
-        ProfileSelectionDialog(
+        InsulinProfileSelectionDialog(
             profiles = uiState.availableProfiles,
             activeProfileId = activeProfile?.activeProfileId,
             onProfileSelected = {
