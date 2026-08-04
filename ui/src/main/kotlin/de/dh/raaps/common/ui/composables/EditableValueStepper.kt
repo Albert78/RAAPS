@@ -148,30 +148,59 @@ fun EditableValueStepper(
                 singleLine = true
             )
         } else {
-            Row(
-                modifier = Modifier
-                    .width(style.valueWidth)
-                    .clickable {
-                        isEditing = true
-                    },
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.Center
-            ) {
-                Text(
-                    text = displayStrategy.format(currentValue),
-                    style = style.textStyle.copy(
-                        color = displayStrategy.color(currentValue).let {
-                            if (it == Color.Unspecified) MaterialTheme.colorScheme.onSurface else it
-                        }
-                    ),
-                    textAlign = TextAlign.Center
-                )
-                if (suffix.isNotEmpty()) {
-                    Spacer(Modifier.width(style.spacing * 0.25f))
+            if (style.suffixBelowValue) {
+                Column(
+                    modifier = Modifier
+                        .width(style.valueWidth)
+                        .clickable {
+                            isEditing = true
+                        },
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.Center
+                ) {
                     Text(
-                        text = suffix.trim(),
-                        style = style.suffixStyle
+                        text = displayStrategy.format(currentValue),
+                        style = style.textStyle.copy(
+                            color = displayStrategy.color(currentValue).let {
+                                if (it == Color.Unspecified) MaterialTheme.colorScheme.onSurface else it
+                            }
+                        ),
+                        textAlign = TextAlign.Center
                     )
+                    if (suffix.isNotEmpty()) {
+                        Text(
+                            text = suffix.trim(),
+                            style = style.suffixStyle,
+                            textAlign = TextAlign.Center
+                        )
+                    }
+                }
+            } else {
+                Row(
+                    modifier = Modifier
+                        .width(style.valueWidth)
+                        .clickable {
+                            isEditing = true
+                        },
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.Center
+                ) {
+                    Text(
+                        text = displayStrategy.format(currentValue),
+                        style = style.textStyle.copy(
+                            color = displayStrategy.color(currentValue).let {
+                                if (it == Color.Unspecified) MaterialTheme.colorScheme.onSurface else it
+                            }
+                        ),
+                        textAlign = TextAlign.Center
+                    )
+                    if (suffix.isNotEmpty()) {
+                        Spacer(Modifier.width(style.spacing * 0.25f))
+                        Text(
+                            text = suffix.trim(),
+                            style = style.suffixStyle
+                        )
+                    }
                 }
             }
         }
@@ -193,7 +222,8 @@ data class StepperStyle(
     val spacing: Dp,
     val valueWidth: Dp,
     val textStyle: TextStyle,
-    val suffixStyle: TextStyle
+    val suffixStyle: TextStyle,
+    val suffixBelowValue: Boolean = false
 )
 
 object StepperDefaults {
@@ -209,10 +239,11 @@ object StepperDefaults {
     @Composable
     fun compactStyle() = StepperStyle(
         buttonSize = 36.dp,
-        spacing = 8.dp,
-        valueWidth = 84.dp,
+        spacing = 4.dp,
+        valueWidth = 48.dp,
         textStyle = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
-        suffixStyle = MaterialTheme.typography.labelSmall
+        suffixStyle = MaterialTheme.typography.labelSmall,
+        suffixBelowValue = true
     )
 }
 
@@ -239,7 +270,19 @@ fun EditableValueStepperPreview() {
                 }
 
                 Column {
-                    Text("Compact Style", style = MaterialTheme.typography.labelSmall)
+                    Text("Compact Style (Suffix Beside)", style = MaterialTheme.typography.labelSmall)
+                    EditableValueStepper(
+                        currentValue = value,
+                        onValueChange = { value = it },
+                        minValue = 90.0,
+                        maxValue = 110.0,
+                        suffix = "mg/dL",
+                        style = StepperDefaults.compactStyle().copy(suffixBelowValue = false, valueWidth = 82.dp)
+                    )
+                }
+
+                Column {
+                    Text("Compact Style (Suffix Below)", style = MaterialTheme.typography.labelSmall)
                     EditableValueStepper(
                         currentValue = value,
                         onValueChange = { value = it },

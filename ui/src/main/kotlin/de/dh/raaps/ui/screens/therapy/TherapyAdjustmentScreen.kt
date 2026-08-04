@@ -10,8 +10,10 @@ import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -46,6 +48,15 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.graphics.Color
+import androidx.compose.foundation.layout.IntrinsicSize
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.OutlinedCard
+import androidx.compose.ui.draw.scale
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
+import de.dh.raaps.common.ui.composables.StepperDefaults
 import de.dh.raaps.common.model.ADJUSTMENT_PERCENTAGE_MAX
 import de.dh.raaps.common.model.ADJUSTMENT_PERCENTAGE_MIN
 import de.dh.raaps.common.model.LOW_THRESHOLD_MAX
@@ -155,10 +166,13 @@ private fun TherapyAdjustmentContent(
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
         // Insulin Adjustment Section
+        val insulinAdjustmentActive = currentPercentage != 0
         AdjustmentSection(
             icon = Icons.Default.UnfoldMore,
             title = stringResource(R.string.aps_control_therapy_adjustment_dialog_insulin_adjustment_label),
-            description = stringResource(R.string.aps_control_therapy_adjustment_dialog_insulin_adjustment_description)
+            description = stringResource(R.string.aps_control_therapy_adjustment_dialog_insulin_adjustment_description),
+            isActive = insulinAdjustmentActive,
+            accentColor = if (currentPercentage > 0) SoftRed else SoftBlue
         ) {
             EditableValueStepper(
                 currentValue = currentPercentage.toDouble(),
@@ -177,50 +191,28 @@ private fun TherapyAdjustmentContent(
         AdjustmentSection(
             icon = Icons.Default.Adjust,
             title = stringResource(R.string.aps_control_therapy_adjustment_dialog_bg_adjustment_label),
-            description = stringResource(R.string.aps_control_therapy_adjustment_dialog_bg_adjustment_description)
+            description = stringResource(R.string.aps_control_therapy_adjustment_dialog_bg_adjustment_description),
+            useCardWrapper = false
         ) {
-            Column(
-                verticalArrangement = Arrangement.spacedBy(12.dp),
-                horizontalAlignment = Alignment.CenterHorizontally
+            Row(
+                modifier = Modifier.fillMaxWidth().height(IntrinsicSize.Max),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                // Target BG
-                Column(
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.spacedBy(4.dp)
-                ) {
-                    Row(
-                        modifier = Modifier
-                            .padding(horizontal = 32.dp)
-                            .fillMaxWidth(),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.SpaceBetween
-                    ) {
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(8.dp)
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.Adjust,
-                                contentDescription = null,
-                                modifier = Modifier.size(20.dp),
-                                tint = MaterialTheme.colorScheme.primary
-                            )
-                            Text(
-                                text = stringResource(R.string.current_therapy_target_label),
-                                style = MaterialTheme.typography.labelMedium
-                            )
+                // Target BG Tile
+                AdjustmentTile(
+                    modifier = Modifier.weight(1f).fillMaxHeight(),
+                    icon = Icons.Default.Adjust,
+                    label = stringResource(R.string.current_therapy_target_label),
+                    active = currentTarget != null,
+                    onActiveChange = { active ->
+                        if (active) {
+                            onValuesChange(currentPercentage, baseTarget, currentLow, null)
+                        } else {
+                            onValuesChange(currentPercentage, null, currentLow, null)
                         }
-                        Switch(
-                            checked = currentTarget != null,
-                            onCheckedChange = { active ->
-                                if (active) {
-                                    onValuesChange(currentPercentage, baseTarget, currentLow, null)
-                                } else {
-                                    onValuesChange(currentPercentage, null, currentLow, null)
-                                }
-                            }
-                        )
-                    }
+                    },
+                    accentColor = MaterialTheme.colorScheme.primary
+                ) {
                     if (currentTarget != null) {
                         EditableValueStepper(
                             currentValue = currentTarget.mgdl.toDouble(),
@@ -231,70 +223,29 @@ private fun TherapyAdjustmentContent(
                             minValue = TARGET_MIN.toDouble(),
                             maxValue = TARGET_MAX.toDouble(),
                             steppingStrategy = steppingStrategyBg,
-                            suffix = " mg/dL"
+                            suffix = "mg/dL",
+                            style = StepperDefaults.compactStyle()
                         )
                     } else {
-                        Row(
-                            modifier = Modifier
-                                .padding(vertical = 8.dp)
-                                .clickable {
-                                    onValuesChange(currentPercentage, baseTarget, currentLow, null)
-                                },
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(4.dp)
-                        ) {
-                            Text(
-                                text = stringResource(R.string.bg_value_single_format, baseTarget.mgdl.toInt()),
-                                style = MaterialTheme.typography.bodyLarge,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
-                            )
-                            Text(
-                                text = "(${stringResource(R.string.aps_control_adjustment_standard)})",
-                                style = MaterialTheme.typography.labelSmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)
-                            )
-                        }
+                        StandardValueDisplay(baseTarget)
                     }
                 }
 
-                // Low Threshold
-                Column(
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.spacedBy(4.dp)
-                ) {
-                    Row(
-                        modifier = Modifier
-                            .padding(horizontal = 32.dp)
-                            .fillMaxWidth(),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.SpaceBetween
-                    ) {
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(8.dp)
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.VerticalAlignBottom,
-                                contentDescription = null,
-                                modifier = Modifier.size(20.dp),
-                                tint = MaterialTheme.colorScheme.error
-                            )
-                            Text(
-                                text = stringResource(R.string.current_therapy_low_threshold_label),
-                                style = MaterialTheme.typography.labelMedium
-                            )
+                // Low Threshold Tile
+                AdjustmentTile(
+                    modifier = Modifier.weight(1f).fillMaxHeight(),
+                    icon = Icons.Default.VerticalAlignBottom,
+                    label = stringResource(R.string.current_therapy_low_threshold_label),
+                    active = currentLow != null,
+                    onActiveChange = { active ->
+                        if (active) {
+                            onValuesChange(currentPercentage, currentTarget, baseLow, null)
+                        } else {
+                            onValuesChange(currentPercentage, currentTarget, null, null)
                         }
-                        Switch(
-                            checked = currentLow != null,
-                            onCheckedChange = { active ->
-                                if (active) {
-                                    onValuesChange(currentPercentage, currentTarget, baseLow, null)
-                                } else {
-                                    onValuesChange(currentPercentage, currentTarget, null, null)
-                                }
-                            }
-                        )
-                    }
+                    },
+                    accentColor = MaterialTheme.colorScheme.error
+                ) {
                     if (currentLow != null) {
                         EditableValueStepper(
                             currentValue = currentLow.mgdl.toDouble(),
@@ -305,29 +256,11 @@ private fun TherapyAdjustmentContent(
                             minValue = LOW_THRESHOLD_MIN.toDouble(),
                             maxValue = LOW_THRESHOLD_MAX.toDouble(),
                             steppingStrategy = steppingStrategyBg,
-                            suffix = " mg/dL"
+                            suffix = "mg/dL",
+                            style = StepperDefaults.compactStyle()
                         )
                     } else {
-                        Row(
-                            modifier = Modifier
-                                .padding(vertical = 8.dp)
-                                .clickable {
-                                    onValuesChange(currentPercentage, currentTarget, baseLow, null)
-                                },
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(4.dp)
-                        ) {
-                            Text(
-                                text = stringResource(R.string.bg_value_single_format, baseLow.mgdl.toInt()),
-                                style = MaterialTheme.typography.bodyLarge,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
-                            )
-                            Text(
-                                text = "(${stringResource(R.string.aps_control_adjustment_standard)})",
-                                style = MaterialTheme.typography.labelSmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)
-                            )
-                        }
+                        StandardValueDisplay(baseLow)
                     }
                 }
             }
@@ -393,40 +326,144 @@ private fun AdjustmentSection(
     icon: ImageVector,
     title: String,
     description: String,
+    useCardWrapper: Boolean = true,
+    isActive: Boolean = false,
+    accentColor: androidx.compose.ui.graphics.Color = MaterialTheme.colorScheme.primary,
     content: @Composable () -> Unit
 ) {
-    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+    Column {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Icon(
                 imageVector = icon,
                 contentDescription = null,
-                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                tint = if (isActive) accentColor else MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.size(20.dp)
             )
             Spacer(modifier = Modifier.width(8.dp))
             Text(
                 text = title,
                 style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.Bold
+                fontWeight = FontWeight.Bold,
+                color = if (isActive) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurfaceVariant
             )
         }
+        Spacer(modifier = Modifier.height(4.dp))
         Text(
             text = description,
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
-        ElevatedCard(
-            modifier = Modifier.fillMaxWidth()
+        Spacer(modifier = Modifier.height(12.dp))
+        if (useCardWrapper) {
+            val containerColor = if (isActive) accentColor.copy(alpha = 0.05f) else MaterialTheme.colorScheme.surface
+            val borderColor = if (isActive) Color.White else MaterialTheme.colorScheme.outlineVariant
+
+            OutlinedCard(
+                modifier = Modifier.fillMaxWidth(),
+                colors = CardDefaults.outlinedCardColors(containerColor = containerColor),
+                border = BorderStroke(1.dp, borderColor)
+            ) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 12.dp, horizontal = 16.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    content()
+                }
+            }
+        } else {
+            content()
+        }
+    }
+}
+
+@Composable
+private fun AdjustmentTile(
+    modifier: Modifier = Modifier,
+    icon: ImageVector,
+    label: String,
+    active: Boolean,
+    onActiveChange: (Boolean) -> Unit,
+    accentColor: androidx.compose.ui.graphics.Color = MaterialTheme.colorScheme.primary,
+    content: @Composable () -> Unit
+) {
+    val containerColor = if (active) accentColor.copy(alpha = 0.1f) else MaterialTheme.colorScheme.surface
+    val borderColor = if (active) Color.White else MaterialTheme.colorScheme.outlineVariant
+    val contentColor = if (active) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurfaceVariant
+    val iconTint = if (active) accentColor else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
+
+    OutlinedCard(
+        modifier = modifier.clickable(
+            interactionSource = remember { MutableInteractionSource() },
+            indication = null // Subtler or no ripple to avoid visual clutter in small tiles
         ) {
+            onActiveChange(!active)
+        },
+        colors = CardDefaults.outlinedCardColors(
+            containerColor = containerColor,
+        ),
+        border = BorderStroke(1.dp, borderColor)
+    ) {
+        Column(
+            modifier = Modifier
+                .padding(8.dp)
+                .fillMaxWidth()
+                .fillMaxHeight(),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Row(
+                modifier = Modifier.padding(vertical = 8.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(6.dp)
+            ) {
+                Icon(
+                    imageVector = icon,
+                    contentDescription = null,
+                    modifier = Modifier.size(16.dp),
+                    tint = iconTint
+                )
+                Text(
+                    text = label,
+                    style = MaterialTheme.typography.labelSmall,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    color = contentColor,
+                    fontWeight = if (active) FontWeight.Bold else FontWeight.Normal
+                )
+            }
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(vertical = 12.dp, horizontal = 16.dp),
+                    .clickable(enabled = false) { /* stop propagation if needed */ },
                 contentAlignment = Alignment.Center
             ) {
                 content()
             }
         }
+    }
+}
+
+@Composable
+private fun StandardValueDisplay(
+    value: BgValue
+) {
+    Column(
+        modifier = Modifier.padding(vertical = 8.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(2.dp)
+    ) {
+        Text(
+            text = stringResource(R.string.bg_value_single_format, value.mgdl.toInt()),
+            style = MaterialTheme.typography.bodyLarge,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+        Text(
+            text = stringResource(R.string.aps_control_adjustment_standard),
+            style = MaterialTheme.typography.labelSmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            textAlign = TextAlign.Center
+        )
     }
 }
 
