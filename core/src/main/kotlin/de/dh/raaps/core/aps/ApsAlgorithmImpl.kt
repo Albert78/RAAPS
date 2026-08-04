@@ -1,6 +1,5 @@
 package de.dh.raaps.core.aps
 
-import de.dh.raaps.common.model.INSULIN_EPSILON
 import de.dh.raaps.common.model.InsulinAmount
 import de.dh.raaps.common.model.calculation.CarbsInsulinCalculationModel
 import de.dh.raaps.common.model.convertToCarbsFromBgDelta
@@ -160,10 +159,14 @@ class ApsAlgorithmImpl(
         val dia = settings.insulinProfile.dia
         val insulinPeak = settings.insulinProfile.peak
 
-        // Data block 1: Influence of meals and insulin - This is updated when metabolic events occur,
-        // the data is reused in succeeding calculation calls until another metabolic event occurs.
+        // Cache block 1: Influence of meals and insulin - the data is reused in succeeding calculation
+        // calls until another metabolic event occurs, which invalidates the cache block
 
-        // Materialize assumed ISF and CR values, update predicted BGI if changed, update BG if changed
+        // Cache block 2: Profile data - the data is reused in succeeding calculation calls
+        // until the profile changes, which invalidates the cache block
+
+        // Prediction block:
+        // Update predicted BGI, update predicted BG
         predictionModel.calculate(
             currentBG = currentBgFiltered,
             avgCurrentDeviationPerTick = avgCurrentDeviationPerTick,
@@ -174,13 +177,6 @@ class ApsAlgorithmImpl(
             therapyManager = therapyManager,
             carbsInsulinCalculationModel = carbsInsulinCalculationModel
         )
-
-        // We cancel all insulin jobs including temporary basal rate - this means, the following code
-        // must calculate:
-        // - Carbs hints for low bg
-        // - Deferred meal boluses
-        // - Currection boluses
-        // - Basal
 
         val bgSettings = therapyManager.getBgSettings()
         val targetBg = bgSettings.first
@@ -193,7 +189,7 @@ class ApsAlgorithmImpl(
 
         // -------------------------------- Low handling -------------------------------------------
 
-        // Step 1: Get out of a current or impending low by suggesting carbs
+        // Get out of a current or impending low by suggesting carbs
         // Find the next occurrence where the value falls below the minimum; find the minimum with time
         predictionModel.findNext(startAt = nowTick, until = nowTick.plusMinutes(LOW_WARNING_THRESHOLD.value.toInt())) {
             it.predictedBg < lowThreshold + LOW_BG_SAFETY_MARGIN
@@ -233,7 +229,7 @@ class ApsAlgorithmImpl(
 
         var tempBasal: TempBasalResult? = null
 
-            // Step 2: Prevent further falling BG
+        // Prevent further falling BG
         if (currentBgFiltered < targetBg && bg15Trend < BgDelta(0)) {
             // If Bg is under normal and further falling
             val bgErrorToTarget = targetBg - currentBgFiltered
@@ -258,12 +254,14 @@ class ApsAlgorithmImpl(
 
         // -------------------------------- Meal boluses -------------------------------------------
 
-        // Step 3: Administer scheduled meal boluses
+        // Administer scheduled meal boluses
         val deferredBoluses = therapyManager.getDeferredBoluses()
-        var handledDeferredBolus: DeferredBolus? = null
+        var handleDeferredBolus: DeferredBolus? = null
+        var sumDeferredBolus = 0.0
         for (deferredBolus in deferredBoluses) {
+            sumDeferredBolus += deferredBolus.amount.iu
             if (deferredBolus.timestamp < now) {
-                handledDeferredBolus = deferredBolus
+                handleDeferredBolus = deferredBolus
                 mealOrCorrectionBolus = deferredBolus.amount
             }
         }
@@ -273,14 +271,24 @@ class ApsAlgorithmImpl(
             tempBasal = tempBasal,
             clearTempBasal = tempBasal == null,
             bolus = mealOrCorrectionBolus,
-            handledDeferredBolus = handledDeferredBolus
+            handledDeferredBolus = handleDeferredBolus
         )
 
         // ------------------------ Good BG or neutral handling check ------------------------------
 
         val currentCob = carbsInsulinCalculationModel.cob(meals, now)
+        val insulinEquivalentOfCarbs = convertToUnitsFromCarbs(carbs = currentCob, cr = cr)
+        val currentIob = carbsInsulinCalculationModel.iob(
+            insulinApplications = insulinApplications,
+            timestamp = now,
+            dia = dia,
+            peak = insulinPeak
+        )
 
-        if (currentCob > SUSPEND_HIGH_CORRECTIONS_ON_HIGH_COB_THRESHOLD || mealOrCorrectionBolus.iu > INSULIN_EPSILON) {
+        // TODO: Validate this arbitrary check; Just want to make sure that we don't start correcting
+        // a high BG if we still have much IOB / deferred bolus
+        if (currentCob > SUSPEND_HIGH_CORRECTIONS_ON_HIGH_COB_THRESHOLD &&
+            (currentIob + sumDeferredBolus) > insulinEquivalentOfCarbs / 2.0) {
             // We're under influence of a meal, which means we expect the blood sugar to rise; skip correction in that case
             return neutralCalculationResult
         }
@@ -306,25 +314,18 @@ class ApsAlgorithmImpl(
                 tempBasal = TempBasalResult(unitsPerHour = 0.0, durationInHours = 20),
                 clearTempBasal = false,
                 bolus = null,
-                handledDeferredBolus = handledDeferredBolus
+                handledDeferredBolus = handleDeferredBolus
             )
         }
 
         // -------------------------------- High handling ------------------------------------------
 
-        // Step 4: Correct high blood sugar by administering insulin
+        // Correct high blood sugar by administering insulin
 
         // This BG error must be corrected with insulin
         val bgErrorAtPeak = predictedBgAtPeak - targetBg
 
         val correction = convertToUnitsFromBgDelta(bgDelta = bgErrorAtPeak, isf = isf)
-        val insulinEquivalentOfCarbs = convertToUnitsFromCarbs(carbs = currentCob, cr = cr)
-        val currentIob = carbsInsulinCalculationModel.iob(
-            insulinApplications = insulinApplications,
-            timestamp = now,
-            dia = dia,
-            peak = insulinPeak
-        )
 
         val insulin = correction + insulinEquivalentOfCarbs - currentIob
         return CalculationResult(
@@ -332,7 +333,7 @@ class ApsAlgorithmImpl(
             tempBasal = TempBasalResult(unitsPerHour = 0.0, durationInHours = 1),
             clearTempBasal = false,
             bolus = InsulinAmount(insulin),
-            handledDeferredBolus = handledDeferredBolus
+            handledDeferredBolus = handleDeferredBolus
         )
     }
 

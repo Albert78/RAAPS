@@ -12,16 +12,16 @@ import de.dh.raaps.common.model.data.Tick
  */
 class PredictionTickState {
     var tick: Tick = Tick.invalid()
-    // Block 1: Impacts of carbs and insulin. Depend on metabolic events. Cached until carbs or insulin change.
+    // Cache block 1: Impacts of carbs and insulin. Depend on metabolic events. Cached until carbs or insulin change.
     var effectiveCarbs: Double? = null // Sum from all meals in the past, per tick
     var effectiveInsulin: Double? = null // Sum from all insulin applications in the past, per tick
 
-    // Block 2: Therapy settings. To avoid more or less expensive calculation, cached until settings change.
+    // Cache block 2: Therapy settings. To avoid more or less expensive calculation, cached until settings change.
     var isf: BgDelta? = null // ISF at the time of this tick, from profile
     var cr: Double? = 0.0 // CR at the time of this tick, from profile
     var basalRateUph: Double? = 0.0 // Normal basal rate in units per hour for this tick, from profile
 
-    // Block 3: BGI values depend on blocks 1 and 2.
+    // Prediction block: BGI values depend on blocks 1 and 2.
     // Includes Carb Impact, Insulin Impact and Basal Requirement (from profile).
     // The BGI is calculated as if no basal rate would be injected, i.e. without correcting, BGI will rise.
     // With all basal applications registered as insulin applications, we get the actual prediction.
