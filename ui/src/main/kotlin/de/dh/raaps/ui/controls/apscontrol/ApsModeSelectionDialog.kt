@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -71,12 +72,18 @@ private fun ApsModeSelectionContent(
         horizontalAlignment = Alignment.CenterHorizontally,
         modifier = modifier.fillMaxWidth()
     ) {
-        availableModes.forEach { mode ->
+        availableModes.forEachIndexed { index, mode ->
             ModeOption(
                 mode = mode,
                 isSelected = mode == selectedMode,
                 onClick = { onModeChange(mode) }
             )
+            if (index < availableModes.size - 1) {
+                HorizontalDivider(
+                    modifier = Modifier.padding(top = 8.dp),
+                    color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)
+                )
+            }
         }
     }
 }

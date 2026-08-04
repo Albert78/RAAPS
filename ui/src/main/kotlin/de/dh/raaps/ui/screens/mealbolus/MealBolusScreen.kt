@@ -1,5 +1,6 @@
 package de.dh.raaps.ui.screens.mealbolus
 
+import android.content.res.Configuration
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
@@ -19,7 +20,7 @@ import de.dh.raaps.common.ui.composables.contentScrollIndicator
 import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
@@ -29,7 +30,6 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -94,12 +94,12 @@ fun MealBolusContent(
                 title = {
                     Text(
                         if (uiState.isEditMode) stringResource(R.string.meal_edit_screen_title)
-                        else stringResource(R.string.meal_bolus_screen_title)
+                        else stringResource(R.string.meal_add_screen_title)
                     )
                 },
                 navigationIcon = {
                     IconButton(onClick = onNavigateUp) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                        Icon(Icons.Default.Close, contentDescription = stringResource(id = R.string.cd_close))
                     }
                 }
             )
@@ -261,95 +261,21 @@ fun MealBolusContent(
                 }
             }
 
-            // Bottom Buttons
-            Row(
+            // Bottom Button
+            Button(
+                onClick = onSubmit,
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(16.dp)
+                enabled = !uiState.isSubmitting
             ) {
-                OutlinedButton(
-                    onClick = onNavigateUp,
-                    modifier = Modifier.weight(1f)
-                ) {
-                    Text(stringResource(android.R.string.cancel))
-                }
-                Button(
-                    onClick = onSubmit,
-                    modifier = Modifier.weight(1f),
-                    enabled = !uiState.isSubmitting
-                ) {
-                    Text(
-                        if (uiState.isEditMode) stringResource(R.string.meal_edit_save_button)
-                        else stringResource(android.R.string.ok)
-                    )
-                }
+                Text(
+                    if (uiState.manualBolus > 0.0) {
+                        stringResource(R.string.meal_bolus_administer_button)
+                    } else {
+                        stringResource(R.string.meal_edit_save_button)
+                    }
+                )
             }
         }
-    }
-}
-
-@Preview(showBackground = true, name = "Manual Mode - Normal")
-@Composable
-fun MealBolusScreenManualPreview() {
-    val sampleMealTypes = listOf(
-        MealType(name = "Frühstück", components = listOf(CarbCurveComponentData(100, Minutes(60))), cat = Minutes(180)),
-        MealType(name = "Mittagessen", components = listOf(CarbCurveComponentData(100, Minutes(60))), cat = Minutes(180))
-    )
-    AppTheme {
-        MealBolusContent(
-            uiState = MealBolusUiState(
-                isLoading = false,
-                carbsKe = 4.5,
-                mealTypes = sampleMealTypes,
-                selectedMealType = sampleMealTypes[0],
-                currentBg = 140,
-                targetBg = 100,
-                isf = 50,
-                cr = 10.0,
-                mealPart = 4.5,
-                correctionPart = 0.8,
-                proposedBolus = 5.3,
-                manualBolus = 5.3,
-                isAutomaticMode = false
-            ),
-            onNavigateUp = {},
-            onCarbsChange = {},
-            onMealTypeChange = {},
-            onManualBolusChange = {},
-            onSubmit = {}
-        )
-    }
-}
-
-@Preview(showBackground = true, name = "Automatic Mode - Correction Ignored")
-@Composable
-fun MealBolusScreenAutomaticPreview() {
-    val sampleMealTypes = listOf(
-        MealType(name = "Frühstück", components = listOf(CarbCurveComponentData(100, Minutes(60))), cat = Minutes(180)),
-        MealType(name = "Mittagessen", components = listOf(CarbCurveComponentData(100, Minutes(60))), cat = Minutes(180))
-    )
-    AppTheme {
-        MealBolusContent(
-            uiState = MealBolusUiState(
-                isLoading = false,
-                carbsKe = 4.5,
-                mealTypes = sampleMealTypes,
-                selectedMealType = sampleMealTypes[0],
-                currentBg = 160,
-                targetBg = 100,
-                isf = 40,
-                cr = 12.0,
-                mealPart = 3.75,
-                correctionPart = 1.5,
-                proposedBolus = 3.75, // Correction ignored in auto mode
-                manualBolus = 3.75,
-                isAutomaticMode = true
-            ),
-            onNavigateUp = {},
-            onCarbsChange = {},
-            onMealTypeChange = {},
-            onManualBolusChange = {},
-            onSubmit = {}
-        )
     }
 }
 
@@ -385,4 +311,70 @@ fun FoodTypeSelector(
             }
         }
     }
+}
+
+@Composable
+private fun MealBolusPreview(isAuto: Boolean) {
+    val sampleMealTypes = listOf(
+        MealType(name = "Schnelle KE", components = listOf(CarbCurveComponentData(100, Minutes(60))), cat = Minutes(180)),
+        MealType(name = "Standard-Essen", components = listOf(CarbCurveComponentData(100, Minutes(60))), cat = Minutes(180)),
+        MealType(name = "Fettreiches Essen", components = listOf(CarbCurveComponentData(100, Minutes(60))), cat = Minutes(180)),
+        MealType(name = "Langsames Essen", components = listOf(CarbCurveComponentData(100, Minutes(60))), cat = Minutes(180)),
+    )
+    AppTheme {
+        MealBolusContent(
+            uiState = if (isAuto) {
+                MealBolusUiState(
+                    isLoading = false,
+                    carbsKe = 4.5,
+                    mealTypes = sampleMealTypes,
+                    selectedMealType = sampleMealTypes[0],
+                    currentBg = 160,
+                    targetBg = 100,
+                    isf = 40,
+                    cr = 12.0,
+                    mealPart = 3.75,
+                    correctionPart = 1.5,
+                    proposedBolus = 3.75, // Correction ignored in auto mode
+                    manualBolus = 3.75,
+                    isAutomaticMode = true
+                )
+            } else {
+                MealBolusUiState(
+                    isLoading = false,
+                    carbsKe = 4.5,
+                    mealTypes = sampleMealTypes,
+                    selectedMealType = sampleMealTypes[0],
+                    currentBg = 140,
+                    targetBg = 100,
+                    isf = 50,
+                    cr = 10.0,
+                    mealPart = 4.5,
+                    correctionPart = 0.8,
+                    proposedBolus = 5.3,
+                    manualBolus = 5.3,
+                    isAutomaticMode = false
+                )
+            },
+            onNavigateUp = {},
+            onCarbsChange = {},
+            onMealTypeChange = {},
+            onManualBolusChange = {},
+            onSubmit = {}
+        )
+    }
+}
+
+@Preview(showBackground = true, name = "Manual Mode")
+@Preview(showBackground = true, name = "Manual Mode - Dark", uiMode = Configuration.UI_MODE_NIGHT_YES)
+@Composable
+fun MealBolusManualPreview() {
+    MealBolusPreview(isAuto = false)
+}
+
+@Preview(showBackground = true, name = "Auto Mode")
+@Preview(showBackground = true, name = "Auto Mode - Dark", uiMode = Configuration.UI_MODE_NIGHT_YES)
+@Composable
+fun MealBolusAutoPreview() {
+    MealBolusPreview(isAuto = true)
 }

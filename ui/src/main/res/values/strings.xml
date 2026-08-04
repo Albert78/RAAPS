@@ -29,8 +29,8 @@
 
     <string name="bg_editor_title">Ziel-BZ &amp; Low-Schwelle</string>
     <string name="bg_editor_desc">Der angestrebte Blutzucker und die Schwelle für niedrige Werte über den Tag (Einheit: mg/dL).</string>
-    <string name="bg_editor_discard_title">Änderungen verwerfen?</string>
-    <string name="bg_editor_discard_message">Du hast Änderungen an den Zielwerten vorgenommen. Möchtest du diese wirklich verwerfen?</string>
+    <string name="bg_editor_discard_title">Änderungen speichern?</string>
+    <string name="bg_editor_discard_message">Du hast Änderungen an den Zielwerten vorgenommen. Möchtest du die Änderungen speichern oder verwerfen?</string>
 
     <string name="profile_editor_discard_title">Änderungen verwerfen?</string>
     <string name="profile_editor_discard_message">Es gibt ungespeicherte Änderungen. Möchtest du den Editor wirklich verlassen?</string>
@@ -177,7 +177,7 @@
     <string name="label_adjusted">(angepasst)</string>
 
     <string name="dashboard_meal_bolus_button">Mahlzeit/Korrektur</string>
-    <string name="meal_bolus_screen_title">Bolus-Rechner</string>
+    <string name="meal_add_screen_title">Mahlzeit/Korrekturbolus</string>
     <string name="meal_edit_screen_title">Mahlzeit bearbeiten</string>
     <string name="meal_edit_save_button">Speichern</string>
     <string name="meal_edit_warning_bolus">Bereits verabreichtes Insulin kann hier nicht bearbeitet werden.</string>
@@ -192,14 +192,15 @@
     <string name="meal_bolus_calc_iob_part">IOB Abzug: -%1$.2f U</string>
     <string name="meal_bolus_calc_cob_part">COB Ausgleich: +%1$.2f U</string>
     <string name="meal_bolus_insulin_label">Insulinmenge (U)</string>
+    <string name="meal_bolus_administer_button">Insulin verabreichen</string>
 
-    <string name="todo_text">To Do</string>
     <string name="drawer_header_title">RAAPS</string>
     <string name="menu_meals_label">Mahlzeiten</string>
     <string name="menu_bolus_history_label">Bolus-History</string>
     <string name="menu_system_control_label">Systemsteuerung</string>
     <string name="menu_alarms_label">Warnungen und Alarme</string>
     <string name="cd_open_navigation_drawer">Hauptmenü öffnen</string>
+    <string name="cd_close">Schließen</string>
 
     <string name="meals_screen_title">Mahlzeiten</string>
     <string name="meals_empty_list">Keine Mahlzeiten eingetragen</string>

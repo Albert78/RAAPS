@@ -161,14 +161,17 @@ fun BgEditorContent(
             confirmButton = {
                 TextButton(onClick = {
                     showDiscardConfirmation = false
-                    onNavigateUp()
+                    onSave()
                 }) {
-                    Text(stringResource(id = R.string.discard_confirm_button))
+                    Text(stringResource(id = de.dh.raaps.common.R.string.action_save))
                 }
             },
             dismissButton = {
-                TextButton(onClick = { showDiscardConfirmation = false }) {
-                    Text(stringResource(id = R.string.discard_dismiss_button))
+                TextButton(onClick = {
+                    showDiscardConfirmation = false
+                    onNavigateUp()
+                }) {
+                    Text(stringResource(id = R.string.discard_confirm_button))
                 }
             }
         )
