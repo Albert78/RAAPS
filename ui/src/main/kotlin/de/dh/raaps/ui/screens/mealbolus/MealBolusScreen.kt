@@ -57,6 +57,7 @@ import de.dh.raaps.common.model.CARBS_KE_MAX
 import de.dh.raaps.common.model.CARBS_KE_MIN
 import de.dh.raaps.common.model.CarbCurveComponentData
 import de.dh.raaps.common.model.MealType
+import de.dh.raaps.ui.screens.meals.getIcon
 import de.dh.raaps.common.model.data.Minutes
 import de.dh.raaps.common.ui.DefaultSteppingStrategy
 import de.dh.raaps.common.ui.ValueDisplayStrategy
@@ -359,10 +360,16 @@ fun FoodTypeSelector(
                     selected = (type == selectedType),
                     onClick = null // null recommended for accessibility with screen readers
                 )
+                Icon(
+                    imageVector = type.getIcon(),
+                    contentDescription = null,
+                    modifier = Modifier.padding(start = 16.dp).size(20.dp),
+                    tint = if (type == selectedType) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
+                )
                 Text(
                     text = type.name,
                     style = MaterialTheme.typography.bodyLarge,
-                    modifier = Modifier.padding(start = 16.dp)
+                    modifier = Modifier.padding(start = 12.dp)
                 )
             }
         }

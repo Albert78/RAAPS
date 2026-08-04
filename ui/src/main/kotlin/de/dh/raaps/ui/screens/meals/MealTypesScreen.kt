@@ -5,6 +5,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
@@ -30,6 +31,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import de.dh.raaps.common.model.MealType
+import de.dh.raaps.ui.screens.meals.getIcon
 import de.dh.raaps.common.ui.composables.screenTitle
 import de.dh.raaps.common.ui.theme.AppTheme
 import de.dh.raaps.ui.R
@@ -111,6 +113,14 @@ fun MealTypeItem(mealType: MealType, onDelete: () -> Unit, onClick: () -> Unit) 
     ListItem(
         headlineContent = { Text(mealType.name) },
         supportingContent = { Text("${mealType.cat.value} Min.") },
+        leadingContent = {
+            Icon(
+                imageVector = mealType.getIcon(),
+                contentDescription = null,
+                modifier = Modifier.size(24.dp),
+                tint = MaterialTheme.colorScheme.primary
+            )
+        },
         trailingContent = {
             IconButton(onClick = onDelete) {
                 Icon(imageVector = Icons.Default.Delete, contentDescription = "Löschen")
