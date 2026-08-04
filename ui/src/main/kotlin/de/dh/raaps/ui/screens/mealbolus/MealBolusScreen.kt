@@ -1,10 +1,12 @@
 package de.dh.raaps.ui.screens.mealbolus
 
+import android.content.res.Configuration
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -18,6 +20,7 @@ import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Info
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -46,19 +49,43 @@ import de.dh.raaps.common.model.BOLUS_MAX
 import de.dh.raaps.common.model.BOLUS_MIN
 import de.dh.raaps.common.model.CARBS_KE_MAX
 import de.dh.raaps.common.model.CARBS_KE_MIN
+import de.dh.raaps.common.model.CarbCurveComponentData
 import de.dh.raaps.common.model.MealType
+import de.dh.raaps.common.model.data.Minutes
 import de.dh.raaps.common.ui.DefaultSteppingStrategy
 import de.dh.raaps.common.ui.DefaultValueDisplayStrategy
 import de.dh.raaps.common.ui.composables.EditableValueStepper
+import de.dh.raaps.common.ui.theme.AppTheme
 import de.dh.raaps.ui.R
+import androidx.compose.ui.tooling.preview.Preview
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MealBolusScreen(
     viewModel: MealBolusViewModel,
     onNavigateUp: () -> Unit
 ) {
     val uiState by viewModel.uiState.collectAsState()
+    
+    MealBolusContent(
+        uiState = uiState,
+        onNavigateUp = onNavigateUp,
+        onCarbsChange = { viewModel.onCarbsChange(it) },
+        onMealTypeChange = { viewModel.onMealTypeChange(it) },
+        onManualBolusChange = { viewModel.onManualBolusChange(it) },
+        onSubmit = { viewModel.submit(onNavigateUp) }
+    )
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun MealBolusContent(
+    uiState: MealBolusUiState,
+    onNavigateUp: () -> Unit,
+    onCarbsChange: (Double) -> Unit,
+    onMealTypeChange: (MealType) -> Unit,
+    onManualBolusChange: (Double) -> Unit,
+    onSubmit: () -> Unit
+) {
     val focusManager = LocalFocusManager.current
 
     Scaffold(
@@ -118,7 +145,7 @@ fun MealBolusScreen(
                 Spacer(Modifier.height(8.dp))
                 EditableValueStepper(
                     currentValue = uiState.carbsKe,
-                    onValueChange = { viewModel.onCarbsChange(it) },
+                    onValueChange = onCarbsChange,
                     minValue = CARBS_KE_MIN,
                     maxValue = CARBS_KE_MAX,
                     steppingStrategy = DefaultSteppingStrategy(0.5), // 0.5 KE steps
@@ -140,7 +167,7 @@ fun MealBolusScreen(
                 FoodTypeSelector(
                     mealTypes = uiState.mealTypes,
                     selectedType = uiState.selectedMealType,
-                    onTypeSelected = { viewModel.onMealTypeChange(it) }
+                    onTypeSelected = onMealTypeChange
                 )
             }
 
@@ -158,16 +185,37 @@ fun MealBolusScreen(
                     HorizontalDivider()
                     Text(stringResource(R.string.meal_bolus_calc_bg_label, uiState.currentBg ?: uiState.targetBg))
                     Text(stringResource(R.string.meal_bolus_calc_factors_label, uiState.isf, uiState.cr))
-                    
+
                     Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
                         Text(
                             text = stringResource(R.string.meal_bolus_calc_meal_part, uiState.mealPart),
                             style = MaterialTheme.typography.bodySmall
                         )
-                        Text(
-                            text = stringResource(R.string.meal_bolus_calc_correction_part, uiState.correctionPart),
-                            style = MaterialTheme.typography.bodySmall
-                        )
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Text(
+                                text = stringResource(R.string.meal_bolus_calc_correction_part, uiState.correctionPart),
+                                style = MaterialTheme.typography.bodySmall,
+                                color = if (uiState.isAutomaticMode)
+                                    MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.38f)
+                                else
+                                    MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                            if (uiState.isAutomaticMode) {
+                                Spacer(Modifier.width(20.dp))
+                                Icon(
+                                    imageVector = Icons.Default.Info,
+                                    contentDescription = null,
+                                    modifier = Modifier.size(16.dp),
+                                    tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.38f)
+                                )
+                                Spacer(Modifier.width(4.dp))
+                                Text(
+                                    text = "Algorithmus",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.38f)
+                                )
+                            }
+                        }
                         if (uiState.iobPart > 0) {
                             Text(
                                 text = stringResource(R.string.meal_bolus_calc_iob_part, uiState.iobPart),
@@ -204,7 +252,7 @@ fun MealBolusScreen(
                     Spacer(Modifier.height(8.dp))
                     EditableValueStepper(
                         currentValue = uiState.manualBolus,
-                        onValueChange = { viewModel.onManualBolusChange(it) },
+                        onValueChange = onManualBolusChange,
                         minValue = BOLUS_MIN,
                         maxValue = BOLUS_MAX,
                         steppingStrategy = DefaultSteppingStrategy(0.1), // 0.1 U steps
@@ -229,7 +277,7 @@ fun MealBolusScreen(
                     Text(stringResource(R.string.meal_bolus_cancel_button))
                 }
                 Button(
-                    onClick = { viewModel.submit(onNavigateUp) },
+                    onClick = onSubmit,
                     modifier = Modifier.weight(1f),
                     enabled = !uiState.isSubmitting
                 ) {
@@ -240,6 +288,72 @@ fun MealBolusScreen(
                 }
             }
         }
+    }
+}
+
+@Preview(showBackground = true, name = "Manual Mode - Normal")
+@Composable
+fun MealBolusScreenManualPreview() {
+    val sampleMealTypes = listOf(
+        MealType(name = "Frühstück", components = listOf(CarbCurveComponentData(100, Minutes(60))), cat = Minutes(180)),
+        MealType(name = "Mittagessen", components = listOf(CarbCurveComponentData(100, Minutes(60))), cat = Minutes(180))
+    )
+    AppTheme {
+        MealBolusContent(
+            uiState = MealBolusUiState(
+                isLoading = false,
+                carbsKe = 4.5,
+                mealTypes = sampleMealTypes,
+                selectedMealType = sampleMealTypes[0],
+                currentBg = 140,
+                targetBg = 100,
+                isf = 50,
+                cr = 10.0,
+                mealPart = 4.5,
+                correctionPart = 0.8,
+                proposedBolus = 5.3,
+                manualBolus = 5.3,
+                isAutomaticMode = false
+            ),
+            onNavigateUp = {},
+            onCarbsChange = {},
+            onMealTypeChange = {},
+            onManualBolusChange = {},
+            onSubmit = {}
+        )
+    }
+}
+
+@Preview(showBackground = true, name = "Automatic Mode - Correction Ignored")
+@Composable
+fun MealBolusScreenAutomaticPreview() {
+    val sampleMealTypes = listOf(
+        MealType(name = "Frühstück", components = listOf(CarbCurveComponentData(100, Minutes(60))), cat = Minutes(180)),
+        MealType(name = "Mittagessen", components = listOf(CarbCurveComponentData(100, Minutes(60))), cat = Minutes(180))
+    )
+    AppTheme {
+        MealBolusContent(
+            uiState = MealBolusUiState(
+                isLoading = false,
+                carbsKe = 4.5,
+                mealTypes = sampleMealTypes,
+                selectedMealType = sampleMealTypes[0],
+                currentBg = 160,
+                targetBg = 100,
+                isf = 40,
+                cr = 12.0,
+                mealPart = 3.75,
+                correctionPart = 1.5,
+                proposedBolus = 3.75, // Correction ignored in auto mode
+                manualBolus = 3.75,
+                isAutomaticMode = true
+            ),
+            onNavigateUp = {},
+            onCarbsChange = {},
+            onMealTypeChange = {},
+            onManualBolusChange = {},
+            onSubmit = {}
+        )
     }
 }
 

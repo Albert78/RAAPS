@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.CreationExtras
+import de.dh.raaps.common.model.ApsMode
 import de.dh.raaps.common.model.DEFAULT_CR_GRAM_PER_UNIT
 import de.dh.raaps.common.model.DEFAULT_ISF_MGDL_PER_UNIT
 import de.dh.raaps.common.model.InsulinAmount
@@ -41,6 +42,7 @@ data class MealBolusUiState(
     val cobPart: Double = 0.0,
     val proposedBolus: Double = 0.0,
     val manualBolus: Double = 0.0,
+    val isAutomaticMode: Boolean = false,
     val isSubmitting: Boolean = false
 )
 
@@ -97,6 +99,13 @@ class MealBolusViewModel(
             }
             calculateBolus()
         }
+
+        viewModelScope.launch {
+            systemRegistry.appModeManager.apsMode.collect { mode ->
+                _uiState.update { it.copy(isAutomaticMode = mode == ApsMode.AutoCorrection) }
+                calculateBolus()
+            }
+        }
     }
 
     fun onCarbsChange(ke: Double) {
@@ -125,7 +134,11 @@ class MealBolusViewModel(
         val iobPart = state.iob
         val cobPart = state.cob / state.cr
 
-        val total = max(0.0, mealPart + correctionPart - iobPart + cobPart)
+        val total = if (state.isAutomaticMode) {
+            max(0.0, mealPart - iobPart + cobPart)
+        } else {
+            max(0.0, mealPart + correctionPart - iobPart + cobPart)
+        }
 
         // Round to 2 decimal places
         val roundedTotal = Math.round(total * 100.0) / 100.0
