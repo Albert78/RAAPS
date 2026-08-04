@@ -328,111 +328,37 @@ fun MealBolusContent(
                     }
                 }
 
-                // Calculation Details
-                Card(modifier = Modifier.fillMaxWidth()) {
-                    Column(
-                        modifier = Modifier.padding(16.dp),
-                        verticalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-                        Text(
-                            text = stringResource(R.string.meal_bolus_calculation_title),
-                            style = MaterialTheme.typography.labelLarge,
-                            fontWeight = FontWeight.Bold
-                        )
-                        HorizontalDivider()
-                        Text(
-                            stringResource(
-                                R.string.meal_bolus_calc_bg_label,
-                                uiState.currentBg ?: uiState.targetBg
-                            )
-                        )
-                        Text(stringResource(R.string.meal_bolus_calc_factors_label, uiState.isf, uiState.cr))
-
-                        Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                            Text(
-                                text = stringResource(R.string.meal_bolus_calc_meal_part, uiState.mealPart),
-                                style = MaterialTheme.typography.bodySmall
-                            )
-                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                Text(
-                                    text = stringResource(
-                                        R.string.meal_bolus_calc_correction_part,
-                                        uiState.correctionPart
-                                    ),
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = if (uiState.isAutomaticMode)
-                                        MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.38f)
-                                    else
-                                        MaterialTheme.colorScheme.onSurfaceVariant
-                                )
-                                if (uiState.isAutomaticMode) {
-                                    Spacer(Modifier.width(20.dp))
-                                    Icon(
-                                        imageVector = Icons.Default.Info,
-                                        contentDescription = null,
-                                        modifier = Modifier.size(16.dp),
-                                        tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.38f)
-                                    )
-                                    Spacer(Modifier.width(4.dp))
-                                    Text(
-                                        text = "Algorithmus",
-                                        style = MaterialTheme.typography.bodySmall,
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.38f)
-                                    )
-                                }
-                            }
-                            if (uiState.iobPart > 0) {
-                                Text(
-                                    text = stringResource(R.string.meal_bolus_calc_iob_part, uiState.iobPart),
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = MaterialTheme.colorScheme.error
-                                )
-                            }
-                            if (uiState.cobPart > 0) {
-                                Text(
-                                    text = stringResource(R.string.meal_bolus_calc_cob_part, uiState.cobPart),
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = MaterialTheme.colorScheme.primary
-                                )
-                            }
-                        }
-
-                        HorizontalDivider()
-                        Text(
-                            text = stringResource(R.string.meal_bolus_calc_result_label, uiState.proposedBolus),
-                            style = MaterialTheme.typography.bodyLarge,
-                            fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.primary
-                        )
-                    }
-                }
-
                 // Insulin Card (Final Insulin Stepper)
                 if (!uiState.isEditMode) {
                     Card(modifier = Modifier.fillMaxWidth()) {
                         Column(
                             modifier = Modifier.padding(16.dp),
-                            horizontalAlignment = Alignment.CenterHorizontally
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            verticalArrangement = Arrangement.spacedBy(16.dp)
                         ) {
-                            Text(
-                                text = stringResource(R.string.meal_bolus_insulin_label),
-                                style = MaterialTheme.typography.titleMedium
-                            )
-                            Spacer(Modifier.height(8.dp))
-                            EditableValueStepper(
-                                currentValue = uiState.manualBolus,
-                                onValueChange = onManualBolusChange,
-                                minValue = BOLUS_MIN,
-                                maxValue = BOLUS_MAX,
-                                steppingStrategy = DefaultSteppingStrategy(0.1), // 0.1 U steps
-                                displayStrategy = object : ValueDisplayStrategy {
-                                    override fun format(value: Double): String =
-                                        String.format(Locale.getDefault(), "%.2f", value)
+                            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                Text(
+                                    text = stringResource(R.string.meal_bolus_insulin_label),
+                                    style = MaterialTheme.typography.titleMedium
+                                )
+                                Spacer(Modifier.height(8.dp))
 
-                                    override fun color(value: Double): Color = Color.Unspecified
-                                },
-                                suffix = " U"
-                            )
+                                CalculationDetailsSelector(uiState = uiState)
+                                EditableValueStepper(
+                                    currentValue = uiState.manualBolus,
+                                    onValueChange = onManualBolusChange,
+                                    minValue = BOLUS_MIN,
+                                    maxValue = BOLUS_MAX,
+                                    steppingStrategy = DefaultSteppingStrategy(0.1), // 0.1 U steps
+                                    displayStrategy = object : ValueDisplayStrategy {
+                                        override fun format(value: Double): String =
+                                            String.format(Locale.getDefault(), "%.2f", value)
+
+                                        override fun color(value: Double): Color = Color.Unspecified
+                                    },
+                                    suffix = " U"
+                                )
+                            }
                         }
                     }
                 }
@@ -454,6 +380,135 @@ fun MealBolusContent(
                         }
                     )
                 }
+            }
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun CalculationDetailsSelector(
+    uiState: MealBolusUiState
+) {
+    var expanded by remember { mutableStateOf(false) }
+
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        onClick = { expanded = !expanded },
+        shape = MaterialTheme.shapes.medium,
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.secondary.copy(alpha = 0.2f)),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.4f)
+        )
+    ) {
+        Column(
+            modifier = Modifier
+                .padding(horizontal = 12.dp, vertical = 8.dp)
+                .fillMaxWidth()
+        ) {
+            if (!expanded) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text(
+                        text = stringResource(R.string.meal_bolus_calc_result_label, uiState.proposedBolus),
+                        style = MaterialTheme.typography.bodyMedium,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.primary
+                    )
+
+                    Icon(
+                        imageVector = Icons.Default.KeyboardArrowDown,
+                        contentDescription = "Expand",
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+            } else {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = stringResource(R.string.meal_bolus_calculation_title),
+                        style = MaterialTheme.typography.labelLarge,
+                        color = MaterialTheme.colorScheme.primary,
+                        fontWeight = FontWeight.Bold
+                    )
+                    Icon(
+                        imageVector = Icons.Default.KeyboardArrowUp,
+                        contentDescription = "Collapse",
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+
+                Spacer(Modifier.height(8.dp))
+                HorizontalDivider(color = MaterialTheme.colorScheme.secondary.copy(alpha = 0.2f))
+                Spacer(Modifier.height(8.dp))
+
+                Text(
+                    stringResource(R.string.meal_bolus_calc_bg_label, uiState.currentBg ?: uiState.targetBg),
+                    style = MaterialTheme.typography.bodySmall
+                )
+                Text(
+                    stringResource(R.string.meal_bolus_calc_factors_label, uiState.isf, uiState.cr),
+                    style = MaterialTheme.typography.bodySmall
+                )
+
+                Spacer(Modifier.height(4.dp))
+
+                Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                    Text(
+                        text = stringResource(R.string.meal_bolus_calc_meal_part, uiState.mealPart),
+                        style = MaterialTheme.typography.bodySmall
+                    )
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Text(
+                            text = stringResource(R.string.meal_bolus_calc_correction_part, uiState.correctionPart),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = if (uiState.isAutomaticMode)
+                                MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.38f)
+                            else
+                                MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        if (uiState.isAutomaticMode) {
+                            Spacer(Modifier.width(8.dp))
+                            Text(
+                                text = "(Algorithmus)",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.38f)
+                            )
+                        }
+                    }
+                    if (uiState.iobPart > 0) {
+                        Text(
+                            text = stringResource(R.string.meal_bolus_calc_iob_part, uiState.iobPart),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.error
+                        )
+                    }
+                    if (uiState.cobPart > 0) {
+                        Text(
+                            text = stringResource(R.string.meal_bolus_calc_cob_part, uiState.cobPart),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.primary
+                        )
+                    }
+                }
+
+                Spacer(Modifier.height(8.dp))
+                HorizontalDivider(color = MaterialTheme.colorScheme.secondary.copy(alpha = 0.2f))
+                Spacer(Modifier.height(4.dp))
+                Text(
+                    text = stringResource(R.string.meal_bolus_calc_result_label, uiState.proposedBolus),
+                    style = MaterialTheme.typography.bodyMedium,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.primary,
+                    textAlign = TextAlign.End,
+                    modifier = Modifier.fillMaxWidth()
+                )
             }
         }
     }

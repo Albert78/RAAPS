@@ -175,11 +175,7 @@ class MealBolusViewModel(
         val iobPart = state.iob
         val cobPart = state.cob / state.cr
 
-        val total = if (state.isAutomaticMode) {
-            max(0.0, (mealPart - iobPart) + cobPart)
-        } else {
-            max(0.0, (mealPart + correctionPart - iobPart) + cobPart)
-        }
+        val total = max(0.0, (mealPart + correctionPart - iobPart) + cobPart)
 
         // Round to 2 decimal places
         val roundedTotal = round(total * 100.0) / 100.0
