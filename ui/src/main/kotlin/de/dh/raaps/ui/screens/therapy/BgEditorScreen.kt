@@ -302,7 +302,7 @@ private fun BgBlockList(
                                     minValue = TARGET_MIN.toDouble(),
                                     maxValue = TARGET_MAX.toDouble(),
                                     steppingStrategy = DefaultSteppingStrategy(step = 5.0),
-                                    style = StepperDefaults.compactStyle().copy(suffixBelowValue = false, valueWidth = 64.dp)
+                                    style = StepperDefaults.mediumStyle()
                                 )
                             }
                             Row(verticalAlignment = Alignment.CenterVertically) {
@@ -325,7 +325,7 @@ private fun BgBlockList(
                                     minValue = TARGET_MIN.toDouble(),
                                     maxValue = TARGET_MAX.toDouble(),
                                     steppingStrategy = DefaultSteppingStrategy(step = 5.0),
-                                    style = StepperDefaults.compactStyle().copy(suffixBelowValue = false, valueWidth = 64.dp)
+                                    style = StepperDefaults.mediumStyle()
                                 )
                             }
                         }

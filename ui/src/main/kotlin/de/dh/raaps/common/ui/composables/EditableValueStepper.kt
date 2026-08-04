@@ -245,6 +245,15 @@ object StepperDefaults {
         suffixStyle = MaterialTheme.typography.labelSmall,
         suffixBelowValue = true
     )
+
+    @Composable
+    fun mediumStyle() = StepperStyle(
+        buttonSize = 44.dp,
+        spacing = 8.dp,
+        valueWidth = 90.dp,
+        textStyle = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold),
+        suffixStyle = MaterialTheme.typography.bodyMedium
+    )
 }
 
 @Preview(showBackground = true)
