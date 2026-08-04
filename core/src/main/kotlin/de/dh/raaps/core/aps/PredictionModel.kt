@@ -1,5 +1,7 @@
 package de.dh.raaps.core.aps
 
+import de.dh.raaps.common.model.InsulinApplication
+import de.dh.raaps.common.model.MealEntry
 import de.dh.raaps.common.model.calculation.CarbsInsulinCalculationModel
 import de.dh.raaps.common.model.convertToUnitsFromCarbs
 import de.dh.raaps.common.model.data.BgDelta
@@ -9,7 +11,6 @@ import de.dh.raaps.common.model.data.Timeline
 import de.dh.raaps.common.model.data.Timestamp
 import de.dh.raaps.common.model.data.times
 import de.dh.raaps.core.aps.ApsAlgorithmImpl.Companion.DEVIATION_DECAY_FACTOR_PER_TICK
-import de.dh.raaps.core.repository.TreatmentRepository
 
 /**
  * Predicts future blood glucose levels based on current blood glucose, treatment history
@@ -71,15 +72,14 @@ class PredictionModel(
     inline suspend fun calculate(
         currentBG: BgValue,
         avgCurrentDeviationPerTick: BgDelta,
-        treatmentRepository: TreatmentRepository,
+        meals: List<MealEntry>,
+        insulinApplications: List<InsulinApplication>,
         therapyManager: TherapyManager,
         carbsInsulinCalculationModel: CarbsInsulinCalculationModel
     ) {
         val settings = therapyManager.getActiveTherapySettings()
         val dia = settings.insulinProfile.dia
         val insulinPeak = settings.insulinProfile.peak
-        val meals = treatmentRepository.getMeals()
-        val insulinApplications = treatmentRepository.getInsulinApplications()
 
         var bg = currentBG
         var deviationPerTick = avgCurrentDeviationPerTick

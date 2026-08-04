@@ -159,14 +159,18 @@ class ApsAlgorithmImpl(
         val avgCurrentDeviationPerTick = calcAvgDeviationPerTick(DEVIATION_TIME_BASE)
         // Assumption: That deviation will be continued in the future but will fade away
 
-        // Stage 1: Influence of meals and insulin - This is updated when metabolic events occur,
+        val meals = treatmentRepository.getMeals()
+        val insulinApplications = treatmentRepository.getInsulinApplications()
+
+        // Data block 1: Influence of meals and insulin - This is updated when metabolic events occur,
         // the data is reused in succeeding calculation calls until another metabolic event occurs.
 
         // Materialize assumed ISF and CR values, update predicted BGI if changed, update BG if changed
         predictionModel.calculate(
             currentBgFiltered,
             avgCurrentDeviationPerTick,
-            treatmentRepository,
+            meals,
+            insulinApplications,
             therapyManager,
             carbsInsulinCalculationModel
         )
@@ -226,6 +230,8 @@ class ApsAlgorithmImpl(
         else
             BgDelta(0)
 
+        var tempBasal: TempBasalResult? = null
+
             // Step 2: Prevent further falling BG
         if (currentBgFiltered < targetBg && bg15Trend < BgDelta(0)) {
             // If Bg is under normal and further falling
@@ -233,17 +239,17 @@ class ApsAlgorithmImpl(
             val correctionUnits = convertToUnitsFromBgDelta(bgErrorToTarget, isf)
 
             // Decrease basal
-            basal = (basal - correctionUnits).coerceAtLeast(0.0)
             if (currentBgFiltered < targetBg - BgDelta(20)) {
                 // Bg is too low and further falling -> Defer ongoing meal boluses
                 return CalculationResult(
                     carbsHint = null,
-                    tempBasal = TempBasalResult(unitsPerHour = basal, durationInHours = 1),
+                    tempBasal = TempBasalResult(unitsPerHour = 0.0, durationInHours = 1),
                     clearTempBasal = false,
                     bolus = null
                 )
             }
             // Else go on with decreased basal
+            tempBasal = TempBasalResult(unitsPerHour = (basal - correctionUnits).coerceAtLeast(0.0), durationInHours = 1)
         }
 
         var mealOrCorrectionBolus = InsulinAmount(0.0)
@@ -260,9 +266,21 @@ class ApsAlgorithmImpl(
 
         // -------------------------------- High handling ------------------------------------------
 
-        Todo() // Das folgende nur, wenn wir nicht unter starken Essenseinfluss sind, wo wir sowieso hoch kommen werden!
-        // Step 4: Correct the next upcoming high by administering insulin early
+        val currentCob = carbsInsulinCalculationModel.cob(meals, now)
+
+        if (currentCob > SUSPEND_HIGH_CORRECTIONS_ON_HIGH_COB_THRESHOLD) {
+            // We're under influence of a meal, which means we expect the blood sugar to rise; skip correction in that case
+            return CalculationResult(
+                carbsHint = null,
+                tempBasal = tempBasal,
+                clearTempBasal = tempBasal == null,
+                bolus = mealOrCorrectionBolus
+            )
+        }
+
+        // Step 4: Correct high blood sugar by administering insulin early
         // Find the next high along with the time, then find the next low along with the time
+        Todo()
         predictionModel.findNext(startAt = nowTick) {
             it.predictedBg > (targetBg - BgDelta.fromMgDl(10))
         }?.let { firstHighPoint ->

@@ -232,14 +232,6 @@ class TherapyManager(
         }
     }
 
-    fun canSetTemp(): Boolean {
-        return when (systemManager.apsMode.value) {
-            ApsMode.Suspend -> false
-            ApsMode.BasalOnly -> false
-            ApsMode.AutoCorrection -> true // TODO: Check if pump supports setting temp
-        }
-    }
-
     fun setTempBasal(durationInHours: Int, unitsPerHour: Double) {
         when (systemManager.apsMode.value) {
             ApsMode.Suspend -> return
