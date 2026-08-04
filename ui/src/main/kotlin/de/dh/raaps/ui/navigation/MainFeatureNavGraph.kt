@@ -21,6 +21,8 @@ import de.dh.raaps.common.navigation.FeatureNavGraph
 import de.dh.raaps.common.navigation.HistoryRoute
 import de.dh.raaps.common.navigation.InsulinProfileEditorRoute
 import de.dh.raaps.common.navigation.MealBolusRoute
+import de.dh.raaps.common.navigation.MealTypeEditorRoute
+import de.dh.raaps.common.navigation.MealTypesRoute
 import de.dh.raaps.common.navigation.MealsRoute
 import de.dh.raaps.common.navigation.NavigationViewModel
 import de.dh.raaps.common.navigation.PermissionsRoute
@@ -38,7 +40,12 @@ import de.dh.raaps.ui.screens.dashboard.DashboardViewModel
 import de.dh.raaps.ui.screens.history.HistoryScreen
 import de.dh.raaps.ui.screens.mealbolus.MealBolusScreen
 import de.dh.raaps.ui.screens.mealbolus.MealBolusViewModel
+import de.dh.raaps.ui.screens.meals.MealTypeEditorScreen
+import de.dh.raaps.ui.screens.meals.MealTypeEditorViewModel
+import de.dh.raaps.ui.screens.meals.MealTypesScreen
+import de.dh.raaps.ui.screens.meals.MealTypesViewModel
 import de.dh.raaps.ui.screens.meals.MealsScreen
+import de.dh.raaps.ui.screens.meals.MealsViewModel
 import de.dh.raaps.ui.screens.permissions.PermissionsScreen
 import de.dh.raaps.ui.screens.permissions.PermissionsViewModel
 import de.dh.raaps.ui.screens.permissions.isPermissionsMissing
@@ -88,7 +95,7 @@ class MainFeatureNavGraph(
                     onNavigateToPreferences = { navViewModel.push(PreferencesMainRoute) },
                     onNavigateToProfileEditor = { navViewModel.push(InsulinProfileEditorRoute) },
                     onNavigateToTherapySettings = { navViewModel.push(CurrentTherapySettingsRoute) },
-                    onNavigateToMealBolus = { navViewModel.push(MealBolusRoute) },
+                    onNavigateToMealBolus = { navViewModel.push(MealBolusRoute()) },
                     onHistoryChartClick = { navViewModel.push(HistoryRoute) },
                     extraContent = extraDashboardContent
                 )
@@ -126,8 +133,9 @@ class MainFeatureNavGraph(
             }
 
             is MealBolusRoute -> NavEntry(key) {
-                val vm: MealBolusViewModel =
-                    viewModel(factory = MealBolusViewModel.Companion.Factory(registry))
+                val vm: MealBolusViewModel = viewModel(
+                    factory = MealBolusViewModel.Companion.Factory(registry, key.mealId)
+                )
 
                 MealBolusScreen(
                     viewModel = vm,
@@ -196,7 +204,36 @@ class MainFeatureNavGraph(
             }
 
             is MealsRoute -> NavEntry(key) {
-                MealsScreen(onNavigateUp = { navViewModel.pop() })
+                val vm: MealsViewModel = viewModel(
+                    factory = MealsViewModel.Companion.Factory(registry)
+                )
+                MealsScreen(
+                    viewModel = vm,
+                    onNavigateToMealTypes = { navViewModel.push(MealTypesRoute) },
+                    onEditMeal = { meal -> navViewModel.push(MealBolusRoute(mealId = meal.id)) },
+                    onNavigateUp = { navViewModel.pop() }
+                )
+            }
+
+            is MealTypesRoute -> NavEntry(key) {
+                val vm: MealTypesViewModel = viewModel(
+                    factory = MealTypesViewModel.Companion.Factory(registry)
+                )
+                MealTypesScreen(
+                    viewModel = vm,
+                    onNavigateToEditor = { id -> navViewModel.push(MealTypeEditorRoute(mealTypeId = id)) },
+                    onNavigateUp = { navViewModel.pop() }
+                )
+            }
+
+            is MealTypeEditorRoute -> NavEntry(key) {
+                val vm: MealTypeEditorViewModel = viewModel(
+                    factory = MealTypeEditorViewModel.Companion.Factory(registry, key.mealTypeId)
+                )
+                MealTypeEditorScreen(
+                    viewModel = vm,
+                    onNavigateUp = { navViewModel.pop() }
+                )
             }
 
             is BolusHistoryRoute -> NavEntry(key) {

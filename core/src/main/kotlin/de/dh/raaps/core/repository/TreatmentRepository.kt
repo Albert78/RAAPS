@@ -166,8 +166,22 @@ class TreatmentRepository(
     }
 
     /**
+     * Returns a specific meal entry by ID.
+     */
+    suspend fun getMeal(id: Long): MealEntry? {
+        mutex.withLock {
+            val inMemory = mealsHistory.find { it.id == id }
+            if (inMemory != null) return inMemory
+        }
+
+        val entity = metabolicEventsDao.getMealById(id) ?: return null
+        val mealTypesMap = metabolicEventsDao.getAllMealTypes().associateBy { it.id }
+        val type = mealTypesMap[entity.meal_type_id]?.toModel()
+        return type?.let { entity.toModel(it) }
+    }
+
+    /**
      * Adds a new insulin application to the cache and database.
-     * Overwrites if timestamp and origin are the same.
      */
     suspend fun addInsulinApplication(insulinApplication: InsulinApplication) {
         val historyStart = historyStart()

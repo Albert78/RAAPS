@@ -59,7 +59,12 @@ fun MealBolusScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text(stringResource(R.string.meal_bolus_screen_title)) },
+                title = {
+                    Text(
+                        if (uiState.isEditMode) stringResource(R.string.meal_edit_screen_title)
+                        else stringResource(R.string.meal_bolus_screen_title)
+                    )
+                },
                 navigationIcon = {
                     IconButton(onClick = onNavigateUp) {
                         Icon(Icons.AutoMirrored.Default.ArrowBack, contentDescription = "Back")
@@ -82,6 +87,22 @@ fun MealBolusScreen(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(24.dp)
         ) {
+            if (uiState.isEditMode) {
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = androidx.compose.material3.CardDefaults.cardColors(
+                        containerColor = MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.5f)
+                    )
+                ) {
+                    Text(
+                        text = stringResource(R.string.meal_edit_warning_bolus),
+                        modifier = Modifier.padding(16.dp),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onErrorContainer
+                    )
+                }
+            }
+
             // KE Stepper
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
                 Text(
@@ -166,21 +187,23 @@ fun MealBolusScreen(
             }
 
             // Final Insulin Stepper
-            Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                Text(
-                    text = stringResource(R.string.meal_bolus_insulin_label),
-                    style = MaterialTheme.typography.titleMedium
-                )
-                Spacer(Modifier.height(8.dp))
-                EditableValueStepper(
-                    currentValue = (uiState.manualBolus * 100).toInt(),
-                    onValueChange = { viewModel.onManualBolusChange(it / 100.0) },
-                    steppingStrategy = DefaultSteppingStrategy(10), // 0.1 U steps
-                    displayStrategy = object : de.dh.raaps.common.ui.ValueDisplayStrategy {
-                        override fun format(value: Int): String = String.format("%.2f", value / 100.0)
-                        override fun color(value: Int): androidx.compose.ui.graphics.Color = androidx.compose.ui.graphics.Color.Unspecified
-                    }
-                )
+            if (!uiState.isEditMode) {
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    Text(
+                        text = stringResource(R.string.meal_bolus_insulin_label),
+                        style = MaterialTheme.typography.titleMedium
+                    )
+                    Spacer(Modifier.height(8.dp))
+                    EditableValueStepper(
+                        currentValue = (uiState.manualBolus * 100).toInt(),
+                        onValueChange = { viewModel.onManualBolusChange(it / 100.0) },
+                        steppingStrategy = DefaultSteppingStrategy(10), // 0.1 U steps
+                        displayStrategy = object : de.dh.raaps.common.ui.ValueDisplayStrategy {
+                            override fun format(value: Int): String = String.format("%.2f", value / 100.0)
+                            override fun color(value: Int): androidx.compose.ui.graphics.Color = androidx.compose.ui.graphics.Color.Unspecified
+                        }
+                    )
+                }
             }
 
             // Bottom Buttons
@@ -199,7 +222,10 @@ fun MealBolusScreen(
                     modifier = Modifier.weight(1f),
                     enabled = !uiState.isSubmitting
                 ) {
-                    Text(stringResource(R.string.meal_bolus_ok_button))
+                    Text(
+                        if (uiState.isEditMode) stringResource(R.string.meal_edit_save_button)
+                        else stringResource(R.string.meal_bolus_ok_button)
+                    )
                 }
             }
         }

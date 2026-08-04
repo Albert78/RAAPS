@@ -132,6 +132,9 @@ interface MetabolicEventsDao {
     @Query("SELECT * FROM meal WHERE timestamp >= :since ORDER BY timestamp ASC")
     suspend fun getMealsSince(since: Long): List<MealEntity>
 
+    @Query("SELECT * FROM meal WHERE id = :id")
+    suspend fun getMealById(id: Long): MealEntity?
+
     @Insert
     suspend fun insertMeal(meal: MealEntity): Long
 

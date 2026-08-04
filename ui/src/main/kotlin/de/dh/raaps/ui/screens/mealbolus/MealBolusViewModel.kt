@@ -23,6 +23,9 @@ import kotlin.math.max
 
 data class MealBolusUiState(
     val isLoading: Boolean = true,
+    val isEditMode: Boolean = false,
+    val originalMealTimestamp: Timestamp? = null,
+    val originalMealId: Long = -1L,
     val carbsKe: Double = 0.0,
     val mealTypes: List<MealType> = emptyList(),
     val selectedMealType: MealType? = null,
@@ -42,7 +45,8 @@ data class MealBolusUiState(
 )
 
 class MealBolusViewModel(
-    private val systemRegistry: SystemRegistry
+    private val systemRegistry: SystemRegistry,
+    private val mealId: Long? = null
 ) : ViewModel() {
     private val _uiState = MutableStateFlow(MealBolusUiState())
     val uiState: StateFlow<MealBolusUiState> = _uiState.asStateFlow()
@@ -72,15 +76,21 @@ class MealBolusViewModel(
             val iob = calculationModel.iob(insulinHistory, now, therapySettings.insulinProfile.dia, therapySettings.insulinProfile.peak)
             val cob = calculationModel.cob(mealsHistory, now)
 
+            val existingMeal = mealId?.let { treatmentRepository.getMeal(it) }
+
             _uiState.update {
                 it.copy(
                     isLoading = false,
+                    isEditMode = existingMeal != null,
+                    originalMealTimestamp = existingMeal?.timestamp,
+                    originalMealId = existingMeal?.id ?: -1L,
+                    carbsKe = existingMeal?.let { meal -> meal.carbGrams / 10.0 } ?: 0.0,
                     mealTypes = mealTypes,
-                    selectedMealType = mealTypes.firstOrNull(),
+                    selectedMealType = existingMeal?.mealType ?: mealTypes.firstOrNull(),
                     currentBg = currentBg,
                     targetBg = bgSettings.first.mgdl.toInt(),
-                    isf = if (isf == 0) DEFAULT_ISF_MGDL_PER_UNIT.toInt() else isf, // Fallback
-                    cr = if (cr == 0.0) 10.0 else DEFAULT_CR_GRAM_PER_UNIT, // Fallback
+                    isf = if (isf == 0) 50 else isf, // Fallback
+                    cr = if (cr == 0.0) 10.0 else cr, // Fallback
                     iob = iob,
                     cob = cob
                 )
@@ -99,6 +109,7 @@ class MealBolusViewModel(
     }
 
     fun onManualBolusChange(amount: Double) {
+        if (_uiState.value.isEditMode) return // Prevent bolus change in edit mode
         _uiState.update { it.copy(manualBolus = max(0.0, amount)) }
     }
 
@@ -126,7 +137,7 @@ class MealBolusViewModel(
                 iobPart = iobPart,
                 cobPart = cobPart,
                 proposedBolus = roundedTotal,
-                manualBolus = roundedTotal
+                manualBolus = if (state.isEditMode) 0.0 else roundedTotal
             )
         }
     }
@@ -140,18 +151,19 @@ class MealBolusViewModel(
             try {
                 val now = Timestamp.now()
 
-                // 1. Record Meal
+                // 1. Record/Update Meal
                 if (state.carbsKe > 0 && state.selectedMealType != null) {
                     val mealEntry = MealEntry(
-                        timestamp = now,
+                        id = if (state.isEditMode) state.originalMealId else -1L,
+                        timestamp = if (state.isEditMode) (state.originalMealTimestamp ?: now) else now,
                         carbGrams = state.carbsKe * 10.0,
                         mealType = state.selectedMealType
                     )
                     treatmentRepository.addMealEntry(mealEntry)
                 }
 
-                // 2. Deliver Bolus
-                if (state.manualBolus > 0.0) {
+                // 2. Deliver Bolus (only if NOT editing)
+                if (!state.isEditMode && state.manualBolus > 0.0) {
                     val amount = InsulinAmount(state.manualBolus)
                     pumpManager.issueCommand(PumpCommand.DeliverBolus(amount), isCancelableAPSCommand = false)
 
@@ -175,10 +187,10 @@ class MealBolusViewModel(
     }
 
     companion object {
-        class Factory(private val registry: SystemRegistry) : ViewModelProvider.Factory {
+        class Factory(private val registry: SystemRegistry, private val mealId: Long? = null) : ViewModelProvider.Factory {
             @Suppress("UNCHECKED_CAST")
             override fun <T : ViewModel> create(modelClass: Class<T>, extras: CreationExtras): T {
-                return MealBolusViewModel(registry) as T
+                return MealBolusViewModel(registry, mealId) as T
             }
         }
     }
