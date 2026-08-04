@@ -61,7 +61,7 @@ import de.dh.raaps.ui.controls.profile.ProfileUiState
 @Composable
 fun ApsControlCard(
     modifier: Modifier = Modifier,
-    profileUiState: ProfileUiState?,
+    profileUiState: ProfileUiState,
     selectedMode: ApsMode,
     availableModes: List<ApsMode>,
     onModeChange: (ApsMode) -> Unit,
@@ -90,106 +90,100 @@ fun ApsControlCard(
                 verticalArrangement = Arrangement.spacedBy(4.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                if (profileUiState == null) {
-                    Text(
-                        text = stringResource(R.string.aps_control_no_profile)
-                    )
+                val nameText = if (adjustmentPercentage != 0) {
+                    "${profileUiState.name} (${if (adjustmentPercentage > 0) "+" else ""}$adjustmentPercentage%)"
                 } else {
-                    val nameText = if (adjustmentPercentage != 0) {
-                        "${profileUiState.name} (${if (adjustmentPercentage > 0) "+" else ""}$adjustmentPercentage%)"
-                    } else {
-                        profileUiState.name
-                    }
-                    Text(
-                        text = nameText,
-                        style = MaterialTheme.typography.labelLarge,
-                        color = MaterialTheme.colorScheme.primary,
-                        maxLines = 2,
-                        overflow = TextOverflow.Ellipsis,
-                        textAlign = TextAlign.Center
-                    )
+                    profileUiState.name
+                }
+                Text(
+                    text = nameText,
+                    style = MaterialTheme.typography.labelLarge,
+                    color = MaterialTheme.colorScheme.primary,
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis,
+                    textAlign = TextAlign.Center
+                )
 
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(12.dp),
-                        modifier = Modifier.padding(bottom = 4.dp)
-                    ) {
-                        // Target
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Icon(
-                                imageVector = Icons.Default.Adjust,
-                                contentDescription = null,
-                                modifier = Modifier.size(14.dp),
-                                tint = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                            Spacer(Modifier.width(4.dp))
-                            Text(
-                                text = profileUiState.target.mgdl.toString(),
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                        }
-
-                        // Low
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Icon(
-                                imageVector = Icons.Default.VerticalAlignBottom,
-                                contentDescription = null,
-                                modifier = Modifier.size(14.dp),
-                                tint = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                            Spacer(Modifier.width(4.dp))
-                            Text(
-                                text = profileUiState.lowThreshold.mgdl.toString(),
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                        }
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                    modifier = Modifier.padding(bottom = 4.dp)
+                ) {
+                    // Target
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(
+                            imageVector = Icons.Default.Adjust,
+                            contentDescription = null,
+                            modifier = Modifier.size(14.dp),
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        Spacer(Modifier.width(4.dp))
+                        Text(
+                            text = profileUiState.target.mgdl.toString(),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
                     }
 
-                    // Chips (Basal, I:C, ISF)
-                    CompositionLocalProvider(
-                        LocalContentColor provides if (isSuspended) MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f) else LocalContentColor.current
+                    // Low
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(
+                            imageVector = Icons.Default.VerticalAlignBottom,
+                            contentDescription = null,
+                            modifier = Modifier.size(14.dp),
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        Spacer(Modifier.width(4.dp))
+                        Text(
+                            text = profileUiState.lowThreshold.mgdl.toString(),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                }
+
+                // Chips (Basal, I:C, ISF)
+                CompositionLocalProvider(
+                    LocalContentColor provides if (isSuspended) MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f) else LocalContentColor.current
+                ) {
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.spacedBy(4.dp)
                     ) {
-                        Column(
-                            horizontalAlignment = Alignment.CenterHorizontally,
-                            verticalArrangement = Arrangement.spacedBy(4.dp)
+                        // Basal Chip
+                        Surface(
+                            color = if (isSuspended) MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f) else MaterialTheme.colorScheme.secondaryContainer,
+                            shape = MaterialTheme.shapes.extraSmall,
                         ) {
-                            // Basal Chip
+                            val basalValue = String.format(LocalLocale.current.platformLocale, "%.1f", if (isSuspended) 0.0 else profileUiState.basal)
+                            Text(
+                                text = " ${stringResource(R.string.aps_control_basal_label, basalValue)} ",
+                                style = MaterialTheme.typography.labelSmall,
+                                modifier = Modifier.padding(horizontal = 4.dp, vertical = 2.dp)
+                            )
+                        }
+
+                        // I:C & ISF Chips
+                        Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
                             Surface(
-                                color = if (isSuspended) MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f) else MaterialTheme.colorScheme.secondaryContainer,
+                                color = if (isSuspended) MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f) else MaterialTheme.colorScheme.surfaceVariant,
                                 shape = MaterialTheme.shapes.extraSmall,
                             ) {
-                                val basalValue = String.format(LocalLocale.current.platformLocale, "%.1f", if (isSuspended) 0.0 else profileUiState.basal)
                                 Text(
-                                    text = " ${stringResource(R.string.aps_control_basal_label, basalValue)} ",
+                                    text = " ${stringResource(R.string.aps_control_ic_label, String.format(LocalLocale.current.platformLocale, "%.1f", profileUiState.ic))} ",
                                     style = MaterialTheme.typography.labelSmall,
                                     modifier = Modifier.padding(horizontal = 4.dp, vertical = 2.dp)
                                 )
                             }
-
-                            // I:C & ISF Chips
-                            Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                                Surface(
-                                    color = if (isSuspended) MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f) else MaterialTheme.colorScheme.surfaceVariant,
-                                    shape = MaterialTheme.shapes.extraSmall,
-                                ) {
-                                    Text(
-                                        text = " ${stringResource(R.string.aps_control_ic_label, String.format(LocalLocale.current.platformLocale, "%.1f", profileUiState.ic))} ",
-                                        style = MaterialTheme.typography.labelSmall,
-                                        modifier = Modifier.padding(horizontal = 4.dp, vertical = 2.dp)
-                                    )
-                                }
-                                Surface(
-                                    color = if (isSuspended) MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f) else MaterialTheme.colorScheme.surfaceVariant,
-                                    shape = MaterialTheme.shapes.extraSmall,
-                                ) {
-                                    Text(
-                                        text = " ${stringResource(R.string.aps_control_isf_label, profileUiState.isf.mgdl)} ",
-                                        style = MaterialTheme.typography.labelSmall,
-                                        modifier = Modifier.padding(horizontal = 4.dp, vertical = 2.dp)
-                                    )
-                                }
+                            Surface(
+                                color = if (isSuspended) MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f) else MaterialTheme.colorScheme.surfaceVariant,
+                                shape = MaterialTheme.shapes.extraSmall,
+                            ) {
+                                Text(
+                                    text = " ${stringResource(R.string.aps_control_isf_label, profileUiState.isf.mgdl)} ",
+                                    style = MaterialTheme.typography.labelSmall,
+                                    modifier = Modifier.padding(horizontal = 4.dp, vertical = 2.dp)
+                                )
                             }
                         }
                     }
@@ -204,7 +198,9 @@ fun ApsControlCard(
 
             // Buttons Column (right)
             Column(
-                modifier = Modifier.weight(1f).padding(horizontal = 16.dp, vertical = 8.dp),
+                modifier = Modifier
+                    .weight(1f)
+                    .padding(horizontal = 16.dp, vertical = 8.dp),
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
@@ -307,26 +303,6 @@ private fun PreviewApsControlCard() {
                     dia = Minutes(300),
                     peak = Minutes(75)
                 ),
-                selectedMode = ApsMode.AutoCorrection,
-                availableModes = ApsMode.entries,
-                onModeChange = {},
-                adjustmentPercentage = 0,
-                onAdjustmentClick = {},
-                onProfileClick = {}
-            )
-        }
-    }
-}
-
-@Preview(name = "Light", showBackground = true)
-@Preview(name = "Dark", showBackground = true, uiMode = Configuration.UI_MODE_NIGHT_YES)
-@Composable
-private fun PreviewApsControlCardNoProfile() {
-    AppTheme {
-        Surface {
-            ApsControlCard(
-                modifier = Modifier.padding(16.dp),
-                profileUiState = null,
                 selectedMode = ApsMode.AutoCorrection,
                 availableModes = ApsMode.entries,
                 onModeChange = {},

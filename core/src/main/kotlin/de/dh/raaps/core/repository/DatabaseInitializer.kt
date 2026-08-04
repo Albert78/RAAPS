@@ -134,12 +134,9 @@ object DatabaseInitializer {
 
         if (repository.getCurrentTherapySettings() == null) {
             val activeProfile = profiles.first()
-            val insulinType = repository.getAllInsulinTypes().firstOrNull()
-                ?: throw IllegalStateException("No insulin type configured for insulin pump")
 
             val currentTherapySettings = CurrentTherapySettings(
-                profile = activeProfile,
-                insulinType = insulinType,
+                insulinProfile = activeProfile,
                 defaultBgBlocks = listOf(
                     BgBlock(
                         Minutes.ofHours(24),

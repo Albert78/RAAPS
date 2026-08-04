@@ -300,7 +300,7 @@ class Core(
         busyWork {
             atomic {
                 val cts = currentTherapySettings ?: return@atomic
-                treatmentRepository.mergeInsulinHistory(history, cts.insulinType)
+                treatmentRepository.mergeInsulinHistory(history, cts.insulinProfile.insulinType)
             }
         }
     }

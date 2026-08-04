@@ -196,16 +196,14 @@ fun InsulinProfileEntity.toModel(insulinType: InsulinType) = InsulinProfile(
 
 fun CurrentTherapySettings.toEntity() = CurrentTherapySettingsEntity(
     id = this.id,
-    profile_id = this.profile.id,
-    insulin_type_id = this.insulinType.id,
+    profile_id = this.insulinProfile.id,
     adjustment_percentage = this.adjustmentPercentage,
     default_bg_blocks = this.defaultBgBlocks.map { it.toDb() }
 )
 
-fun CurrentTherapySettingsEntity.toModel(profile: InsulinProfile, insulinType: InsulinType) = CurrentTherapySettings(
+fun CurrentTherapySettingsEntity.toModel(profile: InsulinProfile) = CurrentTherapySettings(
     id = this.id,
-    profile = profile,
-    insulinType = insulinType,
+    insulinProfile = profile,
     adjustmentPercentage = this.adjustment_percentage,
     defaultBgBlocks = this.default_bg_blocks.map { it.toModel() }
 )

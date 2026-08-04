@@ -31,11 +31,26 @@ data class ProfileUiState(
     val adjustmentPercentage: Int,
     val dia: Minutes,
     val peak: Minutes
-)
+) {
+    companion object {
+        fun empty() = ProfileUiState(
+            name = "",
+            activeProfileId = null,
+            isf = BgDelta(0),
+            ic = 0.0,
+            basal = 0.0,
+            target = BgValue.fromMgDl(0),
+            lowThreshold = BgValue.fromMgDl(0),
+            adjustmentPercentage = 0,
+            dia = Minutes(0),
+            peak = Minutes(0)
+        )
+    }
+}
 
 data class CurrentTherapyUiState(
-    val isLoading: Boolean = false,
-    val activeProfile: ProfileUiState? = null,
+    val isLoading: Boolean = true,
+    val activeProfile: ProfileUiState = ProfileUiState.empty(),
     val glucoseUnit: GlucoseUnit = GlucoseUnit.MG_DL,
     val availableProfiles: List<InsulinProfile> = emptyList(),
     val defaultBgBlocks: List<BgBlock> = emptyList()
@@ -63,37 +78,35 @@ class CurrentTherapyViewModel(
         }.launchIn(viewModelScope)
     }
 
-    private suspend fun updateState(currentSettings: CurrentTherapySettings?, profiles: List<InsulinProfile>) {
+    private suspend fun updateState(currentSettings: CurrentTherapySettings, profiles: List<InsulinProfile>) {
         val now = Timestamp.now()
         val isf = therapyManager.getIsfFactor(now)
         val ic = therapyManager.getIcFactor(now)
         val basal = therapyManager.getBasalPerHour(now)
         val bgSettings = therapyManager.getBgSettings()
 
-        val profileUiState = if (currentSettings != null) {
-            val activeProfileName = currentSettings.profile.id.let { pid ->
-                profiles.find { it.id == pid }?.name
-            } ?: "Manual Override"
-            ProfileUiState(
-                name = activeProfileName,
-                activeProfileId = currentSettings.profile.id,
-                isf = isf,
-                ic = ic,
-                basal = basal,
-                target = bgSettings.first,
-                lowThreshold = bgSettings.second,
-                adjustmentPercentage = currentSettings.adjustmentPercentage,
-                dia = currentSettings.profile.dia,
-                peak = currentSettings.profile.peak
-            )
-        } else null
+        val activeProfileName = currentSettings.insulinProfile.id.let { pid ->
+            profiles.find { it.id == pid }?.name
+        } ?: "Manual Override"
+        val profileUiState = ProfileUiState(
+            name = activeProfileName,
+            activeProfileId = currentSettings.insulinProfile.id,
+            isf = isf,
+            ic = ic,
+            basal = basal,
+            target = bgSettings.first,
+            lowThreshold = bgSettings.second,
+            adjustmentPercentage = currentSettings.adjustmentPercentage,
+            dia = currentSettings.insulinProfile.dia,
+            peak = currentSettings.insulinProfile.peak
+        )
 
         _uiState.update {
             it.copy(
                 isLoading = false,
                 activeProfile = profileUiState,
                 availableProfiles = profiles,
-                defaultBgBlocks = currentSettings?.defaultBgBlocks ?: emptyList()
+                defaultBgBlocks = currentSettings.defaultBgBlocks
             )
         }
     }

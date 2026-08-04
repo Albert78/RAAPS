@@ -36,8 +36,6 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import de.dh.raaps.common.model.ApsMode
-import de.dh.raaps.common.model.DEFAULT_DIA_MINUTES
-import de.dh.raaps.common.model.DEFAULT_PEAK_MINUTES
 import de.dh.raaps.common.model.calculation.CarbsInsulinCalculationModel
 import de.dh.raaps.common.model.data.BgDelta
 import de.dh.raaps.common.model.data.BgValue
@@ -97,7 +95,7 @@ fun DashboardScreen(
 
     if (showAdjustmentDialog) {
         TherapyAdjustmentDialog(
-            currentValue = currentTherapyUiState.activeProfile?.adjustmentPercentage ?: 0,
+            currentValue = currentTherapyUiState.activeProfile.adjustmentPercentage,
             onValueChange = { currentTherapyViewModel.setAdjustmentPercentage(it) },
             onDismissRequest = { showAdjustmentDialog = false }
         )
@@ -241,8 +239,8 @@ fun DashboardContent(
                             insulinApplications = historyUiState.insulinApplications,
                             meals = historyUiState.meals,
                             calculationModel = calculationModel,
-                            dia = currentTherapyUiState.activeProfile?.dia ?: Minutes(DEFAULT_DIA_MINUTES.toShort()),
-                            peak = currentTherapyUiState.activeProfile?.peak ?: Minutes(DEFAULT_PEAK_MINUTES.toShort())
+                            dia = currentTherapyUiState.activeProfile.dia,
+                            peak = currentTherapyUiState.activeProfile.peak
                         ),
                         state = chartState,
                         onChartClick = onHistoryChartClick,
@@ -260,7 +258,7 @@ fun DashboardContent(
                 selectedMode = dashboardUiState.apsMode,
                 availableModes = dashboardUiState.availableApsModes,
                 onModeChange = onApsModeSelect,
-                adjustmentPercentage = currentTherapyUiState.activeProfile?.adjustmentPercentage ?: 0,
+                adjustmentPercentage = currentTherapyUiState.activeProfile.adjustmentPercentage,
                 onAdjustmentClick = onAdjustmentClick,
                 onProfileClick = onNavigateToTherapySettings
             )

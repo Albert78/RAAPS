@@ -1,7 +1,5 @@
 package de.dh.raaps.core.aps
 
-import de.dh.raaps.common.model.DEFAULT_DIA_MINUTES
-import de.dh.raaps.common.model.DEFAULT_PEAK_MINUTES
 import de.dh.raaps.common.model.InsulinAmount
 import de.dh.raaps.common.model.MS_PER_HOUR
 import de.dh.raaps.common.model.calculation.CarbsInsulinCalculationModel
@@ -46,8 +44,8 @@ class ApsAlgorithmImpl(
      */
     override suspend fun updateMealsAndInsulin() {
         val settings = therapyManager.getActiveTherapySettings()
-        val dia = settings?.profile?.dia ?: Minutes(DEFAULT_DIA_MINUTES.toShort())
-        val peak = settings?.profile?.peak ?: Minutes(DEFAULT_PEAK_MINUTES.toShort())
+        val dia = settings.insulinProfile.dia
+        val peak = settings.insulinProfile.peak
         predictionModel.calculatePredictionStage_1(treatmentRepository, carbsInsulinCalculationModel, dia, peak)
     }
 
@@ -228,8 +226,8 @@ class ApsAlgorithmImpl(
                 // The remaining correction will be calculated in one of the next cycles, when
                 // BG has risen higher again.
                 val settings = therapyManager.getActiveTherapySettings()
-                val dia = settings?.profile?.dia ?: pumpInsulinType.dia
-                val peak = settings?.profile?.peak ?: pumpInsulinType.peak
+                val dia = settings.insulinProfile.dia
+                val peak = settings.insulinProfile.peak
                 
                 predictionModel.forEach(to = nextMax.tick) { tick, state ->
                     val bg = state.predictedBg2
@@ -292,8 +290,8 @@ class ApsAlgorithmImpl(
             predictionModel.initializeToTick(Timestamp.now().minus(PRESERVE_PREDICTIONS_PAST_TIME))
 
             val settings = therapyManager.getActiveTherapySettings()
-            val dia = settings?.profile?.dia ?: Minutes(DEFAULT_DIA_MINUTES.toShort())
-            val peak = settings?.profile?.peak ?: Minutes(DEFAULT_PEAK_MINUTES.toShort())
+            val dia = settings.insulinProfile.dia
+            val peak = settings.insulinProfile.peak
 
             predictionModel.calculatePredictionStage_1(
                 treatmentRepository,

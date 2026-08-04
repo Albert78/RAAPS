@@ -84,14 +84,15 @@ class TherapyRepository(
 
     // --- Current Therapy Settings Operations ---
 
-    fun observeCurrentTherapySettings(): Flow<CurrentTherapySettings?> = therapyDao.observeCurrentTherapySettings()
+    fun observeCurrentTherapySettings(): Flow<CurrentTherapySettings> = therapyDao.observeCurrentTherapySettings()
         .map { getCurrentTherapySettings() }
 
-    suspend fun getCurrentTherapySettings(): CurrentTherapySettings? {
-        val entity = therapyDao.getCurrentTherapySettings() ?: return null
-        val profile = getProfileById(entity.profile_id) ?: return null
-        val insulinType = getInsulinTypeById(entity.insulin_type_id) ?: return null
-        val settings = entity.toModel(profile, insulinType)
+    suspend fun getCurrentTherapySettings(): CurrentTherapySettings {
+        val entity = therapyDao.getCurrentTherapySettings()
+            ?: throw IllegalStateException("No current therapy settings found in database")
+        val profile = getProfileById(entity.profile_id)
+            ?: throw IllegalStateException("Active profile ${entity.profile_id} not found")
+        val settings = entity.toModel(profile)
         
         return if (settings.defaultBgBlocks.isEmpty()) {
             settings.copy(
