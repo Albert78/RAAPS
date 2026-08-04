@@ -27,7 +27,8 @@ fun Modifier.contentScrollIndicator(
     scrollableState: ScrollableState,
     indicatorHeight: Dp = 32.dp,
     iconSize: Dp = 64.dp,
-    iconPadding: Dp = 16.dp,
+    topIconPadding: Dp = 16.dp,
+    bottomIconPadding: Dp = 16.dp,
     surfaceAlpha: Float = 0.8f
 ): Modifier {
     val surfaceColor =
@@ -47,7 +48,8 @@ fun Modifier.contentScrollIndicator(
             downPainter = downPainter,
             indicatorHeight = indicatorHeight,
             iconSize = iconSize,
-            iconPadding = iconPadding
+            topIconPadding = topIconPadding,
+            bottomIconPadding = bottomIconPadding
         )
     )
 }
@@ -60,7 +62,8 @@ private fun Modifier.scrollIndicatorDrawModifier(
     downPainter: Painter,
     indicatorHeight: Dp,
     iconSize: Dp,
-    iconPadding: Dp
+    topIconPadding: Dp,
+    bottomIconPadding: Dp
 ): Modifier = this.drawWithContent {
     drawContent()
 
@@ -69,7 +72,8 @@ private fun Modifier.scrollIndicatorDrawModifier(
 
     val indicatorHeightPx = indicatorHeight.toPx()
     val iconSizePx = iconSize.toPx()
-    val iconPaddingPx = iconPadding.toPx()
+    val topIconPaddingPx = topIconPadding.toPx()
+    val bottomIconPaddingPx = bottomIconPadding.toPx()
 
     if (canScrollUp) {
         drawRect(
@@ -84,7 +88,7 @@ private fun Modifier.scrollIndicatorDrawModifier(
         with(upPainter) {
             translate(
                 left = (this@drawWithContent.size.width - iconSizePx) / 2f,
-                top = iconPaddingPx
+                top = topIconPaddingPx
             ) {
                 draw(
                     size = Size(iconSizePx, iconSizePx),
@@ -108,7 +112,7 @@ private fun Modifier.scrollIndicatorDrawModifier(
         with(downPainter) {
             translate(
                 left = (this@drawWithContent.size.width - iconSizePx) / 2f,
-                top = size.height - iconSizePx - iconPaddingPx
+                top = size.height - iconSizePx - bottomIconPaddingPx
             ) {
                 draw(
                     size = Size(iconSizePx, iconSizePx),
