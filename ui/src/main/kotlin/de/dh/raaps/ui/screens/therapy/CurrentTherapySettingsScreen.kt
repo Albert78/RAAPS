@@ -1,32 +1,63 @@
 package de.dh.raaps.ui.screens.therapy
 
 import android.content.res.Configuration
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.IntrinsicSize
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
+import androidx.compose.material.icons.automirrored.filled.List
+import androidx.compose.material.icons.filled.Adjust
+import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.EditNote
+import androidx.compose.material.icons.filled.RadioButtonChecked
+import androidx.compose.material.icons.filled.RadioButtonUnchecked
+import androidx.compose.material.icons.filled.SwapHoriz
+import androidx.compose.material.icons.filled.Tune
+import androidx.compose.material.icons.filled.VerticalAlignBottom
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.ElevatedCard
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.ListItem
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.OutlinedCard
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.VerticalDivider
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalLocale
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import de.dh.raaps.common.model.InsulinType
@@ -39,6 +70,7 @@ import de.dh.raaps.common.model.data.Minutes
 import de.dh.raaps.common.ui.composables.ProfileSelectionDialog
 import de.dh.raaps.common.ui.composables.screenTitle
 import de.dh.raaps.common.ui.theme.AppTheme
+import de.dh.raaps.common.ui.theme.SoftGreen
 import de.dh.raaps.ui.R
 import de.dh.raaps.ui.controls.dialogs.BgEditorDialog
 import de.dh.raaps.ui.controls.profile.CurrentTherapyUiState
@@ -71,7 +103,6 @@ fun CurrentTherapySettingsContent(
     onSelectProfile: (InsulinProfile) -> Unit,
     onUpdateDefaultBgBlocks: (List<BgBlock>) -> Unit
 ) {
-    val locale = LocalLocale.current.platformLocale
     var showProfileDialog by remember { mutableStateOf(false) }
     var showBgEditorDialog by remember { mutableStateOf(false) }
 
@@ -98,93 +129,42 @@ fun CurrentTherapySettingsContent(
             )
         }
     ) { innerPadding ->
-        Column(
+        LazyColumn(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(innerPadding)
+                .padding(innerPadding),
+            contentPadding = PaddingValues(16.dp),
+            verticalArrangement = Arrangement.spacedBy(20.dp)
         ) {
-            LazyColumn(modifier = Modifier.fillMaxSize()) {
-                item {
-                    Text(
-                        text = stringResource(id = R.string.current_therapy_active_insulin_profile_label),
-                        style = MaterialTheme.typography.labelLarge,
-                        color = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
-                    )
-                }
+            // Section 1: Active Profile Card
+            item {
+                SectionHeader(
+                    icon = Icons.Default.Tune,
+                    title = stringResource(id = R.string.current_therapy_active_insulin_profile_label)
+                )
 
-                val activeProfile = uiState.activeProfile
-                item {
-                    ListItem(
-                        headlineContent = { Text(activeProfile.name) },
-                        supportingContent = {
-                            Text(
-                                stringResource(
-                                    id = R.string.aps_control_basal_label,
-                                    String.format(locale, "%.1f", activeProfile.basal)
-                                ) + " | " +
-                                        stringResource(
-                                            id = R.string.aps_control_cr_label,
-                                            String.format(locale, "%.1f", activeProfile.cr)
-                                        ) + " | " +
-                                        stringResource(
-                                            id = R.string.aps_control_isf_label,
-                                            activeProfile.isf.mgdl
-                                        )
-                            )
-                        },
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .clickable { showProfileDialog = true }
-                    )
-                }
+                Spacer(modifier = Modifier.height(8.dp))
 
-                item {
-                    Text(
-                        text = stringResource(id = R.string.current_therapy_bg_title),
-                        style = MaterialTheme.typography.labelLarge,
-                        color = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
-                    )
-                }
+                ActiveProfileCard(
+                    profile = uiState.activeProfile,
+                    onSwitchProfileClick = { showProfileDialog = true },
+                    onEditProfileClick = onNavigateToProfileEditor
+                )
+            }
 
-                item {
-                    val bgBlocks = uiState.defaultBgBlocks
-                    val targets = bgBlocks.map { it.target.mgdl }.distinct()
-                    val lows = bgBlocks.map { it.lowThreshold.mgdl }.distinct()
+            // Section 2: BG Target & Low Threshold Card
+            item {
+                SectionHeader(
+                    icon = Icons.Default.Adjust,
+                    title = stringResource(id = R.string.current_therapy_bg_title)
+                )
 
-                    val targetLabel = if (targets.size == 1) {
-                        stringResource(R.string.current_therapy_target_label_singular)
-                    } else {
-                        stringResource(R.string.current_therapy_target_label_plural)
-                    }
-                    val targetValue = if (targets.size == 1) {
-                        "${targets.first()} mg/dL"
-                    } else {
-                        "${targets.minOrNull()}–${targets.maxOrNull()} mg/dL"
-                    }
+                Spacer(modifier = Modifier.height(8.dp))
 
-                    val lowLabel = if (lows.size == 1) {
-                        stringResource(R.string.current_therapy_low_threshold_label_singular)
-                    } else {
-                        stringResource(R.string.current_therapy_low_threshold_label_plural)
-                    }
-                    val lowValue = if (lows.size == 1) {
-                        "${lows.first()} mg/dL"
-                    } else {
-                        "${lows.minOrNull()}–${lows.maxOrNull()} mg/dL"
-                    }
-
-                    Column(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .clickable { showBgEditorDialog = true }
-                            .padding(16.dp)
-                    ) {
-                        Text(text = "$targetLabel: $targetValue", style = MaterialTheme.typography.bodyLarge)
-                        Text(text = "$lowLabel: $lowValue", style = MaterialTheme.typography.bodyLarge)
-                    }
-                }
+                BgTargetCard(
+                    bgBlocks = uiState.defaultBgBlocks,
+                    onClick = { showBgEditorDialog = true }
+                )
             }
         }
     }
@@ -192,7 +172,7 @@ fun CurrentTherapySettingsContent(
     if (showProfileDialog) {
         ProfileSelectionDialog(
             profiles = uiState.availableProfiles,
-            activeProfileId = uiState.activeProfile?.activeProfileId,
+            activeProfileId = uiState.activeProfile.activeProfileId,
             onProfileSelected = {
                 onSelectProfile(it)
                 showProfileDialog = false
@@ -213,7 +193,478 @@ fun CurrentTherapySettingsContent(
     }
 }
 
-@Preview(showBackground = true)
+@Composable
+private fun SectionHeader(
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    title: String,
+    modifier: Modifier = Modifier
+) {
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        modifier = modifier.fillMaxWidth()
+    ) {
+        Icon(
+            imageVector = icon,
+            contentDescription = null,
+            tint = MaterialTheme.colorScheme.primary,
+            modifier = Modifier.size(20.dp)
+        )
+        Spacer(modifier = Modifier.width(8.dp))
+        Text(
+            text = title,
+            style = MaterialTheme.typography.titleMedium,
+            color = MaterialTheme.colorScheme.primary,
+            fontWeight = FontWeight.Bold
+        )
+    }
+}
+
+@Composable
+private fun ActiveProfileCard(
+    profile: ProfileUiState,
+    onSwitchProfileClick: () -> Unit,
+    onEditProfileClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    val locale = LocalLocale.current.platformLocale
+
+    ElevatedCard(
+        modifier = modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.elevatedCardColors(
+            containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.25f)
+        ),
+        elevation = CardDefaults.elevatedCardElevation(defaultElevation = 2.dp)
+    ) {
+        Column(
+            modifier = Modifier.padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp)
+        ) {
+            // Profile Name & Active Badge Header
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Text(
+                    text = profile.name.ifBlank { stringResource(id = R.string.aps_control_no_profile) },
+                    style = MaterialTheme.typography.headlineSmall,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onSurface,
+                    modifier = Modifier.weight(1f),
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+
+                Spacer(modifier = Modifier.width(8.dp))
+
+                Surface(
+                    color = SoftGreen.copy(alpha = 0.2f),
+                    shape = RoundedCornerShape(16.dp),
+                    border = BorderStroke(1.dp, SoftGreen)
+                ) {
+                    Row(
+                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(4.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Check,
+                            contentDescription = null,
+                            tint = SoftGreen,
+                            modifier = Modifier.size(14.dp)
+                        )
+                        Text(
+                            text = "Aktiv",
+                            style = MaterialTheme.typography.labelMedium,
+                            color = MaterialTheme.colorScheme.onSurface,
+                            fontWeight = FontWeight.SemiBold
+                        )
+                    }
+                }
+            }
+
+            // Parameter Grid (Basal, CR, ISF)
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                MetricChip(
+                    label = stringResource(id = de.dh.raaps.common.R.string.therapy_basal_label),
+                    value = String.format(locale, "%.2f", profile.basal),
+                    unit = "U/h",
+                    modifier = Modifier.weight(1f)
+                )
+
+                MetricChip(
+                    label = stringResource(id = de.dh.raaps.common.R.string.therapy_cr_label),
+                    value = String.format(locale, "%.1f", profile.cr),
+                    unit = "g/U",
+                    modifier = Modifier.weight(1f)
+                )
+
+                MetricChip(
+                    label = stringResource(id = de.dh.raaps.common.R.string.therapy_isf_label),
+                    value = profile.isf.mgdl.toString(),
+                    unit = "mg/dL/U",
+                    modifier = Modifier.weight(1f)
+                )
+            }
+
+            // Secondary Info: DIA and Peak
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceAround,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = "DIA: ${formatMinutes(profile.dia)}",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                Text(
+                    text = "•",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)
+                )
+                Text(
+                    text = "Peak: ${formatMinutes(profile.peak)}",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+
+            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
+
+            // Action Buttons
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.End,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                OutlinedButton(
+                    onClick = onSwitchProfileClick,
+                    shape = RoundedCornerShape(12.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.SwapHoriz,
+                        contentDescription = null,
+                        modifier = Modifier.size(18.dp)
+                    )
+                    Spacer(modifier = Modifier.width(6.dp))
+                    Text(text = "Profil wechseln")
+                }
+
+                Spacer(modifier = Modifier.width(8.dp))
+
+                TextButton(
+                    onClick = onEditProfileClick,
+                    shape = RoundedCornerShape(12.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Edit,
+                        contentDescription = null,
+                        modifier = Modifier.size(18.dp)
+                    )
+                    Spacer(modifier = Modifier.width(4.dp))
+                    Text(text = "Bearbeiten")
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun MetricChip(
+    label: String,
+    value: String,
+    unit: String,
+    modifier: Modifier = Modifier
+) {
+    Surface(
+        modifier = modifier,
+        color = MaterialTheme.colorScheme.surface,
+        shape = RoundedCornerShape(12.dp),
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.6f))
+    ) {
+        Column(
+            modifier = Modifier.padding(horizontal = 8.dp, vertical = 10.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(2.dp)
+        ) {
+            Text(
+                text = label,
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                textAlign = TextAlign.Center,
+                maxLines = 1
+            )
+            Text(
+                text = value,
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.onSurface,
+                textAlign = TextAlign.Center,
+                maxLines = 1
+            )
+            Text(
+                text = unit,
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.8f),
+                textAlign = TextAlign.Center,
+                maxLines = 1
+            )
+        }
+    }
+}
+
+@Composable
+private fun BgTargetCard(
+    bgBlocks: List<BgBlock>,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    val targets = bgBlocks.map { it.target.mgdl }.distinct()
+    val lows = bgBlocks.map { it.lowThreshold.mgdl }.distinct()
+
+    val targetValue = if (targets.size == 1) {
+        "${targets.first()} mg/dL"
+    } else if (targets.isNotEmpty()) {
+        "${targets.minOrNull()}–${targets.maxOrNull()} mg/dL"
+    } else {
+        "-"
+    }
+
+    val lowValue = if (lows.size == 1) {
+        "${lows.first()} mg/dL"
+    } else if (lows.isNotEmpty()) {
+        "${lows.minOrNull()}–${lows.maxOrNull()} mg/dL"
+    } else {
+        "-"
+    }
+
+    OutlinedCard(
+        modifier = modifier
+            .fillMaxWidth()
+            .clickable { onClick() },
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.outlinedCardColors(
+            containerColor = MaterialTheme.colorScheme.surface
+        ),
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
+    ) {
+        Row(
+            modifier = Modifier
+                .padding(16.dp)
+                .fillMaxWidth()
+                .height(IntrinsicSize.Min),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            // Target Column
+            Row(
+                modifier = Modifier.weight(1f),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                Surface(
+                    color = MaterialTheme.colorScheme.primaryContainer,
+                    shape = RoundedCornerShape(12.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Adjust,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.onPrimaryContainer,
+                        modifier = Modifier
+                            .padding(8.dp)
+                            .size(24.dp)
+                    )
+                }
+
+                Column {
+                    Text(
+                        text = stringResource(id = R.string.current_therapy_target_label_singular),
+                        style = MaterialTheme.typography.labelMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    Text(
+                        text = targetValue,
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+                }
+            }
+
+            VerticalDivider(
+                modifier = Modifier.padding(horizontal = 12.dp),
+                color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)
+            )
+
+            // Low Threshold Column
+            Row(
+                modifier = Modifier.weight(1f),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                Surface(
+                    color = MaterialTheme.colorScheme.errorContainer,
+                    shape = RoundedCornerShape(12.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.VerticalAlignBottom,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.onErrorContainer,
+                        modifier = Modifier
+                            .padding(8.dp)
+                            .size(24.dp)
+                    )
+                }
+
+                Column {
+                    Text(
+                        text = stringResource(id = R.string.current_therapy_low_threshold_label_singular),
+                        style = MaterialTheme.typography.labelMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    Text(
+                        text = lowValue,
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+                }
+            }
+
+            Spacer(modifier = Modifier.width(8.dp))
+
+            Icon(
+                imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.size(20.dp)
+            )
+        }
+    }
+}
+
+@Composable
+private fun AvailableProfilesCard(
+    profiles: List<InsulinProfile>,
+    activeProfileId: Long?,
+    onSelectProfile: (InsulinProfile) -> Unit,
+    onManageProfilesClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    val locale = LocalLocale.current.platformLocale
+
+    OutlinedCard(
+        modifier = modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.outlinedCardColors(
+            containerColor = MaterialTheme.colorScheme.surface
+        ),
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
+    ) {
+        Column(modifier = Modifier.fillMaxWidth()) {
+            profiles.forEachIndexed { index, profile ->
+                val isActive = profile.id == activeProfileId
+
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable { onSelectProfile(profile) }
+                        .padding(horizontal = 16.dp, vertical = 12.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Icon(
+                        imageVector = if (isActive) Icons.Default.RadioButtonChecked else Icons.Default.RadioButtonUnchecked,
+                        contentDescription = null,
+                        tint = if (isActive) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.size(22.dp)
+                    )
+
+                    Spacer(modifier = Modifier.width(12.dp))
+
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                            text = profile.name,
+                            style = MaterialTheme.typography.bodyLarge,
+                            fontWeight = if (isActive) FontWeight.Bold else FontWeight.Medium,
+                            color = if (isActive) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
+                        )
+
+                        val basal = profile.basalBlocks.firstOrNull()?.amount ?: 0.0
+                        val cr = profile.crBlocks.firstOrNull()?.amount ?: 0.0
+                        val isf = profile.isfBlocks.firstOrNull()?.amount ?: 0.0
+
+                        Text(
+                            text = "Basal: ${String.format(locale, "%.1f", basal)} U/h | CR: ${String.format(locale, "%.1f", cr)} | ISF: ${isf.toInt()}",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+
+                    if (isActive) {
+                        Surface(
+                            color = SoftGreen.copy(alpha = 0.15f),
+                            shape = RoundedCornerShape(12.dp)
+                        ) {
+                            Text(
+                                text = "Aktiv",
+                                style = MaterialTheme.typography.labelSmall,
+                                color = SoftGreen,
+                                fontWeight = FontWeight.Bold,
+                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp)
+                            )
+                        }
+                    }
+                }
+
+                if (index < profiles.size - 1) {
+                    HorizontalDivider(
+                        modifier = Modifier.padding(horizontal = 16.dp),
+                        color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f)
+                    )
+                }
+            }
+
+            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+
+            TextButton(
+                onClick = onManageProfilesClick,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(8.dp),
+                shape = RoundedCornerShape(12.dp)
+            ) {
+                Icon(
+                    imageVector = Icons.Default.EditNote,
+                    contentDescription = null,
+                    modifier = Modifier.size(18.dp)
+                )
+                Spacer(modifier = Modifier.width(6.dp))
+                Text(
+                    text = stringResource(id = R.string.profile_editor_screen_title),
+                    style = MaterialTheme.typography.labelLarge
+                )
+            }
+        }
+    }
+}
+
+private fun formatMinutes(minutes: Minutes): String {
+    val total = minutes.value.toInt()
+    if (total <= 0) return "0 Min."
+    val hours = total / 60
+    val mins = total % 60
+    return when {
+        hours > 0 && mins > 0 -> "$hours Std. $mins Min."
+        hours > 0 -> "$hours Std."
+        else -> "$mins Min."
+    }
+}
+
+@Preview(showBackground = true, name = "Light Mode")
 @Preview(showBackground = true, uiMode = Configuration.UI_MODE_NIGHT_YES, name = "Dark Mode")
 @Composable
 fun CurrentTherapySettingsPreview() {
@@ -223,12 +674,23 @@ fun CurrentTherapySettingsPreview() {
         dia = Minutes(300)
     )
 
-    val mockProfile = InsulinProfile(
+    val mockProfile1 = InsulinProfile(
         id = 1L,
         name = "Normal",
         basalBlocks = listOf(Block(Minutes(1440), 0.5)),
         isfBlocks = listOf(Block(Minutes(1440), 40.0)),
         crBlocks = listOf(Block(Minutes(1440), 10.0)),
+        insulinType = mockInsulinType,
+        dia = Minutes(300),
+        peak = Minutes(75)
+    )
+
+    val mockProfile2 = InsulinProfile(
+        id = 2L,
+        name = "Sport",
+        basalBlocks = listOf(Block(Minutes(1440), 0.3)),
+        isfBlocks = listOf(Block(Minutes(1440), 50.0)),
+        crBlocks = listOf(Block(Minutes(1440), 12.0)),
         insulinType = mockInsulinType,
         dia = Minutes(300),
         peak = Minutes(75)
@@ -248,7 +710,7 @@ fun CurrentTherapySettingsPreview() {
             dia = Minutes(300),
             peak = Minutes(75)
         ),
-        availableProfiles = listOf(mockProfile),
+        availableProfiles = listOf(mockProfile1, mockProfile2),
         defaultBgBlocks = listOf(
             BgBlock(Minutes(1440), BgValue.fromMgDl(100), BgValue.fromMgDl(70))
         )
