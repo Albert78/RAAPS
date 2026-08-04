@@ -24,9 +24,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
-import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -34,7 +32,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
@@ -62,7 +59,6 @@ import de.dh.raaps.ui.controls.profile.CurrentTherapyViewModel
 import de.dh.raaps.ui.controls.profile.InsulinProfileUiState
 import de.dh.raaps.ui.controls.state.CurrentStateView
 import de.dh.raaps.ui.controls.state.createSampleGoodBgUiState
-import de.dh.raaps.ui.navigation.LocalHamburgerAlpha
 import de.dh.raaps.ui.screens.history.createSampleHistoryUiState
 import de.dh.raaps.ui.screens.permissions.PermissionStatus
 import de.dh.raaps.ui.screens.permissions.PermissionsUiModel
@@ -134,20 +130,12 @@ fun DashboardContent(
     onAdjustmentClick: () -> Unit,
     extraContent: @Composable () -> Unit = {}
 ) {
-    val scrollBehavior = TopAppBarDefaults.enterAlwaysScrollBehavior()
-    val hamburgerAlpha = LocalHamburgerAlpha.current
-
-    LaunchedEffect(scrollBehavior.state.collapsedFraction) {
-        hamburgerAlpha.value = 1f - scrollBehavior.state.collapsedFraction
-    }
-
     var menuExpanded by remember { mutableStateOf(false) }
 
     var carbsVisible by remember { mutableStateOf(true) }
     var insulinVisible by remember { mutableStateOf(true) }
 
     Scaffold(
-        modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
         topBar = {
             TopAppBar(
                 title = screenTitle(
@@ -192,8 +180,7 @@ fun DashboardContent(
                             )
                         }
                     }
-                },
-                scrollBehavior = scrollBehavior
+                }
             )
         }
     ) { innerPadding ->
