@@ -20,10 +20,10 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import kotlin.time.Duration.Companion.milliseconds
 
 class SimBodyInsulinPump(
     private val device: SimBodyPumpDevice,
-    private val heartbeat: SimBodyHeartbeat,
     private val scope: CoroutineScope = CoroutineScope(SupervisorJob() + Dispatchers.Default),
 ): InsulinPump {
     override val hardwareInformation: StateFlow<HardwareInformation?> = MutableStateFlow(
@@ -54,7 +54,7 @@ class SimBodyInsulinPump(
     fun connect() {
         scope.launch {
             _isConnecting.value = true
-            delay(1000) // Simulate connection delay
+            delay(1000.milliseconds) // Simulate connection delay
             _isConnected.value = true
             _isConnecting.value = false
         }

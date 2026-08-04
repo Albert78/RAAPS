@@ -53,7 +53,7 @@ class MainApplication : Application(), SystemWakeReceiver.RegistryProvider {
 
         startApsService()
 
-        setupSystem(registry.aps, pluginManager, this)
+        setupSystem(registry, pluginManager, this)
 
         installNotificationUpdater()
 
