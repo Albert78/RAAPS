@@ -30,11 +30,13 @@ import androidx.compose.ui.platform.LocalLocale
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import de.dh.raaps.common.model.InsulinType
 import de.dh.raaps.common.model.data.BgBlock
 import de.dh.raaps.common.model.data.BgDelta
 import de.dh.raaps.common.model.data.BgValue
-import de.dh.raaps.common.model.data.Minutes
+import de.dh.raaps.common.model.data.Block
 import de.dh.raaps.common.model.data.InsulinProfile
+import de.dh.raaps.common.model.data.Minutes
 import de.dh.raaps.common.ui.composables.ProfileSelectionDialog
 import de.dh.raaps.common.ui.composables.screenTitle
 import de.dh.raaps.common.ui.theme.AppTheme
@@ -213,6 +215,58 @@ fun CurrentTherapySettingsContent(
                 showBgEditorDialog = false
             },
             onDismiss = { showBgEditorDialog = false }
+        )
+    }
+}
+
+@Preview(showBackground = true)
+@Preview(showBackground = true, uiMode = Configuration.UI_MODE_NIGHT_YES, name = "Dark Mode")
+@Composable
+fun CurrentTherapySettingsPreview() {
+    val mockInsulinType = InsulinType(
+        name = "Rapid",
+        peak = Minutes(75),
+        dia = Minutes(300)
+    )
+
+    val mockProfile = InsulinProfile(
+        id = 1L,
+        name = "Normal",
+        basalBlocks = listOf(Block(Minutes(1440), 0.5)),
+        isfBlocks = listOf(Block(Minutes(1440), 40.0)),
+        crBlocks = listOf(Block(Minutes(1440), 10.0)),
+        insulinType = mockInsulinType,
+        dia = Minutes(300),
+        peak = Minutes(75)
+    )
+
+    val mockUiState = CurrentTherapyUiState(
+        isLoading = false,
+        activeProfile = ProfileUiState(
+            name = "Normal",
+            activeProfileId = 1L,
+            isf = BgDelta(40),
+            cr = 10.0,
+            basal = 0.5,
+            target = BgValue.fromMgDl(100),
+            lowThreshold = BgValue.fromMgDl(70),
+            adjustmentPercentage = 0,
+            dia = Minutes(300),
+            peak = Minutes(75)
+        ),
+        availableProfiles = listOf(mockProfile),
+        defaultBgBlocks = listOf(
+            BgBlock(Minutes(1440), BgValue.fromMgDl(100), BgValue.fromMgDl(70))
+        )
+    )
+
+    AppTheme {
+        CurrentTherapySettingsContent(
+            uiState = mockUiState,
+            onNavigateUp = {},
+            onNavigateToProfileEditor = {},
+            onSelectProfile = {},
+            onUpdateDefaultBgBlocks = {}
         )
     }
 }
