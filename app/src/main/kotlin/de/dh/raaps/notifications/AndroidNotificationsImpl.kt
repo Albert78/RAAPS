@@ -13,14 +13,18 @@ import de.dh.raaps.R
 import de.dh.raaps.common.model.ToDo
 import de.dh.raaps.common.model.data.BgValue
 import de.dh.raaps.core.aps.ApsRecommendation
+import de.dh.raaps.core.system.AndroidNotifications
 import de.dh.raaps.ui.activities.MainActivity
 import de.dh.raaps.ui.screens.permissions.canPostNotifications
 import java.util.Locale
 import de.dh.raaps.ui.R as UiR
 
-class ApsNotificationManager(
+/**
+ * Low-level notification manager for communicating with the Android system.
+ */
+class AndroidNotificationsImpl(
     val context: Context
-) {
+): AndroidNotifications {
     private val manager = context.getSystemService<NotificationManager>()!!
 
     fun createNotificationChannels() {
@@ -56,7 +60,7 @@ class ApsNotificationManager(
         return if (bgDeltaStr == null) null else "Delta: $bgDeltaStr"
     }
 
-    fun createForegroundServiceNotification(data: ApsMainNotificationData): Notification {
+    fun createForegroundServiceNotification(data: MainAppNotificationData): Notification {
         Log.d(TAG, "Build notification for ${data.lastBgSample}")
         ToDo.toBeImplemented("Take glucose unit from preferences")
         val bgValueStr = getBgValueString(data.lastBgSample?.value, false)
@@ -81,7 +85,7 @@ class ApsNotificationManager(
             .build()
     }
 
-    fun updateNotification(data: ApsMainNotificationData) {
+    fun updateNotification(data: MainAppNotificationData) {
         val notification: Notification = createForegroundServiceNotification(data)
         notify(NOTIFICATION_ID, notification)
     }
@@ -141,7 +145,7 @@ class ApsNotificationManager(
     }
 
     companion object {
-        val TAG = ApsNotificationManager::class.simpleName
+        val TAG = AndroidNotificationsImpl::class.simpleName
         const val NOTIFICATION_ID = 1
         const val RECOMMENDATION_NOTIFICATION_ID = 2
         const val CHANNEL_ID = "aps_service_channel"

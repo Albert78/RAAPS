@@ -15,6 +15,7 @@ import de.dh.raaps.core.repository.GlucoseRepository
 import de.dh.raaps.core.repository.SettingsRepository
 import de.dh.raaps.core.repository.TherapyRepository
 import de.dh.raaps.core.repository.TreatmentRepository
+import de.dh.raaps.core.system.NotificationManager
 import de.dh.raaps.core.system.SystemWakeService
 
 /**
@@ -51,6 +52,7 @@ interface RAAPSRegistry {
     val wakeService: SystemWakeService
     val timeService: TimeService
     val pumpManager: PumpManager
+    val notificationManager: NotificationManager
     val carbsInsulinCalculationModel: CarbsInsulinCalculationModel
 
     /**

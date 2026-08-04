@@ -7,8 +7,8 @@ import androidx.core.content.ContextCompat
 import de.dh.raaps.core.RAAPSRegistry
 import de.dh.raaps.core.RAAPSRegistryImpl
 import de.dh.raaps.core.system.RegistryProvider
-import de.dh.raaps.notifications.ApsMainNotificationData
-import de.dh.raaps.notifications.ApsNotificationManager
+import de.dh.raaps.notifications.AndroidNotificationsImpl
+import de.dh.raaps.notifications.MainAppNotificationData
 import de.dh.raaps.pluginmanager.PluginManagerImpl
 import de.dh.raaps.services.ApsService
 import de.dh.raaps.services.BootReceiver
@@ -26,7 +26,7 @@ import kotlinx.coroutines.launch
  * Responsibility is limited to system entry points and lifecycle management.
  */
 class MainApplication : Application(), RegistryProvider {
-    lateinit var notificationManager: ApsNotificationManager
+    lateinit var androidNotifications: AndroidNotificationsImpl
         private set
 
     override lateinit var registry: RAAPSRegistry
@@ -41,7 +41,7 @@ class MainApplication : Application(), RegistryProvider {
         super.onCreate()
         instance = this
 
-        notificationManager = ApsNotificationManager(this)
+        androidNotifications = AndroidNotificationsImpl(this)
 
         val pluginManager = PluginManagerImpl(this)
 
@@ -49,6 +49,7 @@ class MainApplication : Application(), RegistryProvider {
             application = this,
             scope = applicationScope,
             pluginManager = pluginManager,
+            androidNotifications = androidNotifications,
             onPermissionsChanged = { startApsService() },
 
             // Hack to make things visible in modules without sharing interna of app module
@@ -91,8 +92,8 @@ class MainApplication : Application(), RegistryProvider {
     fun installNotificationUpdater() {
         applicationScope.launch {
             registry.aps.lastDataTime.collect { _ ->
-                val notificationData = ApsMainNotificationData.create(registry.aps)
-                notificationManager.updateNotification(notificationData)
+                val notificationData = MainAppNotificationData.create(registry.aps)
+                androidNotifications.updateNotification(notificationData)
             }
         }
     }

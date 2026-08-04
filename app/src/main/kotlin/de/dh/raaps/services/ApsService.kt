@@ -7,8 +7,8 @@ import android.content.pm.ServiceInfo
 import android.os.IBinder
 import de.dh.raaps.MainApplication
 import de.dh.raaps.core.aps.APS
-import de.dh.raaps.notifications.ApsMainNotificationData
-import de.dh.raaps.notifications.ApsNotificationManager
+import de.dh.raaps.notifications.AndroidNotificationsImpl
+import de.dh.raaps.notifications.MainAppNotificationData
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -20,7 +20,7 @@ import kotlinx.coroutines.launch
  */
 class ApsService : Service() {
     private val serviceScope = CoroutineScope(Dispatchers.Main + SupervisorJob())
-    private val notificationManager: ApsNotificationManager = MainApplication.instance.notificationManager
+    private val notificationManager: AndroidNotificationsImpl = MainApplication.instance.androidNotifications
 
     val aps : APS = MainApplication.instance.registry.aps
 
@@ -54,11 +54,11 @@ class ApsService : Service() {
     }
 
     private fun startServiceInForeground() {
-        val apsNotificationData = ApsMainNotificationData.create(aps)
+        val apsNotificationData = MainAppNotificationData.create(aps)
         val notification: Notification = notificationManager.createForegroundServiceNotification(apsNotificationData)
 
         startForeground(
-            ApsNotificationManager.NOTIFICATION_ID,
+            AndroidNotificationsImpl.NOTIFICATION_ID,
             notification,
             ServiceInfo.FOREGROUND_SERVICE_TYPE_HEALTH
         )
