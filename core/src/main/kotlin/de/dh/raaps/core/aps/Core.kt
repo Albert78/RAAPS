@@ -3,7 +3,6 @@ package de.dh.raaps.core.aps
 import android.util.Log
 import de.dh.raaps.AppPreferencesRepository
 import de.dh.raaps.common.model.InsulinAmount
-import de.dh.raaps.common.model.InsulinHistory
 import de.dh.raaps.common.model.calculation.CarbsInsulinCalculationModel
 import de.dh.raaps.common.model.data.BgReading
 import de.dh.raaps.common.model.data.BgSampleKind
@@ -250,18 +249,6 @@ class Core(
         atomic {
             calculationAlgorithm.updateMealsAndInsulin()
             isPredictionsStale = true
-        }
-    }
-
-    /**
-     * Triggered when the history of actual bolus and basal values was updated.
-     */
-    suspend fun updatePumpHistory(history: InsulinHistory) {
-        busyWork {
-            atomic {
-                val cts = currentTherapySettings ?: return@atomic
-                treatmentRepository.mergeInsulinHistory(history, cts.insulinProfile.insulinType)
-            }
         }
     }
 

@@ -185,9 +185,7 @@ class APS(
     fun startInitialization() {
         inAPSThread {
             core.initialize()
-            pumpManager.setOnHistoryUpdateListener { history ->
-                core.updatePumpHistory(history)
-            }
+            therapyManager.startInitialization(pumpManager)
 
             launch {
                 settingsRepository.observeCurrentSettings().collect { settings ->

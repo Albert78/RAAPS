@@ -75,7 +75,7 @@ class RAAPSRegistryImpl(
             val settingsRepository = SettingsRepository(appDatabase)
 
             // Initialize Managers
-            val therapyManager = TherapyManager(therapyRepository, appPreferencesRepository)
+            val therapyManager = TherapyManager(therapyRepository, treatmentRepository, appPreferencesRepository)
             val wakeService = SystemWakeServiceImpl(application)
             val timeService = TimeServiceImpl(scope = scope)
             val pumpManager = PumpManagerImpl(scope = scope, wakeService = wakeService)

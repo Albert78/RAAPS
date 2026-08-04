@@ -6,6 +6,7 @@ import de.dh.raaps.common.model.DEFAULT_ISF_MGDL_PER_UNIT
 import de.dh.raaps.common.model.DEFAULT_BG_TARGET_MGDL
 import de.dh.raaps.common.model.DEFAULT_BG_LOW_THRESHOLD_MGDL
 import de.dh.raaps.common.model.InsulinType
+import de.dh.raaps.common.model.InsulinHistory
 import de.dh.raaps.common.model.data.BgDelta
 import de.dh.raaps.common.model.data.BgBlock
 import de.dh.raaps.common.model.data.BgValue
@@ -15,13 +16,16 @@ import de.dh.raaps.common.model.data.InsulinProfile
 import de.dh.raaps.common.model.data.Timestamp
 import de.dh.raaps.common.model.data.getAmountForMinute
 import de.dh.raaps.common.model.data.getBgForMinute
+import de.dh.raaps.core.pump.PumpManager
 import de.dh.raaps.core.repository.TherapyRepository
+import de.dh.raaps.core.repository.TreatmentRepository
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 
 class TherapyManager(
     private val therapyRepository: TherapyRepository,
+    private val treatmentRepository: TreatmentRepository,
     private val appPreferencesRepository: AppPreferencesRepository
 ) {
     private val mutex = Mutex()
@@ -153,5 +157,22 @@ class TherapyManager(
             )
             therapyRepository.updateCurrentTherapySettings(newSettings)
         }
+    }
+
+    /**
+     * Wires up the therapy manager with external components.
+     */
+    fun startInitialization(pumpManager: PumpManager) {
+        pumpManager.setOnHistoryUpdateListener { history ->
+            updatePumpHistory(history)
+        }
+    }
+
+    /**
+     * Triggered when the history of actual bolus and basal values was updated.
+     */
+    suspend fun updatePumpHistory(history: InsulinHistory) {
+        val cts = getActiveTherapySettings()
+        treatmentRepository.mergeInsulinHistory(history, cts.insulinProfile.insulinType)
     }
 }
