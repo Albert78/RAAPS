@@ -2,7 +2,7 @@
   "formatVersion": 1,
   "database": {
     "version": 1,
-    "identityHash": "5501ae2c6a7d5681321bffe201e75367",
+    "identityHash": "eba49f16943b20612952af67c35617e2",
     "entities": [
       {
         "tableName": "sensor_type",
@@ -142,7 +142,7 @@
         ]
       },
       {
-        "tableName": "profiles",
+        "tableName": "insulin_profiles",
         "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `name` TEXT NOT NULL, `basal_blocks` TEXT NOT NULL, `isf_blocks` TEXT NOT NULL, `cr_blocks` TEXT NOT NULL, `insulin_type_id` TEXT NOT NULL, `dia` INTEGER NOT NULL, `peak` INTEGER NOT NULL)",
         "fields": [
           {
@@ -203,7 +203,7 @@
       },
       {
         "tableName": "current_therapy_settings",
-        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `insulin_profile_id` INTEGER NOT NULL, `default_bg_blocks` TEXT NOT NULL, `insulin_adjustment_percentage` INTEGER NOT NULL, `target_bg_override` INTEGER, `low_threshold_override` INTEGER, `adjustment_hint` TEXT, FOREIGN KEY(`insulin_profile_id`) REFERENCES `profiles`(`id`) ON UPDATE NO ACTION ON DELETE SET NULL )",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `insulin_profile_id` INTEGER NOT NULL, `default_bg_blocks` TEXT NOT NULL, `insulin_adjustment_percentage` INTEGER NOT NULL, `target_bg_override` INTEGER, `low_threshold_override` INTEGER, `adjustment_hint` TEXT, FOREIGN KEY(`insulin_profile_id`) REFERENCES `insulin_profiles`(`id`) ON UPDATE NO ACTION ON DELETE SET NULL )",
         "fields": [
           {
             "fieldPath": "id",
@@ -264,7 +264,7 @@
         ],
         "foreignKeys": [
           {
-            "table": "profiles",
+            "table": "insulin_profiles",
             "onDelete": "SET NULL",
             "onUpdate": "NO ACTION",
             "columns": [
@@ -490,7 +490,7 @@
     ],
     "setupQueries": [
       "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
-      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '5501ae2c6a7d5681321bffe201e75367')"
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, 'eba49f16943b20612952af67c35617e2')"
     ]
   }
 }
