@@ -23,7 +23,7 @@ import de.dh.raaps.common.navigation.combineEntryProviders
 import de.dh.raaps.common.ui.composables.EdgeToEdgeHandler
 import de.dh.raaps.common.ui.theme.AppTheme
 import de.dh.raaps.common.ui.theme.rememberUseDarkTheme
-import de.dh.raaps.services.ApsService
+import de.dh.raaps.core.system.RegistryProvider
 import de.dh.raaps.ui.navigation.MainFeatureNavGraph
 
 class MainActivity : ComponentActivity() {
@@ -32,8 +32,10 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
+        val registry = (application as RegistryProvider).registry
+
         // Start the background service
-        startForegroundService(Intent(this, ApsService::class.java))
+        startForegroundService(Intent(this, registry.apsServiceClass))
 
         navViewModel = ViewModelProvider(
             this,
@@ -42,10 +44,8 @@ class MainActivity : ComponentActivity() {
 
         handleIntent(intent)
 
-        val application = application as MainApplication
-
         setContent {
-            val useDarkTheme = rememberUseDarkTheme(application.registry.appPreferencesRepository)
+            val useDarkTheme = rememberUseDarkTheme(registry.appPreferencesRepository)
             EdgeToEdgeHandler(useDarkTheme)
             AppTheme(darkTheme = useDarkTheme) {
                 Surface(

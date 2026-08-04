@@ -1,5 +1,6 @@
 package de.dh.raaps.core
 
+import android.app.Service
 import android.content.Context
 import de.dh.raaps.AppPreferencesRepository
 import de.dh.raaps.common.model.PluginManager
@@ -56,4 +57,6 @@ interface RAAPSRegistry {
      * Handler for permission change events.
      */
     val permissionsChangedHandler: PermissionsChangedHandler
+
+    val apsServiceClass: Class<out Service>
 }

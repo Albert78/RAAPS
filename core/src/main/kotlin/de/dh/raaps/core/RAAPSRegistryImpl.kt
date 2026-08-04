@@ -1,6 +1,7 @@
 package de.dh.raaps.core
 
 import android.app.Application
+import android.app.Service
 import android.content.Context
 import de.dh.raaps.AppPreferencesRepository
 import de.dh.raaps.common.model.PluginManager
@@ -46,7 +47,8 @@ class RAAPSRegistryImpl(
     override val timeService: TimeService,
     override val pumpManager: PumpManager,
     override val carbsInsulinCalculationModel: CarbsInsulinCalculationModel,
-    override val permissionsChangedHandler: PermissionsChangedHandler
+    override val permissionsChangedHandler: PermissionsChangedHandler,
+    override val apsServiceClass: Class<out Service>
 ) : RAAPSRegistry {
 
     companion object {
@@ -58,7 +60,8 @@ class RAAPSRegistryImpl(
             application: Application,
             scope: CoroutineScope,
             pluginManager: PluginManager,
-            onPermissionsChanged: () -> Unit
+            onPermissionsChanged: () -> Unit,
+            apsServiceClass: Class<out Service>
         ): RAAPSRegistry {
             val appPreferencesRepository = AppPreferencesRepository(context = application, scope = scope)
             val appDatabase = AppDatabase.getInstance(application)
@@ -130,7 +133,8 @@ class RAAPSRegistryImpl(
                 timeService = timeService,
                 pumpManager = pumpManager,
                 carbsInsulinCalculationModel = carbsInsulinCalculationModel,
-                permissionsChangedHandler = permissionsHandler
+                permissionsChangedHandler = permissionsHandler,
+                apsServiceClass = apsServiceClass
             )
         }
     }
