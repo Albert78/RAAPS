@@ -47,7 +47,6 @@ import de.dh.raaps.common.ui.composables.screenTitle
 import de.dh.raaps.common.ui.theme.AppTheme
 import de.dh.raaps.ui.R
 import de.dh.raaps.ui.controls.apscontrol.ApsControlCard
-import de.dh.raaps.ui.controls.dialogs.TherapyAdjustmentDialog
 import de.dh.raaps.ui.controls.history.CurrentBgUiState
 import de.dh.raaps.ui.controls.history.HistoryAndImpactChartOrDefault
 import de.dh.raaps.ui.controls.history.HistoryAndImpactDiagramData
@@ -77,6 +76,7 @@ fun DashboardScreen(
     onNavigateToAlarms: () -> Unit,
     onNavigateToTherapySettings: () -> Unit,
     onNavigateToMealBolus: () -> Unit,
+    onAdjustmentClick: () -> Unit,
     onHistoryChartClick: () -> Unit,
     extraContent: @Composable () -> Unit = {}
 ) {
@@ -87,22 +87,6 @@ fun DashboardScreen(
     val cob by historyViewModel.cob.collectAsState()
     val currentTherapyUiState by currentTherapyViewModel.uiState.collectAsState()
     val permissionsUiState by permissionsViewModel.uiState.collectAsState()
-
-    var showAdjustmentDialog by remember { mutableStateOf(false) }
-
-    if (showAdjustmentDialog) {
-        TherapyAdjustmentDialog(
-            currentPercentage = currentTherapyUiState.activeInsulinProfile.insulinAdjustmentPercentage,
-            currentTarget = currentTherapyUiState.activeInsulinProfile.targetBgOverride,
-            currentLow = currentTherapyUiState.activeInsulinProfile.lowThresholdOverride,
-            baseTarget = currentTherapyUiState.activeInsulinProfile.baseTarget,
-            baseLow = currentTherapyUiState.activeInsulinProfile.baseLow,
-            currentHint = currentTherapyUiState.activeInsulinProfile.adjustmentHint,
-            presets = currentTherapyUiState.therapyAdjustmentPresets,
-            onValuesChange = { p, t, l, h -> currentTherapyViewModel.setTherapyAdjustment(p, t, l, h) },
-            onDismissRequest = { showAdjustmentDialog = false }
-        )
-    }
 
     DashboardContent(
         dashboardUiState = uiState,
@@ -120,7 +104,7 @@ fun DashboardScreen(
         onNavigateToMealBolus = onNavigateToMealBolus,
         onHistoryChartClick = onHistoryChartClick,
         onApsModeSelect = { viewModel.setApsMode(it) },
-        onAdjustmentClick = { showAdjustmentDialog = true },
+        onAdjustmentClick = onAdjustmentClick,
         extraContent = extraContent
     )
 }

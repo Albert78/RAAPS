@@ -1,4 +1,4 @@
-package de.dh.raaps.ui.controls.dialogs
+package de.dh.raaps.ui.screens.therapy
 
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -16,20 +17,25 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Adjust
+import androidx.compose.material.icons.filled.Save
 import androidx.compose.material.icons.filled.UnfoldMore
 import androidx.compose.material.icons.filled.VerticalAlignBottom
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ElevatedCard
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SuggestionChip
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
+import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -39,7 +45,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import de.dh.raaps.common.model.ADJUSTMENT_PERCENTAGE_MAX
 import de.dh.raaps.common.model.ADJUSTMENT_PERCENTAGE_MIN
@@ -52,23 +58,99 @@ import de.dh.raaps.common.ui.ConfigurableDisplayStrategy
 import de.dh.raaps.common.ui.ModuloSteppingStrategy
 import de.dh.raaps.common.ui.composables.EditableValueStepper
 import de.dh.raaps.common.ui.composables.contentScrollIndicator
-import de.dh.raaps.common.ui.theme.AppTheme
+import de.dh.raaps.common.ui.composables.screenTitle
 import de.dh.raaps.common.ui.theme.NeutralGrey
 import de.dh.raaps.common.ui.theme.SoftBlue
 import de.dh.raaps.common.ui.theme.SoftRed
 import de.dh.raaps.ui.R
+import de.dh.raaps.ui.controls.profile.CurrentTherapyViewModel
 import de.dh.raaps.ui.controls.profile.TherapyAdjustment
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun TherapyAdjustmentScreen(
+    viewModel: CurrentTherapyViewModel,
+    onNavigateUp: () -> Unit
+) {
+    val uiState by viewModel.uiState.collectAsState()
+    
+    // Local state for editing
+    var localPercentage by remember(uiState.activeInsulinProfile.insulinAdjustmentPercentage) { 
+        mutableStateOf(uiState.activeInsulinProfile.insulinAdjustmentPercentage) 
+    }
+    var localTarget by remember(uiState.activeInsulinProfile.targetBgOverride) { 
+        mutableStateOf(uiState.activeInsulinProfile.targetBgOverride) 
+    }
+    var localLow by remember(uiState.activeInsulinProfile.lowThresholdOverride) { 
+        mutableStateOf(uiState.activeInsulinProfile.lowThresholdOverride) 
+    }
+    var localHint by remember(uiState.activeInsulinProfile.adjustmentHint) { 
+        mutableStateOf(uiState.activeInsulinProfile.adjustmentHint) 
+    }
+
+    Scaffold(
+        topBar = {
+            TopAppBar(
+                title = screenTitle(stringResource(id = R.string.aps_control_therpay_adjustment_dialog_title)),
+                navigationIcon = {
+                    IconButton(onClick = onNavigateUp) {
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                            contentDescription = stringResource(id = de.dh.raaps.common.R.string.cd_navigate_up)
+                        )
+                    }
+                },
+                actions = {
+                    IconButton(onClick = {
+                        viewModel.setTherapyAdjustment(localPercentage, localTarget, localLow, localHint)
+                        onNavigateUp()
+                    }) {
+                        Icon(
+                            imageVector = Icons.Default.Save,
+                            contentDescription = stringResource(id = de.dh.raaps.common.R.string.action_save)
+                        )
+                    }
+                }
+            )
+        }
+    ) { innerPadding ->
+        Surface(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(innerPadding)
+        ) {
+            TherapyAdjustmentContent(
+                currentPercentage = localPercentage,
+                currentTarget = localTarget,
+                currentLow = localLow,
+                baseTarget = uiState.activeInsulinProfile.baseTarget,
+                baseLow = uiState.activeInsulinProfile.baseLow,
+                onValuesChange = { p, t, l, h ->
+                    localPercentage = p
+                    localTarget = t
+                    localLow = l
+                    localHint = h
+                },
+                presets = uiState.therapyAdjustmentPresets,
+                onPresetApplied = { p, t, l, h ->
+                    viewModel.setTherapyAdjustment(p, t, l, h)
+                    onNavigateUp()
+                }
+            )
+        }
+    }
+}
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
-fun TherapyAdjustmentDialogContent(
+private fun TherapyAdjustmentContent(
     currentPercentage: Int,
     currentTarget: BgValue?,
     currentLow: BgValue?,
     baseTarget: BgValue,
     baseLow: BgValue,
     onValuesChange: (Int, BgValue?, BgValue?, String?) -> Unit,
-    onDismissRequest: (() -> Unit)? = null,
+    onPresetApplied: (Int, BgValue?, BgValue?, String?) -> Unit,
     presets: List<TherapyAdjustment> = emptyList()
 ) {
     val steppingStrategyInsulin = remember { ModuloSteppingStrategy(5.0) }
@@ -87,7 +169,7 @@ fun TherapyAdjustmentDialogContent(
     val scrollState = rememberScrollState()
     Column(
         modifier = Modifier
-            .fillMaxWidth()
+            .fillMaxSize()
             .contentScrollIndicator(scrollState)
             .verticalScroll(scrollState)
             .clickable(
@@ -95,7 +177,8 @@ fun TherapyAdjustmentDialogContent(
                 interactionSource = remember { MutableInteractionSource() }
             ) {
                 focusManager.clearFocus()
-            },
+            }
+            .padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
         // Insulin Adjustment Section
@@ -291,13 +374,12 @@ fun TherapyAdjustmentDialogContent(
                     presets.forEach { preset ->
                         SuggestionChip(
                             onClick = {
-                                onValuesChange(
+                                onPresetApplied(
                                     preset.percentage,
                                     preset.targetBgMgDl?.let { BgValue.fromMgDl(it.toInt()) },
                                     preset.lowThresholdMgDl?.let { BgValue.fromMgDl(it.toInt()) },
                                     preset.name
                                 )
-                                onDismissRequest?.invoke()
                             },
                             label = {
                                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
@@ -348,7 +430,7 @@ private fun AdjustmentSection(
             Text(
                 text = title,
                 style = MaterialTheme.typography.titleMedium,
-                fontWeight = androidx.compose.ui.text.font.FontWeight.Bold
+                fontWeight = FontWeight.Bold
             )
         }
         Text(
@@ -367,89 +449,6 @@ private fun AdjustmentSection(
             ) {
                 content()
             }
-        }
-    }
-}
-
-@Composable
-fun TherapyAdjustmentDialog(
-    currentPercentage: Int,
-    currentTarget: BgValue?,
-    currentLow: BgValue?,
-    baseTarget: BgValue,
-    baseLow: BgValue,
-    currentHint: String?,
-    presets: List<TherapyAdjustment>,
-    onValuesChange: (Int, BgValue?, BgValue?, String?) -> Unit,
-    onDismissRequest: () -> Unit
-) {
-    // Keep local state for the dialog to avoid jumping while typing
-    var localPercentage by remember(currentPercentage) { mutableStateOf(currentPercentage) }
-    var localTarget by remember(currentTarget) { mutableStateOf(currentTarget) }
-    var localLow by remember(currentLow) { mutableStateOf(currentLow) }
-    var localHint by remember(currentHint) { mutableStateOf(currentHint) }
-
-    AlertDialog(
-        onDismissRequest = onDismissRequest,
-        title = { Text(stringResource(id = R.string.aps_control_therpay_adjustment_dialog_title)) },
-        text = {
-            TherapyAdjustmentDialogContent(
-                currentPercentage = localPercentage,
-                currentTarget = localTarget,
-                currentLow = localLow,
-                baseTarget = baseTarget,
-                baseLow = baseLow,
-                onValuesChange = { p, t, l, h ->
-                    localPercentage = p
-                    localTarget = t
-                    localLow = l
-                    localHint = h
-                },
-                onDismissRequest = {
-                    onValuesChange(localPercentage, localTarget, localLow, localHint)
-                    onDismissRequest()
-                },
-                presets = presets
-            )
-        },
-        confirmButton = {
-            TextButton(onClick = {
-                onValuesChange(localPercentage, localTarget, localLow, localHint)
-                onDismissRequest()
-            }) {
-                Text(stringResource(id = android.R.string.ok))
-            }
-        },
-        dismissButton = {
-            TextButton(onClick = onDismissRequest) {
-                Text(stringResource(id = android.R.string.cancel))
-            }
-        }
-    )
-}
-
-@Preview(showBackground = true)
-@Composable
-fun TherapyAdjustmentDialogPreview() {
-    AppTheme {
-        Surface {
-            TherapyAdjustmentDialogContent(
-                currentPercentage = 10,
-                currentTarget = BgValue.fromMgDl(120),
-                currentLow = BgValue.fromMgDl(80),
-                baseTarget = BgValue.fromMgDl(100),
-                baseLow = BgValue.fromMgDl(70),
-                onValuesChange = { _, _, _, _ -> },
-                presets = listOf(
-                    TherapyAdjustment("Normal", 0),
-                    TherapyAdjustment("Wandern", -20, 140, 90),
-                    TherapyAdjustment("Fahrrad fahren", -30, 150, 100),
-                    TherapyAdjustment("Klettern", -40, 160, 110),
-                    TherapyAdjustment("Laufen", -25, 130, 95),
-                    TherapyAdjustment("Krank", 30, 100, 70),
-                    TherapyAdjustment("Stress", 20, 115, 75)
-                )
-            )
         }
     }
 }

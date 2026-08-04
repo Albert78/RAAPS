@@ -29,6 +29,7 @@ import de.dh.raaps.common.navigation.NavigationViewModel
 import de.dh.raaps.common.navigation.PermissionsRoute
 import de.dh.raaps.common.navigation.PreferencesMainRoute
 import de.dh.raaps.common.navigation.SystemControlRoute
+import de.dh.raaps.common.navigation.TherapyAdjustmentRoute
 import de.dh.raaps.core.SystemRegistry
 import de.dh.raaps.setUserDeclinedPermissions
 import de.dh.raaps.ui.controls.history.HistoryViewModel
@@ -60,6 +61,7 @@ import de.dh.raaps.ui.screens.preferences.PreferencesViewModel
 import de.dh.raaps.ui.screens.systemcontrol.SystemControlScreen
 import de.dh.raaps.ui.screens.therapy.BgEditorScreen
 import de.dh.raaps.ui.screens.therapy.CurrentTherapySettingsScreen
+import de.dh.raaps.ui.screens.therapy.TherapyAdjustmentScreen
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 
@@ -97,6 +99,7 @@ class MainFeatureNavGraph(
                     onNavigateToAlarms = { navViewModel.push(AlarmsRoute) },
                     onNavigateToTherapySettings = { navViewModel.push(CurrentTherapySettingsRoute) },
                     onNavigateToMealBolus = { navViewModel.push(MealBolusRoute()) },
+                    onAdjustmentClick = { navViewModel.push(TherapyAdjustmentRoute) },
                     onHistoryChartClick = { navViewModel.push(HistoryRoute) },
                     extraContent = extraDashboardContent
                 )
@@ -121,7 +124,8 @@ class MainFeatureNavGraph(
                     viewModel = currentTherapyVM,
                     onNavigateUp = { navViewModel.pop() },
                     onNavigateToInsulinProfileEditor = { navViewModel.push(InsulinProfileEditorRoute) },
-                    onNavigateToBgEditor = { navViewModel.push(BgEditorRoute) }
+                    onNavigateToBgEditor = { navViewModel.push(BgEditorRoute) },
+                    onNavigateToTherapyAdjustment = { navViewModel.push(TherapyAdjustmentRoute) }
                 )
             }
 
@@ -130,6 +134,16 @@ class MainFeatureNavGraph(
                     viewModel(factory = CurrentTherapyViewModel.Companion.Factory(registry))
 
                 BgEditorScreen(
+                    viewModel = currentTherapyVM,
+                    onNavigateUp = { navViewModel.pop() }
+                )
+            }
+
+            is TherapyAdjustmentRoute -> NavEntry(key) {
+                val currentTherapyVM: CurrentTherapyViewModel =
+                    viewModel(factory = CurrentTherapyViewModel.Companion.Factory(registry))
+
+                TherapyAdjustmentScreen(
                     viewModel = currentTherapyVM,
                     onNavigateUp = { navViewModel.pop() }
                 )

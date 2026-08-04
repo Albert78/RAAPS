@@ -66,7 +66,6 @@ import de.dh.raaps.common.ui.theme.NeutralGrey
 import de.dh.raaps.common.ui.theme.SoftBlue
 import de.dh.raaps.common.ui.theme.SoftRed
 import de.dh.raaps.ui.R
-import de.dh.raaps.ui.controls.dialogs.TherapyAdjustmentDialog
 import de.dh.raaps.ui.controls.profile.CurrentTherapyUiState
 import de.dh.raaps.ui.controls.profile.CurrentTherapyViewModel
 import de.dh.raaps.ui.controls.profile.InsulinProfileUiState
@@ -77,7 +76,8 @@ fun CurrentTherapySettingsScreen(
     viewModel: CurrentTherapyViewModel,
     onNavigateUp: () -> Unit,
     onNavigateToInsulinProfileEditor: () -> Unit,
-    onNavigateToBgEditor: () -> Unit
+    onNavigateToBgEditor: () -> Unit,
+    onNavigateToTherapyAdjustment: () -> Unit
 ) {
     val uiState by viewModel.uiState.collectAsState()
 
@@ -86,8 +86,8 @@ fun CurrentTherapySettingsScreen(
         onNavigateUp = onNavigateUp,
         onNavigateToInsulinProfileEditor = onNavigateToInsulinProfileEditor,
         onNavigateToBgEditor = onNavigateToBgEditor,
-        onSelectProfile = { viewModel.selectInsulinProfile(it) },
-        onUpdateTherapyAdjustment = { p, t, l, h -> viewModel.setTherapyAdjustment(p, t, l, h) }
+        onNavigateToTherapyAdjustment = onNavigateToTherapyAdjustment,
+        onSelectProfile = { viewModel.selectInsulinProfile(it) }
     )
 }
 
@@ -98,11 +98,10 @@ fun CurrentTherapySettingsContent(
     onNavigateUp: () -> Unit,
     onNavigateToInsulinProfileEditor: () -> Unit,
     onNavigateToBgEditor: () -> Unit,
-    onSelectProfile: (InsulinProfile) -> Unit,
-    onUpdateTherapyAdjustment: (Int, BgValue?, BgValue?, String?) -> Unit
+    onNavigateToTherapyAdjustment: () -> Unit,
+    onSelectProfile: (InsulinProfile) -> Unit
 ) {
     var showInsulinProfileDialog by remember { mutableStateOf(false) }
-    var showAdjustmentDialog by remember { mutableStateOf(false) }
 
     Scaffold(
         topBar = {
@@ -177,7 +176,7 @@ fun CurrentTherapySettingsContent(
 
                 TemporaryAdjustmentCard(
                     insulinProfile = uiState.activeInsulinProfile,
-                    onClick = { showAdjustmentDialog = true }
+                    onClick = onNavigateToTherapyAdjustment
                 )
             }
         }
@@ -192,22 +191,6 @@ fun CurrentTherapySettingsContent(
                 showInsulinProfileDialog = false
             },
             onDismiss = { showInsulinProfileDialog = false }
-        )
-    }
-
-    if (showAdjustmentDialog) {
-        TherapyAdjustmentDialog(
-            currentPercentage = uiState.activeInsulinProfile.insulinAdjustmentPercentage,
-            currentTarget = uiState.activeInsulinProfile.targetBgOverride,
-            currentLow = uiState.activeInsulinProfile.lowThresholdOverride,
-            baseTarget = uiState.activeInsulinProfile.baseTarget,
-            baseLow = uiState.activeInsulinProfile.baseLow,
-            currentHint = uiState.activeInsulinProfile.adjustmentHint,
-            presets = uiState.therapyAdjustmentPresets,
-            onValuesChange = { p, t, l, h ->
-                onUpdateTherapyAdjustment(p, t, l, h)
-            },
-            onDismissRequest = { showAdjustmentDialog = false }
         )
     }
 }
@@ -795,8 +778,8 @@ fun CurrentTherapySettingsPreview() {
             onNavigateUp = {},
             onNavigateToInsulinProfileEditor = {},
             onNavigateToBgEditor = {},
-            onSelectProfile = {},
-            onUpdateTherapyAdjustment = { _, _, _, _ -> }
+            onNavigateToTherapyAdjustment = {},
+            onSelectProfile = {}
         )
     }
 }
