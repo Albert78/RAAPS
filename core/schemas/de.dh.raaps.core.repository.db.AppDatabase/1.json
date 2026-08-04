@@ -2,7 +2,7 @@
   "formatVersion": 1,
   "database": {
     "version": 1,
-    "identityHash": "089a9c0610aa0ec04ab097471edc367e",
+    "identityHash": "4a726166cb235a113802d5399a21c231",
     "entities": [
       {
         "tableName": "sensor_type",
@@ -142,13 +142,19 @@
         ]
       },
       {
-        "tableName": "therapy_data",
-        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `basal_blocks` TEXT NOT NULL, `isf_blocks` TEXT NOT NULL, `ic_blocks` TEXT NOT NULL)",
+        "tableName": "profiles",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `name` TEXT NOT NULL, `basal_blocks` TEXT NOT NULL, `isf_blocks` TEXT NOT NULL, `ic_blocks` TEXT NOT NULL, `insulin_type_id` TEXT NOT NULL, `dia` INTEGER NOT NULL, `peak` INTEGER NOT NULL)",
         "fields": [
           {
             "fieldPath": "id",
             "columnName": "id",
             "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "name",
+            "columnName": "name",
+            "affinity": "TEXT",
             "notNull": true
           },
           {
@@ -168,6 +174,24 @@
             "columnName": "ic_blocks",
             "affinity": "TEXT",
             "notNull": true
+          },
+          {
+            "fieldPath": "insulin_type_id",
+            "columnName": "insulin_type_id",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "dia",
+            "columnName": "dia",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "peak",
+            "columnName": "peak",
+            "affinity": "INTEGER",
+            "notNull": true
           }
         ],
         "primaryKey": {
@@ -176,60 +200,6 @@
             "id"
           ]
         }
-      },
-      {
-        "tableName": "profiles",
-        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `name` TEXT NOT NULL, `therapy_data_id` INTEGER NOT NULL, FOREIGN KEY(`therapy_data_id`) REFERENCES `therapy_data`(`id`) ON UPDATE NO ACTION ON DELETE CASCADE )",
-        "fields": [
-          {
-            "fieldPath": "id",
-            "columnName": "id",
-            "affinity": "INTEGER",
-            "notNull": true
-          },
-          {
-            "fieldPath": "name",
-            "columnName": "name",
-            "affinity": "TEXT",
-            "notNull": true
-          },
-          {
-            "fieldPath": "therapy_data_id",
-            "columnName": "therapy_data_id",
-            "affinity": "INTEGER",
-            "notNull": true
-          }
-        ],
-        "primaryKey": {
-          "autoGenerate": true,
-          "columnNames": [
-            "id"
-          ]
-        },
-        "indices": [
-          {
-            "name": "index_profiles_therapy_data_id",
-            "unique": false,
-            "columnNames": [
-              "therapy_data_id"
-            ],
-            "orders": [],
-            "createSql": "CREATE INDEX IF NOT EXISTS `index_profiles_therapy_data_id` ON `${TABLE_NAME}` (`therapy_data_id`)"
-          }
-        ],
-        "foreignKeys": [
-          {
-            "table": "therapy_data",
-            "onDelete": "CASCADE",
-            "onUpdate": "NO ACTION",
-            "columns": [
-              "therapy_data_id"
-            ],
-            "referencedColumns": [
-              "id"
-            ]
-          }
-        ]
       },
       {
         "tableName": "current_therapy_settings",
@@ -531,7 +501,7 @@
     ],
     "setupQueries": [
       "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
-      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '089a9c0610aa0ec04ab097471edc367e')"
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '4a726166cb235a113802d5399a21c231')"
     ]
   }
 }

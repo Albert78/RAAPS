@@ -16,13 +16,13 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import de.dh.raaps.common.R
-import de.dh.raaps.common.model.data.Profile
+import de.dh.raaps.common.model.data.InsulinProfile
 
 @Composable
 fun ProfileSelectionDialog(
-    profiles: List<Profile>,
+    profiles: List<InsulinProfile>,
     activeProfileId: Long?,
-    onProfileSelected: (Profile) -> Unit,
+    onProfileSelected: (InsulinProfile) -> Unit,
     onDismiss: () -> Unit
 ) {
     AlertDialog(

@@ -9,7 +9,7 @@ import de.dh.raaps.common.model.Plugin
 import de.dh.raaps.common.model.PluginManager
 import de.dh.raaps.common.model.PumpAlerts
 import de.dh.raaps.common.model.PumpCapabilities
-import de.dh.raaps.common.model.data.TherapyData
+import de.dh.raaps.common.model.data.InsulinProfile
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 
@@ -72,7 +72,7 @@ class SampleInsulinPumpPlugin : InsulinPump, Plugin {
         // TODO: Cancel temporary basal rate
     }
 
-    override suspend fun setProfile(profile: TherapyData) {
+    override suspend fun setProfile(profile: InsulinProfile) {
         // TODO: Set therapy profile
     }
 

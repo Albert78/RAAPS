@@ -1,6 +1,5 @@
 package de.dh.raaps.ui.controls.profile
 
-import android.util.Range
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
@@ -10,7 +9,7 @@ import de.dh.raaps.common.model.data.BgDelta
 import de.dh.raaps.common.model.data.BgValue
 import de.dh.raaps.common.model.data.CurrentTherapySettings
 import de.dh.raaps.common.model.data.GlucoseUnit
-import de.dh.raaps.common.model.data.Profile
+import de.dh.raaps.common.model.data.InsulinProfile
 import de.dh.raaps.common.model.data.Timestamp
 import de.dh.raaps.core.RAAPSRegistry
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -35,7 +34,7 @@ data class CurrentTherapyUiState(
     val isLoading: Boolean = false,
     val activeProfile: ProfileUiState? = null,
     val glucoseUnit: GlucoseUnit = GlucoseUnit.MG_DL,
-    val availableProfiles: List<Profile> = emptyList(),
+    val availableProfiles: List<InsulinProfile> = emptyList(),
     val defaultBgBlocks: List<BgBlock> = emptyList()
 )
 
@@ -61,7 +60,7 @@ class CurrentTherapyViewModel(
         }.launchIn(viewModelScope)
     }
 
-    private suspend fun updateState(currentSettings: CurrentTherapySettings?, profiles: List<Profile>) {
+    private suspend fun updateState(currentSettings: CurrentTherapySettings?, profiles: List<InsulinProfile>) {
         val now = Timestamp.now()
         val isf = therapyManager.getIsfFactor(now)
         val ic = therapyManager.getIcFactor(now)
@@ -100,7 +99,7 @@ class CurrentTherapyViewModel(
         }
     }
 
-    fun selectProfile(profile: Profile) {
+    fun selectProfile(profile: InsulinProfile) {
         viewModelScope.launch {
             therapyManager.selectProfile(profile)
         }

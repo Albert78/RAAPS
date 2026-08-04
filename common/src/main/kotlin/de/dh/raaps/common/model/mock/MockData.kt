@@ -1,27 +1,38 @@
 package de.dh.raaps.common.model.mock
 
+import de.dh.raaps.common.model.InsulinType
 import de.dh.raaps.common.model.data.Block
 import de.dh.raaps.common.model.data.Minutes
-import de.dh.raaps.common.model.data.TherapyData
+import de.dh.raaps.common.model.data.InsulinProfile
 
-fun mockSimpleTherapyData() =
-    TherapyData(
+fun mockInsulinType() = InsulinType(
+    name = "Mock Insulin",
+    dia = Minutes.ofHours(5),
+    peak = Minutes(75)
+)
+
+fun mockSimpleInsulinProfile() =
+    InsulinProfile(
+        name = "Mock Profile",
         icBlocks = listOf(
             Block(
-                Minutes.Companion.ONE_DAY,
+                Minutes.ONE_DAY,
                 10.0
             )
         ),
         isfBlocks = listOf(
             Block(
-                Minutes.Companion.ONE_DAY,
+                Minutes.ONE_DAY,
                 44.0
             )
         ),
         basalBlocks = listOf(
             Block(
-                Minutes.Companion.ONE_DAY,
+                Minutes.ONE_DAY,
                 0.5
             )
-        )
+        ),
+        insulinType = mockInsulinType(),
+        dia = Minutes.ofHours(5),
+        peak = Minutes(75)
     )

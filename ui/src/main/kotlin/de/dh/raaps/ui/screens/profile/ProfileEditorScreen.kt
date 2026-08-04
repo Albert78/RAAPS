@@ -26,10 +26,13 @@ import androidx.compose.material.icons.filled.ContentCopy
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Remove
 import androidx.compose.material.icons.filled.Save
-import androidx.compose.material.icons.filled.VerticalAlignBottom
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ExposedDropdownMenuBox
+import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -57,6 +60,7 @@ import androidx.compose.ui.platform.LocalLocale
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardCapitalization
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -66,23 +70,20 @@ import de.dh.raaps.common.model.BASAL_MIN
 import de.dh.raaps.common.model.DEFAULT_BASAL_UNITS_PER_HOUR
 import de.dh.raaps.common.model.DEFAULT_IC_GRAM_PER_UNIT
 import de.dh.raaps.common.model.DEFAULT_ISF_MGDL_PER_UNIT
-import de.dh.raaps.common.model.DEFAULT_BG_TARGET_MGDL
-import de.dh.raaps.common.model.DEFAULT_BG_LOW_THRESHOLD_MGDL
 import de.dh.raaps.common.model.IC_MAX
 import de.dh.raaps.common.model.IC_MIN
 import de.dh.raaps.common.model.ID_UNDEFINED
 import de.dh.raaps.common.model.ISF_MAX
 import de.dh.raaps.common.model.ISF_MIN
+import de.dh.raaps.common.model.InsulinType
 import de.dh.raaps.common.model.data.Block
 import de.dh.raaps.common.model.data.Minutes
-import de.dh.raaps.common.model.data.Profile
-import de.dh.raaps.common.model.data.TherapyData
+import de.dh.raaps.common.model.data.InsulinProfile
 import de.dh.raaps.common.ui.composables.TimeHourSelector
 import de.dh.raaps.common.ui.composables.screenTitle
 import de.dh.raaps.common.ui.theme.AppTheme
 import de.dh.raaps.ui.controls.profile.ProfileSettingsUiState
 import de.dh.raaps.ui.controls.profile.ProfileSettingsViewModel
-import kotlin.math.roundToInt
 
 @Composable
 fun ProfileEditorScreen(
@@ -95,6 +96,7 @@ fun ProfileEditorScreen(
     if (uiState.editingProfile != null) {
         ProfileDetailEditor(
             profile = uiState.editingProfile!!,
+            insulinTypes = uiState.insulinTypes,
             onSave = { viewModel.saveProfile(it) },
             onCancel = { viewModel.stopEditing() },
             isNameUnique = { name, id -> viewModel.isNameUnique(name, id) }
@@ -104,19 +106,23 @@ fun ProfileEditorScreen(
             uiState = uiState,
             onNavigateUp = onNavigateUp,
             onAddProfile = {
-                viewModel.startEditing(
-                    Profile(
-                        name = "",
-                        therapyData = TherapyData(
+                val defaultInsulinType = uiState.insulinTypes.firstOrNull()
+                if (defaultInsulinType != null) {
+                    viewModel.startEditing(
+                        InsulinProfile(
+                            name = "",
                             basalBlocks = listOf(Block(
                                 Minutes.ofHours(24),
                                 DEFAULT_BASAL_UNITS_PER_HOUR
                             )),
                             isfBlocks = listOf(Block(Minutes.ofHours(24), DEFAULT_ISF_MGDL_PER_UNIT)),
-                            icBlocks = listOf(Block(Minutes.ofHours(24), DEFAULT_IC_GRAM_PER_UNIT))
+                            icBlocks = listOf(Block(Minutes.ofHours(24), DEFAULT_IC_GRAM_PER_UNIT)),
+                            insulinType = defaultInsulinType,
+                            dia = defaultInsulinType.dia,
+                            peak = defaultInsulinType.peak
                         )
                     )
-                )
+                }
             },
             onEditProfile = { viewModel.startEditing(it) },
             onDeleteProfile = { viewModel.confirmDelete(it) },
@@ -151,9 +157,9 @@ fun ProfileList(
     uiState: ProfileSettingsUiState,
     onNavigateUp: () -> Unit,
     onAddProfile: () -> Unit,
-    onEditProfile: (Profile) -> Unit,
-    onDeleteProfile: (Profile) -> Unit,
-    onCopyProfile: (Profile) -> Unit
+    onEditProfile: (InsulinProfile) -> Unit,
+    onDeleteProfile: (InsulinProfile) -> Unit,
+    onCopyProfile: (InsulinProfile) -> Unit
 ) {
     Scaffold(
         topBar = {
@@ -222,24 +228,41 @@ fun ProfileList(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ProfileDetailEditor(
-    profile: Profile,
-    onSave: (Profile) -> Unit,
+    profile: InsulinProfile,
+    insulinTypes: List<InsulinType>,
+    onSave: (InsulinProfile) -> Unit,
     onCancel: () -> Unit,
     isNameUnique: (String, Long) -> Boolean = { _, _ -> true }
 ) {
     var name by remember { mutableStateOf(profile.name) }
-    var therapyData by remember { mutableStateOf(profile.therapyData) }
+    var basalBlocks by remember { mutableStateOf(profile.basalBlocks) }
+    var isfBlocks by remember { mutableStateOf(profile.isfBlocks) }
+    var icBlocks by remember { mutableStateOf(profile.icBlocks) }
+    var insulinType by remember { mutableStateOf(profile.insulinType) }
+    var dia by remember { mutableStateOf(profile.dia.value.toString()) }
+    var peak by remember { mutableStateOf(profile.peak.value.toString()) }
+
     var selectedTab by remember { mutableIntStateOf(0) }
     var showDiscardConfirmation by remember { mutableStateOf(false) }
 
     val tabs = listOf(
+        "Insulin",
         stringResource(id = R.string.profile_editor_tab_basal),
         stringResource(id = R.string.profile_editor_tab_isf),
         stringResource(id = R.string.profile_editor_tab_ic)
     )
 
     val isNameValid = name.trim().isNotBlank() && isNameUnique(name.trim(), profile.id)
-    val hasChanges = name != profile.name || therapyData != profile.therapyData
+    val diaValue = dia.toIntOrNull() ?: 0
+    val peakValue = peak.toIntOrNull() ?: 0
+    
+    val hasChanges = name != profile.name || 
+            basalBlocks != profile.basalBlocks || 
+            isfBlocks != profile.isfBlocks || 
+            icBlocks != profile.icBlocks ||
+            insulinType != profile.insulinType ||
+            diaValue != profile.dia.value.toInt() ||
+            peakValue != profile.peak.value.toInt()
 
     fun handleBack() {
         if (hasChanges) {
@@ -265,8 +288,18 @@ fun ProfileDetailEditor(
                 },
                 actions = {
                     IconButton(
-                        onClick = { onSave(profile.copy(name = name.trim(), therapyData = therapyData)) },
-                        enabled = isNameValid
+                        onClick = { 
+                            onSave(profile.copy(
+                                name = name.trim(), 
+                                basalBlocks = basalBlocks,
+                                isfBlocks = isfBlocks,
+                                icBlocks = icBlocks,
+                                insulinType = insulinType,
+                                dia = Minutes(diaValue.toShort()),
+                                peak = Minutes(peakValue.toShort())
+                            )) 
+                        },
+                        enabled = isNameValid && diaValue > 0 && peakValue > 0
                     ) {
                         Icon(
                             imageVector = Icons.Default.Save,
@@ -306,31 +339,44 @@ fun ProfileDetailEditor(
 
             Box(modifier = Modifier.weight(1f)) {
                 when (selectedTab) {
-                    0 -> TherapyBlockListEditor(
+                    0 -> InsulinSettingsEditor(
+                        insulinTypes = insulinTypes,
+                        selectedInsulinType = insulinType,
+                        onInsulinTypeSelected = { 
+                            insulinType = it
+                            dia = it.dia.value.toString()
+                            peak = it.peak.value.toString()
+                        },
+                        dia = dia,
+                        onDiaChanged = { dia = it },
+                        peak = peak,
+                        onPeakChanged = { peak = it }
+                    )
+                    1 -> TherapyBlockListEditor(
                         title = stringResource(id = R.string.profile_editor_basal_title),
                         description = stringResource(id = R.string.profile_editor_basal_desc),
-                        blocks = therapyData.basalBlocks,
-                        onBlocksChanged = { therapyData = therapyData.copy(basalBlocks = it) },
+                        blocks = basalBlocks,
+                        onBlocksChanged = { basalBlocks = it },
                         step = 0.05,
                         format = "%.2f",
                         minValue = BASAL_MIN,
                         maxValue = BASAL_MAX
                     )
-                    1 -> TherapyBlockListEditor(
+                    2 -> TherapyBlockListEditor(
                         title = stringResource(id = R.string.profile_editor_isf_title),
                         description = stringResource(id = R.string.profile_editor_isf_desc),
-                        blocks = therapyData.isfBlocks,
-                        onBlocksChanged = { therapyData = therapyData.copy(isfBlocks = it) },
+                        blocks = isfBlocks,
+                        onBlocksChanged = { isfBlocks = it },
                         step = 1.0,
                         format = "%.0f",
                         minValue = ISF_MIN,
                         maxValue = ISF_MAX
                     )
-                    2 -> TherapyBlockListEditor(
+                    3 -> TherapyBlockListEditor(
                         title = stringResource(id = R.string.profile_editor_ic_title),
                         description = stringResource(id = R.string.profile_editor_ic_desc),
-                        blocks = therapyData.icBlocks,
-                        onBlocksChanged = { therapyData = therapyData.copy(icBlocks = it) },
+                        blocks = icBlocks,
+                        onBlocksChanged = { icBlocks = it },
                         step = 0.1,
                         format = "%.1f",
                         minValue = IC_MIN,
@@ -360,6 +406,76 @@ fun ProfileDetailEditor(
                 }
             }
         )
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun InsulinSettingsEditor(
+    insulinTypes: List<InsulinType>,
+    selectedInsulinType: InsulinType,
+    onInsulinTypeSelected: (InsulinType) -> Unit,
+    dia: String,
+    onDiaChanged: (String) -> Unit,
+    peak: String,
+    onPeakChanged: (String) -> Unit
+) {
+    var expanded by remember { mutableStateOf(false) }
+
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(16.dp),
+        verticalArrangement = Arrangement.spacedBy(16.dp)
+    ) {
+        Text(text = "Insulin Settings", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+
+        ExposedDropdownMenuBox(
+            expanded = expanded,
+            onExpandedChange = { expanded = !expanded }
+        ) {
+            OutlinedTextField(
+                value = selectedInsulinType.name,
+                onValueChange = {},
+                readOnly = true,
+                label = { Text("Insulin Type") },
+                trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
+                modifier = Modifier
+                    .menuAnchor()
+                    .fillMaxWidth()
+            )
+            ExposedDropdownMenu(
+                expanded = expanded,
+                onDismissRequest = { expanded = false }
+            ) {
+                insulinTypes.forEach { type ->
+                    DropdownMenuItem(
+                        text = { Text(type.name) },
+                        onClick = {
+                            onInsulinTypeSelected(type)
+                            expanded = false
+                        }
+                    )
+                }
+            }
+        }
+
+        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(16.dp)) {
+            OutlinedTextField(
+                value = dia,
+                onValueChange = { onDiaChanged(it) },
+                label = { Text("DIA (min)") },
+                modifier = Modifier.weight(1f),
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
+            )
+            OutlinedTextField(
+                value = peak,
+                onValueChange = { onPeakChanged(it) },
+                label = { Text("Peak (min)") },
+                modifier = Modifier.weight(1f),
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
+            )
+        }
     }
 }
 
@@ -624,45 +740,5 @@ fun ValueAdjuster(
         ) {
             Icon(Icons.Default.Add, contentDescription = stringResource(id = R.string.cd_increase_value))
         }
-    }
-}
-
-@Preview(showBackground = true, name = "Light Mode")
-@Preview(showBackground = true, uiMode = Configuration.UI_MODE_NIGHT_YES, name = "Dark Mode")
-@Composable
-fun ProfileEditorPreview() {
-    AppTheme {
-        ProfileList(
-            uiState = ProfileSettingsUiState(
-                profiles = listOf(
-                    Profile(name = "Normal", therapyData = TherapyData(basalBlocks = emptyList(), isfBlocks = emptyList(), icBlocks = emptyList())),
-                    Profile(name = "Sport", therapyData = TherapyData(basalBlocks = emptyList(), isfBlocks = emptyList(), icBlocks = emptyList())),
-                    Profile(name = "Krank", therapyData = TherapyData(basalBlocks = emptyList(), isfBlocks = emptyList(), icBlocks = emptyList()))
-                ),
-                isLoading = false
-            ),
-            onNavigateUp = {},
-            onAddProfile = {},
-            onEditProfile = {},
-            onDeleteProfile = {},
-            onCopyProfile = {}
-        )
-    }
-}
-
-@Preview(showBackground = true, name = "Detail Editor Preview")
-@Preview(showBackground = true, uiMode = Configuration.UI_MODE_NIGHT_YES, name = "Dark Mode")
-@Composable
-fun ProfileDetailEditorPreview() {
-    AppTheme {
-        ProfileDetailEditor(
-            profile = Profile(name = "Normal", therapyData = TherapyData(
-                basalBlocks = listOf(Block(Minutes.ofHours(24), 1.0)),
-                isfBlocks = listOf(Block(Minutes.ofHours(24), 50.0)),
-                icBlocks = listOf(Block(Minutes.ofHours(24), 10.0))
-            )),
-            onSave = {},
-            onCancel = {}
-        )
     }
 }

@@ -29,9 +29,7 @@ import androidx.compose.ui.unit.dp
 import de.dh.raaps.common.model.data.BgDelta
 import de.dh.raaps.common.model.data.BgValue
 import de.dh.raaps.common.model.data.GlucoseUnit
-import de.dh.raaps.common.model.data.Profile
-import de.dh.raaps.common.model.data.BgBlock
-import de.dh.raaps.common.model.data.TherapyData
+import de.dh.raaps.common.model.data.InsulinProfile
 import de.dh.raaps.common.ui.composables.ProfileSelectionDialog
 import de.dh.raaps.common.ui.isfValue
 import de.dh.raaps.common.ui.theme.AppTheme
@@ -40,7 +38,7 @@ import java.util.Locale
 @Composable
 fun CurrentTherapyView(
     uiState: CurrentTherapyUiState,
-    onProfileSelect: (Profile) -> Unit,
+    onProfileSelect: (InsulinProfile) -> Unit,
     modifier: Modifier = Modifier
 ) {
     var showProfileDialog by remember { mutableStateOf(false) }
@@ -141,35 +139,6 @@ private fun InfoRow(
             text = "$value $unit",
             style = MaterialTheme.typography.bodyMedium,
             fontWeight = FontWeight.Bold
-        )
-    }
-}
-
-@Preview(showBackground = true, name = "Light Mode")
-@Preview(showBackground = true, uiMode = android.content.res.Configuration.UI_MODE_NIGHT_YES, name = "Dark Mode")
-@Composable
-fun CurrentTherapyViewPreview() {
-    AppTheme {
-        CurrentTherapyView(
-            uiState = CurrentTherapyUiState(
-                isLoading = false,
-                activeProfile = ProfileUiState(
-                    name = "Normal",
-                    activeProfileId = 1L,
-                    isf = BgDelta.fromMgDl(50),
-                    ic = 10.0,
-                    basal = 0.5,
-                    target = BgValue.fromMgDl(100),
-                    lowThreshold = BgValue.fromMgDl(70),
-                    adjustmentPercentage = 0
-                ),
-                glucoseUnit = GlucoseUnit.MG_DL,
-                availableProfiles = listOf(
-                    Profile(id = 1L, name = "Normal", therapyData = TherapyData(basalBlocks = emptyList(), isfBlocks = emptyList(), icBlocks = emptyList())),
-                    Profile(id = 2L, name = "Sport", therapyData = TherapyData(basalBlocks = emptyList(), isfBlocks = emptyList(), icBlocks = emptyList()))
-                )
-            ),
-            onProfileSelect = {}
         )
     }
 }

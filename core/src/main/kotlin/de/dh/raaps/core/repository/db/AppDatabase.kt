@@ -19,9 +19,8 @@ import de.dh.raaps.core.repository.db.entities.InsulinEntity
 import de.dh.raaps.core.repository.db.entities.InsulinTypeEntity
 import de.dh.raaps.core.repository.db.entities.MealEntity
 import de.dh.raaps.core.repository.db.entities.MealTypeEntity
-import de.dh.raaps.core.repository.db.entities.ProfileEntity
+import de.dh.raaps.core.repository.db.entities.InsulinProfileEntity
 import de.dh.raaps.core.repository.db.entities.SensorTypeEntity
-import de.dh.raaps.core.repository.db.entities.TherapyDataEntity
 import kotlinx.coroutines.flow.Flow
 import java.util.concurrent.Executors
 
@@ -57,34 +56,21 @@ interface ProviderDao {
 
 @Dao
 interface TherapyDao {
-    // Therapy Data
-    @Query("SELECT * FROM therapy_data WHERE id = :id")
-    suspend fun getTherapyDataById(id: Long): TherapyDataEntity?
-
-    @Insert
-    suspend fun insertTherapyData(data: TherapyDataEntity): Long
-
-    @Update
-    suspend fun updateTherapyData(data: TherapyDataEntity)
-
-    @Query("DELETE FROM therapy_data WHERE id = :id")
-    suspend fun deleteTherapyData(id: Long)
-
     // Profiles
     @Query("SELECT * FROM profiles ORDER BY name ASC")
-    suspend fun getAllProfiles(): List<ProfileEntity>
+    suspend fun getAllProfiles(): List<InsulinProfileEntity>
 
     @Query("SELECT * FROM profiles ORDER BY name ASC")
-    fun observeAllProfiles(): Flow<List<ProfileEntity>>
+    fun observeAllProfiles(): Flow<List<InsulinProfileEntity>>
 
     @Query("SELECT * FROM profiles WHERE id = :id")
-    suspend fun getProfileById(id: Long): ProfileEntity?
+    suspend fun getProfileById(id: Long): InsulinProfileEntity?
 
     @Insert
-    suspend fun insertProfile(profile: ProfileEntity): Long
+    suspend fun insertProfile(profile: InsulinProfileEntity): Long
 
     @Update
-    suspend fun updateProfile(profile: ProfileEntity)
+    suspend fun updateProfile(profile: InsulinProfileEntity)
 
     @Query("DELETE FROM profiles WHERE id = :id")
     suspend fun deleteProfile(id: Long)
@@ -207,8 +193,7 @@ interface MetabolicEventsDao {
     GlucoseReadingEntity::class,
 
     // Therapy
-    TherapyDataEntity::class,
-    ProfileEntity::class,
+    InsulinProfileEntity::class,
     CurrentTherapySettingsEntity::class,
     CurrentSettingsEntity::class,
 

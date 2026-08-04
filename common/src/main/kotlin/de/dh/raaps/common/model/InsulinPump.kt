@@ -1,6 +1,6 @@
 package de.dh.raaps.common.model
 
-import de.dh.raaps.common.model.data.TherapyData
+import de.dh.raaps.common.model.data.InsulinProfile
 import kotlinx.coroutines.flow.StateFlow
 
 /**
@@ -147,7 +147,7 @@ interface InsulinPump {
      *
      * @throws Exception if the command cannot be sent or the pump connection fails.
      */
-    suspend fun setProfile(profile: TherapyData)
+    suspend fun setProfile(profile: InsulinProfile)
 
     /**
      * Performs a synchronization of the pump's history events.

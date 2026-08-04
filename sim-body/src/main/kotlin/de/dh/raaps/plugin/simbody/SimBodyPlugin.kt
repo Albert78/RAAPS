@@ -27,11 +27,11 @@ class SimBodyPlugin(
 ) : Plugin, TickHandler {
     private val database = SimBodyDatabase.getInstance(application)
     val bodyModel = BodyModel(DEFAULT_SIM_BODY_PROFILE, database.impactDao())
-    val pumpDevice = SimBodyPumpDevice(bodyModel, DEFAULT_SIM_THERAPY_PROFILE)
+    val pumpDevice = SimBodyPumpDevice(bodyModel, DEFAULT_SIM_INSULIN_PROFILE)
 
     private val _glucoseReadings = MutableSharedFlow<BgReading>(extraBufferCapacity = 1)
 
-    override val name: String = "Sim Body CGM Plugin"
+    override val name: String = "Sim Body Plugin"
     override val neededPermissions: Collection<String> = emptyList()
 
     override fun initialize(pluginManager: PluginManager) {

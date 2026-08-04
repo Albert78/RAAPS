@@ -11,11 +11,10 @@ import de.dh.raaps.common.model.data.BgValue
 import de.dh.raaps.common.model.data.Block
 import de.dh.raaps.common.model.data.CurrentTherapySettings
 import de.dh.raaps.common.model.data.Minutes
-import de.dh.raaps.common.model.data.Profile
+import de.dh.raaps.common.model.data.InsulinProfile
 import de.dh.raaps.common.model.data.SensorType
 import de.dh.raaps.common.model.data.BgBlock
 import de.dh.raaps.common.model.data.CurrentSettings
-import de.dh.raaps.common.model.data.TherapyData
 import de.dh.raaps.common.model.data.Timestamp
 import de.dh.raaps.core.repository.db.entities.CurrentSettingsEntity
 import de.dh.raaps.core.repository.db.entities.CurrentTherapySettingsEntity
@@ -27,9 +26,8 @@ import de.dh.raaps.core.repository.db.entities.InsulinEntity
 import de.dh.raaps.core.repository.db.entities.InsulinTypeEntity
 import de.dh.raaps.core.repository.db.entities.MealEntity
 import de.dh.raaps.core.repository.db.entities.MealTypeEntity
-import de.dh.raaps.core.repository.db.entities.ProfileEntity
+import de.dh.raaps.core.repository.db.entities.InsulinProfileEntity
 import de.dh.raaps.core.repository.db.entities.SensorTypeEntity
-import de.dh.raaps.core.repository.db.entities.TherapyDataEntity
 
 // BgReading Converters
 fun BgReading.toEntity(dataProviderId: Long, sourceSensorId: Long) = GlucoseReadingEntity(
@@ -174,30 +172,26 @@ fun DBBgBlock.toModel() = BgBlock(
     lowThreshold = BgValue.fromMgDl(this.lowThreshold)
 )
 
-fun TherapyData.toEntity() = TherapyDataEntity(
+fun InsulinProfile.toEntity() = InsulinProfileEntity(
     id = this.id,
+    name = this.name,
     basal_blocks = this.basalBlocks.map { it.toDb() },
     isf_blocks = this.isfBlocks.map { it.toDb() },
-    ic_blocks = this.icBlocks.map { it.toDb() }
+    ic_blocks = this.icBlocks.map { it.toDb() },
+    insulin_type_id = this.insulinType.id,
+    dia = this.dia,
+    peak = this.peak
 )
 
-fun TherapyDataEntity.toModel() = TherapyData(
+fun InsulinProfileEntity.toModel(insulinType: InsulinType) = InsulinProfile(
     id = this.id,
+    name = this.name,
     basalBlocks = this.basal_blocks.map { it.toModel() },
     isfBlocks = this.isf_blocks.map { it.toModel() },
-    icBlocks = this.ic_blocks.map { it.toModel() }
-)
-
-fun Profile.toEntity() = ProfileEntity(
-    id = this.id,
-    name = this.name,
-    therapy_data_id = this.therapyData.id
-)
-
-fun ProfileEntity.toModel(therapyData: TherapyData) = Profile(
-    id = this.id,
-    name = this.name,
-    therapyData = therapyData
+    icBlocks = this.ic_blocks.map { it.toModel() },
+    insulinType = insulinType,
+    dia = this.dia,
+    peak = this.peak
 )
 
 fun CurrentTherapySettings.toEntity() = CurrentTherapySettingsEntity(
@@ -208,7 +202,7 @@ fun CurrentTherapySettings.toEntity() = CurrentTherapySettingsEntity(
     default_bg_blocks = this.defaultBgBlocks.map { it.toDb() }
 )
 
-fun CurrentTherapySettingsEntity.toModel(profile: Profile, insulinType: InsulinType) = CurrentTherapySettings(
+fun CurrentTherapySettingsEntity.toModel(profile: InsulinProfile, insulinType: InsulinType) = CurrentTherapySettings(
     id = this.id,
     profile = profile,
     insulinType = insulinType,

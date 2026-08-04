@@ -194,7 +194,7 @@ class APS(
                 therapyManager.currentTherapySettingsFlow.drop(1).collect { settings ->
                     if (settings == null) return@collect
                     pumpManager.issueCommand(
-                        PumpCommand.SetProfile(settings.profile.therapyData),
+                        PumpCommand.SetProfile(settings.profile),
                         isCancelableAPSCommand = false
                     )
                     core.onTherapySettingsChanged(settings)

@@ -3,7 +3,7 @@ package de.dh.raaps.core.pump
 import de.dh.raaps.common.model.InsulinAmount
 import de.dh.raaps.common.model.InsulinPump
 import de.dh.raaps.common.model.data.Minutes
-import de.dh.raaps.common.model.data.TherapyData
+import de.dh.raaps.common.model.data.InsulinProfile
 import de.dh.raaps.common.model.data.Timestamp
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -27,7 +27,7 @@ enum class PumpCoordinatorState {
  * Commands that can be sent to the pump.
  */
 sealed class PumpCommand {
-    data class SetProfile(val profile: TherapyData) : PumpCommand()
+    data class SetProfile(val profile: InsulinProfile) : PumpCommand()
     data class SetTempBasal(val percent: Int, val durationHours: Int) : PumpCommand()
     object CancelTempBasal : PumpCommand()
     data class DeliverBolus(val amount: InsulinAmount) : PumpCommand()

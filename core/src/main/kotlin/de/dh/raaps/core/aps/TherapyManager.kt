@@ -1,20 +1,18 @@
 package de.dh.raaps.core.aps
 
-import android.util.Range
 import de.dh.raaps.AppPreferencesRepository
 import de.dh.raaps.common.model.DEFAULT_BASAL_UNITS_PER_HOUR
 import de.dh.raaps.common.model.DEFAULT_IC_GRAM_PER_UNIT
 import de.dh.raaps.common.model.DEFAULT_ISF_MGDL_PER_UNIT
 import de.dh.raaps.common.model.DEFAULT_BG_TARGET_MGDL
 import de.dh.raaps.common.model.DEFAULT_BG_LOW_THRESHOLD_MGDL
-import de.dh.raaps.common.model.ID_UNDEFINED
 import de.dh.raaps.common.model.InsulinType
 import de.dh.raaps.common.model.data.BgDelta
 import de.dh.raaps.common.model.data.BgBlock
 import de.dh.raaps.common.model.data.BgValue
 import de.dh.raaps.common.model.data.CurrentTherapySettings
 import de.dh.raaps.common.model.data.Minutes
-import de.dh.raaps.common.model.data.Profile
+import de.dh.raaps.common.model.data.InsulinProfile
 import de.dh.raaps.common.model.data.Timestamp
 import de.dh.raaps.common.model.data.getAmountForMinute
 import de.dh.raaps.common.model.data.getBgForMinute
@@ -39,8 +37,8 @@ class TherapyManager(
      */
     suspend fun getBasalPerHour(timestamp: Timestamp): Double {
         val settings = getActiveTherapySettings() ?: return DEFAULT_BASAL_UNITS_PER_HOUR
-        val data = settings.profile.therapyData
-        val baseBasal = data.basalBlocks.getAmountForMinute(timestamp.minutesSinceMidnight())
+        val profile = settings.profile
+        val baseBasal = profile.basalBlocks.getAmountForMinute(timestamp.minutesSinceMidnight())
         val factor = (100.0 + settings.adjustmentPercentage) / 100.0
         return baseBasal * factor
     }
@@ -52,8 +50,8 @@ class TherapyManager(
      */
     suspend fun getIcFactor(timestamp: Timestamp): Double {
         val settings = getActiveTherapySettings() ?: return DEFAULT_IC_GRAM_PER_UNIT
-        val data = settings.profile.therapyData
-        val baseIc = data.icBlocks.getAmountForMinute(timestamp.minutesSinceMidnight())
+        val profile = settings.profile
+        val baseIc = profile.icBlocks.getAmountForMinute(timestamp.minutesSinceMidnight())
         val factor = (100.0 + settings.adjustmentPercentage) / 100.0
         return baseIc / factor
     }
@@ -68,8 +66,8 @@ class TherapyManager(
         val settings = getActiveTherapySettings() ?: return BgDelta(
             DEFAULT_ISF_MGDL_PER_UNIT.toInt().toShort()
         )
-        val data = settings.profile.therapyData
-        val amount = data.isfBlocks.getAmountForMinute(timestamp.minutesSinceMidnight())
+        val profile = settings.profile
+        val amount = profile.isfBlocks.getAmountForMinute(timestamp.minutesSinceMidnight())
         val factor = (100.0 + settings.adjustmentPercentage) / 100.0
         return BgDelta.fromMgDl((amount / factor).toInt())
     }
@@ -113,16 +111,13 @@ class TherapyManager(
      * Updates the current therapy settings based on a selected profile.
      * This will create a copy of the profile's therapy data as the active configuration.
      */
-    suspend fun selectProfile(profile: Profile) {
+    suspend fun selectProfile(profile: InsulinProfile) {
         mutex.withLock {
             val currentSettings = getActiveTherapySettings()
-            val insulinType = currentSettings?.insulinType
-                ?: therapyRepository.getAllInsulinTypes().firstOrNull()
-                ?: throw IllegalStateException("No insulin type configured for insulin pump")
             
             val newSettings = (currentSettings ?: CurrentTherapySettings(
                 profile = profile,
-                insulinType = insulinType,
+                insulinType = profile.insulinType,
                 defaultBgBlocks = listOf(
                     BgBlock(
                         Minutes.ofHours(24),
@@ -131,7 +126,8 @@ class TherapyManager(
                     )
                 )
             )).copy(
-                profile = profile
+                profile = profile,
+                insulinType = profile.insulinType
             )
             therapyRepository.updateCurrentTherapySettings(newSettings)
         }

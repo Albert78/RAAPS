@@ -40,7 +40,7 @@ import de.dh.raaps.common.model.calculation.CarbsInsulinCalculationModel
 import de.dh.raaps.common.model.data.BgDelta
 import de.dh.raaps.common.model.data.BgValue
 import de.dh.raaps.common.model.data.Minutes
-import de.dh.raaps.common.model.data.Profile
+import de.dh.raaps.common.model.data.InsulinProfile
 import de.dh.raaps.common.navigation.CurrentTherapySettingsRoute
 import de.dh.raaps.common.navigation.DashboardRoute
 import de.dh.raaps.common.navigation.HistoryRoute

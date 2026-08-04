@@ -34,7 +34,7 @@ import de.dh.raaps.common.model.data.BgBlock
 import de.dh.raaps.common.model.data.BgDelta
 import de.dh.raaps.common.model.data.BgValue
 import de.dh.raaps.common.model.data.Minutes
-import de.dh.raaps.common.model.data.Profile
+import de.dh.raaps.common.model.data.InsulinProfile
 import de.dh.raaps.common.ui.composables.ProfileSelectionDialog
 import de.dh.raaps.common.ui.composables.screenTitle
 import de.dh.raaps.common.ui.theme.AppTheme
@@ -67,7 +67,7 @@ fun CurrentTherapySettingsContent(
     uiState: CurrentTherapyUiState,
     onNavigateUp: () -> Unit,
     onNavigateToProfileEditor: () -> Unit,
-    onSelectProfile: (Profile) -> Unit,
+    onSelectProfile: (InsulinProfile) -> Unit,
     onUpdateDefaultBgBlocks: (List<BgBlock>) -> Unit
 ) {
     val locale = LocalLocale.current.platformLocale
@@ -213,40 +213,6 @@ fun CurrentTherapySettingsContent(
                 showBgEditorDialog = false
             },
             onDismiss = { showBgEditorDialog = false }
-        )
-    }
-}
-
-@Preview(showBackground = true, name = "Light Mode")
-@Preview(showBackground = true, uiMode = Configuration.UI_MODE_NIGHT_YES, name = "Dark Mode")
-@Composable
-fun CurrentTherapySettingsScreenPreview() {
-    AppTheme {
-        CurrentTherapySettingsContent(
-            uiState = CurrentTherapyUiState(
-                activeProfile = ProfileUiState(
-                    name = "Normal",
-                    activeProfileId = 1L,
-                    isf = BgDelta.fromMgDl(50),
-                    ic = 10.0,
-                    basal = 0.5,
-                    target = BgValue.fromMgDl(110),
-                    lowThreshold = BgValue.fromMgDl(70),
-                    adjustmentPercentage = 0
-                ),
-                availableProfiles = emptyList(),
-                defaultBgBlocks = listOf(
-                    BgBlock(
-                        duration = Minutes.ofHours(24),
-                        target = BgValue.fromMgDl(110),
-                        lowThreshold = BgValue.fromMgDl(70)
-                    )
-                )
-            ),
-            onNavigateUp = {},
-            onNavigateToProfileEditor = {},
-            onSelectProfile = {},
-            onUpdateDefaultBgBlocks = {}
         )
     }
 }

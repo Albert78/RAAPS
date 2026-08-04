@@ -2,7 +2,7 @@ package de.dh.raaps.plugin.simbody
 
 import de.dh.raaps.common.model.InsulinHistoryPoint
 import de.dh.raaps.common.model.MS_PER_DAY
-import de.dh.raaps.common.model.data.TherapyData
+import de.dh.raaps.common.model.data.InsulinProfile
 import de.dh.raaps.common.model.data.Timestamp
 import de.dh.raaps.common.model.data.getAmountForMinute
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -19,7 +19,7 @@ import java.util.concurrent.CopyOnWriteArrayList
  */
 class SimBodyPumpDevice(
     private val bodyModel: BodyModel,
-    initialProfile: TherapyData
+    initialProfile: InsulinProfile
 ) {
     private val _batteryLevel = MutableStateFlow(0.85) // 0.0 to 1.0
     val batteryLevel: StateFlow<Double> = _batteryLevel.asStateFlow()
@@ -39,8 +39,8 @@ class SimBodyPumpDevice(
     private val _isBroken = MutableStateFlow(false)
     val isBroken: StateFlow<Boolean> = _isBroken.asStateFlow()
 
-    private val _activeProfile = MutableStateFlow<TherapyData>(initialProfile)
-    val activeProfile: StateFlow<TherapyData> = _activeProfile.asStateFlow()
+    private val _activeProfile = MutableStateFlow<InsulinProfile>(initialProfile)
+    val activeProfile: StateFlow<InsulinProfile> = _activeProfile.asStateFlow()
 
     // Internal history storage
     private val _history = CopyOnWriteArrayList<HistoryEntry>()
@@ -77,7 +77,7 @@ class SimBodyPumpDevice(
         _isBroken.value = broken
     }
 
-    fun setProfile(profile: TherapyData) {
+    fun setProfile(profile: InsulinProfile) {
         _activeProfile.value = profile
     }
 

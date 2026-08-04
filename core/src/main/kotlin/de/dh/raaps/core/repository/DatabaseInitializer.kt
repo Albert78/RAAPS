@@ -14,7 +14,6 @@ import de.dh.raaps.common.model.ID_MEAL_FAST
 import de.dh.raaps.common.model.ID_MEAL_HIGH_FAT
 import de.dh.raaps.common.model.ID_MEAL_SLOW
 import de.dh.raaps.common.model.ID_MEAL_STANDARD
-import de.dh.raaps.common.model.ID_UNDEFINED
 import de.dh.raaps.common.model.InsulinType
 import de.dh.raaps.common.model.MealType
 import de.dh.raaps.common.model.data.BgValue
@@ -22,9 +21,8 @@ import de.dh.raaps.common.model.data.Block
 import de.dh.raaps.common.model.data.CurrentSettings
 import de.dh.raaps.common.model.data.CurrentTherapySettings
 import de.dh.raaps.common.model.data.Minutes
-import de.dh.raaps.common.model.data.Profile
+import de.dh.raaps.common.model.data.InsulinProfile
 import de.dh.raaps.common.model.data.BgBlock
-import de.dh.raaps.common.model.data.TherapyData
 
 object DatabaseInitializer {
     suspend fun initialize(
@@ -111,18 +109,24 @@ object DatabaseInitializer {
     }
 
     private suspend fun initializeDefaultProfileAndCurrentTherapy(context: Context, repository: TherapyRepository) {
+        val insulinTypes = repository.getAllInsulinTypes()
+        if (insulinTypes.isEmpty()) return
+
+        val defaultInsulinType = insulinTypes.first()
+
         var profiles = repository.getAllProfiles()
         if (profiles.isEmpty()) {
-            val normalProfile = Profile(
+            val normalProfile = InsulinProfile(
                 name = context.getString(R.string.profile_default_normal_name),
-                therapyData = TherapyData(
-                    basalBlocks = listOf(Block(
-                        Minutes.ofHours(24),
-                        DEFAULT_BASAL_UNITS_PER_HOUR
-                    )),
-                    isfBlocks = listOf(Block(Minutes.ofHours(24), DEFAULT_ISF_MGDL_PER_UNIT)),
-                    icBlocks = listOf(Block(Minutes.ofHours(24), DEFAULT_IC_GRAM_PER_UNIT))
-                )
+                basalBlocks = listOf(Block(
+                    Minutes.ofHours(24),
+                    DEFAULT_BASAL_UNITS_PER_HOUR
+                )),
+                isfBlocks = listOf(Block(Minutes.ofHours(24), DEFAULT_ISF_MGDL_PER_UNIT)),
+                icBlocks = listOf(Block(Minutes.ofHours(24), DEFAULT_IC_GRAM_PER_UNIT)),
+                insulinType = defaultInsulinType,
+                dia = defaultInsulinType.dia,
+                peak = defaultInsulinType.peak
             )
             repository.insertProfile(normalProfile)
             profiles = listOf(normalProfile)
@@ -133,8 +137,6 @@ object DatabaseInitializer {
             val insulinType = repository.getAllInsulinTypes().firstOrNull()
                 ?: throw IllegalStateException("No insulin type configured for insulin pump")
 
-            // For the current therapy settings, we create a fresh copy of the therapy data
-            // so that overrides don't automatically change the underlying profile.
             val currentTherapySettings = CurrentTherapySettings(
                 profile = activeProfile,
                 insulinType = insulinType,

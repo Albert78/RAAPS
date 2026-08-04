@@ -7,7 +7,7 @@ import de.dh.raaps.common.model.InsulinPump
 import de.dh.raaps.common.model.InsulinPumpStatus
 import de.dh.raaps.common.model.PumpAlerts
 import de.dh.raaps.common.model.PumpCapabilities
-import de.dh.raaps.common.model.data.TherapyData
+import de.dh.raaps.common.model.data.InsulinProfile
 import de.dh.raaps.common.model.data.Timestamp
 import de.dh.raaps.common.model.data.getAmountForMinute
 import kotlinx.coroutines.CoroutineScope
@@ -159,7 +159,7 @@ class SimBodyInsulinPump(
         refreshStatus()
     }
 
-    override suspend fun setProfile(profile: TherapyData) {
+    override suspend fun setProfile(profile: InsulinProfile) {
         if (!_isConnected.value) throw Exception("Pump not connected to App")
         device.setProfile(profile)
     }
