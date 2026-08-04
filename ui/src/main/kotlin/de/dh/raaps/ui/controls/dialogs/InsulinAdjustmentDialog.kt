@@ -33,7 +33,7 @@ import de.dh.raaps.common.ui.theme.NeutralGrey
 import de.dh.raaps.common.ui.theme.SoftBlue
 import de.dh.raaps.common.ui.theme.SoftRed
 import de.dh.raaps.ui.R
-import de.dh.raaps.ui.controls.profile.AdjustmentPreset
+import de.dh.raaps.ui.controls.profile.TherapyAdjustment
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
@@ -41,7 +41,7 @@ fun InsulinAdjustmentDialogContent(
     currentValue: Int,
     onValueChange: (Int) -> Unit,
     onDismissRequest: (() -> Unit)? = null,
-    presets: List<AdjustmentPreset> = emptyList()
+    presets: List<TherapyAdjustment> = emptyList()
 ) {
     val steppingStrategy = remember { ModuloSteppingStrategy(5) }
     val displayStrategy = ConfigurableDisplayStrategy(
@@ -138,7 +138,7 @@ fun InsulinAdjustmentDialogContent(
 @Composable
 fun InsulinAdjustmentDialog(
     currentValue: Int,
-    presets: List<AdjustmentPreset>,
+    presets: List<TherapyAdjustment>,
     onValueChange: (Int) -> Unit,
     onDismissRequest: () -> Unit
 ) {
@@ -170,10 +170,10 @@ fun InsulinAdjustmentDialogPreview() {
                 currentValue = 10,
                 onValueChange = {},
                 presets = listOf(
-                    AdjustmentPreset("Normal", 0),
-                    AdjustmentPreset("Wandern", -20),
-                    AdjustmentPreset("Fahrrad fahren", -30),
-                    AdjustmentPreset("Klettern", -40)
+                    TherapyAdjustment("Normal", 0),
+                    TherapyAdjustment("Wandern", -20),
+                    TherapyAdjustment("Fahrrad fahren", -30),
+                    TherapyAdjustment("Klettern", -40)
                 )
             )
         }

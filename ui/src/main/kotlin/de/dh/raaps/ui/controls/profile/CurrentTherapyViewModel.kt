@@ -48,7 +48,7 @@ data class ProfileUiState(
     }
 }
 
-data class AdjustmentPreset(
+data class TherapyAdjustment(
     val name: String,
     val percentage: Int
 )
@@ -59,7 +59,7 @@ data class CurrentTherapyUiState(
     val glucoseUnit: GlucoseUnit = GlucoseUnit.MG_DL,
     val availableProfiles: List<InsulinProfile> = emptyList(),
     val defaultBgBlocks: List<BgBlock> = emptyList(),
-    val adjustmentPresets: List<AdjustmentPreset> = emptyList()
+    val therapyAdjustmentPresets: List<TherapyAdjustment> = emptyList()
 )
 
 /**
@@ -68,7 +68,6 @@ data class CurrentTherapyUiState(
 class CurrentTherapyViewModel(
     private val raapsRegistry: RAAPSRegistry
 ) : ViewModel() {
-
     private val _uiState = MutableStateFlow(CurrentTherapyUiState())
     val uiState: StateFlow<CurrentTherapyUiState> = _uiState
 
@@ -78,10 +77,10 @@ class CurrentTherapyViewModel(
     // Hardcoded presets for now.
     // TODO: Make these user-editable in the future (e.g. via a database table or preferences).
     private val hardcodedPresets = listOf(
-        AdjustmentPreset("Neutral", 0),
-        AdjustmentPreset("Wandern", -20),
-        AdjustmentPreset("Fahrrad fahren", -30),
-        AdjustmentPreset("Klettern", -40)
+        TherapyAdjustment("Neutral", 0),
+        TherapyAdjustment("Wandern", -20),
+        TherapyAdjustment("Fahrrad fahren", -30),
+        TherapyAdjustment("Klettern", -40)
     )
 
     init {
@@ -122,7 +121,7 @@ class CurrentTherapyViewModel(
                 activeProfile = profileUiState,
                 availableProfiles = profiles,
                 defaultBgBlocks = currentSettings.defaultBgBlocks,
-                adjustmentPresets = hardcodedPresets
+                therapyAdjustmentPresets = hardcodedPresets
             )
         }
     }

@@ -6,8 +6,8 @@ import de.dh.raaps.common.model.InsulinType
 import de.dh.raaps.common.model.data.BgBlock
 import de.dh.raaps.common.model.data.BgValue
 import de.dh.raaps.common.model.data.CurrentTherapySettings
-import de.dh.raaps.common.model.data.Minutes
 import de.dh.raaps.common.model.data.InsulinProfile
+import de.dh.raaps.common.model.data.Minutes
 import de.dh.raaps.core.repository.db.AppDatabase
 import de.dh.raaps.core.repository.db.MetabolicEventsDao
 import de.dh.raaps.core.repository.db.TherapyDao
@@ -95,7 +95,7 @@ class TherapyRepository(
 
     suspend fun getCurrentTherapySettingsOrNull(): CurrentTherapySettings? {
         val entity = therapyDao.getCurrentTherapySettings() ?: return null
-        val profile = getInsulinProfileById(entity.profile_id) ?: return null
+        val profile = getInsulinProfileById(entity.insulin_profile_id) ?: return null
         val settings = entity.toModel(profile)
 
         return if (settings.defaultBgBlocks.isEmpty()) {

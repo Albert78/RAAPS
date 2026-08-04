@@ -6,27 +6,27 @@ import de.dh.raaps.common.model.InsulinApplication
 import de.dh.raaps.common.model.InsulinType
 import de.dh.raaps.common.model.MealEntry
 import de.dh.raaps.common.model.MealType
+import de.dh.raaps.common.model.data.BgBlock
 import de.dh.raaps.common.model.data.BgReading
 import de.dh.raaps.common.model.data.BgValue
 import de.dh.raaps.common.model.data.Block
-import de.dh.raaps.common.model.data.CurrentTherapySettings
-import de.dh.raaps.common.model.data.Minutes
-import de.dh.raaps.common.model.data.InsulinProfile
-import de.dh.raaps.common.model.data.SensorType
-import de.dh.raaps.common.model.data.BgBlock
 import de.dh.raaps.common.model.data.CurrentSettings
+import de.dh.raaps.common.model.data.CurrentTherapySettings
+import de.dh.raaps.common.model.data.InsulinProfile
+import de.dh.raaps.common.model.data.Minutes
+import de.dh.raaps.common.model.data.SensorType
 import de.dh.raaps.common.model.data.Timestamp
 import de.dh.raaps.core.repository.db.entities.CurrentSettingsEntity
 import de.dh.raaps.core.repository.db.entities.CurrentTherapySettingsEntity
-import de.dh.raaps.core.repository.db.entities.DBBlock
 import de.dh.raaps.core.repository.db.entities.DBBgBlock
+import de.dh.raaps.core.repository.db.entities.DBBlock
 import de.dh.raaps.core.repository.db.entities.DataProviderEntity
 import de.dh.raaps.core.repository.db.entities.GlucoseReadingEntity
 import de.dh.raaps.core.repository.db.entities.InsulinEntity
+import de.dh.raaps.core.repository.db.entities.InsulinProfileEntity
 import de.dh.raaps.core.repository.db.entities.InsulinTypeEntity
 import de.dh.raaps.core.repository.db.entities.MealEntity
 import de.dh.raaps.core.repository.db.entities.MealTypeEntity
-import de.dh.raaps.core.repository.db.entities.InsulinProfileEntity
 import de.dh.raaps.core.repository.db.entities.SensorTypeEntity
 
 // BgReading Converters
@@ -196,16 +196,16 @@ fun InsulinProfileEntity.toModel(insulinType: InsulinType) = InsulinProfile(
 
 fun CurrentTherapySettings.toEntity() = CurrentTherapySettingsEntity(
     id = this.id,
-    profile_id = this.insulinProfile.id,
+    insulin_profile_id = this.insulinProfile.id,
+    default_bg_blocks = this.defaultBgBlocks.map { it.toDb() },
     adjustment_percentage = this.adjustmentPercentage,
-    default_bg_blocks = this.defaultBgBlocks.map { it.toDb() }
 )
 
 fun CurrentTherapySettingsEntity.toModel(profile: InsulinProfile) = CurrentTherapySettings(
     id = this.id,
     insulinProfile = profile,
+    defaultBgBlocks = this.default_bg_blocks.map { it.toModel() },
     adjustmentPercentage = this.adjustment_percentage,
-    defaultBgBlocks = this.default_bg_blocks.map { it.toModel() }
 )
 
 // Settings Converters

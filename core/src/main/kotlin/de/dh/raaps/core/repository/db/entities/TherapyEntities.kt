@@ -34,16 +34,16 @@ data class InsulinProfileEntity(
         ForeignKey(
             entity = InsulinProfileEntity::class,
             parentColumns = ["id"],
-            childColumns = ["profile_id"],
+            childColumns = ["insulin_profile_id"],
             onDelete = ForeignKey.SET_NULL
         )
     ],
-    indices = [Index("profile_id")]
+    indices = [Index("insulin_profile_id")]
 )
 data class CurrentTherapySettingsEntity(
     @PrimaryKey(autoGenerate = true)
     val id: Long = ID_UNDEFINED,
-    val profile_id: Long,
+    val insulin_profile_id: Long,
+    val default_bg_blocks: List<DBBgBlock>,
     val adjustment_percentage: Int,
-    val default_bg_blocks: List<DBBgBlock>
 )

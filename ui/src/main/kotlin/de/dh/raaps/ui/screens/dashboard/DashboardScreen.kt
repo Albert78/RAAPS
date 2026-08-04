@@ -89,7 +89,7 @@ fun DashboardScreen(
     if (showAdjustmentDialog) {
         InsulinAdjustmentDialog(
             currentValue = currentTherapyUiState.activeProfile.adjustmentPercentage,
-            presets = currentTherapyUiState.adjustmentPresets,
+            presets = currentTherapyUiState.therapyAdjustmentPresets,
             onValueChange = { currentTherapyViewModel.setAdjustmentPercentage(it) },
             onDismissRequest = { showAdjustmentDialog = false }
         )

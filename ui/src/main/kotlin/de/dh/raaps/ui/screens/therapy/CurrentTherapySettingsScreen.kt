@@ -73,10 +73,10 @@ import de.dh.raaps.common.ui.theme.SoftRed
 import de.dh.raaps.ui.R
 import de.dh.raaps.ui.controls.dialogs.BgEditorDialog
 import de.dh.raaps.ui.controls.dialogs.InsulinAdjustmentDialog
-import de.dh.raaps.ui.controls.profile.AdjustmentPreset
 import de.dh.raaps.ui.controls.profile.CurrentTherapyUiState
 import de.dh.raaps.ui.controls.profile.CurrentTherapyViewModel
 import de.dh.raaps.ui.controls.profile.ProfileUiState
+import de.dh.raaps.ui.controls.profile.TherapyAdjustment
 
 @Composable
 fun CurrentTherapySettingsScreen(
@@ -200,7 +200,7 @@ fun CurrentTherapySettingsContent(
     if (showAdjustmentDialog) {
         InsulinAdjustmentDialog(
             currentValue = uiState.activeProfile.adjustmentPercentage,
-            presets = uiState.adjustmentPresets,
+            presets = uiState.therapyAdjustmentPresets,
             onValueChange = {
                 onUpdateAdjustmentPercentage(it)
             },
@@ -697,9 +697,9 @@ fun CurrentTherapySettingsPreview() {
         defaultBgBlocks = listOf(
             BgBlock(Minutes(1440), BgValue.fromMgDl(100), BgValue.fromMgDl(70))
         ),
-        adjustmentPresets = listOf(
-            AdjustmentPreset("Normal", 0),
-            AdjustmentPreset("Sport", -20)
+        therapyAdjustmentPresets = listOf(
+            TherapyAdjustment("Normal", 0),
+            TherapyAdjustment("Sport", -20)
         )
     )
 
