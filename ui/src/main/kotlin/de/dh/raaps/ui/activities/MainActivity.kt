@@ -33,9 +33,13 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberDrawerState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -62,6 +66,7 @@ import de.dh.raaps.core.SystemRegistry
 import de.dh.raaps.core.system.RegistryProvider
 import de.dh.raaps.ui.R
 import de.dh.raaps.ui.navigation.MainFeatureNavGraph
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 class MainActivity : ComponentActivity() {
@@ -141,6 +146,16 @@ class MainActivity : ComponentActivity() {
             DashboardRoute
         )
 
+        var showHamburger by remember { mutableStateOf(isTopLevel) }
+        LaunchedEffect(isTopLevel) {
+            if (isTopLevel) {
+                delay(400) // Delay to wait for screen transition
+                showHamburger = true
+            } else {
+                showHamburger = false
+            }
+        }
+
         val drawerWidth = 320.dp
         val safeInsets = WindowInsets.safeDrawing.asPaddingValues(density)
         val verticalPadding = safeInsets.calculateBottomPadding()
@@ -166,14 +181,13 @@ class MainActivity : ComponentActivity() {
                             Column {
                                 Box(
                                     modifier = Modifier
-                                        .padding(top = 100.dp) // max(0.dp, statusBarHeight - verticalPadding)
-                                        .height(64.dp)
+                                        .padding(top = 50.dp) // max(0.dp, statusBarHeight - verticalPadding)
+                                        .height(100.dp)
                                         .fillMaxWidth(),
-                                    contentAlignment = Alignment.CenterStart
+                                    contentAlignment = Alignment.Center
                                 ) {
                                     Text(
                                         stringResource(id = R.string.drawer_header_title),
-                                        modifier = Modifier.padding(start = 60.dp),
                                         style = MaterialTheme.typography.headlineMedium
                                     )
                                 }
@@ -231,7 +245,7 @@ class MainActivity : ComponentActivity() {
                 )
             }
 
-            if (isTopLevel) {
+            if (showHamburger) {
                 val rotation by animateFloatAsState(
                     targetValue = if (drawerState.targetValue == DrawerValue.Open) 90f else 0f,
                     label = "HamburgerRotation"
