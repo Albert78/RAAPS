@@ -33,7 +33,7 @@ class SystemWakeServiceImpl(
     }
 
     @SuppressLint("ObsoleteSdkInt", "MissingPermission")
-    override fun scheduleWakeup(tag: String, wakeupId: Int, timestamp: Timestamp) {
+    override fun scheduleWakeup(tag: String, wakeupId: UInt?, timestamp: Timestamp) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
             if (!alarmManager.canScheduleExactAlarms()) {
                 Log.e(TAG, "Permission for exact alarms is missing, cannot schedule wakeup for $tag")
@@ -41,14 +41,16 @@ class SystemWakeServiceImpl(
             }
         }
 
+        val internalWakeupId = wakeupId?.toInt() ?: -1
+
         val intent = Intent(context, SystemWakeReceiver::class.java).apply {
             action = ACTION_WAKEUP
             putExtra(EXTRA_TAG, tag)
-            putExtra(EXTRA_WAKEUP_ID, wakeupId)
+            putExtra(EXTRA_WAKEUP_ID, internalWakeupId)
         }
 
         // Create a unique requestCode combining tag hash and wakeupId to avoid collisions
-        val requestCode = (tag.hashCode() xor wakeupId)
+        val requestCode = (tag.hashCode() xor internalWakeupId)
 
         val pendingIntent = PendingIntent.getBroadcast(
             context,
@@ -63,7 +65,7 @@ class SystemWakeServiceImpl(
                 timestamp.ms,
                 pendingIntent
             )
-            Log.d(TAG, "Scheduled system wakeup for $tag at $timestamp with ID $wakeupId")
+            Log.d(TAG, "Scheduled system wakeup for $tag at $timestamp with ID $internalWakeupId")
         } catch (e: SecurityException) {
             Log.e(TAG, "Unable to schedule exact alarm for $tag", e)
         }
@@ -111,7 +113,8 @@ class SystemWakeServiceImpl(
         if (intent.action != ACTION_WAKEUP) return
 
         val tag = intent.getStringExtra(EXTRA_TAG) ?: return
-        val wakeupId = intent.getIntExtra(EXTRA_WAKEUP_ID, -1)
+        val internalWakeupId = intent.getIntExtra(EXTRA_WAKEUP_ID, -1)
+        val wakeupId = if (internalWakeupId == -1) null else internalWakeupId.toUInt()
         
         // Temporarily acquire wake lock to ensure handler has time to process
         acquireBusyState("DISPATCH_WAKEUP_$tag")

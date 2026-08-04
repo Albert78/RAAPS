@@ -100,7 +100,7 @@ class PumpManagerImpl(
         historyUpdateListener = listener
     }
 
-    override fun onWakeup(wakeupId: Int, intent: Intent?) {
+    override fun onWakeup(wakeupId: UInt?, intent: Intent?) {
         if (wakeupId == WAKEUP_PUMP_COORDINATOR) {
             wakeup()
         }
@@ -131,6 +131,6 @@ class PumpManagerImpl(
     companion object {
         private const val TAG = "PumpManager"
         private const val WAKE_TAG = "PUMP"
-        private const val WAKEUP_PUMP_COORDINATOR = 0
+        val WAKEUP_PUMP_COORDINATOR = 0u
     }
 }

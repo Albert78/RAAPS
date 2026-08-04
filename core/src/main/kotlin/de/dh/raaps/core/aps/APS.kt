@@ -354,7 +354,7 @@ class APS(
      * Entry point for system wakeups.
      * Guaranteed to run on the internal APS thread.
      */
-    override fun onWakeup(wakeupId: Int, intent: Intent?) {
+    override fun onWakeup(wakeupId: UInt?, intent: Intent?) {
         inAPSThread {
             if (wakeupId == WAKEUP_STALE_CHECK) {
                 if (core.isStale()) {
@@ -391,6 +391,6 @@ class APS(
 
         const val WAKE_TAG = "APS"
 
-        const val WAKEUP_STALE_CHECK = 0
+        val WAKEUP_STALE_CHECK = 0u
     }
 }

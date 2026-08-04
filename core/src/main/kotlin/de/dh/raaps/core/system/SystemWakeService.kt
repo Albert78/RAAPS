@@ -10,10 +10,10 @@ interface WakeupHandler {
     /**
      * Called when a system wakeup for the registered tag occurs.
      *
-     * @param wakeupId The ID of the wakeup that was scheduled.
+     * @param wakeupId The ID of the wakeup that was scheduled, or null if no ID was provided.
      * @param intent The intent that triggered the wakeup, containing potential extras.
      */
-    fun onWakeup(wakeupId: Int, intent: Intent?)
+    fun onWakeup(wakeupId: UInt?, intent: Intent?)
 }
 
 /**
@@ -29,8 +29,13 @@ interface SystemWakeService {
 
     /**
      * Schedules a system wakeup at the given timestamp for a specific tag.
+     *
+     * @param tag The tag associated with the handler. This tag must be unique among all
+     * wakeup handlers.
+     * @param wakeupId An optional non-negative ID to identify this specific wakeup.
+     * @param timestamp The absolute time for the wakeup.
      */
-    fun scheduleWakeup(tag: String, wakeupId: Int, timestamp: Timestamp)
+    fun scheduleWakeup(tag: String, wakeupId: UInt?, timestamp: Timestamp)
 
     /**
      * Acquires a wake lock for the given tag to prevent the device from sleeping.

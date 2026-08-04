@@ -49,7 +49,7 @@ class SimBodyHeartbeat(
         Log.d(TAG, "SimBody Heartbeat stopped")
     }
 
-    override fun onWakeup(wakeupId: Int, intent: Intent?) {
+    override fun onWakeup(wakeupId: UInt?, intent: Intent?) {
         if (!started) return
         if (wakeupId == WAKEUP_ID_TICK) {
             performTick()
@@ -86,7 +86,7 @@ class SimBodyHeartbeat(
          */
         const val WAKE_TAG = "SIM_BODY"
         
-        private const val WAKEUP_ID_TICK = 1
+        private val WAKEUP_ID_TICK = 1u
         private const val TICK_INTERVAL_MINUTES = 5
     }
 }
