@@ -45,6 +45,9 @@ import de.dh.raaps.common.model.data.BgValue
 import de.dh.raaps.common.model.data.Minutes
 import de.dh.raaps.common.ui.composables.WarningBanner
 import de.dh.raaps.common.ui.composables.screenTitle
+import de.dh.raaps.common.ui.icons.Icon_Menu_Alarms
+import de.dh.raaps.common.ui.icons.Icon_Menu_Permissions
+import de.dh.raaps.common.ui.icons.Icon_Settings
 import de.dh.raaps.common.ui.theme.AppTheme
 import de.dh.raaps.ui.R
 import de.dh.raaps.ui.controls.apscontrol.ApsControlCard
@@ -165,6 +168,7 @@ fun DashboardContent(
                         ) {
                             DropdownMenuItem(
                                 text = { Text(stringResource(id = R.string.menu_item_permissions_label)) },
+                                leadingIcon = { Icon(imageVector = Icon_Menu_Permissions, contentDescription = null) },
                                 onClick = {
                                     menuExpanded = false
                                     onNavigateToPermissions()
@@ -172,6 +176,7 @@ fun DashboardContent(
                             )
                             DropdownMenuItem(
                                 text = { Text(stringResource(id = R.string.menu_item_preferences_label)) },
+                                leadingIcon = { Icon(imageVector = Icon_Settings, contentDescription = null) },
                                 onClick = {
                                     menuExpanded = false
                                     onNavigateToPreferences()
@@ -179,6 +184,7 @@ fun DashboardContent(
                             )
                             DropdownMenuItem(
                                 text = { Text(stringResource(id = R.string.menu_alarms_label)) },
+                                leadingIcon = { Icon(imageVector = Icon_Menu_Alarms, contentDescription = null) },
                                 onClick = {
                                     menuExpanded = false
                                     onNavigateToAlarms()

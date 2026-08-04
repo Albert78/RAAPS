@@ -48,6 +48,7 @@ import de.dh.raaps.common.model.data.Minutes
 import de.dh.raaps.common.model.data.Timestamp
 import de.dh.raaps.common.ui.composables.contentScrollIndicator
 import de.dh.raaps.common.ui.composables.screenTitle
+import de.dh.raaps.common.ui.icons.Icon_Menu_Meal_Types
 import de.dh.raaps.common.ui.theme.AppTheme
 import de.dh.raaps.ui.R
 import de.dh.raaps.common.R as CommonR
@@ -114,6 +115,7 @@ fun MealsContent(
                     ) {
                         DropdownMenuItem(
                             text = { Text(stringResource(id = R.string.menu_meal_types_label)) },
+                            leadingIcon = { Icon(imageVector = Icon_Menu_Meal_Types, contentDescription = null) },
                             onClick = {
                                 showMenu = false
                                 onNavigateToMealTypes()

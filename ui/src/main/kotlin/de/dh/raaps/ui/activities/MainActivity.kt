@@ -67,6 +67,10 @@ import de.dh.raaps.common.navigation.NavigationViewModel
 import de.dh.raaps.common.navigation.SystemControlRoute
 import de.dh.raaps.common.navigation.combineEntryProviders
 import de.dh.raaps.common.ui.composables.EdgeToEdgeHandler
+import de.dh.raaps.common.ui.icons.Icon_Menu_Bolus_History
+import de.dh.raaps.common.ui.icons.Icon_Menu_Food_Database
+import de.dh.raaps.common.ui.icons.Icon_Menu_Meals
+import de.dh.raaps.common.ui.icons.Icon_Menu_System_Control
 import de.dh.raaps.common.ui.theme.AppTheme
 import de.dh.raaps.common.ui.theme.rememberUseDarkTheme
 import de.dh.raaps.core.SystemRegistry
@@ -294,21 +298,25 @@ fun RaapsDrawerContent(
 
                 RaapsDrawerItem(
                     label = stringResource(id = R.string.menu_meals_label),
+                    icon = Icon_Menu_Meals,
                     selected = currentRoute == MealsRoute,
                     onClick = { onRouteSelected(MealsRoute) }
                 )
                 RaapsDrawerItem(
                     label = stringResource(id = R.string.menu_bolus_history_label),
+                    icon = Icon_Menu_Bolus_History,
                     selected = currentRoute == BolusHistoryRoute,
                     onClick = { onRouteSelected(BolusHistoryRoute) }
                 )
                 RaapsDrawerItem(
                     label = stringResource(id = R.string.menu_food_database_label),
+                    icon = Icon_Menu_Food_Database,
                     selected = currentRoute == FoodDatabaseRoute,
                     onClick = { onRouteSelected(FoodDatabaseRoute) }
                 )
                 RaapsDrawerItem(
                     label = stringResource(id = R.string.menu_system_control_label),
+                    icon = Icon_Menu_System_Control,
                     selected = currentRoute == SystemControlRoute,
                     onClick = { onRouteSelected(SystemControlRoute) }
                 )
@@ -320,11 +328,13 @@ fun RaapsDrawerContent(
 @Composable
 private fun RaapsDrawerItem(
     label: String,
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
     selected: Boolean,
     onClick: () -> Unit
 ) {
     NavigationDrawerItem(
         label = { Text(label) },
+        icon = { Icon(imageVector = icon, contentDescription = null) },
         selected = selected,
         onClick = onClick,
         modifier = Modifier.padding(NavigationDrawerItemDefaults.ItemPadding)

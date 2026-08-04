@@ -29,6 +29,13 @@ import androidx.compose.material.icons.outlined.Palette
 import androidx.compose.material.icons.outlined.Settings
 import androidx.compose.material.icons.outlined.Snooze
 import androidx.compose.material.icons.outlined.Warning
+import androidx.compose.material.icons.outlined.Restaurant
+import androidx.compose.material.icons.outlined.History
+import androidx.compose.material.icons.automirrored.outlined.MenuBook
+import androidx.compose.material.icons.outlined.Build
+import androidx.compose.material.icons.outlined.NotificationsActive
+import androidx.compose.material.icons.outlined.Category
+import androidx.compose.material.icons.outlined.Security
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -69,12 +76,28 @@ val Icon_Ui = Icons.Outlined.Palette
 val Icon_Backup = Icons.Outlined.Backup
 val Icon_Restore = Icons.Outlined.Restore
 
+// Menu Navigation Icons
+val Icon_Menu_Meals = Icons.Outlined.Restaurant
+val Icon_Menu_Bolus_History = Icons.Outlined.History
+val Icon_Menu_Food_Database = Icons.AutoMirrored.Outlined.MenuBook
+val Icon_Menu_System_Control = Icons.Outlined.Build
+val Icon_Menu_Alarms = Icons.Outlined.NotificationsActive
+val Icon_Menu_Permissions = Icons.Outlined.Security
+val Icon_Menu_Meal_Types = Icons.Outlined.Category
+
 private data class IconPreview(
     val name: String,
     val imageVector: ImageVector
 )
 
 private val iconsForPreview = listOf(
+    IconPreview("Menu_Meals", Icon_Menu_Meals),
+    IconPreview("Menu_Bolus_History", Icon_Menu_Bolus_History),
+    IconPreview("Menu_Food_Database", Icon_Menu_Food_Database),
+    IconPreview("Menu_System_Control", Icon_Menu_System_Control),
+    IconPreview("Menu_Alarms", Icon_Menu_Alarms),
+    IconPreview("Menu_Permissions", Icon_Menu_Permissions),
+    IconPreview("Menu_Meal_Types", Icon_Menu_Meal_Types),
     IconPreview("Menu_More", Menu_More),
     IconPreview("Menu_Delete", Menu_Delete),
     IconPreview("Icon_Screen_Back", Icon_Screen_Back),
