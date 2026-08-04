@@ -94,9 +94,9 @@
     <string name="current_therapy_active_insulin_profile_label">Insulin-Profil</string>
     <string name="current_therapy_available_profiles_label">Verfügbare Insulin-Profile</string>
     <string name="current_therapy_target_label">Zielwert</string>
-    <string name="current_therapy_bg_title">Ziel-BZ &amp; Low-Schwelle</string>
+    <string name="current_therapy_bg_title">Ziel-BZ &amp; Niedrig-Schwelle</string>
     <string name="current_therapy_low_threshold_label">Niedrig-Schwelle</string>
-    <string name="current_therapy_low_threshold_wrap_label">Niedrig-\nSchwelle</string>
+    <string name="current_therapy_low_threshold_short_label">Niedrig</string>
     <string name="current_therapy_active_badge">Aktiv</string>
     <string name="current_therapy_switch_profile_button">Profil wechseln</string>
     <string name="current_therapy_manage_profile_button">Verwalten</string>
