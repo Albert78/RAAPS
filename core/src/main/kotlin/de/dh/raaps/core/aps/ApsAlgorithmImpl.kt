@@ -322,8 +322,11 @@ class ApsAlgorithmImpl(
 
         // Correct high blood sugar by administering insulin
 
+        // TODO: Make configurable
+        val aggressiveness = 1.1
+
         // This BG error must be corrected with insulin
-        val bgErrorAtPeak = predictedBgAtPeak - targetBg
+        val bgErrorAtPeak = (predictedBgAtPeak - targetBg) * aggressiveness
 
         val correction = convertToUnitsFromBgDelta(bgDelta = bgErrorAtPeak, isf = isf)
 
