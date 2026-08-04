@@ -630,7 +630,13 @@ fun InsulinProfileHelpDialog(onDismiss: () -> Unit) {
     AlertDialog(
         onDismissRequest = onDismiss,
         title = { Text(stringResource(id = R.string.insulin_profile_editor_help_title)) },
-        text = { Text(stringResource(id = R.string.insulin_profile_editor_help_message)) },
+        text = {
+            Text(
+                stringResource(id = R.string.help_24h_profile_general) +
+                        "\n\n" +
+                        stringResource(id = R.string.insulin_profile_editor_help_specific)
+            )
+        },
         confirmButton = {
             TextButton(onClick = onDismiss) {
                 Text(stringResource(id = android.R.string.ok))

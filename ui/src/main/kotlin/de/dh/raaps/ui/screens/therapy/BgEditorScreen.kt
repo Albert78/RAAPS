@@ -16,6 +16,7 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.HelpOutline
 import androidx.compose.material.icons.filled.Adjust
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Delete
@@ -92,6 +93,7 @@ fun BgEditorContent(
     originalBlocks: List<BgBlock> = emptyList()
 ) {
     var showDiscardConfirmation by remember { mutableStateOf(false) }
+    var showHelpDialog by remember { mutableStateOf(false) }
     val hasChanges = remember(blocks, originalBlocks) { blocks != originalBlocks && originalBlocks.isNotEmpty() }
 
     fun handleBack() {
@@ -140,12 +142,27 @@ fun BgEditorContent(
                 .fillMaxSize()
                 .padding(16.dp)
         ) {
-            Text(
-                text = stringResource(id = R.string.bg_editor_desc),
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.padding(bottom = 16.dp)
-            )
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(bottom = 16.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Text(
+                    text = stringResource(id = R.string.bg_editor_desc),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.weight(1f)
+                )
+                IconButton(onClick = { showHelpDialog = true }) {
+                    Icon(
+                        imageVector = Icons.AutoMirrored.Filled.HelpOutline,
+                        contentDescription = stringResource(id = R.string.cd_help),
+                        tint = MaterialTheme.colorScheme.primary
+                    )
+                }
+            }
 
             BgBlockList(
                 blocks = blocks,
@@ -178,6 +195,30 @@ fun BgEditorContent(
             }
         )
     }
+
+    if (showHelpDialog) {
+        BgEditorHelpDialog(onDismiss = { showHelpDialog = false })
+    }
+}
+
+@Composable
+fun BgEditorHelpDialog(onDismiss: () -> Unit) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(stringResource(id = R.string.bg_editor_help_title)) },
+        text = {
+            Text(
+                stringResource(id = R.string.help_24h_profile_general) +
+                        "\n\n" +
+                        stringResource(id = R.string.bg_editor_help_specific)
+            )
+        },
+        confirmButton = {
+            TextButton(onClick = onDismiss) {
+                Text(stringResource(id = android.R.string.ok))
+            }
+        }
+    )
 }
 
 @Composable
