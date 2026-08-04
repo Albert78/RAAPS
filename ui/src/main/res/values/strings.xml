@@ -25,6 +25,10 @@
     <string name="profile_editor_help_message">Jeder Block definiert den Wert ab der gewählten Uhrzeit bis zum Start des nächsten Blocks.\n\n• Der erste Block beginnt immer um 00:00 Uhr.\n• Nutze das [+], um neue Zeitabschnitte einzufügen.\n• Die Uhrzeit eines Blocks kann nur zwischen seinen Nachbarn verschoben werden.\n• Am Ende des Tages schließt der letzte Block automatisch um 24:00 Uhr ab.</string>
 
 
+    <string name="profile_editor_discard_title">Änderungen verwerfen?</string>
+    <string name="profile_editor_discard_message">Es gibt ungespeicherte Änderungen. Möchtest du den Editor wirklich verlassen?</string>
+    <string name="profile_editor_discard_confirm">Verwerfen</string>
+    <string name="profile_editor_discard_dismiss">Bleiben</string>
     <string name="cd_edit_profile">Profil bearbeiten</string>
     <string name="invalid_profile">Ungültiges Profil</string>
     <string name="cd_add_profile">Profil hinzufügen</string>
@@ -36,14 +40,14 @@
     <string name="cd_help">Hilfe anzeigen</string>
 
     <string name="delete_profile_title">Profil löschen</string>
-    <string name="delete_profile_message">Möchten Sie das Profil \"%1$s\" wirklich löschen?</string>
+    <string name="delete_profile_message">Möchtest du das Profil \"%1$s\" wirklich löschen?</string>
 
     <string name="dashboard_permissions_missing">Für eine ordnungsgemäße Funktion benötigt die App weitere Berechtigungen</string>
     <string name="dashboard_fix_permissions_link">Reparieren</string>
     <string name="dashboard_history_title">Aktueller Verlauf</string>
 
-    <string name="error_app_settings_could_not_be_opened_message">Die App-Einstellungen konnten nicht geöffnet werden. Bitte öffnen Sie sie aus den Geräteeinstellungen.</string>
-    <string name="error_battery_optimization_settings_could_not_be_opened_message">Die App-Einstellungen für die Batterie-Optimierung konnten nicht geöffnet werden. Bitte öffnen Sie sie aus den Geräteeinstellungen.</string>
+    <string name="error_app_settings_could_not_be_opened_message">Die App-Einstellungen konnten nicht geöffnet werden. Bitte öffne sie aus den Geräteeinstellungen.</string>
+    <string name="error_battery_optimization_settings_could_not_be_opened_message">Die App-Einstellungen für die Batterie-Optimierung konnten nicht geöffnet werden. Bitte öffne sie aus den Geräteeinstellungen.</string>
 
     <string name="permissions_title">App-Berechtigungen</string>
     <string name="permissions_intro_text">Unter Android können (und müssen) Nutzer bestimmte Funktionen von Apps einzeln freigeben/berechtigen.</string>

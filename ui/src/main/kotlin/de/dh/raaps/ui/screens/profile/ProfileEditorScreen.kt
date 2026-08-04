@@ -239,6 +239,7 @@ fun ProfileDetailEditor(
     var name by remember { mutableStateOf(profile.name) }
     var therapyData by remember { mutableStateOf(profile.therapyData) }
     var selectedTab by remember { mutableIntStateOf(0) }
+    var showDiscardConfirmation by remember { mutableStateOf(false) }
 
     val tabs = listOf(
         stringResource(id = R.string.profile_editor_tab_basal),
@@ -248,15 +249,24 @@ fun ProfileDetailEditor(
     )
 
     val isNameValid = name.trim().isNotBlank() && isNameUnique(name.trim(), profile.id)
+    val hasChanges = name != profile.name || therapyData != profile.therapyData
 
-    BackHandler(onBack = onCancel)
+    fun handleBack() {
+        if (hasChanges) {
+            showDiscardConfirmation = true
+        } else {
+            onCancel()
+        }
+    }
+
+    BackHandler(onBack = ::handleBack)
 
     Scaffold(
         topBar = {
             TopAppBar(
                 title = screenTitle(if (profile.id == ID_UNDEFINED) stringResource(id = R.string.profile_editor_new_profile) else stringResource(id = R.string.profile_editor_edit_profile)),
                 navigationIcon = {
-                    IconButton(onClick = onCancel) {
+                    IconButton(onClick = ::handleBack) {
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                             contentDescription = stringResource(id = de.dh.raaps.common.R.string.cd_cancel)
@@ -345,6 +355,27 @@ fun ProfileDetailEditor(
                 }
             }
         }
+    }
+
+    if (showDiscardConfirmation) {
+        AlertDialog(
+            onDismissRequest = { showDiscardConfirmation = false },
+            title = { Text(stringResource(id = R.string.profile_editor_discard_title)) },
+            text = { Text(stringResource(id = R.string.profile_editor_discard_message)) },
+            confirmButton = {
+                TextButton(onClick = {
+                    showDiscardConfirmation = false
+                    onCancel()
+                }) {
+                    Text(stringResource(id = R.string.profile_editor_discard_confirm))
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showDiscardConfirmation = false }) {
+                    Text(stringResource(id = R.string.profile_editor_discard_dismiss))
+                }
+            }
+        )
     }
 }
 
@@ -793,7 +824,7 @@ fun ProfileEditorPreview() {
                 profiles = listOf(
                     Profile(name = "Normal", therapyData = TherapyData(basalBlocks = emptyList(), isfBlocks = emptyList(), icBlocks = emptyList(), bgBlocks = emptyList())),
                     Profile(name = "Sport", therapyData = TherapyData(basalBlocks = emptyList(), isfBlocks = emptyList(), icBlocks = emptyList(), bgBlocks = emptyList())),
-                    Profile(name = "Illness", therapyData = TherapyData(basalBlocks = emptyList(), isfBlocks = emptyList(), icBlocks = emptyList(), bgBlocks = emptyList()))
+                    Profile(name = "Krank", therapyData = TherapyData(basalBlocks = emptyList(), isfBlocks = emptyList(), icBlocks = emptyList(), bgBlocks = emptyList()))
                 ),
                 isLoading = false
             ),
