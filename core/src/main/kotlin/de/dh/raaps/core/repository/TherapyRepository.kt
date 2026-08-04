@@ -1,8 +1,13 @@
 package de.dh.raaps.core.repository
 
+import de.dh.raaps.common.model.DEFAULT_BG_LOW_THRESHOLD_MGDL
+import de.dh.raaps.common.model.DEFAULT_BG_TARGET_MGDL
 import de.dh.raaps.common.model.ID_UNDEFINED
 import de.dh.raaps.common.model.InsulinType
+import de.dh.raaps.common.model.data.BgBlock
+import de.dh.raaps.common.model.data.BgValue
 import de.dh.raaps.common.model.data.CurrentTherapySettings
+import de.dh.raaps.common.model.data.Minutes
 import de.dh.raaps.common.model.data.Profile
 import de.dh.raaps.common.model.data.TherapyData
 import de.dh.raaps.core.repository.db.AppDatabase
@@ -117,7 +122,21 @@ class TherapyRepository(
         val entity = therapyDao.getCurrentTherapySettings() ?: return null
         val profile = getProfileById(entity.profile_id) ?: return null
         val insulinType = getInsulinTypeById(entity.insulin_type_id) ?: return null
-        return entity.toModel(profile, insulinType)
+        val settings = entity.toModel(profile, insulinType)
+        
+        return if (settings.defaultBgBlocks.isEmpty()) {
+            settings.copy(
+                defaultBgBlocks = listOf(
+                    BgBlock(
+                        Minutes.ofHours(24),
+                        BgValue.fromMgDl(DEFAULT_BG_TARGET_MGDL),
+                        BgValue.fromMgDl(DEFAULT_BG_LOW_THRESHOLD_MGDL)
+                    )
+                )
+            )
+        } else {
+            settings
+        }
     }
 
     suspend fun updateCurrentTherapySettings(currentTherapySettings: CurrentTherapySettings) {

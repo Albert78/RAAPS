@@ -178,16 +178,14 @@ fun TherapyData.toEntity() = TherapyDataEntity(
     id = this.id,
     basal_blocks = this.basalBlocks.map { it.toDb() },
     isf_blocks = this.isfBlocks.map { it.toDb() },
-    ic_blocks = this.icBlocks.map { it.toDb() },
-    bg_blocks = this.bgBlocks.map { it.toDb() }
+    ic_blocks = this.icBlocks.map { it.toDb() }
 )
 
 fun TherapyDataEntity.toModel() = TherapyData(
     id = this.id,
     basalBlocks = this.basal_blocks.map { it.toModel() },
     isfBlocks = this.isf_blocks.map { it.toModel() },
-    icBlocks = this.ic_blocks.map { it.toModel() },
-    bgBlocks = this.bg_blocks.map { it.toModel() }
+    icBlocks = this.ic_blocks.map { it.toModel() }
 )
 
 fun Profile.toEntity() = ProfileEntity(
@@ -206,14 +204,16 @@ fun CurrentTherapySettings.toEntity() = CurrentTherapySettingsEntity(
     id = this.id,
     profile_id = this.profile.id,
     insulin_type_id = this.insulinType.id,
-    adjustment_percentage = this.adjustmentPercentage
+    adjustment_percentage = this.adjustmentPercentage,
+    default_bg_blocks = this.defaultBgBlocks.map { it.toDb() }
 )
 
 fun CurrentTherapySettingsEntity.toModel(profile: Profile, insulinType: InsulinType) = CurrentTherapySettings(
     id = this.id,
     profile = profile,
     insulinType = insulinType,
-    adjustmentPercentage = this.adjustment_percentage
+    adjustmentPercentage = this.adjustment_percentage,
+    defaultBgBlocks = this.default_bg_blocks.map { it.toModel() }
 )
 
 // Settings Converters

@@ -2,7 +2,7 @@
   "formatVersion": 1,
   "database": {
     "version": 1,
-    "identityHash": "e2c7416a6bf34c3507e85273ba272028",
+    "identityHash": "089a9c0610aa0ec04ab097471edc367e",
     "entities": [
       {
         "tableName": "sensor_type",
@@ -143,7 +143,7 @@
       },
       {
         "tableName": "therapy_data",
-        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `basal_blocks` TEXT NOT NULL, `isf_blocks` TEXT NOT NULL, `ic_blocks` TEXT NOT NULL, `bg_blocks` TEXT NOT NULL)",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `basal_blocks` TEXT NOT NULL, `isf_blocks` TEXT NOT NULL, `ic_blocks` TEXT NOT NULL)",
         "fields": [
           {
             "fieldPath": "id",
@@ -166,12 +166,6 @@
           {
             "fieldPath": "ic_blocks",
             "columnName": "ic_blocks",
-            "affinity": "TEXT",
-            "notNull": true
-          },
-          {
-            "fieldPath": "bg_blocks",
-            "columnName": "bg_blocks",
             "affinity": "TEXT",
             "notNull": true
           }
@@ -239,7 +233,7 @@
       },
       {
         "tableName": "current_therapy_settings",
-        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `profile_id` INTEGER NOT NULL, `insulin_type_id` TEXT NOT NULL, `adjustment_percentage` INTEGER NOT NULL, FOREIGN KEY(`profile_id`) REFERENCES `profiles`(`id`) ON UPDATE NO ACTION ON DELETE SET NULL , FOREIGN KEY(`insulin_type_id`) REFERENCES `insulin_type`(`id`) ON UPDATE NO ACTION ON DELETE RESTRICT )",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `profile_id` INTEGER NOT NULL, `insulin_type_id` TEXT NOT NULL, `adjustment_percentage` INTEGER NOT NULL, `default_bg_blocks` TEXT NOT NULL, FOREIGN KEY(`profile_id`) REFERENCES `profiles`(`id`) ON UPDATE NO ACTION ON DELETE SET NULL , FOREIGN KEY(`insulin_type_id`) REFERENCES `insulin_type`(`id`) ON UPDATE NO ACTION ON DELETE RESTRICT )",
         "fields": [
           {
             "fieldPath": "id",
@@ -263,6 +257,12 @@
             "fieldPath": "adjustment_percentage",
             "columnName": "adjustment_percentage",
             "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "default_bg_blocks",
+            "columnName": "default_bg_blocks",
+            "affinity": "TEXT",
             "notNull": true
           }
         ],
@@ -531,7 +531,7 @@
     ],
     "setupQueries": [
       "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
-      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, 'e2c7416a6bf34c3507e85273ba272028')"
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '089a9c0610aa0ec04ab097471edc367e')"
     ]
   }
 }

@@ -19,10 +19,11 @@
     <string name="profile_editor_isf_desc">Gibt an, wie stark eine Einheit Insulin den Blutzucker senkt (Einheit: mg/dL/U).</string>
     <string name="profile_editor_ic_title">I:C (Insulin-Kohlenhydrat-Verhältnis)</string>
     <string name="profile_editor_ic_desc">Gibt an, wie viele Gramm Kohlenhydrate durch eine Einheit Insulin abgedeckt werden (Einheit: g/U).</string>
-    <string name="profile_editor_bg_title">Ziel-BZ &amp; Low-Schwelle</string>
-    <string name="profile_editor_bg_desc">Der angestrebte Blutzucker und die Schwelle für niedrige Werte (Einheit: mg/dL).</string>
     <string name="profile_editor_help_title">Anleitung: 24h-Profil</string>
     <string name="profile_editor_help_message">Jeder Block definiert den Wert ab der gewählten Uhrzeit bis zum Start des nächsten Blocks.\n\n• Der erste Block beginnt immer um 00:00 Uhr.\n• Nutze das [+], um neue Zeitabschnitte einzufügen.\n• Die Uhrzeit eines Blocks kann nur zwischen seinen Nachbarn verschoben werden.\n• Am Ende des Tages schließt der letzte Block automatisch um 24:00 Uhr ab.</string>
+
+    <string name="bg_editor_title">Ziel-BZ &amp; Low-Schwelle</string>
+    <string name="bg_editor_desc">Der angestrebte Blutzucker und die Schwelle für niedrige Werte (Einheit: mg/dL).</string>
 
 
     <string name="profile_editor_discard_title">Änderungen verwerfen?</string>
@@ -89,6 +90,11 @@
     <string name="current_therapy_settings_screen_title">Aktuelle Therapie</string>
     <string name="current_therapy_active_profile_label">Aktives Profil</string>
     <string name="current_therapy_available_profiles_label">Verfügbare Profile</string>
+    <string name="current_therapy_target_label_singular">Zielwert</string>
+    <string name="current_therapy_target_label_plural">Zielwerte</string>
+    <string name="current_therapy_bg_title">Ziel-BZ &amp; Low-Schwelle</string>
+    <string name="current_therapy_low_threshold_label_singular">Niedrig-Schwelle</string>
+    <string name="current_therapy_low_threshold_label_plural">Niedrig-Schwellen</string>
 
     <string name="recommendation_notification_channel_name">Behandlungsempfehlungen</string>
     <string name="recommendation_title_carbs">Essensempfehlung</string>

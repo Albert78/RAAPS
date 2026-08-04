@@ -1,9 +1,7 @@
 package de.dh.raaps.plugin.simbody
 
-import de.dh.raaps.common.model.data.BgValue
 import de.dh.raaps.common.model.data.Block
 import de.dh.raaps.common.model.data.Minutes
-import de.dh.raaps.common.model.data.BgBlock
 import de.dh.raaps.common.model.data.TherapyData
 import de.dh.raaps.plugin.simbody.model.BodyProfile
 
@@ -13,14 +11,7 @@ import de.dh.raaps.plugin.simbody.model.BodyProfile
 val DEFAULT_SIM_THERAPY_PROFILE = TherapyData(
     basalBlocks = listOf(Block(Minutes.ofHours(24), 0.5)),
     isfBlocks = listOf(Block(Minutes.ofHours(24), 50.0)),
-    icBlocks = listOf(Block(Minutes.ofHours(24), 10.0)),
-    bgBlocks = listOf(
-        BgBlock(
-            duration = Minutes.ofHours(24),
-            target = BgValue.fromMgDl(100),
-            lowThreshold = BgValue.fromMgDl(70)
-        )
-    )
+    icBlocks = listOf(Block(Minutes.ofHours(24), 10.0))
 )
 
 /**

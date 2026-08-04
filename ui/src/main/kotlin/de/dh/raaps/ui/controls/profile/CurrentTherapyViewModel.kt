@@ -5,6 +5,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.CreationExtras
+import de.dh.raaps.common.model.data.BgBlock
 import de.dh.raaps.common.model.data.BgDelta
 import de.dh.raaps.common.model.data.BgValue
 import de.dh.raaps.common.model.data.CurrentTherapySettings
@@ -34,7 +35,8 @@ data class CurrentTherapyUiState(
     val isLoading: Boolean = false,
     val activeProfile: ProfileUiState? = null,
     val glucoseUnit: GlucoseUnit = GlucoseUnit.MG_DL,
-    val availableProfiles: List<Profile> = emptyList()
+    val availableProfiles: List<Profile> = emptyList(),
+    val defaultBgBlocks: List<BgBlock> = emptyList()
 )
 
 /**
@@ -86,8 +88,15 @@ class CurrentTherapyViewModel(
             it.copy(
                 isLoading = false,
                 activeProfile = profileUiState,
-                availableProfiles = profiles
+                availableProfiles = profiles,
+                defaultBgBlocks = currentSettings?.defaultBgBlocks ?: emptyList()
             )
+        }
+    }
+
+    fun updateDefaultBgBlocks(blocks: List<BgBlock>) {
+        viewModelScope.launch {
+            therapyManager.updateDefaultBgBlocks(blocks)
         }
     }
 

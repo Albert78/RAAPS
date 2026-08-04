@@ -121,11 +121,7 @@ object DatabaseInitializer {
                         DEFAULT_BASAL_UNITS_PER_HOUR
                     )),
                     isfBlocks = listOf(Block(Minutes.ofHours(24), DEFAULT_ISF_MGDL_PER_UNIT)),
-                    icBlocks = listOf(Block(Minutes.ofHours(24), DEFAULT_IC_GRAM_PER_UNIT)),
-                    bgBlocks = listOf(BgBlock(
-                        Minutes.ofHours(24),
-                        BgValue(DEFAULT_BG_TARGET_MGDL),
-                        BgValue(DEFAULT_BG_LOW_THRESHOLD_MGDL)))
+                    icBlocks = listOf(Block(Minutes.ofHours(24), DEFAULT_IC_GRAM_PER_UNIT))
                 )
             )
             repository.insertProfile(normalProfile)
@@ -141,7 +137,14 @@ object DatabaseInitializer {
             // so that overrides don't automatically change the underlying profile.
             val currentTherapySettings = CurrentTherapySettings(
                 profile = activeProfile,
-                insulinType = insulinType
+                insulinType = insulinType,
+                defaultBgBlocks = listOf(
+                    BgBlock(
+                        Minutes.ofHours(24),
+                        BgValue.fromMgDl(DEFAULT_BG_TARGET_MGDL),
+                        BgValue.fromMgDl(DEFAULT_BG_LOW_THRESHOLD_MGDL)
+                    )
+                )
             )
             repository.updateCurrentTherapySettings(currentTherapySettings)
         }

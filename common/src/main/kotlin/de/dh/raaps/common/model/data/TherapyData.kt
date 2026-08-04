@@ -6,6 +6,5 @@ data class TherapyData(
     var id: Long = ID_UNDEFINED,
     val basalBlocks: List<Block>,
     val isfBlocks: List<Block>,
-    val icBlocks: List<Block>,
-    val bgBlocks: List<BgBlock>
+    val icBlocks: List<Block>
 )

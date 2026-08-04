@@ -10,8 +10,10 @@ import de.dh.raaps.common.model.DEFAULT_BG_LOW_THRESHOLD_MGDL
 import de.dh.raaps.common.model.ID_UNDEFINED
 import de.dh.raaps.common.model.InsulinType
 import de.dh.raaps.common.model.data.BgDelta
+import de.dh.raaps.common.model.data.BgBlock
 import de.dh.raaps.common.model.data.BgValue
 import de.dh.raaps.common.model.data.CurrentTherapySettings
+import de.dh.raaps.common.model.data.Minutes
 import de.dh.raaps.common.model.data.Profile
 import de.dh.raaps.common.model.data.Timestamp
 import de.dh.raaps.common.model.data.getAmountForMinute
@@ -73,13 +75,24 @@ class TherapyManager(
     }
 
     suspend fun getBgSettings(): Pair<BgValue, BgValue> {
-        val data = getActiveTherapySettings()?.profile?.therapyData
+        val settings = getActiveTherapySettings()
             ?: return Pair(
                 BgValue.fromMgDl(DEFAULT_BG_TARGET_MGDL),
                 BgValue.fromMgDl(DEFAULT_BG_LOW_THRESHOLD_MGDL)
             )
 
-        return data.bgBlocks.getBgForMinute(Timestamp.now().minutesSinceMidnight())
+        return settings.defaultBgBlocks.getBgForMinute(Timestamp.now().minutesSinceMidnight())
+    }
+
+    suspend fun updateDefaultBgBlocks(blocks: List<BgBlock>) {
+        mutex.withLock {
+            val currentSettings = getActiveTherapySettings()
+                ?: throw IllegalStateException("No active therapy settings found")
+            val newSettings = currentSettings.copy(
+                defaultBgBlocks = blocks
+            )
+            therapyRepository.updateCurrentTherapySettings(newSettings)
+        }
     }
 
     suspend fun getPumpInsulinType(): InsulinType {
@@ -103,10 +116,20 @@ class TherapyManager(
     suspend fun selectProfile(profile: Profile) {
         mutex.withLock {
             val currentSettings = getActiveTherapySettings()
+            val insulinType = currentSettings?.insulinType
+                ?: therapyRepository.getAllInsulinTypes().firstOrNull()
+                ?: throw IllegalStateException("No insulin type configured for insulin pump")
+            
             val newSettings = (currentSettings ?: CurrentTherapySettings(
                 profile = profile,
-                insulinType = therapyRepository.getAllInsulinTypes().firstOrNull()
-                    ?: throw IllegalStateException("No insulin type configured for insulin pump")
+                insulinType = insulinType,
+                defaultBgBlocks = listOf(
+                    BgBlock(
+                        Minutes.ofHours(24),
+                        BgValue.fromMgDl(DEFAULT_BG_TARGET_MGDL),
+                        BgValue.fromMgDl(DEFAULT_BG_LOW_THRESHOLD_MGDL)
+                    )
+                )
             )).copy(
                 profile = profile
             )

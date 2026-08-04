@@ -22,7 +22,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.HelpOutline
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.Adjust
 import androidx.compose.material.icons.filled.ContentCopy
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Remove
@@ -74,13 +73,9 @@ import de.dh.raaps.common.model.IC_MIN
 import de.dh.raaps.common.model.ID_UNDEFINED
 import de.dh.raaps.common.model.ISF_MAX
 import de.dh.raaps.common.model.ISF_MIN
-import de.dh.raaps.common.model.TARGET_MAX
-import de.dh.raaps.common.model.TARGET_MIN
-import de.dh.raaps.common.model.data.BgValue
 import de.dh.raaps.common.model.data.Block
 import de.dh.raaps.common.model.data.Minutes
 import de.dh.raaps.common.model.data.Profile
-import de.dh.raaps.common.model.data.BgBlock
 import de.dh.raaps.common.model.data.TherapyData
 import de.dh.raaps.common.ui.composables.TimeHourSelector
 import de.dh.raaps.common.ui.composables.screenTitle
@@ -118,11 +113,7 @@ fun ProfileEditorScreen(
                                 DEFAULT_BASAL_UNITS_PER_HOUR
                             )),
                             isfBlocks = listOf(Block(Minutes.ofHours(24), DEFAULT_ISF_MGDL_PER_UNIT)),
-                            icBlocks = listOf(Block(Minutes.ofHours(24), DEFAULT_IC_GRAM_PER_UNIT)),
-                            bgBlocks = listOf(BgBlock(
-                                Minutes.ofHours(24),
-                                BgValue(DEFAULT_BG_TARGET_MGDL),
-                                BgValue(DEFAULT_BG_LOW_THRESHOLD_MGDL)))
+                            icBlocks = listOf(Block(Minutes.ofHours(24), DEFAULT_IC_GRAM_PER_UNIT))
                         )
                     )
                 )
@@ -244,8 +235,7 @@ fun ProfileDetailEditor(
     val tabs = listOf(
         stringResource(id = R.string.profile_editor_tab_basal),
         stringResource(id = R.string.profile_editor_tab_isf),
-        stringResource(id = R.string.profile_editor_tab_ic),
-        stringResource(id = R.string.profile_editor_tab_bg)
+        stringResource(id = R.string.profile_editor_tab_ic)
     )
 
     val isNameValid = name.trim().isNotBlank() && isNameUnique(name.trim(), profile.id)
@@ -345,12 +335,6 @@ fun ProfileDetailEditor(
                         format = "%.1f",
                         minValue = IC_MIN,
                         maxValue = IC_MAX
-                    )
-                    3 -> BgBlockListEditor(
-                        title = stringResource(id = R.string.profile_editor_bg_title),
-                        description = stringResource(id = R.string.profile_editor_bg_desc),
-                        blocks = therapyData.bgBlocks,
-                        onBlocksChanged = { therapyData = therapyData.copy(bgBlocks = it) }
                     )
                 }
             }
@@ -484,177 +468,6 @@ fun TherapyBlockListEditor(
                     minValue = minValue,
                     maxValue = maxValue
                 )
-            }
-
-            item(key = "insert_$index") {
-                InsertButton(canInsert = nextHour - currentHour > 1) { addBlock(index + 1) }
-            }
-        }
-    }
-
-    if (showHelpDialog) {
-        ProfileHelpDialog(onDismiss = { showHelpDialog = false })
-    }
-}
-
-@Composable
-fun BgBlockListEditor(
-    title: String,
-    description: String,
-    blocks: List<BgBlock>,
-    onBlocksChanged: (List<BgBlock>) -> Unit
-) {
-    var showHelpDialog by remember { mutableStateOf(false) }
-
-    val startHours = remember(blocks) {
-        var currentHour = 0
-        blocks.map { block ->
-            val hour = currentHour
-            currentHour += block.duration.value / 60
-            hour
-        }
-    }
-
-    fun updateHour(index: Int, newHour: Int) {
-        val newHours = startHours.toMutableList()
-        newHours[index] = newHour
-
-        val newBlocks = mutableListOf<BgBlock>()
-        for (i in 0 until newHours.size) {
-            val durationHours = if (i < newHours.size - 1) newHours[i+1] - newHours[i] else 24 - newHours[i]
-            newBlocks.add(blocks[i].copy(duration = Minutes.ofHours(durationHours)))
-        }
-        onBlocksChanged(newBlocks)
-    }
-
-    fun addBlock(atIndex: Int) {
-        if (atIndex == 0) return
-        val splitIndex = atIndex - 1
-        val splitBlock = blocks[splitIndex]
-        val splitDuration = splitBlock.duration.value / 60
-
-        val newBlocks = blocks.toMutableList()
-        newBlocks[splitIndex] = splitBlock.copy(duration = Minutes.ofHours(1))
-        newBlocks.add(atIndex, splitBlock.copy(duration = Minutes.ofHours(splitDuration - 1)))
-        onBlocksChanged(newBlocks)
-    }
-
-    fun removeBlock(index: Int) {
-        if (blocks.size <= 1) return
-        val newBlocks = blocks.toMutableList()
-        val removed = newBlocks.removeAt(index)
-        val targetIndex = if (index > 0) index - 1 else 0
-        val target = newBlocks[targetIndex]
-        newBlocks[targetIndex] = target.copy(duration = Minutes((target.duration.value + removed.duration.value).toShort()))
-        onBlocksChanged(newBlocks)
-    }
-
-    LazyColumn(
-        modifier = Modifier.fillMaxSize(),
-        contentPadding = PaddingValues(16.dp),
-        verticalArrangement = Arrangement.spacedBy(8.dp)
-    ) {
-        item {
-            Column(modifier = Modifier.padding(bottom = 8.dp)) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Text(text = title, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
-                    IconButton(onClick = { showHelpDialog = true }) {
-                        Icon(
-                            imageVector = Icons.AutoMirrored.Filled.HelpOutline,
-                            contentDescription = stringResource(id = R.string.cd_help),
-                            tint = MaterialTheme.colorScheme.primary
-                        )
-                    }
-                }
-                Text(text = description, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-            }
-        }
-
-        blocks.forEachIndexed { index, block ->
-            val currentHour = startHours[index]
-            val prevHour = if (index > 0) startHours[index - 1] else -1
-            val nextHour = if (index < blocks.size - 1) startHours[index + 1] else 24
-
-            item(key = "bg_$index") {
-                Surface(
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(12.dp),
-                    color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f)
-                ) {
-                    Row(
-                        modifier = Modifier
-                            .padding(8.dp)
-                            .fillMaxWidth(),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-                        TimeHourSelector(
-                            hour = currentHour,
-                            enabled = index > 0,
-                            minHour = prevHour + 1,
-                            maxHour = nextHour - 1,
-                            onHourChanged = { updateHour(index, it) },
-                            modifier = Modifier.width(100.dp)
-                        )
-
-                        Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                ValueAdjuster(
-                                    value = block.target.mgdl.toDouble(),
-                                    onValueChanged = { newVal ->
-                                        val updated = blocks.toMutableList()
-                                        updated[index] = block.copy(target = BgValue(newVal.roundToInt().toShort()))
-                                        onBlocksChanged(updated)
-                                    },
-                                    step = 5.0,
-                                    format = "%.0f",
-                                    modifier = Modifier.weight(1f),
-                                    minValue = TARGET_MIN.toDouble(),
-                                    maxValue = TARGET_MAX.toDouble()
-                                )
-                                Icon(
-                                    imageVector = Icons.Default.Adjust,
-                                    contentDescription = null,
-                                    modifier = Modifier.size(20.dp).padding(start = 4.dp),
-                                    tint = MaterialTheme.colorScheme.primary
-                                )
-                            }
-                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                ValueAdjuster(
-                                    value = block.lowThreshold.mgdl.toDouble(),
-                                    onValueChanged = { newVal ->
-                                        val updated = blocks.toMutableList()
-                                        updated[index] = block.copy(lowThreshold = BgValue(newVal.roundToInt().toShort()))
-                                        onBlocksChanged(updated)
-                                    },
-                                    step = 5.0,
-                                    format = "%.0f",
-                                    modifier = Modifier.weight(1f),
-                                    minValue = TARGET_MIN.toDouble(),
-                                    maxValue = TARGET_MAX.toDouble()
-                                )
-                                Icon(
-                                    imageVector = Icons.Default.VerticalAlignBottom,
-                                    contentDescription = null,
-                                    modifier = Modifier.size(20.dp).padding(start = 4.dp),
-                                    tint = MaterialTheme.colorScheme.primary
-                                )
-                            }
-                        }
-
-                        if (index > 0) {
-                            IconButton(onClick = { removeBlock(index) }) {
-                                Icon(Icons.Default.Delete, contentDescription = stringResource(id = de.dh.raaps.common.R.string.action_delete))
-                            }
-                        } else {
-                            Box(modifier = Modifier.size(48.dp))
-                        }
-                    }
-                }
             }
 
             item(key = "insert_$index") {
@@ -822,9 +635,9 @@ fun ProfileEditorPreview() {
         ProfileList(
             uiState = ProfileSettingsUiState(
                 profiles = listOf(
-                    Profile(name = "Normal", therapyData = TherapyData(basalBlocks = emptyList(), isfBlocks = emptyList(), icBlocks = emptyList(), bgBlocks = emptyList())),
-                    Profile(name = "Sport", therapyData = TherapyData(basalBlocks = emptyList(), isfBlocks = emptyList(), icBlocks = emptyList(), bgBlocks = emptyList())),
-                    Profile(name = "Krank", therapyData = TherapyData(basalBlocks = emptyList(), isfBlocks = emptyList(), icBlocks = emptyList(), bgBlocks = emptyList()))
+                    Profile(name = "Normal", therapyData = TherapyData(basalBlocks = emptyList(), isfBlocks = emptyList(), icBlocks = emptyList())),
+                    Profile(name = "Sport", therapyData = TherapyData(basalBlocks = emptyList(), isfBlocks = emptyList(), icBlocks = emptyList())),
+                    Profile(name = "Krank", therapyData = TherapyData(basalBlocks = emptyList(), isfBlocks = emptyList(), icBlocks = emptyList()))
                 ),
                 isLoading = false
             ),
@@ -846,8 +659,7 @@ fun ProfileDetailEditorPreview() {
             profile = Profile(name = "Normal", therapyData = TherapyData(
                 basalBlocks = listOf(Block(Minutes.ofHours(24), 1.0)),
                 isfBlocks = listOf(Block(Minutes.ofHours(24), 50.0)),
-                icBlocks = listOf(Block(Minutes.ofHours(24), 10.0)),
-                bgBlocks = listOf(BgBlock(Minutes.ofHours(24), BgValue(100), BgValue(70)))
+                icBlocks = listOf(Block(Minutes.ofHours(24), 10.0))
             )),
             onSave = {},
             onCancel = {}

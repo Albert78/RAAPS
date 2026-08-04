@@ -165,8 +165,8 @@ fun CurrentTherapyViewPreview() {
                 ),
                 glucoseUnit = GlucoseUnit.MG_DL,
                 availableProfiles = listOf(
-                    Profile(id = 1L, name = "Normal", therapyData = TherapyData(basalBlocks = emptyList(), isfBlocks = emptyList(), icBlocks = emptyList(), bgBlocks = emptyList())),
-                    Profile(id = 2L, name = "Sport", therapyData = TherapyData(basalBlocks = emptyList(), isfBlocks = emptyList(), icBlocks = emptyList(), bgBlocks = emptyList()))
+                    Profile(id = 1L, name = "Normal", therapyData = TherapyData(basalBlocks = emptyList(), isfBlocks = emptyList(), icBlocks = emptyList())),
+                    Profile(id = 2L, name = "Sport", therapyData = TherapyData(basalBlocks = emptyList(), isfBlocks = emptyList(), icBlocks = emptyList()))
                 )
             ),
             onProfileSelect = {}

@@ -19,8 +19,7 @@ data class TherapyDataEntity(
     val id: Long = ID_UNDEFINED,
     val basal_blocks: List<DBBlock>,
     val isf_blocks: List<DBBlock>,
-    val ic_blocks: List<DBBlock>,
-    val bg_blocks: List<DBBgBlock>
+    val ic_blocks: List<DBBlock>
 )
 
 /**
@@ -71,5 +70,6 @@ data class CurrentTherapySettingsEntity(
     val id: Long = ID_UNDEFINED,
     val profile_id: Long,
     val insulin_type_id: String,
-    val adjustment_percentage: Int
+    val adjustment_percentage: Int,
+    val default_bg_blocks: List<DBBgBlock>
 )
