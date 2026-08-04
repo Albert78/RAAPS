@@ -7,7 +7,7 @@ import androidx.core.content.ContextCompat
 import de.dh.raaps.core.RAAPSRegistry
 import de.dh.raaps.core.RAAPSRegistryImpl
 import de.dh.raaps.core.system.SystemWakeReceiver
-import de.dh.raaps.notifications.ApsNotificationData
+import de.dh.raaps.notifications.ApsMainNotificationData
 import de.dh.raaps.notifications.ApsNotificationManager
 import de.dh.raaps.pluginmanager.PluginManagerImpl
 import de.dh.raaps.services.ApsService
@@ -27,7 +27,7 @@ import kotlinx.coroutines.launch
 class MainApplication : Application(), SystemWakeReceiver.RegistryProvider {
     lateinit var notificationManager: ApsNotificationManager
         private set
-    
+
     override lateinit var registry: RAAPSRegistry
         private set
 
@@ -41,9 +41,9 @@ class MainApplication : Application(), SystemWakeReceiver.RegistryProvider {
         instance = this
 
         notificationManager = ApsNotificationManager(this)
-        
+
         val pluginManager = PluginManagerImpl(this)
-        
+
         registry = RAAPSRegistryImpl.create(
             application = this,
             scope = applicationScope,
@@ -84,7 +84,7 @@ class MainApplication : Application(), SystemWakeReceiver.RegistryProvider {
     fun installNotificationUpdater() {
         applicationScope.launch {
             registry.aps.lastDataTime.collect { _ ->
-                val notificationData = ApsNotificationData.create(registry.aps)
+                val notificationData = ApsMainNotificationData.create(registry.aps)
                 notificationManager.updateNotification(notificationData)
             }
         }

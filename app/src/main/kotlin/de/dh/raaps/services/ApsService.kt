@@ -7,7 +7,7 @@ import android.content.pm.ServiceInfo
 import android.os.IBinder
 import de.dh.raaps.MainApplication
 import de.dh.raaps.core.aps.APS
-import de.dh.raaps.notifications.ApsNotificationData
+import de.dh.raaps.notifications.ApsMainNotificationData
 import de.dh.raaps.notifications.ApsNotificationManager
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -31,7 +31,7 @@ class ApsService : Service() {
         startServiceInForeground()
 
         MainApplication.instance.setServiceRunning(true)
-        
+
         observeRecommendations()
     }
 
@@ -54,7 +54,7 @@ class ApsService : Service() {
     }
 
     private fun startServiceInForeground() {
-        val apsNotificationData = ApsNotificationData.create(aps)
+        val apsNotificationData = ApsMainNotificationData.create(aps)
         val notification: Notification = notificationManager.createForegroundServiceNotification(apsNotificationData)
 
         startForeground(

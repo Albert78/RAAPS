@@ -11,11 +11,12 @@ import androidx.core.app.NotificationCompat
 import androidx.core.content.getSystemService
 import de.dh.raaps.MainActivity
 import de.dh.raaps.R
-import de.dh.raaps.ui.R as UiR
 import de.dh.raaps.common.model.ToDo
 import de.dh.raaps.common.model.data.BgValue
+import de.dh.raaps.core.aps.ApsRecommendation
 import de.dh.raaps.ui.screens.permissions.canPostNotifications
 import java.util.Locale
+import de.dh.raaps.ui.R as UiR
 
 class ApsNotificationManager(
     val context: Context
@@ -28,7 +29,7 @@ class ApsNotificationManager(
         val serviceImportance = NotificationManager.IMPORTANCE_HIGH
         val serviceChannel = NotificationChannel(CHANNEL_ID, serviceName, serviceImportance)
         serviceChannel.setShowBadge(false)
-        
+
         // Channel for recommendations (User interaction required)
         val recName = context.getString(UiR.string.recommendation_notification_channel_name)
         val recImportance = NotificationManager.IMPORTANCE_HIGH
@@ -55,7 +56,7 @@ class ApsNotificationManager(
         return if (bgDeltaStr == null) null else "Delta: $bgDeltaStr"
     }
 
-    fun createForegroundServiceNotification(data: ApsNotificationData): Notification {
+    fun createForegroundServiceNotification(data: ApsMainNotificationData): Notification {
         Log.d(TAG, "Build notification for ${data.lastBgSample}")
         ToDo.toBeImplemented("Take glucose unit from preferences")
         val bgValueStr = getBgValueString(data.lastBgSample?.value, false)
@@ -80,22 +81,22 @@ class ApsNotificationManager(
             .build()
     }
 
-    fun updateNotification(data: ApsNotificationData) {
+    fun updateNotification(data: ApsMainNotificationData) {
         val notification: Notification = createForegroundServiceNotification(data)
         notify(NOTIFICATION_ID, notification)
     }
 
-    fun showRecommendationNotification(recommendation: de.dh.raaps.core.aps.ApsRecommendation) {
+    fun showRecommendationNotification(recommendation: ApsRecommendation) {
         val title = when (recommendation) {
-            is de.dh.raaps.core.aps.ApsRecommendation.Carbs -> context.getString(UiR.string.recommendation_title_carbs)
-            is de.dh.raaps.core.aps.ApsRecommendation.Bolus -> context.getString(UiR.string.recommendation_title_bolus)
+            is ApsRecommendation.Carbs -> context.getString(UiR.string.recommendation_title_carbs)
+            is ApsRecommendation.Bolus -> context.getString(UiR.string.recommendation_title_bolus)
         }
         val text = when (recommendation) {
-            is de.dh.raaps.core.aps.ApsRecommendation.Carbs -> context.getString(
+            is ApsRecommendation.Carbs -> context.getString(
                 UiR.string.recommendation_text_carbs,
                 recommendation.amountInGram
             )
-            is de.dh.raaps.core.aps.ApsRecommendation.Bolus -> context.getString(
+            is ApsRecommendation.Bolus -> context.getString(
                 UiR.string.recommendation_text_bolus,
                 recommendation.amount.iu
             )

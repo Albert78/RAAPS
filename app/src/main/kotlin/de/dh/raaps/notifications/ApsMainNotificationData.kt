@@ -5,7 +5,7 @@ import de.dh.raaps.common.model.data.BgSampleKind
 import de.dh.raaps.common.model.data.BgValue
 import de.dh.raaps.core.aps.APS
 
-data class ApsNotificationData(
+data class ApsMainNotificationData(
     val lastBgSample: BgReading?,
     val secondToLastBgSample: BgReading?
 ) {
@@ -19,10 +19,10 @@ data class ApsNotificationData(
     }
 
     companion object {
-        fun create(aps: APS): ApsNotificationData {
+        fun create(aps: APS): ApsMainNotificationData {
             val lastBg = aps.getCurrentBg()
             val secondToLastBg = aps.getLastBg()
-            return ApsNotificationData(lastBg, secondToLastBg)
+            return ApsMainNotificationData(lastBg, secondToLastBg)
         }
     }
 }
