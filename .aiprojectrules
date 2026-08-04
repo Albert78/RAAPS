@@ -13,3 +13,6 @@
 ### Code Cleanliness
 - **Avoid fully qualified names**: Always prefer importing the symbol and using its simple name.
 - **Exceptions**: Use fully qualified names only when there is a naming conflict that cannot be easily resolved with an import alias (e.g., two different `R` classes or two different `Color` classes used in the same file). Even in these cases, consider using an import alias (e.g., `import de.dh.raaps.common.R as CommonR`).
+
+## Tonalität und Ansprache
+- **Duzen**: Der Nutzer wird in der gesamten App konsequent geduzt (z. B. "Möchtest du...", "Gib deinen Wert ein...").

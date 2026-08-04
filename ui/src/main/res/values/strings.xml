@@ -29,6 +29,8 @@
 
     <string name="bg_editor_title">Ziel-BZ &amp; Low-Schwelle</string>
     <string name="bg_editor_desc">Der angestrebte Blutzucker und die Schwelle für niedrige Werte über den Tag (Einheit: mg/dL).</string>
+    <string name="bg_editor_discard_title">Änderungen verwerfen?</string>
+    <string name="bg_editor_discard_message">Du hast Änderungen an den Zielwerten vorgenommen. Möchtest du diese wirklich verwerfen?</string>
 
     <string name="profile_editor_discard_title">Änderungen verwerfen?</string>
     <string name="profile_editor_discard_message">Es gibt ungespeicherte Änderungen. Möchtest du den Editor wirklich verlassen?</string>
@@ -181,8 +183,6 @@
     <string name="meal_bolus_calc_iob_part">IOB Abzug: -%1$.2f U</string>
     <string name="meal_bolus_calc_cob_part">COB Ausgleich: +%1$.2f U</string>
     <string name="meal_bolus_insulin_label">Insulinmenge (U)</string>
-    <string name="meal_bolus_ok_button">Ok</string>
-    <string name="meal_bolus_cancel_button">Abbrechen</string>
 
     <string name="todo_text">To Do</string>
     <string name="drawer_header_title">RAAPS</string>

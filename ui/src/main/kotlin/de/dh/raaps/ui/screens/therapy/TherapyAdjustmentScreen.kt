@@ -19,7 +19,6 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Adjust
-import androidx.compose.material.icons.filled.Save
 import androidx.compose.material.icons.filled.UnfoldMore
 import androidx.compose.material.icons.filled.VerticalAlignBottom
 import androidx.compose.material3.ElevatedCard
@@ -74,20 +73,6 @@ fun TherapyAdjustmentScreen(
 ) {
     val uiState by viewModel.uiState.collectAsState()
     
-    // Local state for editing
-    var localPercentage by remember(uiState.activeInsulinProfile.insulinAdjustmentPercentage) { 
-        mutableStateOf(uiState.activeInsulinProfile.insulinAdjustmentPercentage) 
-    }
-    var localTarget by remember(uiState.activeInsulinProfile.targetBgOverride) { 
-        mutableStateOf(uiState.activeInsulinProfile.targetBgOverride) 
-    }
-    var localLow by remember(uiState.activeInsulinProfile.lowThresholdOverride) { 
-        mutableStateOf(uiState.activeInsulinProfile.lowThresholdOverride) 
-    }
-    var localHint by remember(uiState.activeInsulinProfile.adjustmentHint) { 
-        mutableStateOf(uiState.activeInsulinProfile.adjustmentHint) 
-    }
-
     Scaffold(
         topBar = {
             TopAppBar(
@@ -99,17 +84,6 @@ fun TherapyAdjustmentScreen(
                             contentDescription = stringResource(id = de.dh.raaps.common.R.string.cd_navigate_up)
                         )
                     }
-                },
-                actions = {
-                    IconButton(onClick = {
-                        viewModel.setTherapyAdjustment(localPercentage, localTarget, localLow, localHint)
-                        onNavigateUp()
-                    }) {
-                        Icon(
-                            imageVector = Icons.Default.Save,
-                            contentDescription = stringResource(id = de.dh.raaps.common.R.string.action_save)
-                        )
-                    }
                 }
             )
         }
@@ -119,17 +93,15 @@ fun TherapyAdjustmentScreen(
                 .fillMaxSize()
                 .padding(innerPadding)
         ) {
+            val activeProfile = uiState.activeInsulinProfile
             TherapyAdjustmentContent(
-                currentPercentage = localPercentage,
-                currentTarget = localTarget,
-                currentLow = localLow,
-                baseTarget = uiState.activeInsulinProfile.baseTarget,
-                baseLow = uiState.activeInsulinProfile.baseLow,
+                currentPercentage = activeProfile.insulinAdjustmentPercentage,
+                currentTarget = activeProfile.targetBgOverride,
+                currentLow = activeProfile.lowThresholdOverride,
+                baseTarget = activeProfile.baseTarget,
+                baseLow = activeProfile.baseLow,
                 onValuesChange = { p, t, l, h ->
-                    localPercentage = p
-                    localTarget = t
-                    localLow = l
-                    localHint = h
+                    viewModel.setTherapyAdjustment(p, t, l, h)
                 },
                 presets = uiState.therapyAdjustmentPresets,
                 onPresetApplied = { p, t, l, h ->

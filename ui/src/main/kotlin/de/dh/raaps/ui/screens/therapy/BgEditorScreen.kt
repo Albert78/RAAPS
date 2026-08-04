@@ -1,10 +1,10 @@
 package de.dh.raaps.ui.screens.therapy
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -15,11 +15,12 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Adjust
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Save
 import androidx.compose.material.icons.filled.VerticalAlignBottom
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -27,6 +28,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
@@ -60,16 +62,29 @@ fun BgEditorScreen(
 ) {
     val uiState by viewModel.uiState.collectAsState()
     var blocks by remember(uiState.defaultBgBlocks) { mutableStateOf(uiState.defaultBgBlocks) }
+    var showDiscardConfirmation by remember { mutableStateOf(false) }
+
+    val hasChanges = remember(blocks, uiState.defaultBgBlocks) { blocks != uiState.defaultBgBlocks }
+
+    fun handleBack() {
+        if (hasChanges) {
+            showDiscardConfirmation = true
+        } else {
+            onNavigateUp()
+        }
+    }
+
+    BackHandler(onBack = ::handleBack)
 
     Scaffold(
         topBar = {
             TopAppBar(
                 title = screenTitle(stringResource(id = R.string.bg_editor_title)),
                 navigationIcon = {
-                    IconButton(onClick = onNavigateUp) {
+                    IconButton(onClick = ::handleBack) {
                         Icon(
-                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = stringResource(id = de.dh.raaps.common.R.string.cd_navigate_up)
+                            imageVector = Icons.Default.Close,
+                            contentDescription = stringResource(id = de.dh.raaps.common.R.string.cd_cancel)
                         )
                     }
                 },
@@ -106,6 +121,27 @@ fun BgEditorScreen(
                 modifier = Modifier.weight(1f)
             )
         }
+    }
+
+    if (showDiscardConfirmation) {
+        AlertDialog(
+            onDismissRequest = { showDiscardConfirmation = false },
+            title = { Text(stringResource(id = R.string.bg_editor_discard_title)) },
+            text = { Text(stringResource(id = R.string.bg_editor_discard_message)) },
+            confirmButton = {
+                TextButton(onClick = {
+                    showDiscardConfirmation = false
+                    onNavigateUp()
+                }) {
+                    Text(stringResource(id = R.string.profile_editor_discard_confirm))
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showDiscardConfirmation = false }) {
+                    Text(stringResource(id = R.string.profile_editor_discard_dismiss))
+                }
+            }
+        )
     }
 }
 

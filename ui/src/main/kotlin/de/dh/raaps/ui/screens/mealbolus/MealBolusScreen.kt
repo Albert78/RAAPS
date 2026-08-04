@@ -270,7 +270,7 @@ fun MealBolusContent(
                     onClick = onNavigateUp,
                     modifier = Modifier.weight(1f)
                 ) {
-                    Text(stringResource(R.string.meal_bolus_cancel_button))
+                    Text(stringResource(android.R.string.cancel))
                 }
                 Button(
                     onClick = onSubmit,
@@ -279,7 +279,7 @@ fun MealBolusContent(
                 ) {
                     Text(
                         if (uiState.isEditMode) stringResource(R.string.meal_edit_save_button)
-                        else stringResource(R.string.meal_bolus_ok_button)
+                        else stringResource(android.R.string.ok)
                     )
                 }
             }
