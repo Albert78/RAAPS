@@ -72,7 +72,7 @@ class CurrentTherapyViewModel(
     init {
         combine(
             therapyManager.currentTherapySettingsFlow,
-            therapyManager.observeAllProfiles()
+            therapyManager.observeAllInsulinProfiles()
         ) { currentSettings, profiles ->
             updateState(currentSettings, profiles)
         }.launchIn(viewModelScope)
@@ -117,9 +117,9 @@ class CurrentTherapyViewModel(
         }
     }
 
-    fun selectProfile(profile: InsulinProfile) {
+    fun selectInsulinProfile(profile: InsulinProfile) {
         viewModelScope.launch {
-            therapyManager.selectProfile(profile)
+            therapyManager.selectInsulinProfile(profile)
         }
     }
 

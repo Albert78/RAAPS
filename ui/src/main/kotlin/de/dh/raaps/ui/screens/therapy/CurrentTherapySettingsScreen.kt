@@ -56,7 +56,7 @@ fun CurrentTherapySettingsScreen(
         uiState = uiState,
         onNavigateUp = onNavigateUp,
         onNavigateToProfileEditor = onNavigateToProfileEditor,
-        onSelectProfile = { viewModel.selectProfile(it) },
+        onSelectProfile = { viewModel.selectInsulinProfile(it) },
         onUpdateDefaultBgBlocks = { viewModel.updateDefaultBgBlocks(it) }
     )
 }

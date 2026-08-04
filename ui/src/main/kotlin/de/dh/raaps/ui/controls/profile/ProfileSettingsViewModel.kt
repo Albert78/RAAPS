@@ -40,13 +40,13 @@ class ProfileSettingsViewModel(
     fun loadData() {
         viewModelScope.launch {
             _uiState.update { it.copy(isLoading = true) }
-            val profiles = therapyRepository.getAllProfiles()
+            val profiles = therapyRepository.getAllInsulinProfiles()
             val insulinTypes = therapyRepository.getAllInsulinTypes()
             _uiState.update { it.copy(profiles = profiles, insulinTypes = insulinTypes, isLoading = false) }
         }
     }
 
-    fun loadProfiles() {
+    fun loadInsulinProfiles() {
         loadData()
     }
 
@@ -54,7 +54,7 @@ class ProfileSettingsViewModel(
         _uiState.update { it.copy(editingProfile = profile) }
     }
 
-    fun copyProfile(profile: InsulinProfile, newName: String) {
+    fun copyInsulinProfile(profile: InsulinProfile, newName: String) {
         val copy = profile.copy(
             id = ID_UNDEFINED,
             name = newName
@@ -73,14 +73,14 @@ class ProfileSettingsViewModel(
         _uiState.update { it.copy(editingProfile = null) }
     }
 
-    fun saveProfile(profile: InsulinProfile) {
+    fun saveInsulinProfile(profile: InsulinProfile) {
         viewModelScope.launch {
             if (profile.id == ID_UNDEFINED) {
-                therapyRepository.insertProfile(profile)
+                therapyRepository.insertInsulinProfile(profile)
             } else {
-                therapyRepository.updateProfile(profile)
+                therapyRepository.updateInsulinProfile(profile)
             }
-            loadProfiles()
+            loadInsulinProfiles()
             stopEditing()
         }
     }
@@ -93,10 +93,10 @@ class ProfileSettingsViewModel(
         _uiState.update { it.copy(showDeleteConfirmation = null) }
     }
 
-    fun deleteProfile(profile: InsulinProfile) {
+    fun deleteInsulinProfile(profile: InsulinProfile) {
         viewModelScope.launch {
-            therapyRepository.deleteProfile(profile)
-            loadProfiles()
+            therapyRepository.deleteInsulinProfile(profile)
+            loadInsulinProfiles()
             cancelDelete()
         }
     }

@@ -89,15 +89,15 @@ class TherapyManager(
         return currentSettings.insulinProfile.insulinType
     }
 
-    suspend fun getAllProfiles() = therapyRepository.getAllProfiles()
+    suspend fun getAllInsulinProfiles() = therapyRepository.getAllInsulinProfiles()
 
-    fun observeAllProfiles() = therapyRepository.observeAllProfiles()
+    fun observeAllInsulinProfiles() = therapyRepository.observeAllInsulinProfiles()
 
     /**
      * Updates the current therapy settings based on a selected profile.
      * This will create a copy of the profile's therapy data as the active configuration.
      */
-    suspend fun selectProfile(profile: InsulinProfile) {
+    suspend fun selectInsulinProfile(profile: InsulinProfile) {
         mutex.withLock {
             val currentSettings = getActiveTherapySettings()
             

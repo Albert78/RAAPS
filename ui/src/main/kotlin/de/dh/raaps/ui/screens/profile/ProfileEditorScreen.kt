@@ -97,7 +97,7 @@ fun ProfileEditorScreen(
         ProfileDetailEditor(
             profile = uiState.editingProfile!!,
             insulinTypes = uiState.insulinTypes,
-            onSave = { viewModel.saveProfile(it) },
+            onSave = { viewModel.saveInsulinProfile(it) },
             onCancel = { viewModel.stopEditing() },
             isNameUnique = { name, id -> viewModel.isNameUnique(name, id) }
         )
@@ -127,7 +127,7 @@ fun ProfileEditorScreen(
             onEditProfile = { viewModel.startEditing(it) },
             onDeleteProfile = { viewModel.confirmDelete(it) },
             onCopyProfile = { profile ->
-                viewModel.copyProfile(profile, copyNameFormat.format(profile.name))
+                viewModel.copyInsulinProfile(profile, copyNameFormat.format(profile.name))
             }
         )
     }
@@ -138,7 +138,7 @@ fun ProfileEditorScreen(
             title = { Text(stringResource(id = R.string.delete_profile_title)) },
             text = { Text(stringResource(id = R.string.delete_profile_message, profile.name)) },
             confirmButton = {
-                TextButton(onClick = { viewModel.deleteProfile(profile) }) {
+                TextButton(onClick = { viewModel.deleteInsulinProfile(profile) }) {
                     Text(stringResource(id = android.R.string.ok))
                 }
             },

@@ -44,15 +44,15 @@ class TherapyRepository(
 
     // --- Profile Operations ---
 
-    suspend fun getAllProfiles(): List<InsulinProfile> {
-        return therapyDao.getAllProfiles().mapNotNull { entity ->
+    suspend fun getAllInsulinProfiles(): List<InsulinProfile> {
+        return therapyDao.getAllInsulinProfiles().mapNotNull { entity ->
             val insulinType = getInsulinTypeById(entity.insulin_type_id)
             insulinType?.let { entity.toModel(it) }
         }
     }
 
-    fun observeAllProfiles(): Flow<List<InsulinProfile>> {
-        return therapyDao.observeAllProfiles().map { entities ->
+    fun observeAllInsulinProfiles(): Flow<List<InsulinProfile>> {
+        return therapyDao.observeAllInsulinProfiles().map { entities ->
             entities.mapNotNull { entity ->
                 val insulinType = getInsulinTypeById(entity.insulin_type_id)
                 insulinType?.let { entity.toModel(it) }
@@ -60,26 +60,26 @@ class TherapyRepository(
         }
     }
 
-    suspend fun getProfileById(id: Long): InsulinProfile? {
-        val entity = therapyDao.getProfileById(id) ?: return null
+    suspend fun getInsulinProfileById(id: Long): InsulinProfile? {
+        val entity = therapyDao.getInsulinProfileById(id) ?: return null
         val insulinType = getInsulinTypeById(entity.insulin_type_id) ?: return null
         return entity.toModel(insulinType)
     }
 
-    suspend fun insertProfile(profile: InsulinProfile): Long {
-        val id = therapyDao.insertProfile(profile.toEntity())
+    suspend fun insertInsulinProfile(profile: InsulinProfile): Long {
+        val id = therapyDao.insertInsulinProfile(profile.toEntity())
         if (id != -1L) {
             profile.id = id
         }
         return id
     }
 
-    suspend fun updateProfile(profile: InsulinProfile) {
-        therapyDao.updateProfile(profile.toEntity())
+    suspend fun updateInsulinProfile(profile: InsulinProfile) {
+        therapyDao.updateInsulinProfile(profile.toEntity())
     }
 
-    suspend fun deleteProfile(profile: InsulinProfile) {
-        therapyDao.deleteProfile(profile.id)
+    suspend fun deleteInsulinProfile(profile: InsulinProfile) {
+        therapyDao.deleteInsulinProfile(profile.id)
     }
 
     // --- Current Therapy Settings Operations ---
@@ -90,7 +90,7 @@ class TherapyRepository(
     suspend fun getCurrentTherapySettings(): CurrentTherapySettings {
         val entity = therapyDao.getCurrentTherapySettings()
             ?: throw IllegalStateException("No current therapy settings found in database")
-        val profile = getProfileById(entity.profile_id)
+        val profile = getInsulinProfileById(entity.profile_id)
             ?: throw IllegalStateException("Active profile ${entity.profile_id} not found")
         val settings = entity.toModel(profile)
         

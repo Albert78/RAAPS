@@ -33,7 +33,7 @@ object DatabaseInitializer {
     ) {
         initializeInsulinTypes(context, treatmentRepository)
         initializeMealTypes(context, treatmentRepository)
-        initializeDefaultProfileAndCurrentTherapy(context, therapyRepository)
+        initializeDefaultInsulinProfileAndCurrentTherapy(context, therapyRepository)
         initializeSettings(settingsRepository)
     }
 
@@ -108,13 +108,13 @@ object DatabaseInitializer {
         )
     }
 
-    private suspend fun initializeDefaultProfileAndCurrentTherapy(context: Context, repository: TherapyRepository) {
+    private suspend fun initializeDefaultInsulinProfileAndCurrentTherapy(context: Context, repository: TherapyRepository) {
         val insulinTypes = repository.getAllInsulinTypes()
         if (insulinTypes.isEmpty()) return
 
         val defaultInsulinType = insulinTypes.first()
 
-        var profiles = repository.getAllProfiles()
+        var profiles = repository.getAllInsulinProfiles()
         if (profiles.isEmpty()) {
             val normalProfile = InsulinProfile(
                 name = context.getString(R.string.profile_default_normal_name),
@@ -128,7 +128,7 @@ object DatabaseInitializer {
                 dia = defaultInsulinType.dia,
                 peak = defaultInsulinType.peak
             )
-            repository.insertProfile(normalProfile)
+            repository.insertInsulinProfile(normalProfile)
             profiles = listOf(normalProfile)
         }
 
