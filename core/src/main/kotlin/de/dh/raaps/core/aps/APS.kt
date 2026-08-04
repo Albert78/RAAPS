@@ -7,7 +7,6 @@ import de.dh.raaps.common.model.ApsMode
 import de.dh.raaps.common.model.calculation.CarbsInsulinCalculationModel
 import de.dh.raaps.common.model.data.BgReading
 import de.dh.raaps.common.model.data.TimeService
-import de.dh.raaps.common.model.data.Timestamp
 import de.dh.raaps.core.repository.GlucoseRepository
 import de.dh.raaps.core.repository.TherapyRepository
 import de.dh.raaps.core.repository.TreatmentRepository
@@ -143,7 +142,6 @@ class APS(
      */
     fun startInitialization() {
         inAPSThread {
-            glucoseSourceManager.initialize()
             core.initialize()
 
             launch {

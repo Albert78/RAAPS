@@ -29,9 +29,6 @@ class GlucoseSourceManager(
     private val _currentBg = MutableStateFlow<BgReading?>(null)
     val currentBg: StateFlow<BgReading?> = _currentBg.asStateFlow()
 
-    private val _lastDataTime = MutableStateFlow<Timestamp>(Timestamp(0))
-    val lastDataTime: StateFlow<Timestamp> = _lastDataTime.asStateFlow()
-
     var lastBg: BgReading? = null
         private set
 
@@ -71,7 +68,6 @@ class GlucoseSourceManager(
         _currentBg.value = readingsHistory.lastOrNull()
         lastBg = if (readingsHistory.size >= 2) readingsHistory[readingsHistory.size - 2] else null
         sampledBgReadings.sampleAvgValues()
-        _lastDataTime.value = Timestamp.now()
     }
 
     private fun restartGlucosePipeline() {
@@ -119,7 +115,6 @@ class GlucoseSourceManager(
         }
 
         sampledBgReadings.sampleAvgValues()
-        _lastDataTime.value = Timestamp.now()
     }
 
     fun isBgStale(): Boolean {

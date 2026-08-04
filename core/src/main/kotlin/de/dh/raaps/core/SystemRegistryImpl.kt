@@ -110,6 +110,9 @@ class SystemRegistryImpl(
                 glucoseRepository = glucoseRepository,
                 timeService = timeService
             )
+            runBlocking {
+                glucoseSourceManager.initialize()
+            }
 
             runBlocking {
                 treatmentRepository.load()
@@ -132,7 +135,8 @@ class SystemRegistryImpl(
                 glucoseSourceManager = glucoseSourceManager
             )
             aps.startInitialization()
-            notificationManager.startInitialization(scope, glucoseSourceManager, therapyManager)
+
+            notificationManager.startInitialization(scope, glucoseSourceManager, therapyManager, timeService)
 
             val permissionsHandler = PermissionsChangedHandler {
                 pluginManager.triggerUpdatesAfterPermissionsChange()
