@@ -180,4 +180,17 @@
     <string name="meal_bolus_insulin_label">Insulinmenge (U)</string>
     <string name="meal_bolus_ok_button">Ok</string>
     <string name="meal_bolus_cancel_button">Abbrechen</string>
+
+    <string name="todo_text">To Do</string>
+    <string name="drawer_header_title">DAPS</string>
+    <string name="menu_meals_label">Mahlzeiten</string>
+    <string name="menu_bolus_history_label">Bolus-History</string>
+    <string name="menu_system_control_label">Systemsteuerung</string>
+    <string name="menu_alarms_label">Warnungen und Alarme</string>
+    <string name="cd_open_navigation_drawer">Hauptmenü öffnen</string>
+
+    <string name="meals_screen_title">Mahlzeiten</string>
+    <string name="bolus_history_screen_title">Bolus-History</string>
+    <string name="system_control_screen_title">Systemsteuerung</string>
+    <string name="alarms_screen_title">Warnungen und Alarme</string>
 </resources>

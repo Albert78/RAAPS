@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
@@ -68,6 +69,7 @@ fun DashboardScreen(
     historyViewModel: HistoryViewModel,
     currentTherapyViewModel: CurrentTherapyViewModel,
     permissionsViewModel: PermissionsViewModel,
+    onOpenDrawer: () -> Unit,
     onFixPermissions: () -> Unit,
     onNavigateToPermissions: () -> Unit,
     onNavigateToPreferences: () -> Unit,
@@ -107,6 +109,7 @@ fun DashboardScreen(
         cob = cob,
         currentTherapyUiState = currentTherapyUiState,
         permissionsUiState = permissionsUiState,
+        onOpenDrawer = onOpenDrawer,
         onFixPermissionsClick = onFixPermissions,
         onNavigateToPermissions = onNavigateToPermissions,
         onNavigateToPreferences = onNavigateToPreferences,
@@ -130,6 +133,7 @@ fun DashboardContent(
     cob: Double,
     currentTherapyUiState: CurrentTherapyUiState,
     permissionsUiState: PermissionsUiModel,
+    onOpenDrawer: () -> Unit,
     onFixPermissionsClick: () -> Unit,
     onNavigateToPermissions: () -> Unit,
     onNavigateToPreferences: () -> Unit,
@@ -152,6 +156,14 @@ fun DashboardContent(
         topBar = {
             TopAppBar(
                 title = screenTitle(stringResource(id = R.string.dashboard_screen_title)),
+                navigationIcon = {
+                    IconButton(onClick = onOpenDrawer) {
+                        Icon(
+                            imageVector = Icons.Default.Menu,
+                            contentDescription = stringResource(id = R.string.cd_open_navigation_drawer)
+                        )
+                    }
+                },
                 actions = {
                     Box {
                         IconButton(onClick = { menuExpanded = true }) {
@@ -322,6 +334,7 @@ fun DashboardPreview() {
                 numPermissionsMissing = 0,
                 permissionsMissingText = ""
             ),
+            onOpenDrawer = {},
             onFixPermissionsClick = {},
             onNavigateToPermissions = {},
             onNavigateToPreferences = {},
@@ -374,6 +387,7 @@ fun DashboardPermissionsWarningPreview() {
                 numPermissionsMissing = 1,
                 permissionsMissingText = "1 permission missing"
             ),
+            onOpenDrawer = {},
             onFixPermissionsClick = {},
             onNavigateToPermissions = {},
             onNavigateToPreferences = {},

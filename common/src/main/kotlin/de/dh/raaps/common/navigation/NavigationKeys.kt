@@ -10,3 +10,7 @@ import kotlinx.serialization.Serializable
 @Serializable object InsulinProfileEditorRoute : NavKey
 @Serializable object CurrentTherapySettingsRoute : NavKey
 @Serializable object MealBolusRoute : NavKey
+@Serializable object MealsRoute : NavKey
+@Serializable object BolusHistoryRoute : NavKey
+@Serializable object SystemControlRoute : NavKey
+@Serializable object AlarmsRoute : NavKey

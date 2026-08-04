@@ -13,25 +13,32 @@ import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation3.runtime.NavEntry
 import androidx.navigation3.runtime.NavKey
+import de.dh.raaps.common.navigation.AlarmsRoute
+import de.dh.raaps.common.navigation.BolusHistoryRoute
 import de.dh.raaps.common.navigation.CurrentTherapySettingsRoute
 import de.dh.raaps.common.navigation.DashboardRoute
 import de.dh.raaps.common.navigation.FeatureNavGraph
 import de.dh.raaps.common.navigation.HistoryRoute
 import de.dh.raaps.common.navigation.InsulinProfileEditorRoute
 import de.dh.raaps.common.navigation.MealBolusRoute
+import de.dh.raaps.common.navigation.MealsRoute
 import de.dh.raaps.common.navigation.NavigationViewModel
 import de.dh.raaps.common.navigation.PermissionsRoute
 import de.dh.raaps.common.navigation.PreferencesMainRoute
+import de.dh.raaps.common.navigation.SystemControlRoute
 import de.dh.raaps.core.SystemRegistry
 import de.dh.raaps.setUserDeclinedPermissions
 import de.dh.raaps.ui.controls.history.HistoryViewModel
 import de.dh.raaps.ui.controls.profile.CurrentTherapyViewModel
 import de.dh.raaps.ui.controls.profile.InsulinProfileSettingsViewModel
+import de.dh.raaps.ui.screens.alarms.AlarmsScreen
+import de.dh.raaps.ui.screens.bolushistory.BolusHistoryScreen
 import de.dh.raaps.ui.screens.dashboard.DashboardScreen
 import de.dh.raaps.ui.screens.dashboard.DashboardViewModel
 import de.dh.raaps.ui.screens.history.HistoryScreen
 import de.dh.raaps.ui.screens.mealbolus.MealBolusScreen
 import de.dh.raaps.ui.screens.mealbolus.MealBolusViewModel
+import de.dh.raaps.ui.screens.meals.MealsScreen
 import de.dh.raaps.ui.screens.permissions.PermissionsScreen
 import de.dh.raaps.ui.screens.permissions.PermissionsViewModel
 import de.dh.raaps.ui.screens.permissions.isPermissionsMissing
@@ -41,6 +48,7 @@ import de.dh.raaps.ui.screens.permissions.requestIgnoreBatteryOptimizations
 import de.dh.raaps.ui.screens.preferences.PreferencesScreen
 import de.dh.raaps.ui.screens.preferences.PreferencesViewModel
 import de.dh.raaps.ui.screens.profile.InsulinProfileEditorScreen
+import de.dh.raaps.ui.screens.systemcontrol.SystemControlScreen
 import de.dh.raaps.ui.screens.therapy.CurrentTherapySettingsScreen
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -49,6 +57,7 @@ class MainFeatureNavGraph(
     private val activity: ComponentActivity,
     private val navViewModel: NavigationViewModel,
     private val registry: SystemRegistry,
+    private val onOpenDrawer: () -> Unit = {},
     private val extraDashboardContent: @Composable () -> Unit = {}
 ) : FeatureNavGraph {
     override fun getEntry(key: NavKey): NavEntry<NavKey>? {
@@ -75,6 +84,7 @@ class MainFeatureNavGraph(
                     historyViewModel = historyVM,
                     currentTherapyViewModel = currentTherapyVM,
                     permissionsViewModel = permissionsViewModel,
+                    onOpenDrawer = onOpenDrawer,
                     onFixPermissions = { navViewModel.push(PermissionsRoute) },
                     onNavigateToPermissions = { navViewModel.push(PermissionsRoute) },
                     onNavigateToPreferences = { navViewModel.push(PreferencesMainRoute) },
@@ -185,6 +195,22 @@ class MainFeatureNavGraph(
                     viewModel = vm,
                     onNavigateUp = { navViewModel.pop() }
                 )
+            }
+
+            is MealsRoute -> NavEntry(key) {
+                MealsScreen(onOpenDrawer = onOpenDrawer)
+            }
+
+            is BolusHistoryRoute -> NavEntry(key) {
+                BolusHistoryScreen(onOpenDrawer = onOpenDrawer)
+            }
+
+            is SystemControlRoute -> NavEntry(key) {
+                SystemControlScreen(onOpenDrawer = onOpenDrawer)
+            }
+
+            is AlarmsRoute -> NavEntry(key) {
+                AlarmsScreen(onOpenDrawer = onOpenDrawer)
             }
 
             else -> null
