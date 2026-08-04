@@ -4,7 +4,6 @@ import android.content.Context
 import de.dh.raaps.AppPreferencesRepository
 import de.dh.raaps.common.model.ApsMode
 import de.dh.raaps.common.model.calculation.CarbsInsulinCalculationModel
-import de.dh.raaps.common.model.data.BgReading
 import de.dh.raaps.common.model.data.TimeService
 import de.dh.raaps.core.repository.TreatmentRepository
 import de.dh.raaps.core.system.SystemWakeService
@@ -56,9 +55,9 @@ class APS(
 
         onCancelInsulinJobs = { therapyManager.coreCancelInsulinJobs() },
         onDeliverBolus = { amount -> therapyManager.issueBolus(amount) },
-        onCheckSetTemp = { therapyManager.canSetTemp() },
         onSetTempBasal = { durationInHours, unitsPerHour -> therapyManager.setTempBasal(durationInHours, unitsPerHour) },
         onCarbsHint = { amountInGram -> therapyManager.recommendCarbs(amountInGram) },
+        onClearRecommendations = { therapyManager.clearRecommendations() },
         onWaitForAndResetInsulinJobs = { therapyManager.waitForAndResetInsulinJobs() }
     )
 
@@ -123,13 +122,6 @@ class APS(
                     core.onMetabolicEventsChanged()
                 }
             }
-            launch {
-                glucoseSourceManager.currentBg.drop(1).collect { bg ->
-                    if (bg != null) {
-                        updateBg(bg)
-                    }
-                }
-            }
         }
     }
 
@@ -143,17 +135,6 @@ class APS(
 
     private fun emitCoreStateChangedEvent() = inExternalDispatcher {
         _coreState.emit(core.coreState)
-    }
-
-
-    /**
-     * Entry point for external BG updates.
-     * Guaranteed to run on the internal APS thread.
-     */
-    fun updateBg(bg: BgReading) = inAPSThread {
-        therapyManager.clearRecommendations()
-
-        core.updateBg(bg)
     }
 
     /**

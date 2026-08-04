@@ -23,7 +23,6 @@ class ApsAlgorithmImpl(
     val therapyManager: TherapyManager,
     val onCancelInsulinJobs: () -> Unit,
     val onDeliverBolus: (amount: InsulinAmount) -> Unit,
-    val onCheckSetTemp: () -> Boolean,
     val onSetTempBasal: (durationInHours: Int, unitsPerHour: Double) -> Unit,
     val onCarbsHint: (Int) -> Unit,
 ): ApsAlgorithm {
@@ -256,7 +255,6 @@ class ApsAlgorithmImpl(
             therapyManager: TherapyManager,
             onCancelInsulinJobs: () -> Unit,
             onDeliverBolus: (amount: InsulinAmount) -> Unit,
-            onCheckSetTemp: () -> Boolean,
             onSetTempBasal: (durationInHours: Int, unitsPerHour: Double) -> Unit,
             onCarbsHint: (Int) -> Unit,
             tickInterval: Minutes,
@@ -287,7 +285,6 @@ class ApsAlgorithmImpl(
                 carbsInsulinCalculationModel = carbsInsulinCalculationModel,
                 therapyManager = therapyManager,
                 onCancelInsulinJobs = onCancelInsulinJobs,
-                onCheckSetTemp = onCheckSetTemp,
                 onSetTempBasal = onSetTempBasal,
                 onCarbsHint = onCarbsHint,
                 onDeliverBolus = onDeliverBolus,

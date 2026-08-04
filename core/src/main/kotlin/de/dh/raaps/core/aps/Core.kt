@@ -3,14 +3,11 @@ package de.dh.raaps.core.aps
 import android.util.Log
 import de.dh.raaps.common.model.InsulinAmount
 import de.dh.raaps.common.model.calculation.CarbsInsulinCalculationModel
-import de.dh.raaps.common.model.data.BgReading
-import de.dh.raaps.common.model.data.BgSampleKind
 import de.dh.raaps.common.model.data.CurrentTherapySettings
 import de.dh.raaps.common.model.data.Tick
 import de.dh.raaps.common.model.data.TickHandler
 import de.dh.raaps.common.model.data.TickPriority
 import de.dh.raaps.common.model.data.TimeService
-import de.dh.raaps.common.model.data.Timestamp
 import de.dh.raaps.core.repository.TreatmentRepository
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
@@ -68,15 +65,12 @@ class Core(
 
     private val onCancelInsulinJobs: () -> Unit,
     private val onDeliverBolus: (amount: InsulinAmount) -> Unit,
-    private val onCheckSetTemp: () -> Boolean,
     private val onSetTempBasal: (durationInHours: Int, unitsPerHour: Double) -> Unit,
     private val onCarbsHint: (Int) -> Unit,
+    private val onClearRecommendations: () -> Unit,
     private val onWaitForAndResetInsulinJobs: suspend () -> Unit,
 ) : TickHandler {
     private var calculationAlgorithm: ApsAlgorithm = NoopAlgorithm()
-
-    // State
-    var isPredictionsStale: Boolean = true
 
     var coreState: CoreState = CoreState.Uninitialized
         private set
@@ -129,12 +123,6 @@ class Core(
         onCoreStateChanged()
     }
 
-    override suspend fun onTick(tick: Tick) {
-        if (coreState !is CoreState.Active) return
-
-        Log.d(TAG, "onTick: $tick")
-    }
-
     suspend fun initialize() {
         busyWork {
             atomic {
@@ -147,7 +135,6 @@ class Core(
                     therapyManager,
                     onCancelInsulinJobs = onCancelInsulinJobs,
                     onDeliverBolus = onDeliverBolus,
-                    onCheckSetTemp = onCheckSetTemp,
                     onSetTempBasal = onSetTempBasal,
                     onCarbsHint = onCarbsHint,
                     tickInterval = timeService.tickInterval,
@@ -163,29 +150,18 @@ class Core(
         }
     }
 
-    /**
-     * Processes a new glucose reading. This is called from the glucose readings pipeline but
-     * can also be called from outside to provide an additional bg value, e.g. from a bloody measure.
-     */
-    suspend fun updateBg(bg: BgReading) {
+    override suspend fun onTick(tick: Tick) {
+        Log.d(TAG, "onTick: $tick")
+
         if (coreState !is CoreState.Active) return
+
         busyWork {
-            if (bg.sampleKind == BgSampleKind.Invalid) {
-                Log.d(TAG, "Skipping BG entry $bg because it has an invalid value")
-                return@busyWork
-            } else {
-                Log.d(TAG, "New BG: $bg")
-            }
-            if (bg.timestamp.ms > Timestamp.now().ms + EARLY_BG_GUARD.inMs()) {
-                Log.w(TAG, "Rejecting BG reading because it's timestamp is in the future (now() = ${Timestamp.now().ms}, BG timestamp = ${bg.timestamp.ms}")
-                return@busyWork
-            }
+            onClearRecommendations()
             atomic {
                 val alg = calculationAlgorithm
                 onWaitForAndResetInsulinJobs()
                 alg.recalculate()
             }
-            onDataUpdated()
         }
     }
 
@@ -202,7 +178,6 @@ class Core(
     suspend fun onMetabolicEventsChanged() {
         atomic {
             calculationAlgorithm.updateMealsAndInsulin()
-            isPredictionsStale = true
         }
     }
 
@@ -225,9 +200,9 @@ class Core(
 
             onCancelInsulinJobs: () -> Unit,
             onDeliverBolus: (amount: InsulinAmount) -> Unit,
-            onCheckSetTemp: () -> Boolean,
             onSetTempBasal: (durationInHours: Int, unitsPerHour: Double) -> Unit,
             onCarbsHint: (amountInGram: Int) -> Unit,
+            onClearRecommendations: () -> Unit,
             onWaitForAndResetInsulinJobs: suspend () -> Unit,
         ): Core {
             return Core(
@@ -244,9 +219,9 @@ class Core(
 
                 onCancelInsulinJobs = onCancelInsulinJobs,
                 onDeliverBolus = onDeliverBolus,
-                onCheckSetTemp = onCheckSetTemp,
                 onSetTempBasal = onSetTempBasal,
                 onCarbsHint = onCarbsHint,
+                onClearRecommendations = onClearRecommendations,
                 onWaitForAndResetInsulinJobs = onWaitForAndResetInsulinJobs,
             )
         }
