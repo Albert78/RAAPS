@@ -1,4 +1,4 @@
-package de.dh.raaps
+package de.dh.raaps.ui.activities
 
 import android.content.Context
 import android.content.Intent
@@ -18,11 +18,13 @@ import androidx.lifecycle.viewmodel.navigation3.rememberViewModelStoreNavEntryDe
 import androidx.navigation3.runtime.rememberSaveableStateHolderNavEntryDecorator
 import androidx.navigation3.ui.NavDisplay
 import de.dh.raaps.common.navigation.DashboardRoute
+import de.dh.raaps.common.navigation.FeatureNavGraph
 import de.dh.raaps.common.navigation.NavigationViewModel
 import de.dh.raaps.common.navigation.combineEntryProviders
 import de.dh.raaps.common.ui.composables.EdgeToEdgeHandler
 import de.dh.raaps.common.ui.theme.AppTheme
 import de.dh.raaps.common.ui.theme.rememberUseDarkTheme
+import de.dh.raaps.core.RAAPSRegistry
 import de.dh.raaps.core.system.RegistryProvider
 import de.dh.raaps.ui.navigation.MainFeatureNavGraph
 
@@ -52,7 +54,7 @@ class MainActivity : ComponentActivity() {
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background
                 ) {
-                    MainApp()
+                    MainApp(registry)
                 }
             }
         }
@@ -75,15 +77,13 @@ class MainActivity : ComponentActivity() {
     }
 
     @Composable
-    fun MainApp() {
-        val application = application as MainApplication
-        val registry = application.registry
+    fun MainApp(registry: RAAPSRegistry) {
         val backStack by navViewModel.backstack.collectAsState()
 
-        val extraGraphs = getExtraNavGraphs(this, navViewModel, registry)
+        val extraGraphs = getExtraNavGraphs?.let { it(navViewModel) } ?: emptyList()
 
-        val extraDashboardContent = @Composable {
-            extraGraphs.forEach { it.DashboardExtension() }
+        val extraDashboardContent: @Composable () -> Unit = @Composable {
+            extraGraphs?.forEach { it.DashboardExtension() }
         }
 
         val mainGraph = MainFeatureNavGraph(this, navViewModel, registry, extraDashboardContent)
@@ -103,6 +103,9 @@ class MainActivity : ComponentActivity() {
     }
 
     companion object {
+        // Hack to transport extra nav graphs from MainApplication into MainActivity. Any better solution is welcome...
+        var getExtraNavGraphs: ((navViewModel: NavigationViewModel) -> List<FeatureNavGraph>)? = null
+
         fun createStartDashboardIntent(context: Context): Intent {
             return Intent(context, MainActivity::class.java).apply {
                 action = Intent.ACTION_VIEW

@@ -12,6 +12,7 @@ import de.dh.raaps.notifications.ApsNotificationManager
 import de.dh.raaps.pluginmanager.PluginManagerImpl
 import de.dh.raaps.services.ApsService
 import de.dh.raaps.services.BootReceiver
+import de.dh.raaps.ui.activities.MainActivity
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -49,12 +50,17 @@ class MainApplication : Application(), RegistryProvider {
             scope = applicationScope,
             pluginManager = pluginManager,
             onPermissionsChanged = { startApsService() },
+
+            // Hack to make things visible in modules without sharing interna of app module
             apsServiceClass = ApsService::class.java
         )
 
         startApsService()
 
+        // Dynamic injection setup - called function depends on chosen flavor
         setupSystem(registry, pluginManager, this)
+
+        MainActivity.getExtraNavGraphs = ::getExtraNavGraphs
 
         installNotificationUpdater()
 

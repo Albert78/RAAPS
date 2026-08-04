@@ -9,11 +9,11 @@ import android.content.Context.NOTIFICATION_SERVICE
 import android.util.Log
 import androidx.core.app.NotificationCompat
 import androidx.core.content.getSystemService
-import de.dh.raaps.MainActivity
 import de.dh.raaps.R
 import de.dh.raaps.common.model.ToDo
 import de.dh.raaps.common.model.data.BgValue
 import de.dh.raaps.core.aps.ApsRecommendation
+import de.dh.raaps.ui.activities.MainActivity
 import de.dh.raaps.ui.screens.permissions.canPostNotifications
 import java.util.Locale
 import de.dh.raaps.ui.R as UiR

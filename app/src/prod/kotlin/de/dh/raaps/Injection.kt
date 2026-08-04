@@ -23,9 +23,7 @@ fun setupSystem(registry: RAAPSRegistry, pluginManager: PluginManager, applicati
 }
 
 fun getExtraNavGraphs(
-    activity: ComponentActivity,
-    navViewModel: NavigationViewModel,
-    registry: RAAPSRegistry
+    navViewModel: NavigationViewModel
 ): List<FeatureNavGraph> {
     return emptyList()
 }
