@@ -13,19 +13,24 @@ import de.dh.raaps.common.model.data.InsulinProfile
 import de.dh.raaps.common.model.data.Minutes
 import de.dh.raaps.common.model.data.Timestamp
 import de.dh.raaps.core.RAAPSRegistry
+import de.dh.raaps.glucoseUnit
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.launchIn
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
 data class InsulinProfileUiState(
     val name: String,
     val activeProfileId: Long?,
-    val isf: BgDelta,
-    val cr: Double,
-    val basal: Double,
+    val currentIsf: BgDelta,
+    val currentCr: Double,
+    val currentBasal: Double,
+    val isfRange: String,
+    val crRange: String,
+    val basalRange: String,
     val target: BgValue,
     val lowThreshold: BgValue,
     val insulinAdjustmentPercentage: Int,
@@ -39,9 +44,12 @@ data class InsulinProfileUiState(
         fun empty() = InsulinProfileUiState(
             name = "",
             activeProfileId = null,
-            isf = BgDelta(0),
-            cr = 0.0,
-            basal = 0.0,
+            currentIsf = BgDelta(0),
+            currentCr = 0.0,
+            currentBasal = 0.0,
+            isfRange = "",
+            crRange = "",
+            basalRange = "",
             target = BgValue.fromMgDl(0),
             lowThreshold = BgValue.fromMgDl(0),
             insulinAdjustmentPercentage = 0,
@@ -94,20 +102,26 @@ class CurrentTherapyViewModel(
     )
 
     init {
+        val glucoseUnitFlow = appPreferencesRepository.cachedPreferences.map { it.glucoseUnit }
         combine(
             therapyManager.currentTherapySettingsFlow,
-            therapyManager.observeAllInsulinProfiles()
-        ) { currentSettings, profiles ->
-            updateState(currentSettings, profiles)
+            therapyManager.observeAllInsulinProfiles(),
+            glucoseUnitFlow
+        ) { currentSettings, profiles, unit ->
+            updateState(currentSettings, profiles, unit)
         }.launchIn(viewModelScope)
     }
 
-    private suspend fun updateState(currentSettings: CurrentTherapySettings, profiles: List<InsulinProfile>) {
+    private suspend fun updateState(currentSettings: CurrentTherapySettings, profiles: List<InsulinProfile>, unit: GlucoseUnit) {
         val now = Timestamp.now()
         val isf = therapyManager.getIsfFactor(now)
         val cr = therapyManager.getCrFactor(now)
         val basal = therapyManager.getBasalPerHour(now)
         val bgSettings = therapyManager.getBgSettings()
+
+        val basalValues = currentSettings.insulinProfile.basalBlocks.map { it.amount }
+        val crValues = currentSettings.insulinProfile.crBlocks.map { it.amount }
+        val isfValues = currentSettings.insulinProfile.isfBlocks.map { it.amount }
 
         val activeProfileName = currentSettings.insulinProfile.id.let { pid ->
             profiles.find { it.id == pid }?.name
@@ -115,9 +129,12 @@ class CurrentTherapyViewModel(
         val profileUiState = InsulinProfileUiState(
             name = activeProfileName,
             activeProfileId = currentSettings.insulinProfile.id,
-            isf = isf,
-            cr = cr,
-            basal = basal,
+            currentIsf = isf,
+            currentCr = cr,
+            currentBasal = basal,
+            isfRange = formatIsfRange(isfValues, unit),
+            crRange = formatRange(crValues, "%.1f"),
+            basalRange = formatRange(basalValues, "%.2f"),
             target = bgSettings.first,
             lowThreshold = bgSettings.second,
             insulinAdjustmentPercentage = currentSettings.insulinAdjustmentPercentage,
@@ -132,10 +149,40 @@ class CurrentTherapyViewModel(
             it.copy(
                 isLoading = false,
                 activeProfile = profileUiState,
+                glucoseUnit = unit,
                 availableProfiles = profiles,
                 defaultBgBlocks = currentSettings.defaultBgBlocks,
                 therapyAdjustmentPresets = hardcodedPresets
             )
+        }
+    }
+
+    private fun formatRange(values: List<Double>, format: String): String {
+        if (values.isEmpty()) return "-"
+        val min = values.minOrNull() ?: 0.0
+        val max = values.maxOrNull() ?: 0.0
+        return if (min == max) {
+            String.format(java.util.Locale.getDefault(), format, min)
+        } else {
+            val fMin = String.format(java.util.Locale.getDefault(), format, min)
+            val fMax = String.format(java.util.Locale.getDefault(), format, max)
+            "$fMin – $fMax"
+        }
+    }
+
+    private fun formatIsfRange(values: List<Double>, unit: GlucoseUnit): String {
+        if (values.isEmpty()) return "-"
+        val min = values.minOrNull() ?: 0.0
+        val max = values.maxOrNull() ?: 0.0
+
+        fun formatVal(v: Double): String {
+            return BgDelta(v.toInt().toShort()).toString(unit)
+        }
+
+        return if (min == max) {
+            formatVal(min)
+        } else {
+            "${formatVal(min)} – ${formatVal(max)}"
         }
     }
 

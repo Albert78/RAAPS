@@ -64,9 +64,9 @@ class SimBodyNavGraph(
         val therapyState by therapyVM.uiState.collectAsState()
 
         therapyProfileName = therapyState.activeProfile?.name
-        therapyBasal = therapyState.activeProfile?.basal?.let { "$it U/h" }
-        therapyIsf = therapyState.activeProfile?.isf?.let { "${it.mgdl} mg/dL/U" }
-        therapyCr = therapyState.activeProfile?.cr?.let { "$it g/U" }
+        therapyBasal = therapyState.activeProfile?.currentBasal?.let { "$it U/h" }
+        therapyIsf = therapyState.activeProfile?.currentIsf?.let { "${it.mgdl} mg/dL/U" }
+        therapyCr = therapyState.activeProfile?.currentCr?.let { "$it g/U" }
         therapyTarget = therapyState.activeProfile?.target?.let { "${it.mgdl} mg/dL" }
         lowThreshold = therapyState.activeProfile?.lowThreshold?.let { "${it.mgdl} mg/dL" }
 

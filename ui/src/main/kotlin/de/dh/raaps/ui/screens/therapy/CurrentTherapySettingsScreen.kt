@@ -49,7 +49,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalLocale
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -262,8 +261,6 @@ private fun ActiveInsulinProfileCard(
     onManageInsulinProfilesClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    val locale = LocalLocale.current.platformLocale
-
     ElevatedCard(
         modifier = modifier.fillMaxWidth(),
         shape = RoundedCornerShape(16.dp)
@@ -323,21 +320,21 @@ private fun ActiveInsulinProfileCard(
             ) {
                 MetricChip(
                     label = stringResource(id = de.dh.raaps.common.R.string.therapy_basal_label),
-                    value = String.format(locale, "%.2f", profile.basal),
+                    value = profile.basalRange,
                     unit = stringResource(id = R.string.unit_u_per_h),
                     modifier = Modifier.weight(1f)
                 )
 
                 MetricChip(
                     label = stringResource(id = de.dh.raaps.common.R.string.therapy_cr_label),
-                    value = String.format(locale, "%.1f", profile.cr),
+                    value = profile.crRange,
                     unit = stringResource(id = R.string.unit_g_per_u),
                     modifier = Modifier.weight(1f)
                 )
 
                 MetricChip(
                     label = stringResource(id = de.dh.raaps.common.R.string.therapy_isf_label),
-                    value = profile.isf.mgdl.toString(),
+                    value = profile.isfRange,
                     unit = stringResource(id = R.string.unit_mgdl_per_u),
                     modifier = Modifier.weight(1f)
                 )
@@ -829,9 +826,12 @@ fun CurrentTherapySettingsPreview() {
         activeProfile = InsulinProfileUiState(
             name = "Normal",
             activeProfileId = 1L,
-            isf = BgDelta(40),
-            cr = 10.0,
-            basal = 0.5,
+            currentIsf = BgDelta(40),
+            currentCr = 10.0,
+            currentBasal = 0.5,
+            isfRange = "40 - 50",
+            crRange = "10.0 - 12.0",
+            basalRange = "0.50 - 0.55",
             target = BgValue.fromMgDl(100),
             lowThreshold = BgValue.fromMgDl(70),
             insulinAdjustmentPercentage = -30,

@@ -129,7 +129,7 @@ fun ApsControlCard(
                             color = if (isSuspended) MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f) else MaterialTheme.colorScheme.secondaryContainer,
                             shape = MaterialTheme.shapes.extraSmall,
                         ) {
-                            val basalValue = String.format(LocalLocale.current.platformLocale, "%.1f", if (isSuspended) 0.0 else insulinProfileUiState.basal)
+                            val basalValue = String.format(LocalLocale.current.platformLocale, "%.1f", if (isSuspended) 0.0 else insulinProfileUiState.currentBasal)
                             Text(
                                 text = " ${stringResource(R.string.aps_control_basal_label, basalValue)} ",
                                 style = MaterialTheme.typography.labelSmall,
@@ -144,7 +144,7 @@ fun ApsControlCard(
                                 shape = MaterialTheme.shapes.extraSmall,
                             ) {
                                 Text(
-                                    text = " ${stringResource(R.string.aps_control_cr_label, String.format(LocalLocale.current.platformLocale, "%.1f", insulinProfileUiState.cr))} ",
+                                    text = " ${stringResource(R.string.aps_control_cr_label, String.format(LocalLocale.current.platformLocale, "%.1f", insulinProfileUiState.currentCr))} ",
                                     style = MaterialTheme.typography.labelSmall,
                                     modifier = Modifier.padding(horizontal = 4.dp, vertical = 2.dp)
                                 )
@@ -154,7 +154,7 @@ fun ApsControlCard(
                                 shape = MaterialTheme.shapes.extraSmall,
                             ) {
                                 Text(
-                                    text = " ${stringResource(R.string.aps_control_isf_label, insulinProfileUiState.isf.mgdl)} ",
+                                    text = " ${stringResource(R.string.aps_control_isf_label, insulinProfileUiState.currentIsf.mgdl)} ",
                                     style = MaterialTheme.typography.labelSmall,
                                     modifier = Modifier.padding(horizontal = 4.dp, vertical = 2.dp)
                                 )
@@ -317,11 +317,14 @@ private fun PreviewApsControlCard() {
                 insulinProfileUiState = InsulinProfileUiState(
                     name = "Standard",
                     activeProfileId = null,
+                    currentIsf = BgDelta.fromMgDl(50),
+                    currentCr = 12.0,
+                    currentBasal = 0.8,
+                    isfRange = "50",
+                    crRange = "12.0",
+                    basalRange = "0.80",
                     target = BgValue.fromMgDl(100),
                     lowThreshold = BgValue.fromMgDl(70),
-                    basal = 0.8,
-                    cr = 12.0,
-                    isf = BgDelta.fromMgDl(50),
                     insulinAdjustmentPercentage = 0,
                     targetBgOverride = null,
                     lowThresholdOverride = null,

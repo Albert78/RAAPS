@@ -28,9 +28,7 @@ import androidx.compose.ui.unit.dp
 import de.dh.raaps.common.model.data.GlucoseUnit
 import de.dh.raaps.common.model.data.InsulinProfile
 import de.dh.raaps.common.ui.composables.InsulinProfileSelectionDialog
-import de.dh.raaps.common.ui.isfValue
 import de.dh.raaps.ui.R
-import java.util.Locale
 
 @Composable
 fun CurrentTherapyView(
@@ -79,19 +77,19 @@ fun CurrentTherapyView(
             )
             InfoRow(
                 label = stringResource(id = de.dh.raaps.common.R.string.therapy_basal_label),
-                value = activeProfile?.basal?.let { String.format(Locale.getDefault(), "%.2f", it) } ?: "-",
+                value = activeProfile.basalRange,
                 unit = stringResource(id = R.string.unit_u_per_h),
                 modifier = Modifier.padding(bottom = 2.dp)
             )
             InfoRow(
                 label = stringResource(id = de.dh.raaps.common.R.string.therapy_isf_label),
-                value = activeProfile?.isf?.let { isfValue(it, uiState.glucoseUnit) } ?: "-",
+                value = activeProfile.isfRange,
                 unit = "$unitStr/U",
                 modifier = Modifier.padding(bottom = 2.dp)
             )
             InfoRow(
                 label = stringResource(id = de.dh.raaps.common.R.string.therapy_cr_label),
-                value = activeProfile?.cr?.let { String.format(Locale.getDefault(), "%.1f", it) } ?: "-",
+                value = activeProfile.crRange,
                 unit = stringResource(id = R.string.unit_g_per_u)
             )
         }
