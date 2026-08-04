@@ -39,11 +39,11 @@ fun SimBodyDashboardCard(
     onDetailsClick: () -> Unit,
     onHistoryClick: () -> Unit,
     treatmentProfileName: String? = null,
-    treatmentBasal: String? = null,
-    treatmentIsf: String? = null,
-    treatmentCr: String? = null,
-    treatmentTarget: String? = null,
-    treatmentLowThreshold: String? = null
+    treatmentBasal: Double? = null,
+    treatmentIsf: Double? = null,
+    treatmentCr: Double? = null,
+    treatmentTarget: Double? = null,
+    treatmentLowThreshold: Double? = null
 ) {
     val exercise by bodyModel.exerciseIntensityFlow.collectAsState()
     val illness by bodyModel.illnessFactorFlow.collectAsState()
@@ -90,8 +90,8 @@ fun SimBodyDashboardCard(
                 style = MaterialTheme.typography.titleSmall,
                 modifier = Modifier.padding(top = 8.dp)
             )
-            ParameterRow("ISF", "${bodyModel.isf} mg/dL/U") { }
-            ParameterRow("CR", "${bodyModel.cr} g/U") { }
+            ParameterRow("ISF", String.format(Locale.US, "%.1f mg/dL/U", bodyModel.isf)) { }
+            ParameterRow("CR", String.format(Locale.US, "%.1f g/U", bodyModel.cr)) { }
             ParameterRow("Liver Output", "${bodyModel.liverGlucoseOutputGph} g/h") { }
 
             if (treatmentProfileName != null) {
@@ -100,11 +100,11 @@ fun SimBodyDashboardCard(
                     style = MaterialTheme.typography.titleSmall,
                     modifier = Modifier.padding(top = 12.dp)
                 )
-                if (treatmentBasal != null) ParameterRow("Basal", treatmentBasal) { }
-                if (treatmentIsf != null) ParameterRow("ISF", treatmentIsf) { }
-                if (treatmentCr != null) ParameterRow("CR", treatmentCr) { }
-                if (treatmentTarget != null) ParameterRow("Target", treatmentTarget) { }
-                if (treatmentLowThreshold != null) ParameterRow("Low Threshold", treatmentLowThreshold) { }
+                if (treatmentBasal != null) ParameterRow("Basal", String.format(Locale.US, "%.1f U/h", treatmentBasal)) { }
+                if (treatmentIsf != null) ParameterRow("ISF", String.format(Locale.US, "%.1f mg/dL/U", treatmentIsf)) { }
+                if (treatmentCr != null) ParameterRow("CR", String.format(Locale.US, "%.1f g/U", treatmentCr)) { }
+                if (treatmentTarget != null) ParameterRow("Target", String.format(Locale.US, "%.0f mg/dL", treatmentTarget)) { }
+                if (treatmentLowThreshold != null) ParameterRow("Low Threshold", String.format(Locale.US, "%.0f mg/dL", treatmentLowThreshold)) { }
             }
 
             Row(

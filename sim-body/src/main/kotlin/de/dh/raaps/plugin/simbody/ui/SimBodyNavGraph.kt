@@ -51,24 +51,17 @@ class SimBodyNavGraph(
     override fun DashboardExtension() {
         if (bodyModel == null) return
 
-        var therapyProfileName: String? = null
-        var therapyBasal: String? = null
-        var therapyIsf: String? = null
-        var therapyCr: String? = null
-        var therapyTarget: String? = null
-        var lowThreshold: String? = null
-
         val therapyVM: CurrentTherapyViewModel = viewModel(
             factory = CurrentTherapyViewModel.Companion.Factory(raapsRegistry)
         )
         val therapyState by therapyVM.uiState.collectAsState()
 
-        therapyProfileName = therapyState.activeProfile?.name
-        therapyBasal = therapyState.activeProfile?.currentBasal?.let { "$it U/h" }
-        therapyIsf = therapyState.activeProfile?.currentIsf?.let { "${it.mgdl} mg/dL/U" }
-        therapyCr = therapyState.activeProfile?.currentCr?.let { "$it g/U" }
-        therapyTarget = therapyState.activeProfile?.target?.let { "${it.mgdl} mg/dL" }
-        lowThreshold = therapyState.activeProfile?.lowThreshold?.let { "${it.mgdl} mg/dL" }
+        val therapyProfileName = therapyState.activeProfile.name
+        val therapyBasal = therapyState.activeProfile.currentBasal
+        val therapyIsf = therapyState.activeProfile.currentIsf.mgdl.toDouble()
+        val therapyCr = therapyState.activeProfile.currentCr
+        val therapyTarget = therapyState.activeProfile.target.mgdl.toDouble()
+        val lowThreshold = therapyState.activeProfile.lowThreshold.mgdl.toDouble()
 
         Text(
             text = "Sim Body",
@@ -81,7 +74,7 @@ class SimBodyNavGraph(
             bodyModel = bodyModel,
             onDetailsClick = { navViewModel.push(SimBodyImpactsRoute) },
             onHistoryClick = { navViewModel.push(SimBodyHistoryRoute) },
-            treatmentProfileName = therapyProfileName,
+            treatmentProfileName = if (therapyProfileName.isNotEmpty()) therapyProfileName else null,
             treatmentBasal = therapyBasal,
             treatmentIsf = therapyIsf,
             treatmentCr = therapyCr,
