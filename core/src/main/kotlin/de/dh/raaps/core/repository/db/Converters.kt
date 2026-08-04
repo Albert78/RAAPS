@@ -14,8 +14,10 @@ import de.dh.raaps.common.model.data.Minutes
 import de.dh.raaps.common.model.data.Profile
 import de.dh.raaps.common.model.data.SensorType
 import de.dh.raaps.common.model.data.BgBlock
+import de.dh.raaps.common.model.data.CurrentSettings
 import de.dh.raaps.common.model.data.TherapyData
 import de.dh.raaps.common.model.data.Timestamp
+import de.dh.raaps.core.repository.db.entities.CurrentSettingsEntity
 import de.dh.raaps.core.repository.db.entities.CurrentTherapySettingsEntity
 import de.dh.raaps.core.repository.db.entities.DBBlock
 import de.dh.raaps.core.repository.db.entities.DBBgBlock
@@ -204,7 +206,6 @@ fun CurrentTherapySettings.toEntity() = CurrentTherapySettingsEntity(
     id = this.id,
     profile_id = this.profile.id,
     insulin_type_id = this.insulinType.id,
-    aps_mode = this.apsMode,
     adjustment_percentage = this.adjustmentPercentage
 )
 
@@ -212,6 +213,16 @@ fun CurrentTherapySettingsEntity.toModel(profile: Profile, insulinType: InsulinT
     id = this.id,
     profile = profile,
     insulinType = insulinType,
-    apsMode = this.aps_mode,
     adjustmentPercentage = this.adjustment_percentage
+)
+
+// Settings Converters
+fun CurrentSettings.toEntity() = CurrentSettingsEntity(
+    id = this.id,
+    aps_mode = this.apsMode
+)
+
+fun CurrentSettingsEntity.toModel() = CurrentSettings(
+    id = this.id,
+    apsMode = this.aps_mode
 )

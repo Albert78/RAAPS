@@ -19,6 +19,7 @@ import de.dh.raaps.common.model.InsulinType
 import de.dh.raaps.common.model.MealType
 import de.dh.raaps.common.model.data.BgValue
 import de.dh.raaps.common.model.data.Block
+import de.dh.raaps.common.model.data.CurrentSettings
 import de.dh.raaps.common.model.data.CurrentTherapySettings
 import de.dh.raaps.common.model.data.Minutes
 import de.dh.raaps.common.model.data.Profile
@@ -26,10 +27,16 @@ import de.dh.raaps.common.model.data.BgBlock
 import de.dh.raaps.common.model.data.TherapyData
 
 object DatabaseInitializer {
-    suspend fun initialize(context: Context, treatmentRepository: TreatmentRepository, therapyRepository: TherapyRepository) {
+    suspend fun initialize(
+        context: Context,
+        treatmentRepository: TreatmentRepository,
+        therapyRepository: TherapyRepository,
+        settingsRepository: SettingsRepository
+    ) {
         initializeInsulinTypes(context, treatmentRepository)
         initializeMealTypes(context, treatmentRepository)
         initializeDefaultProfileAndCurrentTherapy(context, therapyRepository)
+        initializeSettings(settingsRepository)
     }
 
     private suspend fun initializeInsulinTypes(context: Context, repository: TreatmentRepository) {
@@ -137,6 +144,12 @@ object DatabaseInitializer {
                 insulinType = insulinType
             )
             repository.updateCurrentTherapySettings(currentTherapySettings)
+        }
+    }
+
+    private suspend fun initializeSettings(repository: SettingsRepository) {
+        if (repository.getCurrentSettings() == null) {
+            repository.updateCurrentSettings(CurrentSettings())
         }
     }
 }

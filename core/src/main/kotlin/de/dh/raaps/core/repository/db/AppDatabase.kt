@@ -11,6 +11,7 @@ import androidx.room.RoomDatabase
 import androidx.room.TypeConverters
 import androidx.room.Update
 import de.dh.raaps.common.model.InsulinOrigin
+import de.dh.raaps.core.repository.db.entities.CurrentSettingsEntity
 import de.dh.raaps.core.repository.db.entities.CurrentTherapySettingsEntity
 import de.dh.raaps.core.repository.db.entities.DataProviderEntity
 import de.dh.raaps.core.repository.db.entities.GlucoseReadingEntity
@@ -100,6 +101,21 @@ interface TherapyDao {
 
     @Update
     suspend fun updateCurrentTherapySettings(data: CurrentTherapySettingsEntity)
+}
+
+@Dao
+interface SettingsDao {
+    @Query("SELECT * FROM current_settings LIMIT 1")
+    suspend fun getCurrentSettings(): CurrentSettingsEntity?
+
+    @Query("SELECT * FROM current_settings LIMIT 1")
+    fun observeCurrentSettings(): Flow<CurrentSettingsEntity?>
+
+    @Insert
+    suspend fun insertCurrentSettings(data: CurrentSettingsEntity): Long
+
+    @Update
+    suspend fun updateCurrentSettings(data: CurrentSettingsEntity)
 }
 
 @Dao
@@ -194,6 +210,7 @@ interface MetabolicEventsDao {
     TherapyDataEntity::class,
     ProfileEntity::class,
     CurrentTherapySettingsEntity::class,
+    CurrentSettingsEntity::class,
 
     // Metabolic events
     MealTypeEntity::class,
@@ -208,6 +225,7 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun providerDao(): ProviderDao
     abstract fun therapyDao(): TherapyDao
     abstract fun metabolicEventsDao(): MetabolicEventsDao
+    abstract fun settingsDao(): SettingsDao
 
     companion object {
         const val CURRENT_DATABASE_VERSION = "1.0"

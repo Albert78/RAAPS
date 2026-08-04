@@ -15,6 +15,7 @@ import de.dh.raaps.core.repository.DatabaseInitializer
 import de.dh.raaps.core.repository.DeviceManagementRepository
 import de.dh.raaps.core.repository.FoodRepository
 import de.dh.raaps.core.repository.GlucoseRepository
+import de.dh.raaps.core.repository.SettingsRepository
 import de.dh.raaps.core.repository.TherapyRepository
 import de.dh.raaps.core.repository.TreatmentRepository
 import de.dh.raaps.core.repository.db.AppDatabase
@@ -32,6 +33,7 @@ class RAAPSRegistryImpl(
     override val treatmentRepository: TreatmentRepository,
     override val foodRepository: FoodRepository,
     override val deviceManagementRepository: DeviceManagementRepository,
+    override val settingsRepository: SettingsRepository,
     override val appPreferencesRepository: AppPreferencesRepository,
     override val therapyManager: TherapyManager,
     override val aps: APS,
@@ -66,6 +68,7 @@ class RAAPSRegistryImpl(
             )
             val foodRepository = FoodRepository(appDatabase)
             val deviceManagementRepository = DeviceManagementRepository(appDatabase)
+            val settingsRepository = SettingsRepository(appDatabase)
 
             // Initialize Managers
             val therapyManager = TherapyManager(therapyRepository, appPreferencesRepository)
@@ -73,12 +76,13 @@ class RAAPSRegistryImpl(
 
             runBlocking {
                 treatmentRepository.load()
-                DatabaseInitializer.initialize(application, treatmentRepository, therapyRepository)
+                DatabaseInitializer.initialize(application, treatmentRepository, therapyRepository, settingsRepository)
             }
 
             val aps = APS(
                 glucoseRepository = glucoseRepository,
                 therapyRepository = therapyRepository,
+                settingsRepository = settingsRepository,
                 treatmentRepository = treatmentRepository,
                 appPreferencesRepository = appPreferencesRepository,
                 therapyManager = therapyManager,
@@ -99,6 +103,7 @@ class RAAPSRegistryImpl(
                 treatmentRepository = treatmentRepository,
                 foodRepository = foodRepository,
                 deviceManagementRepository = deviceManagementRepository,
+                settingsRepository = settingsRepository,
                 appPreferencesRepository = appPreferencesRepository,
                 therapyManager = therapyManager,
                 aps = aps,

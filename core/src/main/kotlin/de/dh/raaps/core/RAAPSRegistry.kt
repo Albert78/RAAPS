@@ -9,6 +9,7 @@ import de.dh.raaps.core.pump.PumpCoordinator
 import de.dh.raaps.core.repository.DeviceManagementRepository
 import de.dh.raaps.core.repository.FoodRepository
 import de.dh.raaps.core.repository.GlucoseRepository
+import de.dh.raaps.core.repository.SettingsRepository
 import de.dh.raaps.core.repository.TherapyRepository
 import de.dh.raaps.core.repository.TreatmentRepository
 import de.dh.raaps.core.system.SystemWakeService
@@ -37,6 +38,7 @@ interface RAAPSRegistry {
     val treatmentRepository: TreatmentRepository
     val foodRepository: FoodRepository
     val deviceManagementRepository: DeviceManagementRepository
+    val settingsRepository: SettingsRepository
     val appPreferencesRepository: AppPreferencesRepository
 
     // Logical Managers and Services

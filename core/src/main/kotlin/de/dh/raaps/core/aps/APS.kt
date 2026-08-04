@@ -14,6 +14,7 @@ import de.dh.raaps.core.pump.PumpCommand
 import de.dh.raaps.core.pump.PumpCoordinator
 import de.dh.raaps.core.pump.PumpJob
 import de.dh.raaps.core.repository.GlucoseRepository
+import de.dh.raaps.core.repository.SettingsRepository
 import de.dh.raaps.core.repository.TherapyRepository
 import de.dh.raaps.core.repository.TreatmentRepository
 import de.dh.raaps.core.system.SystemWakeService
@@ -70,6 +71,7 @@ sealed class ApsRecommendation {
 class APS(
     val glucoseRepository: GlucoseRepository,
     val therapyRepository: TherapyRepository,
+    val settingsRepository: SettingsRepository,
     val treatmentRepository: TreatmentRepository,
     val appPreferencesRepository: AppPreferencesRepository,
     val therapyManager: TherapyManager,
@@ -241,6 +243,17 @@ class APS(
             core.initialize()
 
             launch {
+                settingsRepository.observeCurrentSettings().collect { settings ->
+                    if (settings == null) return@collect
+                    _apsMode.value = settings.apsMode
+                    if (settings.apsMode != ApsMode.Suspend) {
+                        core.activate()
+                    } else {
+                        core.suspend()
+                    }
+                }
+            }
+            launch {
                 therapyManager.currentTherapySettingsFlow.drop(1).collect { settings ->
                     if (settings == null) return@collect
                     pumpCoordinator?.issueCommand(
@@ -259,13 +272,6 @@ class APS(
                 treatmentRepository.observeInsulinApplications().drop(1).collect { data ->
                     core.onMetabolicEventsChanged()
                 }
-            }
-
-            val initialSettings = therapyManager.getActiveTherapySettings()
-            val initialMode = initialSettings?.apsMode ?: ApsMode.Suspend
-            _apsMode.value = initialMode
-            if (initialMode != ApsMode.Suspend) {
-                core.activate()
             }
         }
         restartGlucosePipeline()
@@ -315,9 +321,9 @@ class APS(
         }
 
         // Persist mode
-        val currentSettings = therapyManager.getActiveTherapySettings()
+        val currentSettings = settingsRepository.getCurrentSettings()
         if (currentSettings != null) {
-            therapyRepository.updateCurrentTherapySettings(currentSettings.copy(apsMode = mode))
+            settingsRepository.updateCurrentSettings(currentSettings.copy(apsMode = mode))
         }
     }
 
