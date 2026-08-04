@@ -142,8 +142,13 @@ class BodyModel(
         activeProfile = profile
     }
 
+    // Loading state
+    private val _isLoaded = MutableStateFlow(false)
+    val isLoaded: Boolean get() = _isLoaded.value
+    val isLoadedFlow: StateFlow<Boolean> = _isLoaded.asStateFlow()
+
     // Current state
-    private val _bloodGlucose = MutableStateFlow(BgValue.fromMgDl(120))
+    private val _bloodGlucose = MutableStateFlow(BgValue.INVALID)
     var bloodGlucose: BgValue
         get() = _bloodGlucose.value
         set(value) {
@@ -161,15 +166,23 @@ class BodyModel(
         }
 
     fun loadState() {
-        val dao = simBodyDao ?: return
+        val dao = simBodyDao ?: run {
+            _isLoaded.value = true
+            return
+        }
         scope.launch {
             // Load simulation state
-            dao.getSimulationState()?.let { state ->
+            val state = dao.getSimulationState()
+            if (state != null) {
                 _bloodGlucose.value = BgValue.fromMgDl(state.currentBgMgDl)
                 _lastTickTimestamp.value = Timestamp(state.lastTickTimestampMs)
                 _exerciseIntensity.value = state.exerciseIntensity
                 _stressLevel.value = state.stressLevel
                 _illnessFactor.value = state.illnessFactor
+            } else {
+                // First run defaults
+                _bloodGlucose.value = BgValue.fromMgDl(120)
+                _lastTickTimestamp.value = Timestamp.now()
             }
 
             // Load active profile if exists
@@ -222,6 +235,8 @@ class BodyModel(
             }
             impactHistory.clear()
             impactHistory.addAll(history)
+
+            _isLoaded.value = true
         }
     }
 

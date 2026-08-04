@@ -14,6 +14,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Adjust
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Delete
@@ -82,8 +83,11 @@ fun BgEditorScreen(
                 navigationIcon = {
                     IconButton(onClick = ::handleBack) {
                         Icon(
-                            imageVector = Icons.Default.Close,
-                            contentDescription = stringResource(id = de.dh.raaps.common.R.string.cd_cancel)
+                            imageVector = if (hasChanges) Icons.Default.Close else Icons.AutoMirrored.Filled.ArrowBack,
+                            contentDescription = stringResource(
+                                id = if (hasChanges) de.dh.raaps.common.R.string.cd_cancel
+                                else de.dh.raaps.common.R.string.cd_navigate_up
+                            )
                         )
                     }
                 },
@@ -132,12 +136,12 @@ fun BgEditorScreen(
                     showDiscardConfirmation = false
                     onNavigateUp()
                 }) {
-                    Text(stringResource(id = R.string.profile_editor_discard_confirm))
+                    Text(stringResource(id = R.string.discard_confirm_button))
                 }
             },
             dismissButton = {
                 TextButton(onClick = { showDiscardConfirmation = false }) {
-                    Text(stringResource(id = R.string.profile_editor_discard_dismiss))
+                    Text(stringResource(id = R.string.discard_dismiss_button))
                 }
             }
         )

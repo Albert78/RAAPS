@@ -43,6 +43,7 @@ fun SimBodyDashboardCard(
     val illness by bodyModel.illnessFactorFlow.collectAsState()
     val stress by bodyModel.stressLevelFlow.collectAsState()
     val bg by bodyModel.bloodGlucoseFlow.collectAsState()
+    val isLoaded by bodyModel.isLoadedFlow.collectAsState()
     val activeProfile by bodyModel.activeProfileFlow.collectAsState()
 
     var showEditDialog by remember { mutableStateOf<String?>(null) }
@@ -62,21 +63,41 @@ fun SimBodyDashboardCard(
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold
                 )
-                Button(onClick = onDetailsClick) {
+                Button(
+                    onClick = onDetailsClick,
+                    enabled = isLoaded
+                ) {
                     Text("Details")
                 }
             }
 
-            ParameterRow("Blood Glucose", "${bg.mgdl} mg/dL") { showEditDialog = "bg" }
-            ParameterRow("IOB / COB", String.format(Locale.US, "%.2f U / %.1f g", bodyModel.iob, bodyModel.cob)) { }
-            ParameterRow("Exercise Intensity", String.format(Locale.US, "%.2f", exercise)) {
-                showEditDialog = "exercise"
+            ParameterRow(
+                "Blood Glucose",
+                if (isLoaded) "${bg.mgdl} mg/dL" else "---"
+            ) { if (isLoaded) showEditDialog = "bg" }
+
+            ParameterRow(
+                "IOB / COB",
+                if (isLoaded) String.format(Locale.US, "%.2f U / %.1f g", bodyModel.iob, bodyModel.cob) else "---"
+            ) { }
+
+            ParameterRow(
+                "Exercise Intensity",
+                if (isLoaded) String.format(Locale.US, "%.2f", exercise) else "---"
+            ) {
+                if (isLoaded) showEditDialog = "exercise"
             }
-            ParameterRow("Illness Factor", String.format(Locale.US, "%.2f", illness)) {
-                showEditDialog = "illness"
+            ParameterRow(
+                "Illness Factor",
+                if (isLoaded) String.format(Locale.US, "%.2f", illness) else "---"
+            ) {
+                if (isLoaded) showEditDialog = "illness"
             }
-            ParameterRow("Stress Level", String.format(Locale.US, "%.2f", stress)) {
-                showEditDialog = "stress"
+            ParameterRow(
+                "Stress Level",
+                if (isLoaded) String.format(Locale.US, "%.2f", stress) else "---"
+            ) {
+                if (isLoaded) showEditDialog = "stress"
             }
 
             Text(
@@ -84,19 +105,28 @@ fun SimBodyDashboardCard(
                 style = MaterialTheme.typography.titleSmall,
                 modifier = Modifier.padding(top = 8.dp)
             )
-            ParameterRow("ISF", String.format(Locale.US, "%.1f mg/dL/U", bodyModel.isf)) { }
-            ParameterRow("CR", String.format(Locale.US, "%.1f g/U", bodyModel.cr)) { }
-            ParameterRow("Liver Output", "${bodyModel.liverGlucoseOutputGph} g/h") { }
+            ParameterRow(
+                "ISF",
+                if (isLoaded) String.format(Locale.US, "%.1f mg/dL/U", bodyModel.isf) else "---"
+            ) { }
+            ParameterRow(
+                "CR",
+                if (isLoaded) String.format(Locale.US, "%.1f g/U", bodyModel.cr) else "---"
+            ) { }
+            ParameterRow(
+                "Liver Output",
+                if (isLoaded) "${bodyModel.liverGlucoseOutputGph} g/h" else "---"
+            ) { }
 
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .clickable(onClick = onHistoryClick)
+                    .clickable(enabled = isLoaded, onClick = onHistoryClick)
                     .padding(top = 8.dp),
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
                 Text(
-                    "Inputs: ${bodyModel.meals.size} meals, ${bodyModel.insulinApplications.size} boluses",
+                    if (isLoaded) "Inputs: ${bodyModel.meals.size} meals, ${bodyModel.insulinApplications.size} boluses" else "Loading...",
                     style = MaterialTheme.typography.bodySmall,
                 )
                 Text(

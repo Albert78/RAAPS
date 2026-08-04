@@ -7,6 +7,11 @@ import de.dh.raaps.common.model.data.BgSampleKind
 import de.dh.raaps.common.model.data.Timestamp
 import de.dh.raaps.core.system.SystemWakeService
 import de.dh.raaps.core.system.WakeupHandler
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.filter
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.launch
 
 /**
  * Handles the periodic wakeup of the SimBody simulation using the central [SystemWakeService].
@@ -18,6 +23,7 @@ class SimBodyHeartbeat(
     private val onBgReading: (BgReading) -> Unit
 ) : WakeupHandler {
 
+    private val scope = CoroutineScope(Dispatchers.Main)
     private var started = false
 
     init {
@@ -30,9 +36,14 @@ class SimBodyHeartbeat(
     fun start() {
         if (started) return
         started = true
-        Log.d(TAG, "SimBody Heartbeat started")
-        performTick()
-        scheduleNext()
+        Log.d(TAG, "SimBody Heartbeat waiting for loading...")
+        
+        scope.launch {
+            bodyModel.isLoadedFlow.filter { it }.first()
+            Log.d(TAG, "SimBody Heartbeat starting (model loaded)")
+            performTick()
+            scheduleNext()
+        }
     }
 
     /**
