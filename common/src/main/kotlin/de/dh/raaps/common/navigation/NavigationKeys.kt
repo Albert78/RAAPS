@@ -8,3 +8,4 @@ import kotlinx.serialization.Serializable
 @Serializable object PermissionsRoute : NavKey
 @Serializable object PreferencesMainRoute : NavKey
 @Serializable object ProfileEditorRoute : NavKey
+@Serializable object CurrentTherapySettingsRoute : NavKey

@@ -41,7 +41,6 @@ import java.util.Locale
 fun CurrentTherapyView(
     uiState: CurrentTherapyUiState,
     onProfileSelect: (Profile) -> Unit,
-    onNavigateToProfileEditor: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     var showProfileDialog by remember { mutableStateOf(false) }
@@ -111,11 +110,7 @@ fun CurrentTherapyView(
                 onProfileSelect(it)
                 showProfileDialog = false
             },
-            onDismiss = { showProfileDialog = false },
-            onEditProfilesClick = {
-                showProfileDialog = false
-                onNavigateToProfileEditor()
-            }
+            onDismiss = { showProfileDialog = false }
         )
     }
 }
@@ -174,8 +169,7 @@ fun CurrentTherapyViewPreview() {
                     Profile(id = 2L, name = "Sport", therapyData = TherapyData(basalBlocks = emptyList(), isfBlocks = emptyList(), icBlocks = emptyList(), bgBlocks = emptyList()))
                 )
             ),
-            onProfileSelect = {},
-            onNavigateToProfileEditor = {}
+            onProfileSelect = {}
         )
     }
 }

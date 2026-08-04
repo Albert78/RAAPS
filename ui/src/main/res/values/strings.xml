@@ -86,6 +86,9 @@
     <string name="aps_service_notification_content_no_value_yet">Kein Glukosewert</string>
 
     <string name="history_screen_title">Historie</string>
+    <string name="current_therapy_settings_screen_title">Aktuelle Therapie</string>
+    <string name="current_therapy_active_profile_label">Aktives Profil</string>
+    <string name="current_therapy_available_profiles_label">Verfügbare Profile</string>
 
     <string name="recommendation_notification_channel_name">Behandlungsempfehlungen</string>
     <string name="recommendation_title_carbs">Essensempfehlung</string>

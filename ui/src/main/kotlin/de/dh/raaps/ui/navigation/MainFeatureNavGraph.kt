@@ -13,6 +13,7 @@ import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation3.runtime.NavEntry
 import androidx.navigation3.runtime.NavKey
+import de.dh.raaps.common.navigation.CurrentTherapySettingsRoute
 import de.dh.raaps.common.navigation.DashboardRoute
 import de.dh.raaps.common.navigation.FeatureNavGraph
 import de.dh.raaps.common.navigation.HistoryRoute
@@ -37,6 +38,7 @@ import de.dh.raaps.ui.screens.permissions.requestIgnoreBatteryOptimizations
 import de.dh.raaps.ui.screens.preferences.PreferencesScreen
 import de.dh.raaps.ui.screens.preferences.PreferencesViewModel
 import de.dh.raaps.ui.screens.profile.ProfileEditorScreen
+import de.dh.raaps.ui.screens.therapy.CurrentTherapySettingsScreen
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 
@@ -74,6 +76,7 @@ class MainFeatureNavGraph(
                     onNavigateToPermissions = { navViewModel.push(PermissionsRoute) },
                     onNavigateToPreferences = { navViewModel.push(PreferencesMainRoute) },
                     onNavigateToProfileEditor = { navViewModel.push(ProfileEditorRoute) },
+                    onNavigateToTherapySettings = { navViewModel.push(CurrentTherapySettingsRoute) },
                     onHistoryChartClick = { navViewModel.push(HistoryRoute) },
                     extraContent = extraDashboardContent
                 )
@@ -87,6 +90,17 @@ class MainFeatureNavGraph(
                 ProfileEditorScreen(
                     viewModel = vm,
                     onNavigateUp = { navViewModel.pop() }
+                )
+            }
+
+            is CurrentTherapySettingsRoute -> NavEntry(key) {
+                val currentTherapyVM: CurrentTherapyViewModel =
+                    viewModel(factory = CurrentTherapyViewModel.Companion.Factory(registry))
+
+                CurrentTherapySettingsScreen(
+                    viewModel = currentTherapyVM,
+                    onNavigateUp = { navViewModel.pop() },
+                    onNavigateToProfileEditor = { navViewModel.push(ProfileEditorRoute) }
                 )
             }
 

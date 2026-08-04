@@ -39,7 +39,12 @@ import de.dh.raaps.common.model.ApsMode
 import de.dh.raaps.common.model.data.BgDelta
 import de.dh.raaps.common.model.data.BgValue
 import de.dh.raaps.common.model.data.Profile
-import de.dh.raaps.common.ui.composables.ProfileSelectionDialog
+import de.dh.raaps.common.navigation.CurrentTherapySettingsRoute
+import de.dh.raaps.common.navigation.DashboardRoute
+import de.dh.raaps.common.navigation.HistoryRoute
+import de.dh.raaps.common.navigation.PermissionsRoute
+import de.dh.raaps.common.navigation.PreferencesMainRoute
+import de.dh.raaps.common.navigation.ProfileEditorRoute
 import de.dh.raaps.common.ui.composables.WarningBanner
 import de.dh.raaps.common.ui.composables.screenTitle
 import de.dh.raaps.common.ui.theme.AppTheme
@@ -72,6 +77,7 @@ fun DashboardScreen(
     onNavigateToPermissions: () -> Unit,
     onNavigateToPreferences: () -> Unit,
     onNavigateToProfileEditor: () -> Unit,
+    onNavigateToTherapySettings: () -> Unit,
     onHistoryChartClick: () -> Unit,
     extraContent: @Composable () -> Unit = {}
 ) {
@@ -105,8 +111,8 @@ fun DashboardScreen(
         onNavigateToPermissions = onNavigateToPermissions,
         onNavigateToPreferences = onNavigateToPreferences,
         onNavigateToProfileEditor = onNavigateToProfileEditor,
+        onNavigateToTherapySettings = onNavigateToTherapySettings,
         onHistoryChartClick = onHistoryChartClick,
-        onProfileSelect = { currentTherapyViewModel.selectProfile(it) },
         onApsModeSelect = { viewModel.setApsMode(it) },
         onAdjustmentClick = { showAdjustmentDialog = true },
         extraContent = extraContent
@@ -127,8 +133,8 @@ fun DashboardContent(
     onNavigateToPermissions: () -> Unit,
     onNavigateToPreferences: () -> Unit,
     onNavigateToProfileEditor: () -> Unit,
+    onNavigateToTherapySettings: () -> Unit,
     onHistoryChartClick: (() -> Unit)?,
-    onProfileSelect: (Profile) -> Unit,
     onApsModeSelect: (ApsMode) -> Unit,
     onAdjustmentClick: () -> Unit,
     extraContent: @Composable () -> Unit = {}
@@ -138,7 +144,6 @@ fun DashboardContent(
 
     var carbsVisible by remember { mutableStateOf(true) }
     var insulinVisible by remember { mutableStateOf(true) }
-    var showProfileDialog by remember { mutableStateOf(false) }
 
     Scaffold(
         modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
@@ -248,25 +253,9 @@ fun DashboardContent(
                 onModeChange = onApsModeSelect,
                 adjustmentPercentage = currentTherapyUiState.activeProfile?.adjustmentPercentage ?: 0,
                 onAdjustmentClick = onAdjustmentClick,
-                onProfileClick = { showProfileDialog = true }
+                onProfileClick = onNavigateToTherapySettings
             )
 
-
-            if (showProfileDialog) {
-                ProfileSelectionDialog(
-                    profiles = currentTherapyUiState.availableProfiles,
-                    activeProfileId = currentTherapyUiState.activeProfile?.activeProfileId,
-                    onProfileSelected = {
-                        onProfileSelect(it)
-                        showProfileDialog = false
-                    },
-                    onDismiss = { showProfileDialog = false },
-                    onEditProfilesClick = {
-                        showProfileDialog = false
-                        onNavigateToProfileEditor()
-                    }
-                )
-            }
 
             Spacer(modifier = Modifier.height(24.dp))
 
@@ -310,8 +299,8 @@ fun DashboardPreview() {
             onNavigateToPermissions = {},
             onNavigateToPreferences = {},
             onNavigateToProfileEditor = {},
+            onNavigateToTherapySettings = {},
             onHistoryChartClick = {},
-            onProfileSelect = {},
             onApsModeSelect = {},
             onAdjustmentClick = {}
         )
@@ -353,8 +342,8 @@ fun DashboardPermissionsWarningPreview() {
             onNavigateToPermissions = {},
             onNavigateToPreferences = {},
             onNavigateToProfileEditor = {},
+            onNavigateToTherapySettings = {},
             onHistoryChartClick = {},
-            onProfileSelect = {},
             onApsModeSelect = {},
             onAdjustmentClick = {}
         )
