@@ -33,6 +33,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberDrawerState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -65,6 +66,7 @@ import de.dh.raaps.common.ui.theme.rememberUseDarkTheme
 import de.dh.raaps.core.SystemRegistry
 import de.dh.raaps.core.system.RegistryProvider
 import de.dh.raaps.ui.R
+import de.dh.raaps.ui.navigation.LocalHamburgerAlpha
 import de.dh.raaps.ui.navigation.MainFeatureNavGraph
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -146,6 +148,8 @@ class MainActivity : ComponentActivity() {
             DashboardRoute
         )
 
+        val hamburgerAlpha = remember { mutableStateOf(1f) }
+
         var showHamburger by remember { mutableStateOf(isTopLevel) }
         LaunchedEffect(isTopLevel) {
             if (isTopLevel) {
@@ -154,6 +158,10 @@ class MainActivity : ComponentActivity() {
             } else {
                 showHamburger = false
             }
+        }
+
+        LaunchedEffect(currentRoute) {
+            hamburgerAlpha.value = 1f
         }
 
         val drawerWidth = 320.dp
@@ -234,15 +242,17 @@ class MainActivity : ComponentActivity() {
                     }
                 }
             ) {
-                NavDisplay(
-                    backStack = backStack,
-                    onBack = { navViewModel.pop() },
-                    entryDecorators = listOf(
-                        rememberSaveableStateHolderNavEntryDecorator(),
-                        rememberViewModelStoreNavEntryDecorator()
-                    ),
-                    entryProvider = combinedProvider
-                )
+                CompositionLocalProvider(LocalHamburgerAlpha provides hamburgerAlpha) {
+                    NavDisplay(
+                        backStack = backStack,
+                        onBack = { navViewModel.pop() },
+                        entryDecorators = listOf(
+                            rememberSaveableStateHolderNavEntryDecorator(),
+                            rememberViewModelStoreNavEntryDecorator()
+                        ),
+                        entryProvider = combinedProvider
+                    )
+                }
             }
 
             if (showHamburger) {
@@ -257,11 +267,13 @@ class MainActivity : ComponentActivity() {
                             if (drawerState.isOpen) drawerState.close() else drawerState.open()
                         }
                     },
+                    enabled = hamburgerAlpha.value > 0f,
                     modifier = Modifier
                         .safeDrawingPadding()
                         .padding(start = 8.dp, top = 8.dp)
                         .graphicsLayer {
                             rotationZ = rotation
+                            alpha = hamburgerAlpha.value
                         }
                 ) {
                     Icon(

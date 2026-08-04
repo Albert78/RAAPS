@@ -26,6 +26,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -58,6 +59,7 @@ import de.dh.raaps.ui.controls.profile.CurrentTherapyViewModel
 import de.dh.raaps.ui.controls.profile.InsulinProfileUiState
 import de.dh.raaps.ui.controls.state.CurrentStateView
 import de.dh.raaps.ui.controls.state.createSampleGoodBgUiState
+import de.dh.raaps.ui.navigation.LocalHamburgerAlpha
 import de.dh.raaps.ui.screens.history.createSampleHistoryUiState
 import de.dh.raaps.ui.screens.permissions.PermissionStatus
 import de.dh.raaps.ui.screens.permissions.PermissionsUiModel
@@ -144,7 +146,13 @@ fun DashboardContent(
     onAdjustmentClick: () -> Unit,
     extraContent: @Composable () -> Unit = {}
 ) {
-    val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
+    val scrollBehavior = TopAppBarDefaults.enterAlwaysScrollBehavior()
+    val hamburgerAlpha = LocalHamburgerAlpha.current
+
+    LaunchedEffect(scrollBehavior.state.collapsedFraction) {
+        hamburgerAlpha.value = 1f - scrollBehavior.state.collapsedFraction
+    }
+
     var menuExpanded by remember { mutableStateOf(false) }
 
     var carbsVisible by remember { mutableStateOf(true) }
