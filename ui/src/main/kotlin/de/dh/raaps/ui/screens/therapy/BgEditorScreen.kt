@@ -67,9 +67,30 @@ fun BgEditorScreen(
 ) {
     val uiState by viewModel.uiState.collectAsState()
     var blocks by remember(uiState.defaultBgBlocks) { mutableStateOf(uiState.defaultBgBlocks) }
-    var showDiscardConfirmation by remember { mutableStateOf(false) }
 
-    val hasChanges = remember(blocks, uiState.defaultBgBlocks) { blocks != uiState.defaultBgBlocks }
+    BgEditorContent(
+        blocks = blocks,
+        onBlocksChanged = { blocks = it },
+        onSave = {
+            viewModel.updateDefaultBgBlocks(blocks)
+            onNavigateUp()
+        },
+        onNavigateUp = onNavigateUp,
+        originalBlocks = uiState.defaultBgBlocks
+    )
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun BgEditorContent(
+    blocks: List<BgBlock>,
+    onBlocksChanged: (List<BgBlock>) -> Unit,
+    onSave: () -> Unit,
+    onNavigateUp: () -> Unit,
+    originalBlocks: List<BgBlock> = emptyList()
+) {
+    var showDiscardConfirmation by remember { mutableStateOf(false) }
+    val hasChanges = remember(blocks, originalBlocks) { blocks != originalBlocks && originalBlocks.isNotEmpty() }
 
     fun handleBack() {
         if (hasChanges) {
@@ -100,10 +121,7 @@ fun BgEditorScreen(
                     }
                 },
                 actions = {
-                    IconButton(onClick = {
-                        viewModel.updateDefaultBgBlocks(blocks)
-                        onNavigateUp()
-                    }) {
+                    IconButton(onClick = onSave) {
                         Icon(
                             imageVector = Icons.Default.Save,
                             contentDescription = stringResource(id = de.dh.raaps.common.R.string.action_save)
@@ -114,11 +132,25 @@ fun BgEditorScreen(
             )
         }
     ) { innerPadding ->
-        BgEditorContent(
-            blocks = blocks,
-            onBlocksChanged = { blocks = it },
-            modifier = Modifier.padding(innerPadding)
-        )
+        Column(
+            modifier = Modifier
+                .padding(innerPadding)
+                .fillMaxSize()
+                .padding(16.dp)
+        ) {
+            Text(
+                text = stringResource(id = R.string.bg_editor_desc),
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.padding(bottom = 16.dp)
+            )
+
+            BgBlockList(
+                blocks = blocks,
+                onBlocksChanged = onBlocksChanged,
+                modifier = Modifier.weight(1f)
+            )
+        }
     }
 
     if (showDiscardConfirmation) {
@@ -139,32 +171,6 @@ fun BgEditorScreen(
                     Text(stringResource(id = R.string.discard_dismiss_button))
                 }
             }
-        )
-    }
-}
-
-@Composable
-private fun BgEditorContent(
-    blocks: List<BgBlock>,
-    onBlocksChanged: (List<BgBlock>) -> Unit,
-    modifier: Modifier = Modifier
-) {
-    Column(
-        modifier = modifier
-            .fillMaxSize()
-            .padding(16.dp)
-    ) {
-        Text(
-            text = stringResource(id = R.string.bg_editor_desc),
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.padding(bottom = 16.dp)
-        )
-
-        BgBlockList(
-            blocks = blocks,
-            onBlocksChanged = onBlocksChanged,
-            modifier = Modifier.weight(1f)
         )
     }
 }
@@ -349,7 +355,9 @@ private fun BgEditorPreview() {
         Surface {
             BgEditorContent(
                 blocks = mockBlocks,
-                onBlocksChanged = {}
+                onBlocksChanged = {},
+                onSave = {},
+                onNavigateUp = {}
             )
         }
     }
