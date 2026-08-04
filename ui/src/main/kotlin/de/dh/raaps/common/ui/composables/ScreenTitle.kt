@@ -3,8 +3,10 @@ package de.dh.raaps.common.ui.composables
 import android.content.res.Configuration
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -18,6 +20,8 @@ import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
@@ -27,25 +31,38 @@ import de.dh.raaps.common.R
 import de.dh.raaps.common.ui.icons.Icon_Screen_Back
 import de.dh.raaps.common.ui.theme.AppTheme
 
-fun screenTitle(text: String): @Composable () -> Unit {
+fun screenTitle(text: String, iconPainter: Painter? = null): @Composable () -> Unit {
     return {
-        ScreenTitle(text = text)
+        ScreenTitle(text = text, iconPainter = iconPainter)
     }
 }
 
 @Composable
 fun ScreenTitle(
-    text: String
+    text: String,
+    iconPainter: Painter? = null
 ) {
     val modifiedText = text.replace("-", "-\u200B")
-    Text(
-        text = modifiedText,
-        style = MaterialTheme.typography.headlineLarge,
-        maxLines = 2,
-        overflow = TextOverflow.Ellipsis,
-        modifier = Modifier
-            .padding(start = 8.dp, end = 20.dp)
-    )
+    Row(verticalAlignment = Alignment.CenterVertically) {
+        if (iconPainter != null) {
+            Icon(
+                painter = iconPainter,
+                contentDescription = null,
+                modifier = Modifier
+                    .size(44.dp)
+                    .padding(start = 8.dp),
+                tint = Color.Unspecified
+            )
+        }
+        Text(
+            text = modifiedText,
+            style = MaterialTheme.typography.headlineLarge,
+            maxLines = 2,
+            overflow = TextOverflow.Ellipsis,
+            modifier = Modifier
+                .padding(start = 8.dp, end = 8.dp)
+        )
+    }
 }
 
 @OptIn(ExperimentalMaterial3Api::class)

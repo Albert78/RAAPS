@@ -218,7 +218,7 @@
     <string name="meal_type_components_title">Komponenten</string>
     <string name="meal_type_weight_label">Gewicht (%)</string>
     <string name="meal_type_peak_label">Peak (Min.)</string>
-    <string name="error_meal_type_weights_sum">Die Summe der Gewichte muss 100% ergeben.</string>
+    <string name="error_meal_type_weights_sum">Die Summe der Gewichte muss 100 % ergeben.</string>
     <string name="cd_add_meal_type">Mahlzeitentyp hinzufügen</string>
     <string name="cd_add_meal">Mahlzeit hinzufügen</string>
     <string name="meal_entry_grams_format">%1$.1f g KH</string>

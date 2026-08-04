@@ -6,8 +6,11 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
@@ -16,6 +19,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.safeDrawingPadding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Menu
@@ -45,11 +49,13 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.core.net.toUri
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewmodel.navigation3.rememberViewModelStoreNavEntryDecorator
+import androidx.navigation3.runtime.NavKey
 import androidx.navigation3.runtime.rememberSaveableStateHolderNavEntryDecorator
 import androidx.navigation3.ui.NavDisplay
 import de.dh.raaps.common.navigation.BolusHistoryRoute
@@ -174,73 +180,16 @@ class MainActivity : ComponentActivity() {
                 drawerState = drawerState,
                 gesturesEnabled = isTopLevel,
                 drawerContent = {
-                    ModalDrawerSheet(
-                        modifier = Modifier.width(drawerWidth),
-                        drawerContainerColor = Color.Transparent,
-                        drawerTonalElevation = 0.dp,
-                        windowInsets = WindowInsets(0.dp)
-                    ) {
-                        Surface(
-                            modifier = Modifier
-                                .fillMaxSize()
-                                .padding(top = statusBarHeight + 2.dp, bottom = verticalPadding),
-                            color = MaterialTheme.colorScheme.surfaceContainerLow,
-                            shape = MaterialTheme.shapes.large
-                        ) {
-                            Column {
-                                Box(
-                                    modifier = Modifier
-                                        .padding(top = 50.dp) // max(0.dp, statusBarHeight - verticalPadding)
-                                        .height(100.dp)
-                                        .fillMaxWidth(),
-                                    contentAlignment = Alignment.Center
-                                ) {
-                                    Text(
-                                        stringResource(id = R.string.drawer_header_title),
-                                        style = MaterialTheme.typography.headlineMedium
-                                    )
-                                }
-                                HorizontalDivider()
-
-                                NavigationDrawerItem(
-                                    label = { Text(stringResource(id = R.string.menu_meals_label)) },
-                                    selected = currentRoute == MealsRoute,
-                                    onClick = {
-                                        scope.launch { drawerState.close() }
-                                        navViewModel.push(MealsRoute)
-                                    },
-                                    modifier = Modifier.padding(NavigationDrawerItemDefaults.ItemPadding)
-                                )
-                                NavigationDrawerItem(
-                                    label = { Text(stringResource(id = R.string.menu_bolus_history_label)) },
-                                    selected = currentRoute == BolusHistoryRoute,
-                                    onClick = {
-                                        scope.launch { drawerState.close() }
-                                        navViewModel.push(BolusHistoryRoute)
-                                    },
-                                    modifier = Modifier.padding(NavigationDrawerItemDefaults.ItemPadding)
-                                )
-                                NavigationDrawerItem(
-                                    label = { Text(stringResource(id = R.string.menu_food_database_label)) },
-                                    selected = currentRoute == FoodDatabaseRoute,
-                                    onClick = {
-                                        scope.launch { drawerState.close() }
-                                        navViewModel.push(FoodDatabaseRoute)
-                                    },
-                                    modifier = Modifier.padding(NavigationDrawerItemDefaults.ItemPadding)
-                                )
-                                NavigationDrawerItem(
-                                    label = { Text(stringResource(id = R.string.menu_system_control_label)) },
-                                    selected = currentRoute == SystemControlRoute,
-                                    onClick = {
-                                        scope.launch { drawerState.close() }
-                                        navViewModel.push(SystemControlRoute)
-                                    },
-                                    modifier = Modifier.padding(NavigationDrawerItemDefaults.ItemPadding)
-                                )
-                            }
-                        }
-                    }
+                    RaapsDrawerContent(
+                        currentRoute = currentRoute,
+                        onRouteSelected = { route ->
+                            scope.launch { drawerState.close() }
+                            navViewModel.push(route)
+                        },
+                        drawerWidth = drawerWidth,
+                        statusBarHeight = statusBarHeight,
+                        verticalPadding = verticalPadding
+                    )
                 }
             ) {
                 CompositionLocalProvider(LocalHamburgerAlpha provides hamburgerAlpha) {
@@ -296,5 +245,101 @@ class MainActivity : ComponentActivity() {
                 data = "app://raaps.dh.de/dashboard".toUri()
             }
         }
+    }
+}
+
+@Composable
+fun RaapsDrawerContent(
+    currentRoute: NavKey?,
+    onRouteSelected: (NavKey) -> Unit,
+    drawerWidth: androidx.compose.ui.unit.Dp = 320.dp,
+    statusBarHeight: androidx.compose.ui.unit.Dp = 0.dp,
+    verticalPadding: androidx.compose.ui.unit.Dp = 0.dp
+) {
+    ModalDrawerSheet(
+        modifier = Modifier.width(drawerWidth),
+        drawerContainerColor = Color.Transparent,
+        drawerTonalElevation = 0.dp,
+        windowInsets = WindowInsets(0.dp)
+    ) {
+        Surface(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(top = statusBarHeight + 2.dp, bottom = verticalPadding),
+            color = MaterialTheme.colorScheme.surfaceContainerLow,
+            shape = MaterialTheme.shapes.large
+        ) {
+            Column {
+                Row(
+                    modifier = Modifier
+                        .padding(top = 50.dp)
+                        .height(100.dp)
+                        .fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.Center
+                ) {
+                    Icon(
+                        painter = painterResource(id = R.drawable.ic_app_logo),
+                        contentDescription = null,
+                        modifier = Modifier.size(56.dp),
+                        tint = Color.Unspecified
+                    )
+                    Spacer(Modifier.width(16.dp))
+                    Text(
+                        stringResource(id = R.string.drawer_header_title),
+                        style = MaterialTheme.typography.headlineMedium
+                    )
+                }
+                HorizontalDivider()
+
+                RaapsDrawerItem(
+                    label = stringResource(id = R.string.menu_meals_label),
+                    selected = currentRoute == MealsRoute,
+                    onClick = { onRouteSelected(MealsRoute) }
+                )
+                RaapsDrawerItem(
+                    label = stringResource(id = R.string.menu_bolus_history_label),
+                    selected = currentRoute == BolusHistoryRoute,
+                    onClick = { onRouteSelected(BolusHistoryRoute) }
+                )
+                RaapsDrawerItem(
+                    label = stringResource(id = R.string.menu_food_database_label),
+                    selected = currentRoute == FoodDatabaseRoute,
+                    onClick = { onRouteSelected(FoodDatabaseRoute) }
+                )
+                RaapsDrawerItem(
+                    label = stringResource(id = R.string.menu_system_control_label),
+                    selected = currentRoute == SystemControlRoute,
+                    onClick = { onRouteSelected(SystemControlRoute) }
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun RaapsDrawerItem(
+    label: String,
+    selected: Boolean,
+    onClick: () -> Unit
+) {
+    NavigationDrawerItem(
+        label = { Text(label) },
+        selected = selected,
+        onClick = onClick,
+        modifier = Modifier.padding(NavigationDrawerItemDefaults.ItemPadding)
+    )
+}
+
+@androidx.compose.ui.tooling.preview.Preview(showBackground = true, widthDp = 320)
+@Composable
+fun RaapsDrawerPreview() {
+    AppTheme {
+        RaapsDrawerContent(
+            currentRoute = DashboardRoute,
+            onRouteSelected = {},
+            statusBarHeight = 24.dp,
+            verticalPadding = 16.dp
+        )
     }
 }
