@@ -51,6 +51,7 @@ class SimBodyInsulinPump(
     private val _isConnecting = MutableStateFlow(false)
     val isConnecting: StateFlow<Boolean> = _isConnecting
 
+    // TODO: Simulate connection loss
     fun connect() {
         scope.launch {
             _isConnecting.value = true

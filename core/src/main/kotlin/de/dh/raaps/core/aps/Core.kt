@@ -6,6 +6,7 @@ import de.dh.raaps.common.model.DataProvider
 import de.dh.raaps.common.model.GlucoseSource
 import de.dh.raaps.common.model.InsulinAmount
 import de.dh.raaps.common.model.InsulinHistory
+import de.dh.raaps.common.model.calculation.CarbsInsulinCalculationModel
 import de.dh.raaps.common.model.data.BgReading
 import de.dh.raaps.common.model.data.BgSampleKind
 import de.dh.raaps.common.model.data.CurrentTherapySettings
@@ -67,6 +68,7 @@ class Core(
     private val glucoseRepository: GlucoseRepository,
     private val appPreferencesRepository: AppPreferencesRepository,
     private val timeService: TimeService,
+    private val carbsInsulinCalculationModel: CarbsInsulinCalculationModel,
 
     private val onDataUpdated: () -> Unit,
     private val onCoreStateChanged: () -> Unit,
@@ -188,7 +190,8 @@ class Core(
                     onCheckZeroTemp = onCheckZeroTemp,
                     onZeroTemp = onZeroTemp,
                     onCarbsHint = onCarbsHint,
-                    tickInterval = timeService.tickInterval
+                    tickInterval = timeService.tickInterval,
+                    carbsInsulinCalculationModel = carbsInsulinCalculationModel
                 )
                 onDataUpdated()
 
@@ -313,6 +316,7 @@ class Core(
             treatmentRepository: TreatmentRepository,
             appPreferencesRepository: AppPreferencesRepository,
             timeService: TimeService,
+            carbsInsulinCalculationModel: CarbsInsulinCalculationModel,
 
             onDataUpdated: () -> Unit,
             onCoreStateChanged: () -> Unit,
@@ -332,6 +336,7 @@ class Core(
                 glucoseRepository = glucoseRepository,
                 appPreferencesRepository = appPreferencesRepository,
                 timeService = timeService,
+                carbsInsulinCalculationModel = carbsInsulinCalculationModel,
 
                 onDataUpdated = onDataUpdated,
                 onCoreStateChanged = onCoreStateChanged,

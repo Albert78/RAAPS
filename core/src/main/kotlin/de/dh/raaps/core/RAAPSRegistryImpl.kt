@@ -4,6 +4,7 @@ import android.app.Application
 import android.content.Context
 import de.dh.raaps.AppPreferencesRepository
 import de.dh.raaps.common.model.PluginManager
+import de.dh.raaps.common.model.calculation.CarbsInsulinCalculationModel
 import de.dh.raaps.common.model.data.Minutes
 import de.dh.raaps.common.model.data.TimeService
 import de.dh.raaps.core.aps.APS
@@ -44,6 +45,7 @@ class RAAPSRegistryImpl(
     override val wakeService: SystemWakeService,
     override val timeService: TimeService,
     override val pumpManager: PumpManager,
+    override val carbsInsulinCalculationModel: CarbsInsulinCalculationModel,
     override val permissionsChangedHandler: PermissionsChangedHandler
 ) : RAAPSRegistry {
 
@@ -77,6 +79,7 @@ class RAAPSRegistryImpl(
             val wakeService = SystemWakeServiceImpl(application)
             val timeService = TimeServiceImpl(scope = scope)
             val pumpManager = PumpManagerImpl(scope = scope, wakeService = wakeService)
+            val carbsInsulinCalculationModel = CarbsInsulinCalculationModel(timeService.tickInterval)
 
             runBlocking {
                 treatmentRepository.load()
@@ -93,6 +96,7 @@ class RAAPSRegistryImpl(
                 wakeService = wakeService,
                 timeService = timeService,
                 pumpManager = pumpManager,
+                carbsInsulinCalculationModel = carbsInsulinCalculationModel,
                 context = application
             )
             aps.startInitialization()
@@ -117,6 +121,7 @@ class RAAPSRegistryImpl(
                 wakeService = wakeService,
                 timeService = timeService,
                 pumpManager = pumpManager,
+                carbsInsulinCalculationModel = carbsInsulinCalculationModel,
                 permissionsChangedHandler = permissionsHandler
             )
         }

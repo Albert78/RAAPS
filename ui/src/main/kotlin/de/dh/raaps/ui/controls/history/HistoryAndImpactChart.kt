@@ -91,6 +91,7 @@ data class HistoryAndImpactDiagramData(
             readings: List<BgReading>,
             insulinApplications: List<InsulinApplication> = emptyList(),
             meals: List<MealEntry> = emptyList(),
+            calculationModel: CarbsInsulinCalculationModel
         ): HistoryAndImpactDiagramData? {
             val validReadings = readings.filter { it.sampleKind == BgSampleKind.Value }
             if (validReadings.isEmpty()) return null
@@ -104,8 +105,6 @@ data class HistoryAndImpactDiagramData(
             val endTs = (((lastTs + MS_PER_HOUR / 2) / MS_PER_HOUR) + 1) * MS_PER_HOUR
             val maxX = (endTs - baseTimestamp).toDouble() / MS_PER_MINUTE
 
-            val calcModel = CarbsInsulinCalculationModel(Minutes(5))
-
             val insulinX = mutableListOf<Double>()
             val insulinY = mutableListOf<Double>()
             val carbX = mutableListOf<Double>()
@@ -118,12 +117,12 @@ data class HistoryAndImpactDiagramData(
                 insulinX.add(x)
                 // TODO: Correct scale to match axis labels
                 // Scaled so 10 units (standard insulin) peak at ~100 mg/dL
-                insulinY.add(calcModel.effectiveInsulin(insulinApplications, timestamp) * 222.2)
+                insulinY.add(calculationModel.effectiveInsulin(insulinApplications, timestamp) * 222.2)
 
                 carbX.add(x)
                 // TODO: Correct scale to match axis labels
                 // Scaled so 100g (standard meal) peak at ~55 mg/dL
-                carbY.add(calcModel.carbAbsorption(meals, timestamp) * 12.2)
+                carbY.add(calculationModel.carbAbsorption(meals, timestamp) * 12.2)
             }
 
             return HistoryAndImpactDiagramData(
@@ -460,6 +459,7 @@ fun HistoryAndImpactChart(
 fun createSampleImpactDiagramData(): HistoryAndImpactDiagramData {
     val readings = createSampleReadings(120, 5)
     val baseTs = readings.first().timestamp.ms
+    val calcModel = CarbsInsulinCalculationModel(Minutes(5))
 
     val insulinApplications = listOf(
         InsulinApplication(0, Timestamp(baseTs + 30 * MS_PER_MINUTE), 5.0, InsulinType("1", "Rapid", Minutes(60.toShort()), Minutes(300.toShort())), InsulinOrigin.Manual),
@@ -476,7 +476,8 @@ fun createSampleImpactDiagramData(): HistoryAndImpactDiagramData {
     return HistoryAndImpactDiagramData.create(
         readings = readings,
         insulinApplications = insulinApplications,
-        meals = meals
+        meals = meals,
+        calculationModel = calcModel
     )!!.let { it.copy(dataSignature = "impact_${it.dataSignature}") }
 }
 

@@ -3,6 +3,7 @@ package de.dh.raaps.core
 import android.content.Context
 import de.dh.raaps.AppPreferencesRepository
 import de.dh.raaps.common.model.PluginManager
+import de.dh.raaps.common.model.calculation.CarbsInsulinCalculationModel
 import de.dh.raaps.common.model.data.TimeService
 import de.dh.raaps.core.aps.APS
 import de.dh.raaps.core.aps.TherapyManager
@@ -49,6 +50,7 @@ interface RAAPSRegistry {
     val wakeService: SystemWakeService
     val timeService: TimeService
     val pumpManager: PumpManager
+    val carbsInsulinCalculationModel: CarbsInsulinCalculationModel
 
     /**
      * Handler for permission change events.

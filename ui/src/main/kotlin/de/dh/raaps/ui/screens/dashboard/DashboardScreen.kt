@@ -36,8 +36,10 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import de.dh.raaps.common.model.ApsMode
+import de.dh.raaps.common.model.calculation.CarbsInsulinCalculationModel
 import de.dh.raaps.common.model.data.BgDelta
 import de.dh.raaps.common.model.data.BgValue
+import de.dh.raaps.common.model.data.Minutes
 import de.dh.raaps.common.model.data.Profile
 import de.dh.raaps.common.navigation.CurrentTherapySettingsRoute
 import de.dh.raaps.common.navigation.DashboardRoute
@@ -105,6 +107,7 @@ fun DashboardScreen(
         historyUiState = historyUiState,
         iob = iob,
         cob = cob,
+        calculationModel = historyViewModel.calculationModel,
         currentTherapyUiState = currentTherapyUiState,
         permissionsUiState = permissionsUiState,
         onFixPermissionsClick = onFixPermissions,
@@ -127,6 +130,7 @@ fun DashboardContent(
     historyUiState: HistoryUiState,
     iob: Double,
     cob: Double,
+    calculationModel: CarbsInsulinCalculationModel,
     currentTherapyUiState: CurrentTherapyUiState,
     permissionsUiState: PermissionsUiModel,
     onFixPermissionsClick: () -> Unit,
@@ -233,7 +237,8 @@ fun DashboardContent(
                         diagramData = HistoryAndImpactDiagramData.create(
                             readings = historyUiState.readings,
                             insulinApplications = historyUiState.insulinApplications,
-                            meals = historyUiState.meals
+                            meals = historyUiState.meals,
+                            calculationModel = calculationModel
                         ),
                         state = chartState,
                         onChartClick = onHistoryChartClick,
@@ -275,6 +280,7 @@ fun DashboardPreview() {
             historyUiState = createSampleHistoryUiState(),
             iob = 1.57,
             cob = 12.0,
+            calculationModel = CarbsInsulinCalculationModel(Minutes(5)),
             currentTherapyUiState = CurrentTherapyUiState(
                 activeProfile = ProfileUiState(
                     name = "Normal",
@@ -318,6 +324,7 @@ fun DashboardPermissionsWarningPreview() {
             historyUiState = createSampleHistoryUiState(),
             iob = 1.57,
             cob = 12.0,
+            calculationModel = CarbsInsulinCalculationModel(Minutes(5)),
             currentTherapyUiState = CurrentTherapyUiState(
                 activeProfile = ProfileUiState(
                     name = "Normal",

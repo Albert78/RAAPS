@@ -115,7 +115,7 @@ class HistoryViewModel(
     private val glucoseRepository = raapsRegistry.glucoseRepository
     private val treatmentRepository = raapsRegistry.treatmentRepository
 
-    private val calculationModel = CarbsInsulinCalculationModel(raapsRegistry.timeService.tickInterval)
+    val calculationModel = raapsRegistry.carbsInsulinCalculationModel
 
     private val _tickCounter = MutableStateFlow(0)
 

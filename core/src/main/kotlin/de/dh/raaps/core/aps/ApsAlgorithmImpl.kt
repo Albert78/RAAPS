@@ -272,6 +272,7 @@ class ApsAlgorithmImpl(
             onZeroTemp: (durationInHours: Int) -> Unit,
             onCarbsHint: (Int) -> Unit,
             tickInterval: Minutes,
+            carbsInsulinCalculationModel: CarbsInsulinCalculationModel,
         ): ApsAlgorithm {
             val timeline = Timeline(tickInterval)
             val predictionModel = PredictionModel(
@@ -279,8 +280,7 @@ class ApsAlgorithmImpl(
                 timeline = timeline
             )
             predictionModel.initializeToTick(Timestamp.now().minus(PRESERVE_PREDICTIONS_PAST_TIME))
-            val carbsInsulinCalculationModel =
-                CarbsInsulinCalculationModel(tickInterval)
+            
             predictionModel.calculatePredictionStage_1(
                 treatmentRepository,
                 carbsInsulinCalculationModel
