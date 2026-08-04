@@ -5,6 +5,8 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.CreationExtras
 import de.dh.raaps.common.model.ApsMode
+import de.dh.raaps.common.model.DEFAULT_CR_GRAM_PER_UNIT
+import de.dh.raaps.common.model.DEFAULT_ISF_MGDL_PER_UNIT
 import de.dh.raaps.common.model.ID_UNDEFINED
 import de.dh.raaps.common.model.InsulinAmount
 import de.dh.raaps.common.model.InsulinApplication
@@ -102,8 +104,8 @@ class MealBolusViewModel(
                     selectedMealType = existingMeal?.mealType ?: mealTypes.firstOrNull(),
                     currentBg = currentBg,
                     targetBg = bgSettings.first.mgdl.toInt(),
-                    isf = if (isf == 0) 50 else isf, // Fallback
-                    cr = if (cr == 0.0) 10.0 else cr, // Fallback
+                    isf = if (isf == 0) DEFAULT_ISF_MGDL_PER_UNIT.toInt() else isf,
+                    cr = if (cr == 0.0) DEFAULT_CR_GRAM_PER_UNIT else cr,
                     iob = iob,
                     cob = cob
                 )

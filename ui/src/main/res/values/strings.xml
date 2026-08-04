@@ -188,7 +188,6 @@
     <string name="meal_bolus_carbs_label">Mahlzeit (KE)</string>
     <string name="meal_bolus_food_type_label">Nahrungstyp</string>
     <string name="meal_bolus_calculation_title">Berechnung</string>
-    <string name="meal_bolus_calc_bg_label">Aktueller BZ: %1$d mg/dL</string>
     <string name="meal_bolus_calc_factors_label">ISF: %1$d, CR: %2$.1f</string>
     <string name="meal_bolus_calc_result_label">Vorgeschlagener Bolus: %1$.2f U</string>
     <string name="meal_bolus_calc_meal_part">Mahlzeit: +%1$.2f U</string>

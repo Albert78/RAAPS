@@ -449,10 +449,6 @@ fun CalculationDetailsSelector(
                 Spacer(Modifier.height(8.dp))
 
                 Text(
-                    stringResource(R.string.meal_bolus_calc_bg_label, uiState.currentBg ?: uiState.targetBg),
-                    style = MaterialTheme.typography.bodySmall
-                )
-                Text(
                     stringResource(R.string.meal_bolus_calc_factors_label, uiState.isf, uiState.cr),
                     style = MaterialTheme.typography.bodySmall
                 )
@@ -464,24 +460,11 @@ fun CalculationDetailsSelector(
                         text = stringResource(R.string.meal_bolus_calc_meal_part, uiState.mealPart),
                         style = MaterialTheme.typography.bodySmall
                     )
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Text(
-                            text = stringResource(R.string.meal_bolus_calc_correction_part, uiState.correctionPart),
-                            style = MaterialTheme.typography.bodySmall,
-                            color = if (uiState.isAutomaticMode)
-                                MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.38f)
-                            else
-                                MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                        if (uiState.isAutomaticMode) {
-                            Spacer(Modifier.width(8.dp))
-                            Text(
-                                text = "(Algorithmus)",
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.38f)
-                            )
-                        }
-                    }
+                    Text(
+                        text = stringResource(R.string.meal_bolus_calc_correction_part, uiState.correctionPart),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
                     if (uiState.iobPart > 0) {
                         Text(
                             text = stringResource(R.string.meal_bolus_calc_iob_part, uiState.iobPart),
@@ -506,7 +489,6 @@ fun CalculationDetailsSelector(
                     style = MaterialTheme.typography.bodyMedium,
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.primary,
-                    textAlign = TextAlign.End,
                     modifier = Modifier.fillMaxWidth()
                 )
             }
@@ -622,7 +604,7 @@ fun FoodTypeSelector(
 }
 
 @Composable
-private fun MealBolusPreview(isAuto: Boolean) {
+private fun MealBolusPreview() {
     val sampleMealTypes = listOf(
         MealType(name = "Schnelle KE", components = listOf(CarbCurveComponentData(100, Minutes(60))), cat = Minutes(180)),
         MealType(name = "Standard-Essen", components = listOf(CarbCurveComponentData(100, Minutes(60))), cat = Minutes(180)),
@@ -631,41 +613,23 @@ private fun MealBolusPreview(isAuto: Boolean) {
     )
     AppTheme {
         MealBolusContent(
-            uiState = if (isAuto) {
-                MealBolusUiState(
-                    isLoading = false,
-                    carbsKe = 4.5,
-                    mealTypes = sampleMealTypes,
-                    selectedMealType = sampleMealTypes[0],
-                    currentBg = 160,
-                    targetBg = 100,
-                    isf = 40,
-                    cr = 12.0,
-                    mealPart = 3.75,
-                    correctionPart = 1.5,
-                    proposedBolus = 3.75, // Correction ignored in auto mode
-                    manualBolus = 3.75,
-                    isAutomaticMode = true
-                )
-            } else {
-                MealBolusUiState(
-                    isLoading = false,
-                    carbsKe = 4.5,
-                    mealTypes = sampleMealTypes,
-                    selectedMealType = sampleMealTypes[0],
-                    currentBg = 140,
-                    targetBg = 100,
-                    isf = 50,
-                    cr = 10.0,
-                    mealPart = 4.5,
-                    correctionPart = 0.8,
-                    proposedBolus = 5.3,
-                    manualBolus = 5.3,
-                    isAutomaticMode = false
-                )
-            },
+            uiState = MealBolusUiState(
+                isLoading = false,
+                carbsKe = 4.5,
+                mealTypes = sampleMealTypes,
+                selectedMealType = sampleMealTypes[0],
+                currentBg = 140,
+                targetBg = 100,
+                isf = 50,
+                cr = 10.0,
+                mealPart = 4.5,
+                correctionPart = 0.8,
+                proposedBolus = 5.3,
+                manualBolus = 5.3,
+                isAutomaticMode = false
+            ),
             currentBgValue = CurrentBgData.valid(
-                bgValue = BgValue(if (isAuto) 160 else 140),
+                bgValue = BgValue(140),
                 delta = BgDelta(5),
                 trend = BgTrend.FortyFiveUp,
                 timestamp = Timestamp.now()
@@ -681,16 +645,9 @@ private fun MealBolusPreview(isAuto: Boolean) {
     }
 }
 
-@Preview(showBackground = true, name = "Manual Mode")
-@Preview(showBackground = true, name = "Manual Mode - Dark", uiMode = Configuration.UI_MODE_NIGHT_YES)
+@Preview(showBackground = true, name = "Default Mode")
+@Preview(showBackground = true, name = "Default Mode - Dark", uiMode = Configuration.UI_MODE_NIGHT_YES)
 @Composable
-fun MealBolusManualPreview() {
-    MealBolusPreview(isAuto = false)
-}
-
-@Preview(showBackground = true, name = "Auto Mode")
-@Preview(showBackground = true, name = "Auto Mode - Dark", uiMode = Configuration.UI_MODE_NIGHT_YES)
-@Composable
-fun MealBolusAutoPreview() {
-    MealBolusPreview(isAuto = true)
+fun MealBolusDefaultPreview() {
+    MealBolusPreview()
 }
