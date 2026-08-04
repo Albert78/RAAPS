@@ -27,15 +27,15 @@ import java.util.concurrent.Executors
  * on a single background thread.
  */
 class APS(
+    val glucoseSourceManager: GlucoseSourceManager,
     val treatmentRepository: TreatmentRepository,
-    val appPreferencesRepository: AppPreferencesRepository,
     val therapyManager: TherapyManager,
     val systemManager: SystemManager,
     val wakeService: SystemWakeService,
     val timeService: TimeService,
+    val appPreferencesRepository: AppPreferencesRepository,
     val carbsInsulinCalculationModel: CarbsInsulinCalculationModel,
-    val context: Context,
-    val glucoseSourceManager: GlucoseSourceManager
+    val context: Context
 ) {
     // Threading: Single background thread to avoid race conditions in the core logic
     private val apsDispatcher = Executors.newSingleThreadExecutor().asCoroutineDispatcher()

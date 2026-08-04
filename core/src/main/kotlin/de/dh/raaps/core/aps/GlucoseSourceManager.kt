@@ -68,28 +68,20 @@ class GlucoseSourceManager(
         val plugin = glucoseSource ?: return
 
         glucoseJob = scope.launch {
-            installGlucosePipeline(plugin)
+            Log.d(TAG, "Installing glucose pipeline: ${plugin.name}")
+
+            val sensorType = glucoseRepository.getOrCreateSensorTypeByName(plugin.getSensorTypeName())
+            val dataProvider = glucoseRepository.getOrCreateDataProviderByName(plugin.name, plugin.dataProviderType)
+
+            readingsTimeDelay = plugin.readingsTimeDelay
+
+            // Persist values and update in-memory history
+            plugin.getValues()
+                .persist(glucoseRepository, dataProvider, sensorType)
+                .collect { reading ->
+                    addReading(reading)
+                }
         }
-    }
-
-    private suspend fun installGlucosePipeline(plugin: GlucoseSource) {
-        Log.d(TAG, "Installing glucose pipeline")
-
-        val sensorType = glucoseRepository.getOrCreateSensorTypeByName(plugin.getSensorTypeName())
-        val dataProvider = glucoseRepository.getOrCreateDataProviderByName(plugin.name, plugin.dataProviderType)
-
-        readingsTimeDelay = plugin.readingsTimeDelay
-
-        // Persist values
-        val persistedValues = plugin.getValues()
-            .persist(glucoseRepository, dataProvider, sensorType)
-
-        persistedValues
-            .collect { bg ->
-                addReading(bg)
-                // Synchronize our internal ticking grid to fire 20s after the BG reading.
-                timeService.synchronize(Timestamp.now().plusSeconds(20))
-            }
     }
 
     fun addReading(reading: BgReading) {
@@ -103,13 +95,8 @@ class GlucoseSourceManager(
         sampledBgReadings.sampleAvgValues()
     }
 
-    fun isBgStale(): Boolean {
-        val lastReading = history.last()
-        return lastReading != null && lastReading.timestamp + STALE_BG_THRESHOLD < Timestamp.now()
-    }
-
-    fun nextBgStaleCheckAt(): Timestamp {
-        return Timestamp.now() + STALE_BG_THRESHOLD
+    fun getLastDataTime(): Timestamp? {
+        return history.last()?.timestamp
     }
 
     fun stop() {

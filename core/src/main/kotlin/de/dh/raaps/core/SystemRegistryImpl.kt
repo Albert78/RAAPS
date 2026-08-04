@@ -103,6 +103,7 @@ class SystemRegistryImpl(
                 glucoseSourceManager = glucoseSourceManager,
                 wakeService = wakeService,
                 settingsRepository = settingsRepository,
+                timeService = timeService,
                 scope = scope
             )
 
@@ -124,15 +125,15 @@ class SystemRegistryImpl(
             therapyManager.startInitialization()
 
             val aps = APS(
+                glucoseSourceManager = glucoseSourceManager,
                 treatmentRepository = treatmentRepository,
-                appPreferencesRepository = appPreferencesRepository,
                 therapyManager = therapyManager,
                 systemManager = systemManager,
                 wakeService = wakeService,
                 timeService = timeService,
+                appPreferencesRepository = appPreferencesRepository,
                 carbsInsulinCalculationModel = carbsInsulinCalculationModel,
-                context = application,
-                glucoseSourceManager = glucoseSourceManager
+                context = application
             )
             aps.startInitialization()
 
