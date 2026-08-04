@@ -5,14 +5,14 @@ import de.dh.raaps.common.model.GlucoseSource
 import de.dh.raaps.common.model.data.BgReading
 import de.dh.raaps.common.model.data.Minutes
 import de.dh.raaps.common.model.data.TimeService
-import de.dh.raaps.common.model.data.Timestamp
 import de.dh.raaps.common.model.data.Timeline
+import de.dh.raaps.common.model.data.Timestamp
 import de.dh.raaps.core.repository.GlucoseRepository
-import de.dh.raaps.core.aps.persist
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.launch
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 
 /**
  * Manages the glucose source and the history of blood glucose readings.
@@ -25,6 +25,15 @@ class GlucoseSourceManager(
     private var scope: CoroutineScope? = null
     private var inAPSThread: ((suspend CoroutineScope.() -> Unit) -> Job)? = null
     private var onNewBg: (suspend (BgReading) -> Unit)? = null
+
+    private val _currentBg = MutableStateFlow<BgReading?>(null)
+    val currentBg: StateFlow<BgReading?> = _currentBg.asStateFlow()
+
+    private val _lastDataTime = MutableStateFlow<Timestamp>(Timestamp(0))
+    val lastDataTime: StateFlow<Timestamp> = _lastDataTime.asStateFlow()
+
+    var lastBg: BgReading? = null
+        private set
 
     var glucoseSource: GlucoseSource? = null
         set(value) {
@@ -57,6 +66,12 @@ class GlucoseSourceManager(
     suspend fun initialize() {
         val readings = glucoseRepository.loadBgReadings(from = Timestamp.now().minus(ApsAlgorithmImpl.DEVIATION_TIME_BASE))
         history.setAll(readings)
+
+        val readingsHistory = history.toList()
+        _currentBg.value = readingsHistory.lastOrNull()
+        lastBg = if (readingsHistory.size >= 2) readingsHistory[readingsHistory.size - 2] else null
+        sampledBgReadings.sampleAvgValues()
+        _lastDataTime.value = Timestamp.now()
     }
 
     private fun restartGlucosePipeline() {
@@ -97,9 +112,17 @@ class GlucoseSourceManager(
 
     fun addReading(reading: BgReading) {
         history.add(reading)
+
+        if (_currentBg.value == null || reading.timestamp >= _currentBg.value!!.timestamp) {
+            lastBg = _currentBg.value
+            _currentBg.value = reading
+        }
+
+        sampledBgReadings.sampleAvgValues()
+        _lastDataTime.value = Timestamp.now()
     }
 
-    fun isStale(): Boolean {
+    fun isBgStale(): Boolean {
         val lastReading = history.last()
         return lastReading != null && lastReading.timestamp + STALE_BG_THRESHOLD < Timestamp.now()
     }

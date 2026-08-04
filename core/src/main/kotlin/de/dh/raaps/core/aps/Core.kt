@@ -76,17 +76,13 @@ class Core(
     private var calculationAlgorithm: ApsAlgorithm = NoopAlgorithm()
 
     // State
-    var currentBg: BgReading? = null
-        private set
-    var lastBg: BgReading? = null
-        private set
     var isPredictionsStale: Boolean = true
 
     var coreState: CoreState = CoreState.Uninitialized
         private set
 
     suspend fun nextBgStaleCheckAt(): Timestamp? = glucoseSourceManager.nextBgStaleCheckAt()
-    suspend fun isStale(): Boolean = glucoseSourceManager.isStale()
+    suspend fun isStale(): Boolean = glucoseSourceManager.isBgStale()
 
     /**
      * Lock which is acquired in situations where a suspend function
@@ -153,13 +149,9 @@ class Core(
                 Log.d(TAG, "Initializing...")
                 setCoreState(CoreState.Initializing)
 
-                val readingsHistory = glucoseSourceManager.history.toList()
-
-                currentBg = readingsHistory.lastOrNull()
-                lastBg = if (readingsHistory.size >= 2) readingsHistory[readingsHistory.size - 2] else null
-
                 calculationAlgorithm = ApsAlgorithmImpl.create(
                     treatmentRepository,
+                    glucoseSourceManager.sampledBgReadings,
                     therapyManager,
                     onCancelInsulinJobs = onCancelInsulinJobs,
                     onDeliverBolus = onDeliverBolus,
@@ -197,15 +189,9 @@ class Core(
                 return@busyWork
             }
             atomic {
-                if (currentBg == null || bg.timestamp >= currentBg!!.timestamp) {
-                    lastBg = currentBg
-                    currentBg = bg
-                }
-
                 val alg = calculationAlgorithm
                 onWaitForAndResetInsulinJobs()
-                glucoseSourceManager.sampledBgReadings.sampleAvgValues()
-                alg.recalculate(glucoseSourceManager.sampledBgReadings)
+                alg.recalculate()
             }
             onDataUpdated()
         }

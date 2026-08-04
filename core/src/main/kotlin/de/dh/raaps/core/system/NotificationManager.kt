@@ -1,7 +1,7 @@
 package de.dh.raaps.core.system
 
 import android.app.Notification
-import de.dh.raaps.core.aps.APS
+import de.dh.raaps.core.aps.GlucoseSourceManager
 import de.dh.raaps.core.aps.TherapyManager
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
@@ -13,11 +13,11 @@ import kotlinx.coroutines.launch
 class NotificationManager(
     val androidNotifications: AndroidNotifications
 ) {
-    private lateinit var aps: APS
+    private lateinit var glucoseSourceManager: GlucoseSourceManager
     private lateinit var therapyManager: TherapyManager
 
-    fun startInitialization(scope: CoroutineScope, aps: APS, therapyManager: TherapyManager) {
-        this.aps = aps
+    fun startInitialization(scope: CoroutineScope, glucoseSourceManager: GlucoseSourceManager, therapyManager: TherapyManager) {
+        this.glucoseSourceManager = glucoseSourceManager
         this.therapyManager = therapyManager
         androidNotifications.createNotificationChannels()
 
@@ -32,13 +32,13 @@ class NotificationManager(
         }
 
         scope.launch {
-            aps.lastDataTime.collect { _ ->
-                androidNotifications.updateMainAppNotification(aps)
+            glucoseSourceManager.lastDataTime.collect { _ ->
+                androidNotifications.updateMainAppNotification(glucoseSourceManager)
             }
         }
     }
 
     fun createForegroundServiceNotification(): Notification {
-        return androidNotifications.createMainAppNotification(aps)
+        return androidNotifications.createMainAppNotification(glucoseSourceManager)
     }
 }

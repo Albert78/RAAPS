@@ -77,7 +77,7 @@ class APS(
         carbsInsulinCalculationModel = carbsInsulinCalculationModel,
         glucoseSourceManager = glucoseSourceManager,
 
-        onDataUpdated = { emitDataUpdateEvent() },
+        onDataUpdated = { /* Now handled by GSM directly */ },
         onCoreStateChanged = { emitCoreStateChangedEvent() },
         onAcquireBusyState = { acquireBusyState() },
         onReleaseBusyState = { releaseBusyState() },
@@ -89,10 +89,6 @@ class APS(
         onCarbsHint = { amountInGram -> therapyManager.recommendCarbs(amountInGram) },
         onWaitForAndResetInsulinJobs = { therapyManager.waitForAndResetInsulinJobs() }
     )
-
-    // Observers (Updated by the internal core, read by the facade/UI)
-    private val _lastDataTime = MutableStateFlow<Timestamp>(Timestamp(0))
-    val lastDataTime: StateFlow<Timestamp> = _lastDataTime.asStateFlow()
 
     private val _coreState = MutableStateFlow<CoreState>(CoreState.Initializing)
     /**
@@ -185,10 +181,6 @@ class APS(
         wakeService.releaseBusyState(WAKE_TAG)
     }
 
-    private fun emitDataUpdateEvent() = inExternalDispatcher {
-        _lastDataTime.emit(Timestamp.now())
-    }
-
     private fun emitCoreStateChangedEvent() = inExternalDispatcher {
         _coreState.emit(core.coreState)
     }
@@ -214,7 +206,7 @@ class APS(
     override fun onWakeup(wakeupId: UInt?, intent: Intent?) {
         inAPSThread {
             if (wakeupId == WAKEUP_STALE_CHECK) {
-                if (glucoseSourceManager.isStale()) {
+                if (glucoseSourceManager.isBgStale()) {
                     addIssue(ApsIssue.StaleBG)
                 } else {
                     removeIssue(ApsIssue.StaleBG)
@@ -227,17 +219,8 @@ class APS(
      * Gracefully stops the APS system and releases all background resources.
      */
     fun stop() {
-        glucoseSourceManager.stop()
         apsScope.cancel()
         apsDispatcher.close()
-    }
-
-    fun getCurrentBg(): BgReading? {
-        return core.currentBg
-    }
-
-    fun getLastBg(): BgReading? {
-        return core.lastBg
     }
 
     companion object {

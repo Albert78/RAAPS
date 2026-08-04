@@ -132,7 +132,7 @@ class SystemRegistryImpl(
                 glucoseSourceManager = glucoseSourceManager
             )
             aps.startInitialization()
-            notificationManager.startInitialization(scope, aps, therapyManager)
+            notificationManager.startInitialization(scope, glucoseSourceManager, therapyManager)
 
             val permissionsHandler = PermissionsChangedHandler {
                 pluginManager.triggerUpdatesAfterPermissionsChange()

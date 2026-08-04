@@ -12,7 +12,7 @@ import androidx.core.content.getSystemService
 import de.dh.raaps.R
 import de.dh.raaps.common.model.ToDo
 import de.dh.raaps.common.model.data.BgValue
-import de.dh.raaps.core.aps.APS
+import de.dh.raaps.core.aps.GlucoseSourceManager
 import de.dh.raaps.core.aps.ApsRecommendation
 import de.dh.raaps.core.system.AndroidNotifications
 import de.dh.raaps.ui.activities.MainActivity
@@ -61,8 +61,8 @@ class AndroidNotificationsImpl(
         return if (bgDeltaStr == null) null else "Delta: $bgDeltaStr"
     }
 
-    override fun createMainAppNotification(aps: APS): Notification {
-        val data = MainAppNotificationData.create(aps)
+    override fun createMainAppNotification(glucoseSourceManager: GlucoseSourceManager): Notification {
+        val data = MainAppNotificationData.create(glucoseSourceManager)
         Log.d(TAG, "Build notification for ${data.lastBgSample}")
         ToDo.toBeImplemented("Take glucose unit from preferences")
         val bgValueStr = getBgValueString(data.lastBgSample?.value, false)
@@ -87,8 +87,8 @@ class AndroidNotificationsImpl(
             .build()
     }
 
-    override fun updateMainAppNotification(aps: APS) {
-        val notification: Notification = createMainAppNotification(aps)
+    override fun updateMainAppNotification(glucoseSourceManager: GlucoseSourceManager) {
+        val notification: Notification = createMainAppNotification(glucoseSourceManager)
         notify(AndroidNotifications.FOREGROUND_NOTIFICATION_ID, notification)
     }
 

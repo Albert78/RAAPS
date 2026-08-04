@@ -5,7 +5,6 @@ import de.dh.raaps.common.model.calculation.CarbsInsulinCalculationModel
 import de.dh.raaps.common.model.convertToCarbsFromBgDelta
 import de.dh.raaps.common.model.convertToUnitsFromBgDelta
 import de.dh.raaps.common.model.data.BgDelta
-import de.dh.raaps.common.model.data.BgReading
 import de.dh.raaps.common.model.data.BgValue
 import de.dh.raaps.common.model.data.Minutes
 import de.dh.raaps.common.model.data.Tick
@@ -18,6 +17,7 @@ import de.dh.raaps.core.repository.TreatmentRepository
 class ApsAlgorithmImpl(
     val timeline: Timeline,
     val treatmentRepository: TreatmentRepository,
+    val sampledBgReadings: SampledBgReadings,
     val predictionModel: PredictionModel,
     val carbsInsulinCalculationModel: CarbsInsulinCalculationModel,
     val therapyManager: TherapyManager,
@@ -27,10 +27,6 @@ class ApsAlgorithmImpl(
     val onSetTempBasal: (durationInHours: Int, unitsPerHour: Double) -> Unit,
     val onCarbsHint: (Int) -> Unit,
 ): ApsAlgorithm {
-    private var _sampledBgReadings: SampledBgReadings? = null
-    private val sampledBgReadings: SampledBgReadings
-        get() = _sampledBgReadings ?: throw IllegalStateException("recalculate must be called before accessing sampledBgReadings")
-
     // --- Time-based extensions for Tick to provide a Timestamp-like API ---
     private fun Tick.plusMinutes(minutes: Int): Tick = this + (minutes / timeline.tickDuration.value.toInt())
     private fun Tick.plusHours(hours: Int): Tick = plusMinutes(hours * 60)
@@ -78,14 +74,12 @@ class ApsAlgorithmImpl(
         return BgDelta.fromMgDl((sumDeviationsMgdl / numValues).toInt())
     }
 
-    override suspend fun recalculate(readings: SampledBgReadings) {
-        _sampledBgReadings = readings
-
+    override suspend fun recalculate() {
         // Filter BG values to avoid big jumps caused by measurement errors.
         // If we have enough input values, we can use the better SavitzkyGolay filter, else fallback to PTWMA
-        var currentBgFiltered = readings.calculateSavitzkyGolayEndBorder3()
+        var currentBgFiltered = sampledBgReadings.calculateSavitzkyGolayEndBorder3()
         if (currentBgFiltered.isInvalid()) {
-            currentBgFiltered = readings.calculatePTWMA(0.7)
+            currentBgFiltered = sampledBgReadings.calculatePTWMA(0.7)
         }
 
         if (currentBgFiltered.isInvalid()) {
@@ -247,15 +241,6 @@ class ApsAlgorithmImpl(
         Todo() // ZeroTemp
     }
 
-    override suspend fun nextBgStaleCheckAt(): Timestamp? {
-        return Timestamp.now() + STALE_BG_THRESHOLD
-    }
-
-    override suspend fun isStale(): Boolean {
-        val lastReading = _sampledBgReadings?.lastReading()
-        return lastReading != null && lastReading.timestamp + STALE_BG_THRESHOLD < Timestamp.now()
-    }
-
     companion object {
         const val PREDICTION_WINDOW_HOURS = 10
         val DEVIATION_TIME_BASE = Minutes(30)
@@ -267,6 +252,7 @@ class ApsAlgorithmImpl(
 
         suspend fun create(
             treatmentRepository: TreatmentRepository,
+            sampledBgReadings: SampledBgReadings,
             therapyManager: TherapyManager,
             onCancelInsulinJobs: () -> Unit,
             onDeliverBolus: (amount: InsulinAmount) -> Unit,
@@ -296,6 +282,7 @@ class ApsAlgorithmImpl(
             return ApsAlgorithmImpl(
                 timeline = timeline,
                 treatmentRepository = treatmentRepository,
+                sampledBgReadings = sampledBgReadings,
                 predictionModel = predictionModel,
                 carbsInsulinCalculationModel = carbsInsulinCalculationModel,
                 therapyManager = therapyManager,
