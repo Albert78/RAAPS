@@ -54,7 +54,9 @@ data class ProfileUiState(
 
 data class TherapyAdjustment(
     val name: String,
-    val percentage: Int
+    val percentage: Int,
+    val targetBgMgDl: Short? = null,
+    val lowThresholdMgDl: Short? = null
 )
 
 data class CurrentTherapyUiState(
@@ -82,9 +84,9 @@ class CurrentTherapyViewModel(
     // TODO: Make these user-editable in the future (e.g. via a database table or preferences).
     private val hardcodedPresets = listOf(
         TherapyAdjustment("Neutral", 0),
-        TherapyAdjustment("Wandern", -20),
-        TherapyAdjustment("Fahrrad fahren", -30),
-        TherapyAdjustment("Klettern", -40)
+        TherapyAdjustment("Wandern", -20, targetBgMgDl = 140, lowThresholdMgDl = 90),
+        TherapyAdjustment("Fahrrad fahren", -30, targetBgMgDl = 150, lowThresholdMgDl = 100),
+        TherapyAdjustment("Klettern", -40, targetBgMgDl = 160, lowThresholdMgDl = 110)
     )
 
     init {
@@ -144,21 +146,9 @@ class CurrentTherapyViewModel(
         }
     }
 
-    fun setInsulinAdjustmentPercentage(percentage: Int) {
+    fun setTherapyAdjustment(percentage: Int, targetBg: BgValue?, lowThreshold: BgValue?) {
         viewModelScope.launch {
-            therapyManager.setInsulinAdjustmentPercentage(percentage)
-        }
-    }
-
-    fun setTargetBgOverride(target: BgValue?) {
-        viewModelScope.launch {
-            therapyManager.setTargetBgOverride(target)
-        }
-    }
-
-    fun setLowThresholdOverride(threshold: BgValue?) {
-        viewModelScope.launch {
-            therapyManager.setLowThresholdOverride(threshold)
+            therapyManager.setTherapyAdjustment(percentage, targetBg, lowThreshold)
         }
     }
 

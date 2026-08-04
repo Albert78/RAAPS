@@ -28,7 +28,7 @@
     <string name="profile_editor_help_message">Jeder Block definiert den Wert ab der gewählten Uhrzeit bis zum Start des nächsten Blocks.\n\n• Der erste Block beginnt immer um 00:00 Uhr.\n• Nutze das [+], um neue Zeitabschnitte einzufügen.\n• Die Uhrzeit eines Blocks kann nur zwischen seinen Nachbarn verschoben werden.\n• Am Ende des Tages schließt der letzte Block automatisch um 24:00 Uhr ab.\n\nDas Insulin-Profil ist die Basis für deine Therapieberechnungen.</string>
 
     <string name="bg_editor_title">Ziel-BZ &amp; Low-Schwelle</string>
-    <string name="bg_editor_desc">Der angestrebte Blutzucker und die Schwelle für niedrige Werte (Einheit: mg/dL).</string>
+    <string name="bg_editor_desc">Der angestrebte Blutzucker und die Schwelle für niedrige Werte über den Tag (Einheit: mg/dL).</string>
 
     <string name="profile_editor_discard_title">Änderungen verwerfen?</string>
     <string name="profile_editor_discard_message">Es gibt ungespeicherte Änderungen. Möchtest du den Editor wirklich verlassen?</string>
@@ -129,11 +129,13 @@
     <string name="aps_control_adjustment_neutral">neutral</string>
     <string name="aps_control_no_insulin_profile">Kein Profil</string>
 
-    <string name="aps_control_insulin_adjustment_label">Temporäre Anpassung</string>
-    <string name="aps_control_insulin_adjustment_dialog_title">Insulin-Anpassung</string>
-    <string name="aps_control_insulin_adjustment_dialog_description">Passe die abgegebene Insulinmenge für einen begrenzten Zeitraum prozentual an.</string>
-    <string name="aps_control_insulin_adjustment_dialog_presets_title">Schnellauswahl</string>
-
+    <string name="aps_control_therapy_adjustment_label">Temporäre Anpassung</string>
+    <string name="aps_control_therpay_adjustment_dialog_title">Temporäre Therapie-Anpassung</string>
+    <string name="aps_control_therapy_adjustment_dialog_insulin_adjustment_label">Insulin-Anpassung</string>
+    <string name="aps_control_therapy_adjustment_dialog_insulin_adjustment_description">Passe die abgegebene Insulinmenge für einen begrenzten Zeitraum prozentual an.</string>
+    <string name="aps_control_therapy_adjustment_dialog_bg_adjustment_label">Werte-Anpassung</string>
+    <string name="aps_control_therapy_adjustment_dialog_bg_adjustment_description">Überschreibe Zielwert und Niedrig-Schwelle für einen begrenzten Zeitraum.</string>
+    <string name="aps_control_therapy_adjustment_dialog_presets_title">Schnellauswahl</string>
 
     <string name="glucose_unit_mgdl">mg/dL</string>
     <string name="glucose_unit_mmol">mmol/l</string>
@@ -148,4 +150,6 @@
     <string name="history_impact_ke_label">KE</string>
     <string name="cd_copy_profile">Profil kopieren</string>
     <string name="profile_editor_copy_name_format">%1$s (Kopie)</string>
+    <string name="label_increased">erhöht</string>
+    <string name="label_decreased">reduziert</string>
 </resources>

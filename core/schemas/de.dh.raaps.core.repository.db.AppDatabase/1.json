@@ -2,7 +2,7 @@
   "formatVersion": 1,
   "database": {
     "version": 1,
-    "identityHash": "f11b9f3188785ecbaff6f39363351a4d",
+    "identityHash": "8b6a574edc177a6df30decc29bc96887",
     "entities": [
       {
         "tableName": "sensor_type",
@@ -203,7 +203,7 @@
       },
       {
         "tableName": "current_therapy_settings",
-        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `profile_id` INTEGER NOT NULL, `adjustment_percentage` INTEGER NOT NULL, `default_bg_blocks` TEXT NOT NULL, FOREIGN KEY(`profile_id`) REFERENCES `profiles`(`id`) ON UPDATE NO ACTION ON DELETE SET NULL )",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `insulin_profile_id` INTEGER NOT NULL, `default_bg_blocks` TEXT NOT NULL, `insulin_adjustment_percentage` INTEGER NOT NULL, `target_bg_override` INTEGER, `low_threshold_override` INTEGER, FOREIGN KEY(`insulin_profile_id`) REFERENCES `profiles`(`id`) ON UPDATE NO ACTION ON DELETE SET NULL )",
         "fields": [
           {
             "fieldPath": "id",
@@ -212,14 +212,8 @@
             "notNull": true
           },
           {
-            "fieldPath": "profile_id",
-            "columnName": "profile_id",
-            "affinity": "INTEGER",
-            "notNull": true
-          },
-          {
-            "fieldPath": "adjustment_percentage",
-            "columnName": "adjustment_percentage",
+            "fieldPath": "insulin_profile_id",
+            "columnName": "insulin_profile_id",
             "affinity": "INTEGER",
             "notNull": true
           },
@@ -228,6 +222,22 @@
             "columnName": "default_bg_blocks",
             "affinity": "TEXT",
             "notNull": true
+          },
+          {
+            "fieldPath": "insulin_adjustment_percentage",
+            "columnName": "insulin_adjustment_percentage",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "target_bg_override",
+            "columnName": "target_bg_override",
+            "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "low_threshold_override",
+            "columnName": "low_threshold_override",
+            "affinity": "INTEGER"
           }
         ],
         "primaryKey": {
@@ -238,13 +248,13 @@
         },
         "indices": [
           {
-            "name": "index_current_therapy_settings_profile_id",
+            "name": "index_current_therapy_settings_insulin_profile_id",
             "unique": false,
             "columnNames": [
-              "profile_id"
+              "insulin_profile_id"
             ],
             "orders": [],
-            "createSql": "CREATE INDEX IF NOT EXISTS `index_current_therapy_settings_profile_id` ON `${TABLE_NAME}` (`profile_id`)"
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_current_therapy_settings_insulin_profile_id` ON `${TABLE_NAME}` (`insulin_profile_id`)"
           }
         ],
         "foreignKeys": [
@@ -253,7 +263,7 @@
             "onDelete": "SET NULL",
             "onUpdate": "NO ACTION",
             "columns": [
-              "profile_id"
+              "insulin_profile_id"
             ],
             "referencedColumns": [
               "id"
@@ -475,7 +485,7 @@
     ],
     "setupQueries": [
       "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
-      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, 'f11b9f3188785ecbaff6f39363351a4d')"
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '8b6a574edc177a6df30decc29bc96887')"
     ]
   }
 }

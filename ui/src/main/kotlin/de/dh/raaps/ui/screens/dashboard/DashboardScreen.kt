@@ -45,7 +45,7 @@ import de.dh.raaps.common.ui.composables.screenTitle
 import de.dh.raaps.common.ui.theme.AppTheme
 import de.dh.raaps.ui.R
 import de.dh.raaps.ui.controls.apscontrol.ApsControlCard
-import de.dh.raaps.ui.controls.dialogs.InsulinAdjustmentDialog
+import de.dh.raaps.ui.controls.dialogs.TherapyAdjustmentDialog
 import de.dh.raaps.ui.controls.history.CurrentBgUiState
 import de.dh.raaps.ui.controls.history.HistoryAndImpactChartOrDefault
 import de.dh.raaps.ui.controls.history.HistoryAndImpactDiagramData
@@ -87,10 +87,12 @@ fun DashboardScreen(
     var showAdjustmentDialog by remember { mutableStateOf(false) }
 
     if (showAdjustmentDialog) {
-        InsulinAdjustmentDialog(
-            currentValue = currentTherapyUiState.activeProfile.insulinAdjustmentPercentage,
+        TherapyAdjustmentDialog(
+            currentPercentage = currentTherapyUiState.activeProfile.insulinAdjustmentPercentage,
+            currentTarget = currentTherapyUiState.activeProfile.targetBgOverride,
+            currentLow = currentTherapyUiState.activeProfile.lowThresholdOverride,
             presets = currentTherapyUiState.therapyAdjustmentPresets,
-            onValueChange = { currentTherapyViewModel.setInsulinAdjustmentPercentage(it) },
+            onValuesChange = { p, t, l -> currentTherapyViewModel.setTherapyAdjustment(p, t, l) },
             onDismissRequest = { showAdjustmentDialog = false }
         )
     }
