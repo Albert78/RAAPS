@@ -100,15 +100,13 @@ class SimBodyInsulinPump(
 
     override val basalStatus: StateFlow<BasalStatus> = combine(
         device.tempBasalRate,
-        device.tempBasalPercent,
         device.activeProfile,
         combine(device.isBroken, device.hasHardwareError, device.isOccluded) { b, h, o -> b || h || o }
-    ) { tempRate, tempPercent, profile, isSuspended ->
+    ) { tempRate, profile, isSuspended ->
         val normalRate = profile.basalBlocks.getAmountForMinute(Timestamp.now().minutesSinceMidnight())
         BasalStatus(
             activeRate = if (isSuspended) 0.0 else (tempRate ?: normalRate),
             isTempBasal = tempRate != null,
-            tempBasalPercent = tempPercent,
             isSuspended = isSuspended
         )
     }.stateIn(scope, SharingStarted.Eagerly, BasalStatus())
@@ -152,7 +150,7 @@ class SimBodyInsulinPump(
 
     override suspend fun cancelTempBasal() {
         if (!_isConnected.value) throw Exception("Pump not connected to App")
-        device.updateBasalRate(null, null) // Clear temp basal override
+        device.updateBasalRate(null) // Clear temp basal override
         refreshStatus()
     }
 

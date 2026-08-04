@@ -63,12 +63,6 @@ data class BasalStatus(
     val isTempBasal: Boolean = false,
 
     /**
-     * If [isTempBasal] is true, this holds the percentage of the temporary basal rate (e.g., 150 for 150%).
-     * This field is purely informational and explains the origin of the current [activeRate].
-     */
-    val tempBasalPercent: Int? = null,
-
-    /**
      * True if insulin delivery is globally suspended on the hardware level.
      * While suspended, [activeRate] is always 0.0. This state is distinct
      * from a 0% temporary basal rate as it usually requires a manual 'resume' action.
