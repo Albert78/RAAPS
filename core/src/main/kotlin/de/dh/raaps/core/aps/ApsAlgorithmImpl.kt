@@ -1,5 +1,7 @@
 package de.dh.raaps.core.aps
 
+import de.dh.raaps.common.model.DEFAULT_DIA_MINUTES
+import de.dh.raaps.common.model.DEFAULT_PEAK_MINUTES
 import de.dh.raaps.common.model.InsulinAmount
 import de.dh.raaps.common.model.MS_PER_HOUR
 import de.dh.raaps.common.model.calculation.CarbsInsulinCalculationModel
@@ -43,7 +45,10 @@ class ApsAlgorithmImpl(
      * Called when meals or insulin events occured. This recalculates prediction stage 1.
      */
     override suspend fun updateMealsAndInsulin() {
-        predictionModel.calculatePredictionStage_1(treatmentRepository, carbsInsulinCalculationModel)
+        val settings = therapyManager.getActiveTherapySettings()
+        val dia = settings?.profile?.dia ?: Minutes(DEFAULT_DIA_MINUTES.toShort())
+        val peak = settings?.profile?.peak ?: Minutes(DEFAULT_PEAK_MINUTES.toShort())
+        predictionModel.calculatePredictionStage_1(treatmentRepository, carbsInsulinCalculationModel, dia, peak)
     }
 
     /**
@@ -222,14 +227,19 @@ class ApsAlgorithmImpl(
                 // the dose is iteratively reduced until safety is ensured.
                 // The remaining correction will be calculated in one of the next cycles, when
                 // BG has risen higher again.
+                val settings = therapyManager.getActiveTherapySettings()
+                val dia = settings?.profile?.dia ?: pumpInsulinType.dia
+                val peak = settings?.profile?.peak ?: pumpInsulinType.peak
+                
                 predictionModel.forEach(to = nextMax.tick) { tick, state ->
                     val bg = state.predictedBg2
                     if (bg == BgValue.INVALID) return@forEach
                     val spentInsulin = carbsInsulinCalculationModel.spentInsulin(
                         amount = bolusAmount,
-                        insulinType = pumpInsulinType,
                         applicationTimestamp = insulinTick.timestamp,
-                        timestamp = timeline.timestamp(tick)
+                        timestamp = timeline.timestamp(tick),
+                        dia = dia,
+                        peak = peak
                     )
                     val bgDeltaFromTestInsulin = spentInsulin * state.isf
                     val resultBG = state.predictedBg2 - bgDeltaFromTestInsulin
@@ -280,10 +290,16 @@ class ApsAlgorithmImpl(
                 timeline = timeline
             )
             predictionModel.initializeToTick(Timestamp.now().minus(PRESERVE_PREDICTIONS_PAST_TIME))
-            
+
+            val settings = therapyManager.getActiveTherapySettings()
+            val dia = settings?.profile?.dia ?: Minutes(DEFAULT_DIA_MINUTES.toShort())
+            val peak = settings?.profile?.peak ?: Minutes(DEFAULT_PEAK_MINUTES.toShort())
+
             predictionModel.calculatePredictionStage_1(
                 treatmentRepository,
-                carbsInsulinCalculationModel
+                carbsInsulinCalculationModel,
+                dia,
+                peak
             )
             val bgReadingsHistory =
                 RecentBgReadingsHistory(

@@ -36,6 +36,8 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import de.dh.raaps.common.model.ApsMode
+import de.dh.raaps.common.model.DEFAULT_DIA_MINUTES
+import de.dh.raaps.common.model.DEFAULT_PEAK_MINUTES
 import de.dh.raaps.common.model.calculation.CarbsInsulinCalculationModel
 import de.dh.raaps.common.model.data.BgDelta
 import de.dh.raaps.common.model.data.BgValue
@@ -238,7 +240,9 @@ fun DashboardContent(
                             readings = historyUiState.readings,
                             insulinApplications = historyUiState.insulinApplications,
                             meals = historyUiState.meals,
-                            calculationModel = calculationModel
+                            calculationModel = calculationModel,
+                            dia = currentTherapyUiState.activeProfile?.dia ?: Minutes(DEFAULT_DIA_MINUTES.toShort()),
+                            peak = currentTherapyUiState.activeProfile?.peak ?: Minutes(DEFAULT_PEAK_MINUTES.toShort())
                         ),
                         state = chartState,
                         onChartClick = onHistoryChartClick,
@@ -290,7 +294,9 @@ fun DashboardPreview() {
                     basal = 0.5,
                     target = BgValue.fromMgDl(110),
                     lowThreshold = BgValue.fromMgDl(70),
-                    adjustmentPercentage = 0
+                    adjustmentPercentage = 0,
+                    dia = Minutes(300),
+                    peak = Minutes(75)
                 ),
             ),
             permissionsUiState = PermissionsUiModel(
@@ -334,7 +340,9 @@ fun DashboardPermissionsWarningPreview() {
                     basal = 0.5,
                     target = BgValue.fromMgDl(110),
                     lowThreshold = BgValue.fromMgDl(70),
-                    adjustmentPercentage = 0
+                    adjustmentPercentage = 0,
+                    dia = Minutes(300),
+                    peak = Minutes(75)
                 ),
             ),
             permissionsUiState = PermissionsUiModel(

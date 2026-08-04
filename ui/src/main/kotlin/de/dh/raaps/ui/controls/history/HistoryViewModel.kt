@@ -8,12 +8,15 @@ import androidx.lifecycle.viewmodel.CreationExtras
 import de.dh.raaps.common.model.InsulinApplication
 import de.dh.raaps.common.model.MealEntry
 import de.dh.raaps.common.model.ToDo
+import de.dh.raaps.common.model.DEFAULT_DIA_MINUTES
+import de.dh.raaps.common.model.DEFAULT_PEAK_MINUTES
 import de.dh.raaps.common.model.calculation.CarbsInsulinCalculationModel
 import de.dh.raaps.common.model.data.BgDelta
 import de.dh.raaps.common.model.data.BgReading
 import de.dh.raaps.common.model.data.BgSampleKind
 import de.dh.raaps.common.model.data.BgValue
 import de.dh.raaps.common.model.data.GlucoseUnit
+import de.dh.raaps.common.model.data.Minutes
 import de.dh.raaps.common.model.data.Tick
 import de.dh.raaps.common.model.data.TickHandler
 import de.dh.raaps.common.model.data.TickPriority
@@ -114,6 +117,7 @@ class HistoryViewModel(
 
     private val glucoseRepository = raapsRegistry.glucoseRepository
     private val treatmentRepository = raapsRegistry.treatmentRepository
+    private val therapyManager = raapsRegistry.therapyManager
 
     val calculationModel = raapsRegistry.carbsInsulinCalculationModel
 
@@ -131,21 +135,23 @@ class HistoryViewModel(
                 glucoseRepository.observeBgReadings(),
                 treatmentRepository.observeInsulinApplications(),
                 treatmentRepository.observeMeals(),
+                therapyManager.currentTherapySettingsFlow,
                 _tickCounter
-            ) { readings, insulin, meals, _ ->
+            ) { readings, insulin, meals, settings, _ ->
                 val historyLimit = Timestamp.now().minusHours(25)
                 val filteredReadings = readings.filter { it.timestamp >= historyLimit }
                 val filteredInsulin = insulin.filter { it.timestamp >= historyLimit }
                 val filteredMeals = meals.filter { it.timestamp >= historyLimit }
 
-                Triple(filteredReadings, filteredInsulin, filteredMeals)
-            }.collect { (readings, insulin, meals) ->
-                val now = Timestamp.now()
-                _iob.value = calculationModel.iob(insulin, now)
-                _cob.value = calculationModel.cob(meals, now)
+                val dia = settings?.profile?.dia ?: Minutes(DEFAULT_DIA_MINUTES.toShort())
+                val peak = settings?.profile?.peak ?: Minutes(DEFAULT_PEAK_MINUTES.toShort())
 
-                updateUiModel(readings, insulin, meals)
-            }
+                val now = Timestamp.now()
+                _iob.value = calculationModel.iob(filteredInsulin, now, dia, peak)
+                _cob.value = calculationModel.cob(filteredMeals, now)
+
+                updateUiModel(filteredReadings, filteredInsulin, filteredMeals)
+            }.collect { }
         }
     }
 

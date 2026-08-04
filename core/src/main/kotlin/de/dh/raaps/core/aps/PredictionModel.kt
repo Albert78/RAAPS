@@ -3,6 +3,7 @@ package de.dh.raaps.core.aps
 import de.dh.raaps.common.model.calculation.CarbsInsulinCalculationModel
 import de.dh.raaps.common.model.data.BgDelta
 import de.dh.raaps.common.model.data.BgValue
+import de.dh.raaps.common.model.data.Minutes
 import de.dh.raaps.common.model.data.Tick
 import de.dh.raaps.common.model.data.Timeline
 import de.dh.raaps.common.model.data.Timestamp
@@ -48,7 +49,9 @@ class PredictionModel(
      */
     inline suspend fun calculatePredictionStage_1(
         treatmentRepository: TreatmentRepository,
-        carbsInsulinCalculationModel: CarbsInsulinCalculationModel
+        carbsInsulinCalculationModel: CarbsInsulinCalculationModel,
+        dia: Minutes,
+        peak: Minutes
     ) {
         val meals = treatmentRepository.getMeals()
         val insulinApplications = treatmentRepository.getInsulinApplications()
@@ -58,8 +61,10 @@ class PredictionModel(
             // They only need to be touched when we have more meals or boluses.
             // All other data is calculated in each tick cycle.
             tickState.effectiveInsulin = carbsInsulinCalculationModel.effectiveInsulin(
-                insulinApplications,
-                timeline.timestamp(tick)
+                insulinApplications = insulinApplications,
+                timestamp = timeline.timestamp(tick),
+                dia = dia,
+                peak = peak
             )
             tickState.effectiveCarbs = carbsInsulinCalculationModel.carbAbsorption(
                 meals,
@@ -80,7 +85,7 @@ class PredictionModel(
     ): Boolean {
         var bg = currentBG
         var deviation = avgCurrentDeviation
-        var calculateFutherStepsNecessary = false
+        var calculateFurtherStepsNecessary = false
         val timestampIn30Minutes = Timestamp.now().plusMinutes(30)
         forEachS(from = timeline.getNowTick() + 1, to = getLastTick()) { tick, state ->
             val timestamp = timeline.timestamp(tick)
@@ -92,7 +97,7 @@ class PredictionModel(
                 state.isf = isf
                 state.ic = ic
                 state.basalRateUph = basalPerHour
-                calculateFutherStepsNecessary = true
+                calculateFurtherStepsNecessary = true
             }
 
             val insulinEquivalentOfCarbs = state.effectiveCarbs / state.ic
@@ -103,7 +108,7 @@ class PredictionModel(
 
             if (bgi != state.bgi) {
                 state.bgi = bgi
-                calculateFutherStepsNecessary = true
+                calculateFurtherStepsNecessary = true
             }
 
             // Ease out the deviation
@@ -114,11 +119,11 @@ class PredictionModel(
             if (isInNext30Minutes && (bg - state.predictedBg1).abs > MAX_BG_DEVIATION_FOR_KEEP_PREDICTION) {
                 // If the new situation shows a significant BG deviation from the predicted BG in the
                 // near future, recalculation is necessary
-                calculateFutherStepsNecessary = true
+                calculateFurtherStepsNecessary = true
             }
             state.predictedBg1 = bg
         }
-        return calculateFutherStepsNecessary
+        return calculateFurtherStepsNecessary
     }
 
     /**

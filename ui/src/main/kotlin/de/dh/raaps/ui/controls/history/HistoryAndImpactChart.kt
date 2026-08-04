@@ -56,6 +56,8 @@ import de.dh.raaps.common.model.InsulinOrigin
 import de.dh.raaps.common.model.InsulinType
 import de.dh.raaps.common.model.MS_PER_HOUR
 import de.dh.raaps.common.model.MS_PER_MINUTE
+import de.dh.raaps.common.model.DEFAULT_DIA_MINUTES
+import de.dh.raaps.common.model.DEFAULT_PEAK_MINUTES
 import de.dh.raaps.common.model.MealEntry
 import de.dh.raaps.common.model.MealType
 import de.dh.raaps.common.model.calculation.CarbsInsulinCalculationModel
@@ -91,7 +93,9 @@ data class HistoryAndImpactDiagramData(
             readings: List<BgReading>,
             insulinApplications: List<InsulinApplication> = emptyList(),
             meals: List<MealEntry> = emptyList(),
-            calculationModel: CarbsInsulinCalculationModel
+            calculationModel: CarbsInsulinCalculationModel,
+            dia: Minutes = Minutes(DEFAULT_DIA_MINUTES.toShort()),
+            peak: Minutes = Minutes(DEFAULT_PEAK_MINUTES.toShort())
         ): HistoryAndImpactDiagramData? {
             val validReadings = readings.filter { it.sampleKind == BgSampleKind.Value }
             if (validReadings.isEmpty()) return null
@@ -117,7 +121,7 @@ data class HistoryAndImpactDiagramData(
                 insulinX.add(x)
                 // TODO: Correct scale to match axis labels
                 // Scaled so 10 units (standard insulin) peak at ~100 mg/dL
-                insulinY.add(calculationModel.effectiveInsulin(insulinApplications, timestamp) * 222.2)
+                insulinY.add(calculationModel.effectiveInsulin(insulinApplications, timestamp, dia, peak) * 222.2)
 
                 carbX.add(x)
                 // TODO: Correct scale to match axis labels
@@ -477,7 +481,9 @@ fun createSampleImpactDiagramData(): HistoryAndImpactDiagramData {
         readings = readings,
         insulinApplications = insulinApplications,
         meals = meals,
-        calculationModel = calcModel
+        calculationModel = calcModel,
+        dia = Minutes(300),
+        peak = Minutes(60)
     )!!.let { it.copy(dataSignature = "impact_${it.dataSignature}") }
 }
 

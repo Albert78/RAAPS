@@ -10,6 +10,7 @@ import de.dh.raaps.common.model.data.BgValue
 import de.dh.raaps.common.model.data.CurrentTherapySettings
 import de.dh.raaps.common.model.data.GlucoseUnit
 import de.dh.raaps.common.model.data.InsulinProfile
+import de.dh.raaps.common.model.data.Minutes
 import de.dh.raaps.common.model.data.Timestamp
 import de.dh.raaps.core.RAAPSRegistry
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -27,7 +28,9 @@ data class ProfileUiState(
     val basal: Double,
     val target: BgValue,
     val lowThreshold: BgValue,
-    val adjustmentPercentage: Int
+    val adjustmentPercentage: Int,
+    val dia: Minutes,
+    val peak: Minutes
 )
 
 data class CurrentTherapyUiState(
@@ -79,7 +82,9 @@ class CurrentTherapyViewModel(
                 basal = basal,
                 target = bgSettings.first,
                 lowThreshold = bgSettings.second,
-                adjustmentPercentage = currentSettings.adjustmentPercentage
+                adjustmentPercentage = currentSettings.adjustmentPercentage,
+                dia = currentSettings.profile.dia,
+                peak = currentSettings.profile.peak
             )
         } else null
 

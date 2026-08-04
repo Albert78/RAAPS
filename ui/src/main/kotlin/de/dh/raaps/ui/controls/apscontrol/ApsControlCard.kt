@@ -47,6 +47,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import de.dh.raaps.common.model.ApsMode
+import de.dh.raaps.common.model.data.Minutes
 import de.dh.raaps.common.model.data.BgDelta
 import de.dh.raaps.common.model.data.BgValue
 import de.dh.raaps.common.ui.composables.AppColorBlue
@@ -302,7 +303,9 @@ private fun PreviewApsControlCard() {
                     basal = 0.8,
                     ic = 12.0,
                     isf = BgDelta.fromMgDl(50),
-                    adjustmentPercentage = 0
+                    adjustmentPercentage = 0,
+                    dia = Minutes(300),
+                    peak = Minutes(75)
                 ),
                 selectedMode = ApsMode.AutoCorrection,
                 availableModes = ApsMode.entries,
