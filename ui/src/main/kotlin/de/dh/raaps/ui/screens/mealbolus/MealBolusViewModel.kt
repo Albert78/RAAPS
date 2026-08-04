@@ -14,7 +14,10 @@ import de.dh.raaps.common.model.MealType
 import de.dh.raaps.common.model.data.Minutes
 import de.dh.raaps.common.model.data.Timestamp
 import de.dh.raaps.core.SystemRegistry
+import de.dh.raaps.core.aps.ExecutionResult
 import de.dh.raaps.core.pump.PumpCommand
+import kotlinx.coroutines.awaitCancellation
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -22,6 +25,7 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlin.math.max
 import kotlin.math.round
+import kotlin.time.Duration.Companion.seconds
 
 data class MealBolusUiState(
     val isLoading: Boolean = true,
@@ -45,6 +49,10 @@ data class MealBolusUiState(
     val manualBolus: Double = 0.0,
     val isAutomaticMode: Boolean = false,
     val isSubmitting: Boolean = false,
+    val isLockAcquired: Boolean = false,
+    val isBusy: Boolean = false,
+    val lockBusyOwner: String? = null,
+    val lockError: Boolean = false,
 )
 
 class MealBolusViewModel(
@@ -61,6 +69,7 @@ class MealBolusViewModel(
     private val calculationModel = systemRegistry.carbsInsulinCalculationModel
 
     init {
+        acquireLock()
         viewModelScope.launch {
             val now = Timestamp.now()
             val therapySettings = therapyManager.getActiveTherapySettings()
@@ -105,6 +114,31 @@ class MealBolusViewModel(
             systemRegistry.appModeManager.apsMode.collect { mode ->
                 _uiState.update { it.copy(isAutomaticMode = mode == ApsMode.AutoCorrection) }
                 calculateBolus()
+            }
+        }
+    }
+
+    private fun acquireLock() {
+        viewModelScope.launch {
+            var retryAttempt = 0
+            while (retryAttempt < 2) {
+                val result = systemRegistry.therapyManager.tryAcquire("MealBolusScreen") {
+                    _uiState.update { it.copy(isLockAcquired = true, isBusy = false) }
+                    awaitCancellation()
+                }
+
+                if (result is ExecutionResult.Busy) {
+                    if (retryAttempt == 0) {
+                        _uiState.update { it.copy(isBusy = true, lockBusyOwner = result.owner) }
+                        delay(3.seconds)
+                        retryAttempt++
+                    } else {
+                        _uiState.update { it.copy(isBusy = false, lockError = true) }
+                        break
+                    }
+                } else {
+                    break
+                }
             }
         }
     }
