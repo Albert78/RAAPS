@@ -147,7 +147,7 @@ fun CurrentTherapySettingsContent(
                     .fillMaxWidth()
                     .contentScrollIndicator(scrollState)
                     .verticalScroll(scrollState)
-                    .padding(8.dp),
+                    .padding(16.dp),
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 // Active Insulin Profile Card
@@ -617,12 +617,7 @@ private fun TemporaryAdjustmentCard(
                     status = if (insulinProfile.insulinAdjustmentPercentage == 0)
                         stringResource(R.string.aps_control_adjustment_neutral)
                     else
-                        stringResource(
-                            if (insulinProfile.insulinAdjustmentPercentage > 0)
-                                R.string.label_increased
-                            else
-                                R.string.label_decreased
-                        )
+                        stringResource(R.string.label_active)
                 )
 
                 // Target BG Override
@@ -639,7 +634,10 @@ private fun TemporaryAdjustmentCard(
                     else
                         MaterialTheme.colorScheme.onSurfaceVariant,
                     status = if (insulinProfile.targetBgOverride != null)
-                        stringResource(R.string.current_therapy_active_badge)
+                        if (insulinProfile.targetBgOverride > insulinProfile.target)
+                            stringResource(R.string.label_increased)
+                        else
+                            stringResource(R.string.label_decreased)
                     else
                         null
                 )
@@ -657,7 +655,13 @@ private fun TemporaryAdjustmentCard(
                         MaterialTheme.colorScheme.error
                     else
                         MaterialTheme.colorScheme.onSurfaceVariant,
-                    status = if (insulinProfile.lowThresholdOverride != null) stringResource(R.string.label_active) else null
+                    status = if (insulinProfile.lowThresholdOverride != null)
+                        if (insulinProfile.lowThresholdOverride > insulinProfile.lowThreshold)
+                            stringResource(R.string.label_increased)
+                        else
+                            stringResource(R.string.label_decreased)
+                    else
+                        null
                 )
             }
         }
