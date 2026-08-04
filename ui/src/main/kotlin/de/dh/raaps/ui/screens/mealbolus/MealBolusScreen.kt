@@ -1,10 +1,12 @@
 package de.dh.raaps.ui.screens.mealbolus
 
 import android.content.res.Configuration
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -22,10 +24,13 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Info
+import androidx.compose.material.icons.filled.KeyboardArrowDown
+import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FilterChip
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -38,7 +43,9 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -210,19 +217,12 @@ fun MealBolusContent(
                 )
             }
 
-            // Food Type RadioBox
-            Column(modifier = Modifier.fillMaxWidth()) {
-                Text(
-                    text = stringResource(R.string.meal_bolus_food_type_label),
-                    style = MaterialTheme.typography.titleMedium
-                )
-                Spacer(Modifier.height(8.dp))
-                FoodTypeSelector(
-                    mealTypes = uiState.mealTypes,
-                    selectedType = uiState.selectedMealType,
-                    onTypeSelected = onMealTypeChange
-                )
-            }
+            // Food Type Collapsible Selector
+            FoodTypeSelector(
+                mealTypes = uiState.mealTypes,
+                selectedType = uiState.selectedMealType,
+                onTypeSelected = onMealTypeChange
+            )
 
             // Calculation Details
             Card(modifier = Modifier.fillMaxWidth()) {
@@ -336,41 +336,108 @@ fun MealBolusContent(
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun FoodTypeSelector(
     mealTypes: List<MealType>,
     selectedType: MealType?,
     onTypeSelected: (MealType) -> Unit
 ) {
-    Column(Modifier.selectableGroup()) {
-        mealTypes.forEach { type ->
-            Row(
-                Modifier
-                    .fillMaxWidth()
-                    .height(48.dp)
-                    .selectable(
-                        selected = (type == selectedType),
-                        onClick = { onTypeSelected(type) },
-                        role = Role.RadioButton
+    var expanded by remember { mutableStateOf(false) }
+
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        shape = MaterialTheme.shapes.medium,
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.2f)
+        )
+    ) {
+        Column(
+            modifier = Modifier
+                .padding(horizontal = 12.dp, vertical = 4.dp)
+                .fillMaxWidth()
+        ) {
+            if (!expanded) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    // Show icons of all meal types, highlight selected
+                    mealTypes.forEach { type ->
+                        val isSelected = type == selectedType
+                        IconButton(
+                            onClick = { onTypeSelected(type) },
+                            modifier = Modifier.size(40.dp)
+                        ) {
+                            Icon(
+                                imageVector = type.getIcon(),
+                                contentDescription = type.name,
+                                modifier = Modifier.size(24.dp),
+                                tint = if (isSelected)
+                                    MaterialTheme.colorScheme.primary
+                                else
+                                    MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f)
+                            )
+                        }
+                    }
+
+                    Spacer(Modifier.weight(1f))
+
+                    IconButton(onClick = { expanded = true }) {
+                        Icon(
+                            imageVector = Icons.Default.KeyboardArrowDown,
+                            contentDescription = "Expand",
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                }
+            } else {
+                Row(
+                    modifier = Modifier.fillMaxWidth().padding(top = 4.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = stringResource(R.string.meal_bolus_food_type_label),
+                        style = MaterialTheme.typography.labelLarge,
+                        color = MaterialTheme.colorScheme.primary,
+                        fontWeight = FontWeight.Bold,
+                        modifier = Modifier.padding(start = 4.dp)
                     )
-                    .padding(horizontal = 16.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                RadioButton(
-                    selected = (type == selectedType),
-                    onClick = null // null recommended for accessibility with screen readers
-                )
-                Icon(
-                    imageVector = type.getIcon(),
-                    contentDescription = null,
-                    modifier = Modifier.padding(start = 16.dp).size(20.dp),
-                    tint = if (type == selectedType) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
-                )
-                Text(
-                    text = type.name,
-                    style = MaterialTheme.typography.bodyLarge,
-                    modifier = Modifier.padding(start = 12.dp)
-                )
+                    IconButton(onClick = { expanded = false }) {
+                        Icon(
+                            imageVector = Icons.Default.KeyboardArrowUp,
+                            contentDescription = "Collapse",
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                }
+
+                Spacer(Modifier.height(4.dp))
+
+                FlowRow(
+                    modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    mealTypes.forEach { type ->
+                        FilterChip(
+                            selected = (type == selectedType),
+                            onClick = {
+                                onTypeSelected(type)
+                                expanded = false
+                            },
+                            label = { Text(type.name) },
+                            leadingIcon = {
+                                Icon(
+                                    imageVector = type.getIcon(),
+                                    contentDescription = null,
+                                    modifier = Modifier.size(18.dp)
+                                )
+                            }
+                        )
+                    }
+                }
             }
         }
     }
