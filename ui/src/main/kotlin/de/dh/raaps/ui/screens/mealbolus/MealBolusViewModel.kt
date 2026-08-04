@@ -5,13 +5,13 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.CreationExtras
 import de.dh.raaps.common.model.ApsMode
-import de.dh.raaps.common.model.DEFAULT_CR_GRAM_PER_UNIT
-import de.dh.raaps.common.model.DEFAULT_ISF_MGDL_PER_UNIT
+import de.dh.raaps.common.model.ID_UNDEFINED
 import de.dh.raaps.common.model.InsulinAmount
 import de.dh.raaps.common.model.InsulinApplication
 import de.dh.raaps.common.model.InsulinOrigin
 import de.dh.raaps.common.model.MealEntry
 import de.dh.raaps.common.model.MealType
+import de.dh.raaps.common.model.data.Minutes
 import de.dh.raaps.common.model.data.Timestamp
 import de.dh.raaps.core.SystemRegistry
 import de.dh.raaps.core.pump.PumpCommand
@@ -21,12 +21,13 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlin.math.max
+import kotlin.math.round
 
 data class MealBolusUiState(
     val isLoading: Boolean = true,
     val isEditMode: Boolean = false,
     val originalMealTimestamp: Timestamp? = null,
-    val originalMealId: Long = -1L,
+    val originalMealId: Long = ID_UNDEFINED,
     val carbsKe: Double = 0.0,
     val mealTypes: List<MealType> = emptyList(),
     val selectedMealType: MealType? = null,
@@ -43,7 +44,7 @@ data class MealBolusUiState(
     val proposedBolus: Double = 0.0,
     val manualBolus: Double = 0.0,
     val isAutomaticMode: Boolean = false,
-    val isSubmitting: Boolean = false
+    val isSubmitting: Boolean = false,
 )
 
 class MealBolusViewModel(
@@ -68,7 +69,7 @@ class MealBolusViewModel(
             val bgSettings = therapyManager.getBgSettings()
             val mealTypes = treatmentRepository.getAllMealTypes()
 
-            val lastReading = glucoseRepository.loadBgReadings(now.minus(de.dh.raaps.common.model.data.Minutes(30))).lastOrNull()
+            val lastReading = glucoseRepository.loadBgReadings(now - Minutes(30)).lastOrNull()
             val currentBg = lastReading?.value?.mgdl?.toInt()
 
             val historyLimit = now.minusHours(25)
@@ -85,7 +86,7 @@ class MealBolusViewModel(
                     isLoading = false,
                     isEditMode = existingMeal != null,
                     originalMealTimestamp = existingMeal?.timestamp,
-                    originalMealId = existingMeal?.id ?: -1L,
+                    originalMealId = existingMeal?.id ?: ID_UNDEFINED,
                     carbsKe = existingMeal?.let { meal -> meal.carbGrams / 10.0 } ?: 0.0,
                     mealTypes = mealTypes,
                     selectedMealType = existingMeal?.mealType ?: mealTypes.firstOrNull(),
@@ -135,13 +136,13 @@ class MealBolusViewModel(
         val cobPart = state.cob / state.cr
 
         val total = if (state.isAutomaticMode) {
-            max(0.0, mealPart - iobPart + cobPart)
+            max(0.0, (mealPart - iobPart) + cobPart)
         } else {
-            max(0.0, mealPart + correctionPart - iobPart + cobPart)
+            max(0.0, (mealPart + correctionPart - iobPart) + cobPart)
         }
 
         // Round to 2 decimal places
-        val roundedTotal = Math.round(total * 100.0) / 100.0
+        val roundedTotal = round(total * 100.0) / 100.0
 
         _uiState.update {
             it.copy(
@@ -167,7 +168,7 @@ class MealBolusViewModel(
                 // 1. Record/Update Meal
                 if (state.carbsKe > 0 && state.selectedMealType != null) {
                     val mealEntry = MealEntry(
-                        id = if (state.isEditMode) state.originalMealId else -1L,
+                        id = if (state.isEditMode) state.originalMealId else ID_UNDEFINED,
                         timestamp = if (state.isEditMode) (state.originalMealTimestamp ?: now) else now,
                         carbGrams = state.carbsKe * 10.0,
                         mealType = state.selectedMealType
@@ -192,8 +193,9 @@ class MealBolusViewModel(
                     treatmentRepository.addInsulinApplication(application)
                 }
 
+                _uiState.update { it.copy(isSubmitting = false) }
                 onSuccess()
-            } catch (e: Exception) {
+            } catch (_: Exception) {
                 // TODO: Error handling
                 _uiState.update { it.copy(isSubmitting = false) }
             }

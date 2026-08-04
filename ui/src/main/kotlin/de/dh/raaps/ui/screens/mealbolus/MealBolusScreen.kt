@@ -87,10 +87,7 @@ fun MealBolusContent(
     onManualBolusChange: (Double) -> Unit,
     onSubmit: () -> Unit
 ) {
-    val focusManager = LocalFocusManager.current
-
     Scaffold(
-        modifier = Modifier.imePadding(),
         topBar = {
             TopAppBar(
                 title = {
@@ -101,7 +98,7 @@ fun MealBolusContent(
                 },
                 navigationIcon = {
                     IconButton(onClick = onNavigateUp) {
-                        Icon(Icons.AutoMirrored.Default.ArrowBack, contentDescription = "Back")
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
                     }
                 }
             )
@@ -111,11 +108,6 @@ fun MealBolusContent(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(innerPadding)
-                .clickable(
-                    indication = null,
-                    interactionSource = remember { MutableInteractionSource() },
-                    onClick = { focusManager.clearFocus() }
-                )
                 .verticalScroll(rememberScrollState())
                 .padding(16.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
