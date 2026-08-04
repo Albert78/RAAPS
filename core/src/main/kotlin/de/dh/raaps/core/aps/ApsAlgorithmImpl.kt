@@ -2,6 +2,8 @@ package de.dh.raaps.core.aps
 
 import de.dh.raaps.common.model.InsulinAmount
 import de.dh.raaps.common.model.calculation.CarbsInsulinCalculationModel
+import de.dh.raaps.common.model.convertToCarbsFromBgDelta
+import de.dh.raaps.common.model.convertToUnitsFromBgDelta
 import de.dh.raaps.common.model.data.BgDelta
 import de.dh.raaps.common.model.data.BgReading
 import de.dh.raaps.common.model.data.BgValue
@@ -131,6 +133,8 @@ class ApsAlgorithmImpl(
 
         val pumpInsulinType = therapyManager.getPumpInsulinType()
         val insulinPeakTicks = timeline.inTicks(pumpInsulinType.peak)
+        val isf = therapyManager.getIsfFactor(now)
+        val cr = therapyManager.getCrFactor(now)
 
         // -------------------------------- Low handling -------------------------------------------
 
@@ -141,7 +145,7 @@ class ApsAlgorithmImpl(
         }?.let { _ ->
             // TODO: This handling is for "normal" lows. We should also check if there is much more insulin
             // then carbs, e.g. BG prediction dropping fast. If this is the situation, tell the user to manually check the situation.
-            onZeroTemp(1)
+            onSetTempBasal(1, 0.0)
 
             // We're too low. Find out, now low we'll come to calculate the amount of suggested carbs.
 
@@ -149,12 +153,14 @@ class ApsAlgorithmImpl(
             val bgMin = predictionModel.findBgMin(startAt = nowTick, nowTick.plusMinutes(FAST_KE_DEFAULT_PEAK.value.toInt()))
             if (bgMin != null && bgMin.predictedBg.isValid()) {
                 val bgError = targetBg - bgMin.predictedBg
-                val carbsInG = bgError /
-                        therapyManager.getIsfFactor(now) *
-                        therapyManager.getCrFactor(now)
+                val carbsInG = convertToCarbsFromBgDelta(
+                    bgDelta = bgError,
+                    isf = isf,
+                    cr = cr
+                )
                 onCarbsHint(carbsInG.toInt())
             }
-            return // Stop further processing
+            return // Stop further processing when we're currently low
         }
 
         val bgMinus15 = sampledBgReadings.getAt(nowTick.minusMinutes(15))
@@ -163,19 +169,42 @@ class ApsAlgorithmImpl(
         else
             BgDelta(0)
 
-            // Step 2: If Bg is under normal and further falling, defer ongoing meal boluses and decrease basal
+        // Default basal rate to be adapted by the following code
+        var basal = therapyManager.getBasalPerHour(now)
+
+            // Step 2: Prevent further falling BG
         if (currentBgFiltered < targetBg && bg15Trend < BgDelta(0)) {
-            reduce_basis() um BG-Error
+            // If Bg is under normal and further falling
+            val bgErrorToTarget = targetBg - currentBgFiltered
+            val correctionUnits = convertToUnitsFromBgDelta(bgErrorToTarget, isf)
+
+            // Decrease basal
+            basal = (basal - correctionUnits).coerceAtLeast(0.0)
             if (currentBgFiltered < targetBg - BgDelta(20)) {
+                // Bg is too low and further falling -> Defer ongoing meal boluses
+                onSetTempBasal(1, basal)
                 return
             }
-            return
+            // Else go on with decreased basal
         }
+
+        var mealOrCorrectionBolus = InsulinAmount(0.0)
 
         // -------------------------------- Meal boluses -------------------------------------------
 
         // Step 3: Administer scheduled meal boluses
-        Todo()
+        val deferredBoluses = therapyManager.getDeferredBoluses()
+        for (deferredBolus in deferredBoluses) {
+            if (deferredBolus.timestamp < now) {
+                mealOrCorrectionBolus = deferredBolus.amount
+            }
+        }
+
+//        weiter: Für das Folgende brauchen wir eine Möglichkeit im TherapyManager, um die Basisdaten für Entscheidungen
+//        zu locken, bis die Entscheidung getroffen ist. (z.B. Algorithmus so lange aufhalten, bis Nutzer Bolusscreen verlassen hat)
+//        Hmm, wie machen wir die Interaktion mit dem Bolus-Screen? Soll der unabhängig von dem Algorithmus einfach eine
+//        Bolusgabe anstoßen? Den Algorithmus einfach aussetzen, wenn er in der Zeit aktiv wird?
+//        Z.B. mit Popup "Der Algorithmus wurde ausgesetzt während Nutzeraktion"
 
         // -------------------------------- High handling ------------------------------------------
 

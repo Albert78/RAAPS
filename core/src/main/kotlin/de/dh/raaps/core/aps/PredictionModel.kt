@@ -86,7 +86,6 @@ class PredictionModel(
     ) {
         var bg = currentBG
         var deviationPerTick = avgCurrentDeviationPerTick
-        var calculateFurtherStepsNecessary = false
         val timestampIn30Minutes = Timestamp.now().plusMinutes(30)
         forEachS(from = timeline.getNowTick() + 1, to = getLastTick()) { tick, state ->
             val timestamp = timeline.timestamp(tick)
@@ -98,7 +97,6 @@ class PredictionModel(
                 state.isf = isf
                 state.cr = cr
                 state.basalRateUph = basalPerHour
-                calculateFurtherStepsNecessary = true
             }
 
             val insulinEquivalentOfCarbs = state.effectiveCarbs / state.cr
@@ -146,7 +144,7 @@ class PredictionModel(
     }
 
     suspend fun findNextS(startAt: Tick, predicate: suspend (PredictionTickState) -> Boolean): PredictionTickState? {
-        return rollingHistory.findForwardS(startAt, predicate)
+        return rollingHistory.findForwardS(startTick = startAt, predicate)
     }
 
     fun forEach(
@@ -160,6 +158,6 @@ class PredictionModel(
         from: Tick = getFirstTick(),
         to: Tick = getLastTick(),
         action: suspend (Tick, PredictionTickState) -> Unit) {
-        rollingHistory.forEachS(action)
+        rollingHistory.forEachS(from = from, to = to, action = action)
     }
 }

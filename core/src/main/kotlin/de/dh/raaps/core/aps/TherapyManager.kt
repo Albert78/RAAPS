@@ -37,9 +37,10 @@ sealed class ApsRecommendation {
     data class Bolus(val amount: InsulinAmount) : ApsRecommendation()
 }
 
-class DeferredBolus {
-    // TODO
-}
+data class DeferredBolus(
+    val amount : InsulinAmount,
+    val timestamp : Timestamp
+)
 
 class TherapyManager(
     private val therapyRepository: TherapyRepository,

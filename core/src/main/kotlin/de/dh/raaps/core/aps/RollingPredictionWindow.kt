@@ -71,7 +71,7 @@ class RollingPredictionWindow(
         }
     }
 
-    suspend fun forEachS(action: suspend (Tick, PredictionTickState) -> Unit) {
+    suspend fun forEachS(from: Tick = getFirstTick(), to: Tick = getLastTick(), action: suspend (Tick, PredictionTickState) -> Unit) {
         for (tick in getFirstTick()..getLastTick()) {
             tryGetTickState(tick)?.let { action(tick, it) }
         }
