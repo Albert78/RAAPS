@@ -10,6 +10,7 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.launch
 
 data class MealsUiState(
     val meals: List<MealEntry> = emptyList(),
@@ -34,6 +35,12 @@ class MealsViewModel(
             started = SharingStarted.WhileSubscribed(5000),
             initialValue = MealsUiState()
         )
+
+    fun deleteMeal(meal: MealEntry) {
+        viewModelScope.launch {
+            treatmentRepository.removeMealEntry(meal)
+        }
+    }
 
     companion object {
         class Factory(private val registry: SystemRegistry) : ViewModelProvider.Factory {

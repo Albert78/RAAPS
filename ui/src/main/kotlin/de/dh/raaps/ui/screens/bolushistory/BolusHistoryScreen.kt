@@ -63,6 +63,9 @@ import de.dh.raaps.common.ui.composables.EditableValueStepper
 import de.dh.raaps.common.ui.composables.screenTitle
 import de.dh.raaps.common.ui.theme.AppTheme
 import de.dh.raaps.ui.R
+import de.dh.raaps.common.R as CommonR
+import java.time.Instant
+import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.time.format.FormatStyle
 import java.util.Locale
@@ -103,7 +106,7 @@ fun BolusHistoryContent(
                     IconButton(onClick = onNavigateUp) {
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = stringResource(id = de.dh.raaps.common.R.string.cd_navigate_up)
+                            contentDescription = stringResource(id = CommonR.string.cd_navigate_up)
                         )
                     }
                 }
@@ -190,8 +193,8 @@ fun BolusItem(
 ) {
     val timeFormatter = remember { DateTimeFormatter.ofLocalizedDateTime(FormatStyle.SHORT) }
     val timeString = remember(entry.timestamp) {
-        java.time.Instant.ofEpochMilli(entry.timestamp.ms)
-            .atZone(java.time.ZoneId.systemDefault())
+        Instant.ofEpochMilli(entry.timestamp.ms)
+            .atZone(ZoneId.systemDefault())
             .toLocalDateTime()
             .format(timeFormatter)
     }
@@ -339,12 +342,12 @@ fun AddManualBolusDialog(
                 },
                 enabled = amount > 0 && selectedInsulinType != null
             ) {
-                Text(text = stringResource(id = de.dh.raaps.common.R.string.action_save))
+                Text(text = stringResource(id = CommonR.string.action_save))
             }
         },
         dismissButton = {
             TextButton(onClick = onDismiss) {
-                Text(text = stringResource(id = de.dh.raaps.common.R.string.cd_cancel))
+                Text(text = stringResource(id = CommonR.string.cd_cancel))
             }
         }
     )

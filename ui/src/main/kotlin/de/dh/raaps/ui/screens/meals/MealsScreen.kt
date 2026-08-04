@@ -14,6 +14,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material3.DropdownMenu
@@ -47,6 +48,9 @@ import de.dh.raaps.common.model.data.Timestamp
 import de.dh.raaps.common.ui.composables.screenTitle
 import de.dh.raaps.common.ui.theme.AppTheme
 import de.dh.raaps.ui.R
+import de.dh.raaps.common.R as CommonR
+import java.time.Instant
+import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.time.format.FormatStyle
 
@@ -56,6 +60,7 @@ fun MealsScreen(
     onNavigateToMealTypes: () -> Unit,
     onNavigateToMealBolus: () -> Unit,
     onEditMeal: (MealEntry) -> Unit,
+    onDeleteMeal: (MealEntry) -> Unit,
     onNavigateUp: () -> Unit,
 ) {
     val uiState by viewModel.uiState.collectAsState()
@@ -65,6 +70,7 @@ fun MealsScreen(
         onNavigateToMealTypes = onNavigateToMealTypes,
         onNavigateToMealBolus = onNavigateToMealBolus,
         onEditMeal = onEditMeal,
+        onDeleteMeal = onDeleteMeal,
         onNavigateUp = onNavigateUp,
     )
 }
@@ -76,6 +82,7 @@ fun MealsContent(
     onNavigateToMealTypes: () -> Unit,
     onNavigateToMealBolus: () -> Unit,
     onEditMeal: (MealEntry) -> Unit,
+    onDeleteMeal: (MealEntry) -> Unit,
     onNavigateUp: () -> Unit,
 ) {
     var showMenu by remember { mutableStateOf(false) }
@@ -88,7 +95,7 @@ fun MealsContent(
                     IconButton(onClick = onNavigateUp) {
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = stringResource(id = de.dh.raaps.common.R.string.cd_navigate_up)
+                            contentDescription = stringResource(id = CommonR.string.cd_navigate_up),
                         )
                     }
                 },
@@ -96,7 +103,7 @@ fun MealsContent(
                     IconButton(onClick = { showMenu = !showMenu }) {
                         Icon(
                             imageVector = Icons.Default.MoreVert,
-                            contentDescription = stringResource(id = de.dh.raaps.common.R.string.cd_more_options)
+                            contentDescription = stringResource(id = CommonR.string.cd_more_options)
                         )
                     }
                     DropdownMenu(
@@ -150,7 +157,8 @@ fun MealsContent(
                     MealItem(
                         meal = meal,
                         isEditable = isEditable,
-                        onEditClick = { onEditMeal(meal) }
+                        onEditClick = { onEditMeal(meal) },
+                        onDeleteClick = { onDeleteMeal(meal) },
                     )
                     HorizontalDivider()
                 }
@@ -164,11 +172,12 @@ fun MealItem(
     meal: MealEntry,
     isEditable: Boolean,
     onEditClick: () -> Unit,
+    onDeleteClick: () -> Unit,
 ) {
     val timeFormatter = remember { DateTimeFormatter.ofLocalizedDateTime(FormatStyle.SHORT) }
     val timeString = remember(meal.timestamp) {
-        java.time.Instant.ofEpochMilli(meal.timestamp.ms)
-            .atZone(java.time.ZoneId.systemDefault())
+        Instant.ofEpochMilli(meal.timestamp.ms)
+            .atZone(ZoneId.systemDefault())
             .toLocalDateTime()
             .format(timeFormatter)
     }
@@ -190,12 +199,22 @@ fun MealItem(
                 )
                 if (isEditable) {
                     Spacer(Modifier.width(8.dp))
-                    Icon(
-                        imageVector = Icons.Default.Edit,
-                        contentDescription = stringResource(id = R.string.cd_edit),
-                        tint = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier.size(16.dp)
-                    )
+                    IconButton(onClick = onEditClick, modifier = Modifier.size(24.dp)) {
+                        Icon(
+                            imageVector = Icons.Default.Edit,
+                            contentDescription = stringResource(id = R.string.cd_edit),
+                            tint = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.size(16.dp),
+                        )
+                    }
+                    IconButton(onClick = onDeleteClick, modifier = Modifier.size(24.dp)) {
+                        Icon(
+                            imageVector = Icons.Default.Delete,
+                            contentDescription = stringResource(id = R.string.cd_delete_profile),
+                            tint = MaterialTheme.colorScheme.error,
+                            modifier = Modifier.size(16.dp),
+                        )
+                    }
                 }
             }
         }
@@ -212,6 +231,7 @@ fun MealsPreview() {
             onNavigateToMealTypes = {},
             onNavigateToMealBolus = {},
             onEditMeal = {},
+            onDeleteMeal = {},
             onNavigateUp = {}
         )
     }
@@ -237,6 +257,7 @@ fun MealsWithDataPreview() {
             onNavigateToMealTypes = {},
             onNavigateToMealBolus = {},
             onEditMeal = {},
+            onDeleteMeal = {},
             onNavigateUp = {}
         )
     }
