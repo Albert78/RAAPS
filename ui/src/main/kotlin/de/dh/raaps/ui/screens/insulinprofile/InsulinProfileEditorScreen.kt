@@ -4,6 +4,8 @@ import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -15,6 +17,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
@@ -77,6 +80,7 @@ import de.dh.raaps.common.model.data.Block
 import de.dh.raaps.common.model.data.InsulinProfile
 import de.dh.raaps.common.model.data.Minutes
 import de.dh.raaps.common.ui.composables.TimeHourSelector
+import de.dh.raaps.common.ui.composables.contentScrollIndicator
 import de.dh.raaps.common.ui.composables.screenTitle
 import de.dh.raaps.ui.R
 import de.dh.raaps.ui.controls.profile.InsulinProfileSettingsUiState
@@ -189,7 +193,11 @@ fun InsulinProfileList(
             if (uiState.isLoading) {
                 CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
             } else {
-                LazyColumn(modifier = Modifier.fillMaxSize()) {
+                val listState = rememberLazyListState()
+                LazyColumn(
+                    state = listState,
+                    modifier = Modifier.fillMaxSize().contentScrollIndicator(listState)
+                ) {
                     items(uiState.profiles.size) { index ->
                         val profile = uiState.profiles[index]
                         ListItem(
@@ -418,10 +426,13 @@ fun InsulinSettingsEditor(
     onPeakChanged: (String) -> Unit
 ) {
     var expanded by remember { mutableStateOf(false) }
+    val scrollState = rememberScrollState()
 
     Column(
         modifier = Modifier
             .fillMaxSize()
+            .contentScrollIndicator(scrollState)
+            .verticalScroll(scrollState)
             .padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
@@ -489,6 +500,8 @@ fun TherapyBlockListEditor(
 ) {
     var showHelpDialog by remember { mutableStateOf(false) }
 
+    val listState = rememberLazyListState()
+
     val startHours = remember(blocks) {
         var currentHour = 0
         blocks.map { block ->
@@ -533,7 +546,8 @@ fun TherapyBlockListEditor(
     }
 
     LazyColumn(
-        modifier = Modifier.fillMaxSize(),
+        state = listState,
+        modifier = Modifier.fillMaxSize().contentScrollIndicator(listState),
         contentPadding = PaddingValues(16.dp),
         verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {

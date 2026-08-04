@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Adjust
@@ -38,6 +39,7 @@ import de.dh.raaps.common.model.data.BgBlock
 import de.dh.raaps.common.model.data.BgValue
 import de.dh.raaps.common.model.data.Minutes
 import de.dh.raaps.common.ui.composables.TimeHourSelector
+import de.dh.raaps.common.ui.composables.contentScrollIndicator
 import de.dh.raaps.ui.R
 import de.dh.raaps.ui.screens.insulinprofile.InsertButton
 import de.dh.raaps.ui.screens.insulinprofile.ValueAdjuster
@@ -131,8 +133,11 @@ private fun BgBlockList(
         onBlocksChanged(newBlocks)
     }
 
+    val listState = rememberLazyListState()
+
     LazyColumn(
-        modifier = Modifier.fillMaxWidth(),
+        state = listState,
+        modifier = Modifier.fillMaxWidth().contentScrollIndicator(listState),
         contentPadding = PaddingValues(vertical = 8.dp),
         verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
