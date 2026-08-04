@@ -48,12 +48,18 @@ data class ProfileUiState(
     }
 }
 
+data class AdjustmentPreset(
+    val name: String,
+    val percentage: Int
+)
+
 data class CurrentTherapyUiState(
     val isLoading: Boolean = true,
     val activeProfile: ProfileUiState = ProfileUiState.empty(),
     val glucoseUnit: GlucoseUnit = GlucoseUnit.MG_DL,
     val availableProfiles: List<InsulinProfile> = emptyList(),
-    val defaultBgBlocks: List<BgBlock> = emptyList()
+    val defaultBgBlocks: List<BgBlock> = emptyList(),
+    val adjustmentPresets: List<AdjustmentPreset> = emptyList()
 )
 
 /**
@@ -68,6 +74,15 @@ class CurrentTherapyViewModel(
 
     private val therapyManager = raapsRegistry.therapyManager
     private val appPreferencesRepository = raapsRegistry.appPreferencesRepository
+
+    // Hardcoded presets for now.
+    // TODO: Make these user-editable in the future (e.g. via a database table or preferences).
+    private val hardcodedPresets = listOf(
+        AdjustmentPreset("Neutral", 0),
+        AdjustmentPreset("Wandern", -20),
+        AdjustmentPreset("Fahrrad fahren", -30),
+        AdjustmentPreset("Klettern", -40)
+    )
 
     init {
         combine(
@@ -106,7 +121,8 @@ class CurrentTherapyViewModel(
                 isLoading = false,
                 activeProfile = profileUiState,
                 availableProfiles = profiles,
-                defaultBgBlocks = currentSettings.defaultBgBlocks
+                defaultBgBlocks = currentSettings.defaultBgBlocks,
+                adjustmentPresets = hardcodedPresets
             )
         }
     }

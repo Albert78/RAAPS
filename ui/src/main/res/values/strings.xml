@@ -113,6 +113,7 @@
     <string name="aps_control_no_profile">Kein Profil</string>
     <string name="aps_control_adjustment_dialog_title">Insulin-Anpassung</string>
     <string name="aps_control_adjustment_dialog_description">Passt die abgegebene Insulinmenge (Basalrate, ISF und I:C) prozentual an.</string>
+    <string name="aps_control_adjustment_dialog_presets_title">Schnellauswahl</string>
 
     <string name="glucose_unit_mgdl">mg/dL</string>
     <string name="approx_prefix">ca.</string>
