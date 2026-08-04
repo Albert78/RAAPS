@@ -2,7 +2,7 @@
   "formatVersion": 1,
   "database": {
     "version": 1,
-    "identityHash": "06328a358fbfb5c3e49da94559f3fd6a",
+    "identityHash": "3af0ec0aa46c6541ce5bf103300a3ad5",
     "entities": [
       {
         "tableName": "sensor_type",
@@ -492,11 +492,41 @@
             ]
           }
         ]
+      },
+      {
+        "tableName": "deferred_bolus",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `timestamp` INTEGER NOT NULL, `amount` REAL NOT NULL)",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "timestamp",
+            "columnName": "timestamp",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "amount",
+            "columnName": "amount",
+            "affinity": "REAL",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": true,
+          "columnNames": [
+            "id"
+          ]
+        }
       }
     ],
     "setupQueries": [
       "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
-      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '06328a358fbfb5c3e49da94559f3fd6a')"
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '3af0ec0aa46c6541ce5bf103300a3ad5')"
     ]
   }
 }

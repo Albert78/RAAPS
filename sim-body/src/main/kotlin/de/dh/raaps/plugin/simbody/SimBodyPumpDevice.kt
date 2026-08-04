@@ -39,7 +39,7 @@ class SimBodyPumpDevice(
     private val _isBroken = MutableStateFlow(false)
     val isBroken: StateFlow<Boolean> = _isBroken.asStateFlow()
 
-    private val _activeProfile = MutableStateFlow<InsulinProfile>(initialProfile)
+    private val _activeProfile = MutableStateFlow(initialProfile)
     val activeProfile: StateFlow<InsulinProfile> = _activeProfile.asStateFlow()
 
     // Internal history storage
