@@ -41,10 +41,6 @@ class APS(
     private val apsDispatcher = Executors.newSingleThreadExecutor().asCoroutineDispatcher()
     private val apsScope = CoroutineScope(apsDispatcher + SupervisorJob())
 
-    init {
-        glucoseSourceManager.setThreading(scope = apsScope, inAPSThread = { block -> inAPSThread(block) })
-    }
-
     // Computation Core: Pure logic and state, completely thread-agnostic
     private val core: Core = Core.createProductiveCore(
         therapyManager = therapyManager,

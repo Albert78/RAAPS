@@ -9,10 +9,14 @@ import de.dh.raaps.common.model.data.Timeline
 import de.dh.raaps.common.model.data.Timestamp
 import de.dh.raaps.core.repository.GlucoseRepository
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.launch
 
 /**
  * Manages the glucose source and the history of blood glucose readings.
@@ -21,9 +25,8 @@ class GlucoseSourceManager(
     private val glucoseRepository: GlucoseRepository,
     private val timeService: TimeService
 ) {
+    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default.limitedParallelism(1))
     private var glucoseJob: Job? = null
-    private var scope: CoroutineScope? = null
-    private var inAPSThread: ((suspend CoroutineScope.() -> Unit) -> Job)? = null
 
     private val _currentBg = MutableStateFlow<BgReading?>(null)
     val currentBg: StateFlow<BgReading?> = _currentBg.asStateFlow()
@@ -50,11 +53,6 @@ class GlucoseSourceManager(
     var readingsTimeDelay: Minutes = Minutes(5)
         private set
 
-    fun setThreading(scope: CoroutineScope, inAPSThread: (suspend CoroutineScope.() -> Unit) -> Job) {
-        this.scope = scope
-        this.inAPSThread = inAPSThread
-    }
-
     suspend fun initialize() {
         val readings = glucoseRepository.loadBgReadings(from = Timestamp.now().minus(ApsAlgorithmImpl.DEVIATION_TIME_BASE))
         history.setAll(readings)
@@ -68,9 +66,8 @@ class GlucoseSourceManager(
     private fun restartGlucosePipeline() {
         glucoseJob?.cancel()
         val plugin = glucoseSource ?: return
-        val inAPS = inAPSThread ?: return
 
-        glucoseJob = inAPS {
+        glucoseJob = scope.launch {
             installGlucosePipeline(plugin)
         }
     }
@@ -118,7 +115,7 @@ class GlucoseSourceManager(
     fun stop() {
         glucoseSource?.stop()
         glucoseSource = null
-        glucoseJob?.cancel()
+        scope.cancel()
     }
 
     companion object {
