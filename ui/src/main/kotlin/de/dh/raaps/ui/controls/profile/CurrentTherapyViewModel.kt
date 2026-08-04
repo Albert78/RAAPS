@@ -31,6 +31,7 @@ data class ProfileUiState(
     val insulinAdjustmentPercentage: Int,
     val targetBgOverride: BgValue?,
     val lowThresholdOverride: BgValue?,
+    val adjustmentHint: String?,
     val dia: Minutes,
     val peak: Minutes
 ) {
@@ -46,6 +47,7 @@ data class ProfileUiState(
             insulinAdjustmentPercentage = 0,
             targetBgOverride = null,
             lowThresholdOverride = null,
+            adjustmentHint = null,
             dia = Minutes(0),
             peak = Minutes(0)
         )
@@ -119,6 +121,7 @@ class CurrentTherapyViewModel(
             insulinAdjustmentPercentage = currentSettings.insulinAdjustmentPercentage,
             targetBgOverride = currentSettings.targetBgOverride,
             lowThresholdOverride = currentSettings.lowThresholdOverride,
+            adjustmentHint = currentSettings.adjustmentHint,
             dia = currentSettings.insulinProfile.dia,
             peak = currentSettings.insulinProfile.peak
         )
@@ -146,9 +149,9 @@ class CurrentTherapyViewModel(
         }
     }
 
-    fun setTherapyAdjustment(percentage: Int, targetBg: BgValue?, lowThreshold: BgValue?) {
+    fun setTherapyAdjustment(percentage: Int, targetBg: BgValue?, lowThreshold: BgValue?, adjustmentHint: String?) {
         viewModelScope.launch {
-            therapyManager.setTherapyAdjustment(percentage, targetBg, lowThreshold)
+            therapyManager.setTherapyAdjustment(percentage, targetBg, lowThreshold, adjustmentHint)
         }
     }
 

@@ -52,7 +52,7 @@ fun TherapyAdjustmentDialogContent(
     currentPercentage: Int,
     currentTarget: BgValue?,
     currentLow: BgValue?,
-    onValuesChange: (Int, BgValue?, BgValue?) -> Unit,
+    onValuesChange: (Int, BgValue?, BgValue?, String?) -> Unit,
     onDismissRequest: (() -> Unit)? = null,
     presets: List<TherapyAdjustment> = emptyList()
 ) {
@@ -88,7 +88,7 @@ fun TherapyAdjustmentDialogContent(
         ) {
             EditableValueStepper(
                 currentValue = currentPercentage,
-                onValueChange = { onValuesChange(it, currentTarget, currentLow) },
+                onValueChange = { onValuesChange(it, currentTarget, currentLow, null) },
                 steppingStrategy = steppingStrategyInsulin,
                 displayStrategy = displayStrategyInsulin,
                 suffix = "%"
@@ -123,7 +123,7 @@ fun TherapyAdjustmentDialogContent(
                         currentValue = currentTarget?.mgdl?.toInt() ?: 0,
                         onValueChange = { 
                             val newValue = if (it == 0) null else BgValue.fromMgDl(it)
-                            onValuesChange(currentPercentage, newValue, currentLow)
+                            onValuesChange(currentPercentage, newValue, currentLow, null)
                         },
                         steppingStrategy = steppingStrategyBg,
                         suffix = " mg/dL"
@@ -150,7 +150,7 @@ fun TherapyAdjustmentDialogContent(
                         currentValue = currentLow?.mgdl?.toInt() ?: 0,
                         onValueChange = { 
                             val newValue = if (it == 0) null else BgValue.fromMgDl(it)
-                            onValuesChange(currentPercentage, currentTarget, newValue)
+                            onValuesChange(currentPercentage, currentTarget, newValue, null)
                         },
                         steppingStrategy = steppingStrategyBg,
                         suffix = " mg/dL"
@@ -180,7 +180,8 @@ fun TherapyAdjustmentDialogContent(
                                 onValuesChange(
                                     preset.percentage,
                                     preset.targetBgMgDl?.let { BgValue.fromMgDl(it.toInt()) },
-                                    preset.lowThresholdMgDl?.let { BgValue.fromMgDl(it.toInt()) }
+                                    preset.lowThresholdMgDl?.let { BgValue.fromMgDl(it.toInt()) },
+                                    preset.name
                                 )
                                 onDismissRequest?.invoke()
                             },
@@ -251,14 +252,16 @@ fun TherapyAdjustmentDialog(
     currentPercentage: Int,
     currentTarget: BgValue?,
     currentLow: BgValue?,
+    currentHint: String?,
     presets: List<TherapyAdjustment>,
-    onValuesChange: (Int, BgValue?, BgValue?) -> Unit,
+    onValuesChange: (Int, BgValue?, BgValue?, String?) -> Unit,
     onDismissRequest: () -> Unit
 ) {
     // Keep local state for the dialog to avoid jumping while typing
     var localPercentage by remember(currentPercentage) { mutableStateOf(currentPercentage) }
     var localTarget by remember(currentTarget) { mutableStateOf(currentTarget) }
     var localLow by remember(currentLow) { mutableStateOf(currentLow) }
+    var localHint by remember(currentHint) { mutableStateOf(currentHint) }
 
     AlertDialog(
         onDismissRequest = onDismissRequest,
@@ -268,13 +271,14 @@ fun TherapyAdjustmentDialog(
                 currentPercentage = localPercentage,
                 currentTarget = localTarget,
                 currentLow = localLow,
-                onValuesChange = { p, t, l ->
+                onValuesChange = { p, t, l, h ->
                     localPercentage = p
                     localTarget = t
                     localLow = l
+                    localHint = h
                 },
                 onDismissRequest = {
-                    onValuesChange(localPercentage, localTarget, localLow)
+                    onValuesChange(localPercentage, localTarget, localLow, localHint)
                     onDismissRequest()
                 },
                 presets = presets
@@ -282,7 +286,7 @@ fun TherapyAdjustmentDialog(
         },
         confirmButton = {
             TextButton(onClick = {
-                onValuesChange(localPercentage, localTarget, localLow)
+                onValuesChange(localPercentage, localTarget, localLow, localHint)
                 onDismissRequest()
             }) {
                 Text(stringResource(id = android.R.string.ok))
@@ -305,7 +309,7 @@ fun TherapyAdjustmentDialogPreview() {
                 currentPercentage = 10,
                 currentTarget = BgValue.fromMgDl(120),
                 currentLow = BgValue.fromMgDl(80),
-                onValuesChange = { _, _, _ -> },
+                onValuesChange = { _, _, _, _ -> },
                 presets = listOf(
                     TherapyAdjustment("Normal", 0),
                     TherapyAdjustment("Wandern", -20, 140, 90),

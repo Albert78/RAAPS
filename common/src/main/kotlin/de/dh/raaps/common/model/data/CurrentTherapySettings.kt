@@ -13,4 +13,5 @@ data class CurrentTherapySettings(
     val insulinAdjustmentPercentage: Int = 0,
     val targetBgOverride: BgValue? = null,
     val lowThresholdOverride: BgValue? = null,
+    val adjustmentHint: String? = null,
 )

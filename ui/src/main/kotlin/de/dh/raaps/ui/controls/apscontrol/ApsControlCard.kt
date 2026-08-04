@@ -68,6 +68,7 @@ fun ApsControlCard(
     availableModes: List<ApsMode>,
     onModeChange: (ApsMode) -> Unit,
     insulinAdjustmentPercentage: Int,
+    adjustmentHint: String?,
     onAdjustmentClick: () -> Unit,
     onProfileClick: () -> Unit
 ) {
@@ -251,7 +252,18 @@ fun ApsControlCard(
 
                 // Adjustment Button
                 val isNeutral = insulinAdjustmentPercentage == 0
-                if (isNeutral) {
+                val adjustmentText = buildString {
+                    if (adjustmentHint != null) {
+                        append(adjustmentHint)
+                        append(" (")
+                    }
+                    append(displayStrategy.format(insulinAdjustmentPercentage))
+                    if (adjustmentHint != null) {
+                        append(")")
+                    }
+                }
+
+                if (isNeutral && adjustmentHint == null) {
                     OutlinedButton(
                         onClick = onAdjustmentClick,
                         enabled = !isSuspended,
@@ -261,7 +273,7 @@ fun ApsControlCard(
                     ) {
                         Icon(Icons.Default.UnfoldMore, null, modifier = Modifier.size(18.dp))
                         Spacer(Modifier.width(8.dp))
-                        Text(displayStrategy.format(insulinAdjustmentPercentage), style = MaterialTheme.typography.titleMedium)
+                        Text(adjustmentText, style = MaterialTheme.typography.titleMedium)
                     }
                 } else {
                     Button(
@@ -277,7 +289,7 @@ fun ApsControlCard(
                         Icon(Icons.Default.UnfoldMore, null, modifier = Modifier.size(18.dp))
                         Spacer(Modifier.width(8.dp))
                         Text(
-                            displayStrategy.format(insulinAdjustmentPercentage),
+                            adjustmentText,
                             style = MaterialTheme.typography.titleMedium
                         )
                     }
@@ -313,6 +325,7 @@ private fun PreviewApsControlCard() {
                     insulinAdjustmentPercentage = 0,
                     targetBgOverride = null,
                     lowThresholdOverride = null,
+                    adjustmentHint = null,
                     dia = Minutes(300),
                     peak = Minutes(75)
                 ),
@@ -320,6 +333,7 @@ private fun PreviewApsControlCard() {
                 availableModes = ApsMode.entries,
                 onModeChange = {},
                 insulinAdjustmentPercentage = 0,
+                adjustmentHint = null,
                 onAdjustmentClick = {},
                 onProfileClick = {}
             )

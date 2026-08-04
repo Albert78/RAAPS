@@ -92,7 +92,7 @@ fun CurrentTherapySettingsScreen(
         onNavigateToInsulinProfileEditor = onNavigateToInsulinProfileEditor,
         onSelectProfile = { viewModel.selectInsulinProfile(it) },
         onUpdateDefaultBgBlocks = { viewModel.updateDefaultBgBlocks(it) },
-        onUpdateTherapyAdjustment = { p, t, l -> viewModel.setTherapyAdjustment(p, t, l) }
+        onUpdateTherapyAdjustment = { p, t, l, h -> viewModel.setTherapyAdjustment(p, t, l, h) }
     )
 }
 
@@ -104,7 +104,7 @@ fun CurrentTherapySettingsContent(
     onNavigateToInsulinProfileEditor: () -> Unit,
     onSelectProfile: (InsulinProfile) -> Unit,
     onUpdateDefaultBgBlocks: (List<BgBlock>) -> Unit,
-    onUpdateTherapyAdjustment: (Int, BgValue?, BgValue?) -> Unit
+    onUpdateTherapyAdjustment: (Int, BgValue?, BgValue?, String?) -> Unit
 ) {
     var showInsulinProfileDialog by remember { mutableStateOf(false) }
     var showBgEditorDialog by remember { mutableStateOf(false) }
@@ -140,7 +140,7 @@ fun CurrentTherapySettingsContent(
             contentPadding = PaddingValues(16.dp),
             verticalArrangement = Arrangement.spacedBy(20.dp)
         ) {
-            // Section 1: Active Profile Card
+            // Active Insulin Profile Card
             item {
                 SectionHeader(
                     icon = Icons.Default.Tune,
@@ -156,22 +156,7 @@ fun CurrentTherapySettingsContent(
                 )
             }
 
-            // Section 2: Temporary Adjustment Card
-            item {
-                SectionHeader(
-                    icon = Icons.Default.UnfoldMore,
-                    title = stringResource(id = R.string.aps_control_therapy_adjustment_label)
-                )
-
-                Spacer(modifier = Modifier.height(8.dp))
-
-                TemporaryAdjustmentCard(
-                    profile = uiState.activeProfile,
-                    onClick = { showAdjustmentDialog = true }
-                )
-            }
-
-            // Section 3: BG Target & Low Threshold Card
+            // BG Target & Low Threshold Card
             item {
                 SectionHeader(
                     icon = Icons.Default.Adjust,
@@ -183,6 +168,21 @@ fun CurrentTherapySettingsContent(
                 BgTargetCard(
                     bgBlocks = uiState.defaultBgBlocks,
                     onClick = { showBgEditorDialog = true }
+                )
+            }
+
+            // Temporary Adjustment Card
+            item {
+                SectionHeader(
+                    icon = Icons.Default.UnfoldMore,
+                    title = stringResource(id = R.string.aps_control_therapy_adjustment_label)
+                )
+
+                Spacer(modifier = Modifier.height(8.dp))
+
+                TemporaryAdjustmentCard(
+                    profile = uiState.activeProfile,
+                    onClick = { showAdjustmentDialog = true }
                 )
             }
         }
@@ -216,9 +216,10 @@ fun CurrentTherapySettingsContent(
             currentPercentage = uiState.activeProfile.insulinAdjustmentPercentage,
             currentTarget = uiState.activeProfile.targetBgOverride,
             currentLow = uiState.activeProfile.lowThresholdOverride,
+            currentHint = uiState.activeProfile.adjustmentHint,
             presets = uiState.therapyAdjustmentPresets,
-            onValuesChange = { p, t, l ->
-                onUpdateTherapyAdjustment(p, t, l)
+            onValuesChange = { p, t, l, h ->
+                onUpdateTherapyAdjustment(p, t, l, h)
             },
             onDismissRequest = { showAdjustmentDialog = false }
         )
@@ -427,60 +428,18 @@ private fun TemporaryAdjustmentCard(
             modifier = Modifier.padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
+            // Header: Hint and Arrow
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(12.dp)
-                ) {
-                    Surface(
-                        color = if (profile.insulinAdjustmentPercentage == 0) {
-                            MaterialTheme.colorScheme.surfaceVariant
-                        } else {
-                            displayStrategy.color(profile.insulinAdjustmentPercentage).copy(alpha = 0.15f)
-                        },
-                        shape = RoundedCornerShape(12.dp),
-                        border = BorderStroke(
-                            width = 1.dp,
-                            color = if (profile.insulinAdjustmentPercentage == 0) {
-                                MaterialTheme.colorScheme.outlineVariant
-                            } else {
-                                displayStrategy.color(profile.insulinAdjustmentPercentage)
-                            }
-                        )
-                    ) {
-                        Text(
-                            text = displayStrategy.format(profile.insulinAdjustmentPercentage),
-                            style = MaterialTheme.typography.titleMedium,
-                            fontWeight = FontWeight.Bold,
-                            color = if (profile.insulinAdjustmentPercentage == 0) {
-                                MaterialTheme.colorScheme.onSurfaceVariant
-                            } else {
-                                displayStrategy.color(profile.insulinAdjustmentPercentage)
-                            },
-                            modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp)
-                        )
-                    }
-
-                    Column {
-                        Text(
-                            text = stringResource(id = R.string.aps_control_therapy_adjustment_dialog_insulin_adjustment_label),
-                            style = MaterialTheme.typography.labelMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                        Text(
-                            text = if (profile.insulinAdjustmentPercentage == 0) 
-                                stringResource(R.string.aps_control_adjustment_neutral) 
-                            else 
-                                stringResource(if (profile.insulinAdjustmentPercentage > 0) R.string.label_increased else R.string.label_decreased),
-                            style = MaterialTheme.typography.bodyMedium,
-                            fontWeight = FontWeight.Bold
-                        )
-                    }
-                }
+                Text(
+                    text = profile.adjustmentHint ?: stringResource(R.string.aps_control_therapy_adjustment_label),
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold,
+                    color = if (profile.adjustmentHint != null) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
+                )
 
                 Icon(
                     imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
@@ -490,36 +449,108 @@ private fun TemporaryAdjustmentCard(
                 )
             }
 
-            if (profile.targetBgOverride != null || profile.lowThresholdOverride != null) {
-                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
-                
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(16.dp)
-                ) {
-                    if (profile.targetBgOverride != null) {
-                        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                            Icon(Icons.Default.Adjust, contentDescription = null, modifier = Modifier.size(16.dp), tint = MaterialTheme.colorScheme.primary)
-                            Text(
-                                text = stringResource(R.string.bg_value_single_format, profile.targetBgOverride.mgdl),
-                                style = MaterialTheme.typography.bodySmall,
-                                fontWeight = FontWeight.Bold
-                            )
-                        }
-                    }
-                    if (profile.lowThresholdOverride != null) {
-                        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                            Icon(Icons.Default.VerticalAlignBottom, contentDescription = null, modifier = Modifier.size(16.dp), tint = MaterialTheme.colorScheme.error)
-                            Text(
-                                text = stringResource(R.string.bg_value_single_format, profile.lowThresholdOverride.mgdl),
-                                style = MaterialTheme.typography.bodySmall,
-                                fontWeight = FontWeight.Bold
-                            )
-                        }
-                    }
-                }
+            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f))
+
+            // Adjustment Grid
+            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                // Insulin Adjustment
+                AdjustmentItem(
+                    icon = Icons.Default.UnfoldMore,
+                    label = stringResource(R.string.aps_control_therapy_adjustment_dialog_insulin_adjustment_label),
+                    value = displayStrategy.format(profile.insulinAdjustmentPercentage),
+                    valueColor = if (profile.insulinAdjustmentPercentage == 0)
+                        MaterialTheme.colorScheme.onSurfaceVariant
+                    else
+                        displayStrategy.color(profile.insulinAdjustmentPercentage),
+                    status = if (profile.insulinAdjustmentPercentage == 0)
+                        stringResource(R.string.aps_control_adjustment_neutral)
+                    else
+                        stringResource(if (profile.insulinAdjustmentPercentage > 0) R.string.label_increased else R.string.label_decreased)
+                )
+
+                // Target BG Override
+                AdjustmentItem(
+                    icon = Icons.Default.Adjust,
+                    label = stringResource(R.string.current_therapy_target_label_singular),
+                    value = if (profile.targetBgOverride != null)
+                        stringResource(R.string.bg_value_single_format, profile.targetBgOverride.mgdl)
+                    else
+                        stringResource(R.string.aps_control_adjustment_neutral),
+                    valueColor = if (profile.targetBgOverride != null)
+                        MaterialTheme.colorScheme.primary
+                    else
+                        MaterialTheme.colorScheme.onSurfaceVariant,
+                    status = if (profile.targetBgOverride != null) stringResource(R.string.current_therapy_active_badge) else null
+                )
+
+                // Low Threshold Override
+                AdjustmentItem(
+                    icon = Icons.Default.VerticalAlignBottom,
+                    label = stringResource(R.string.current_therapy_low_threshold_label_singular),
+                    value = if (profile.lowThresholdOverride != null)
+                        stringResource(R.string.bg_value_single_format, profile.lowThresholdOverride.mgdl)
+                    else
+                        stringResource(R.string.aps_control_adjustment_neutral),
+                    valueColor = if (profile.lowThresholdOverride != null)
+                        MaterialTheme.colorScheme.error
+                    else
+                        MaterialTheme.colorScheme.onSurfaceVariant,
+                    status = if (profile.lowThresholdOverride != null) stringResource(R.string.current_therapy_active_badge) else null
+                )
             }
         }
+    }
+}
+
+@Composable
+private fun AdjustmentItem(
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    label: String,
+    value: String,
+    valueColor: androidx.compose.ui.graphics.Color,
+    status: String? = null
+) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(12.dp)
+    ) {
+        Surface(
+            color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
+            shape = RoundedCornerShape(8.dp)
+        ) {
+            Icon(
+                imageVector = icon,
+                contentDescription = null,
+                modifier = Modifier
+                    .padding(6.dp)
+                    .size(18.dp),
+                tint = MaterialTheme.colorScheme.primary
+            )
+        }
+
+        Column(modifier = Modifier.weight(1f)) {
+            Text(
+                text = label,
+                style = MaterialTheme.typography.labelMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+            if (status != null) {
+                Text(
+                    text = status,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = valueColor.copy(alpha = 0.8f),
+                    fontWeight = FontWeight.SemiBold
+                )
+            }
+        }
+
+        Text(
+            text = value,
+            style = MaterialTheme.typography.titleMedium,
+            fontWeight = FontWeight.Bold,
+            color = valueColor
+        )
     }
 }
 
@@ -750,6 +781,7 @@ fun CurrentTherapySettingsPreview() {
             insulinAdjustmentPercentage = 0,
             targetBgOverride = null,
             lowThresholdOverride = null,
+            adjustmentHint = null,
             dia = Minutes(300),
             peak = Minutes(75)
         ),
@@ -770,7 +802,7 @@ fun CurrentTherapySettingsPreview() {
             onNavigateToInsulinProfileEditor = {},
             onSelectProfile = {},
             onUpdateDefaultBgBlocks = {},
-            onUpdateTherapyAdjustment = { _, _, _ -> }
+            onUpdateTherapyAdjustment = { _, _, _, _ -> }
         )
     }
 }

@@ -112,13 +112,14 @@ class TherapyManager(
         }
     }
 
-    suspend fun setTherapyAdjustment(percentage: Int, targetBg: BgValue?, lowThreshold: BgValue?) {
+    suspend fun setTherapyAdjustment(percentage: Int, targetBg: BgValue?, lowThreshold: BgValue?, adjustmentHint: String?) {
         mutex.withLock {
             val currentSettings = getActiveTherapySettings()
             val newSettings = currentSettings.copy(
                 insulinAdjustmentPercentage = percentage,
                 targetBgOverride = targetBg,
-                lowThresholdOverride = lowThreshold
+                lowThresholdOverride = lowThreshold,
+                adjustmentHint = adjustmentHint
             )
             therapyRepository.updateCurrentTherapySettings(newSettings)
         }

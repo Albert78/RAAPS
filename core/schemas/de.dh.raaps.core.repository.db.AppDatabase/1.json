@@ -2,7 +2,7 @@
   "formatVersion": 1,
   "database": {
     "version": 1,
-    "identityHash": "8b6a574edc177a6df30decc29bc96887",
+    "identityHash": "5501ae2c6a7d5681321bffe201e75367",
     "entities": [
       {
         "tableName": "sensor_type",
@@ -203,7 +203,7 @@
       },
       {
         "tableName": "current_therapy_settings",
-        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `insulin_profile_id` INTEGER NOT NULL, `default_bg_blocks` TEXT NOT NULL, `insulin_adjustment_percentage` INTEGER NOT NULL, `target_bg_override` INTEGER, `low_threshold_override` INTEGER, FOREIGN KEY(`insulin_profile_id`) REFERENCES `profiles`(`id`) ON UPDATE NO ACTION ON DELETE SET NULL )",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `insulin_profile_id` INTEGER NOT NULL, `default_bg_blocks` TEXT NOT NULL, `insulin_adjustment_percentage` INTEGER NOT NULL, `target_bg_override` INTEGER, `low_threshold_override` INTEGER, `adjustment_hint` TEXT, FOREIGN KEY(`insulin_profile_id`) REFERENCES `profiles`(`id`) ON UPDATE NO ACTION ON DELETE SET NULL )",
         "fields": [
           {
             "fieldPath": "id",
@@ -238,6 +238,11 @@
             "fieldPath": "low_threshold_override",
             "columnName": "low_threshold_override",
             "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "adjustment_hint",
+            "columnName": "adjustment_hint",
+            "affinity": "TEXT"
           }
         ],
         "primaryKey": {
@@ -485,7 +490,7 @@
     ],
     "setupQueries": [
       "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
-      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '8b6a574edc177a6df30decc29bc96887')"
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '5501ae2c6a7d5681321bffe201e75367')"
     ]
   }
 }

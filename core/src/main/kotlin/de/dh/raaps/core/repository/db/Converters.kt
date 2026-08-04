@@ -201,6 +201,7 @@ fun CurrentTherapySettings.toEntity() = CurrentTherapySettingsEntity(
     insulin_adjustment_percentage = this.insulinAdjustmentPercentage,
     target_bg_override = this.targetBgOverride?.mgdl,
     low_threshold_override = this.lowThresholdOverride?.mgdl,
+    adjustment_hint = this.adjustmentHint,
 )
 
 fun CurrentTherapySettingsEntity.toModel(profile: InsulinProfile) = CurrentTherapySettings(
@@ -210,6 +211,7 @@ fun CurrentTherapySettingsEntity.toModel(profile: InsulinProfile) = CurrentThera
     insulinAdjustmentPercentage = this.insulin_adjustment_percentage,
     targetBgOverride = this.target_bg_override?.let { BgValue.fromMgDl(it) },
     lowThresholdOverride = this.low_threshold_override?.let { BgValue.fromMgDl(it) },
+    adjustmentHint = this.adjustment_hint,
 )
 
 // Settings Converters

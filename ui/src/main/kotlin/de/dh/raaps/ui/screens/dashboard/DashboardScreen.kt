@@ -91,8 +91,9 @@ fun DashboardScreen(
             currentPercentage = currentTherapyUiState.activeProfile.insulinAdjustmentPercentage,
             currentTarget = currentTherapyUiState.activeProfile.targetBgOverride,
             currentLow = currentTherapyUiState.activeProfile.lowThresholdOverride,
+            currentHint = currentTherapyUiState.activeProfile.adjustmentHint,
             presets = currentTherapyUiState.therapyAdjustmentPresets,
-            onValuesChange = { p, t, l -> currentTherapyViewModel.setTherapyAdjustment(p, t, l) },
+            onValuesChange = { p, t, l, h -> currentTherapyViewModel.setTherapyAdjustment(p, t, l, h) },
             onDismissRequest = { showAdjustmentDialog = false }
         )
     }
@@ -255,6 +256,7 @@ fun DashboardContent(
                 availableModes = dashboardUiState.availableApsModes,
                 onModeChange = onApsModeSelect,
                 insulinAdjustmentPercentage = currentTherapyUiState.activeProfile.insulinAdjustmentPercentage,
+                adjustmentHint = currentTherapyUiState.activeProfile.adjustmentHint,
                 onAdjustmentClick = onAdjustmentClick,
                 onProfileClick = onNavigateToTherapySettings
             )
@@ -291,6 +293,7 @@ fun DashboardPreview() {
                     insulinAdjustmentPercentage = 0,
                     targetBgOverride = null,
                     lowThresholdOverride = null,
+                    adjustmentHint = null,
                     dia = Minutes(300),
                     peak = Minutes(75)
                 ),
@@ -339,6 +342,7 @@ fun DashboardPermissionsWarningPreview() {
                     insulinAdjustmentPercentage = 0,
                     targetBgOverride = null,
                     lowThresholdOverride = null,
+                    adjustmentHint = null,
                     dia = Minutes(300),
                     peak = Minutes(75)
                 ),
