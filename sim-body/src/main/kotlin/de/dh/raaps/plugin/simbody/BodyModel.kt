@@ -371,6 +371,8 @@ class BodyModel(
         type: InsulinType? = null,
         timestamp: Timestamp = Timestamp.now()
     ) {
+        if (amount < SimBodyInsulinPump.SIM_PUMP_MIN_BOLUS_INCREMENT) return
+
         val entry = InsulinApplication(
             timestamp = timestamp,
             amount = amount,

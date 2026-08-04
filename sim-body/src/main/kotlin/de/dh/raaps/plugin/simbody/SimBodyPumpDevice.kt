@@ -112,6 +112,9 @@ class SimBodyPumpDevice(
         if (isBroken.value || hasHardwareError.value || isOccluded.value || !isPrimed.value) {
             return
         }
+        if (units < SimBodyInsulinPump.SIM_PUMP_MIN_BOLUS_INCREMENT) {
+            return
+        }
         if (reservoirLevel.value < units) {
             return
         }
@@ -135,6 +138,9 @@ class SimBodyPumpDevice(
      */
     fun deliverBolus(units: Double): Boolean {
         if (isBroken.value || hasHardwareError.value || isOccluded.value || !isPrimed.value) {
+            return false
+        }
+        if (units < SimBodyInsulinPump.SIM_PUMP_MIN_BOLUS_INCREMENT) {
             return false
         }
         if (reservoirLevel.value < units) {

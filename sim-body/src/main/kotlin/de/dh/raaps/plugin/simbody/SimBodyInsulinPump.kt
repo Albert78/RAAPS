@@ -26,6 +26,13 @@ class SimBodyInsulinPump(
     private val device: SimBodyPumpDevice,
     private val scope: CoroutineScope = CoroutineScope(SupervisorJob() + Dispatchers.Default),
 ): InsulinPump {
+    companion object {
+        const val SIM_PUMP_MIN_BASAL_RATE = 0.0
+        const val SIM_PUMP_MIN_BASAL_INCREMENT = 0.05
+        const val SIM_PUMP_MIN_BOLUS_INCREMENT = 0.05
+        const val SIM_PUMP_MAX_BOLUS_SIZE = 25.0
+    }
+
     override val hardwareInformation: StateFlow<HardwareInformation?> = MutableStateFlow(
         HardwareInformation(
             manufacturer = "RAAPS",
@@ -37,11 +44,11 @@ class SimBodyInsulinPump(
 
     override val pumpCapabilities: StateFlow<PumpCapabilities> = MutableStateFlow(
         PumpCapabilities(
-            minBasalRate = 0.0,
+            minBasalRate = SIM_PUMP_MIN_BASAL_RATE,
             supportsZeroBasal = true,
-            minBasalIncrement = 0.05,
-            minBolusIncrement = 0.05,
-            maxBolusSize = 25.0
+            minBasalIncrement = SIM_PUMP_MIN_BASAL_INCREMENT,
+            minBolusIncrement = SIM_PUMP_MIN_BOLUS_INCREMENT,
+            maxBolusSize = SIM_PUMP_MAX_BOLUS_SIZE
         )
     )
 

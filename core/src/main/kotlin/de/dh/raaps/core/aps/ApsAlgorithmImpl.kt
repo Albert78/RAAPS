@@ -11,6 +11,7 @@ import de.dh.raaps.common.model.data.Tick
 import de.dh.raaps.common.model.data.Timeline
 import de.dh.raaps.common.model.data.Timestamp
 import de.dh.raaps.core.repository.TreatmentRepository
+import kotlin.math.absoluteValue
 
 class ApsAlgorithmImpl(
     val timeline: Timeline,
@@ -111,7 +112,7 @@ class ApsAlgorithmImpl(
         if (result.clearTempBasal) {
             onClearTempBasal(treatmentLock)
         }
-        if (result.bolus != null) {
+        if (result.bolus != null && result.bolus.iu >= de.dh.raaps.common.model.INSULIN_EPSILON) {
             onDeliverBolus(treatmentLock, result.bolus, result.handledDeferredBolus)
         }
     }
@@ -308,7 +309,7 @@ class ApsAlgorithmImpl(
 
         val predictedBgAtPeak = lookAheadStateAtPeak.predictedBg
 
-        if (predictedBgAtPeak.mgdl <= targetBg.mgdl) {
+        if (predictedBgAtPeak.mgdl <= targetBg.mgdl - 10) {
             return CalculationResult(
                 carbsHint = null,
                 tempBasal = TempBasalResult(unitsPerHour = 0.0, durationInHours = 20),
@@ -316,6 +317,19 @@ class ApsAlgorithmImpl(
                 bolus = null,
                 handledDeferredBolus = handleDeferredBolus
             )
+        }
+
+        if (handleDeferredBolus == null) {
+            if ((currentBgFiltered.mgdl - targetBg.mgdl).absoluteValue < 5 && bg15Trend < BgDelta(5)) {
+                // Absolute best case without (big) influences. Just use standard basal.
+                return CalculationResult(
+                    carbsHint = null,
+                    tempBasal = null,
+                    clearTempBasal = true,
+                    bolus = null,
+                    handledDeferredBolus = handleDeferredBolus
+                )
+            }
         }
 
         // -------------------------------- High handling ------------------------------------------
