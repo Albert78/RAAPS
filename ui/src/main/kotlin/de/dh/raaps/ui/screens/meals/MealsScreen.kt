@@ -2,11 +2,10 @@ package de.dh.raaps.ui.screens.meals
 
 import android.content.res.Configuration
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -40,7 +39,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import de.dh.raaps.common.model.CarbCurveComponentData
 import de.dh.raaps.common.model.MealEntry
+import de.dh.raaps.common.model.MealType
+import de.dh.raaps.common.model.data.Minutes
 import de.dh.raaps.common.model.data.Timestamp
 import de.dh.raaps.common.ui.composables.screenTitle
 import de.dh.raaps.common.ui.theme.AppTheme
@@ -121,22 +123,37 @@ fun MealsContent(
             }
         }
     ) { innerPadding ->
-        LazyColumn(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(innerPadding)
-        ) {
-            items(uiState.meals) { meal ->
-                val isEditable = remember(meal.timestamp) {
-                    meal.timestamp >= Timestamp.now().minusHours(4)
-                }
-
-                MealItem(
-                    meal = meal,
-                    isEditable = isEditable,
-                    onEditClick = { onEditMeal(meal) }
+        if (uiState.meals.isEmpty()) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(innerPadding),
+                contentAlignment = Alignment.Center
+            ) {
+                Text(
+                    text = stringResource(id = R.string.meals_empty_list),
+                    style = MaterialTheme.typography.bodyLarge,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
-                HorizontalDivider()
+            }
+        } else {
+            LazyColumn(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(innerPadding)
+            ) {
+                items(uiState.meals.sortedByDescending { it.timestamp }) { meal ->
+                    val isEditable = remember(meal.timestamp) {
+                        meal.timestamp >= Timestamp.now().minusHours(4)
+                    }
+
+                    MealItem(
+                        meal = meal,
+                        isEditable = isEditable,
+                        onEditClick = { onEditMeal(meal) }
+                    )
+                    HorizontalDivider()
+                }
             }
         }
     }
@@ -192,6 +209,31 @@ fun MealsPreview() {
     AppTheme {
         MealsContent(
             uiState = MealsUiState(),
+            onNavigateToMealTypes = {},
+            onNavigateToMealBolus = {},
+            onEditMeal = {},
+            onNavigateUp = {}
+        )
+    }
+}
+
+@Preview(showBackground = true, name = "With Data")
+@Composable
+fun MealsWithDataPreview() {
+    val sampleMealType = MealType(
+        name = "Normal",
+        components = listOf(CarbCurveComponentData(100, Minutes(45.toShort()))),
+        cat = Minutes(180.toShort())
+    )
+    val sampleMeals = listOf(
+        MealEntry(id = 1, timestamp = Timestamp.now().minusHours(8), carbGrams = 45.0, mealType = sampleMealType),
+        MealEntry(id = 2, timestamp = Timestamp.now().minusHours(5), carbGrams = 15.0, mealType = sampleMealType),
+        MealEntry(id = 3, timestamp = Timestamp.now().minusHours(1), carbGrams = 60.0, mealType = sampleMealType)
+    )
+
+    AppTheme {
+        MealsContent(
+            uiState = MealsUiState(meals = sampleMeals),
             onNavigateToMealTypes = {},
             onNavigateToMealBolus = {},
             onEditMeal = {},

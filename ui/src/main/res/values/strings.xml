@@ -193,6 +193,7 @@
     <string name="cd_open_navigation_drawer">Hauptmenü öffnen</string>
 
     <string name="meals_screen_title">Mahlzeiten</string>
+    <string name="meals_empty_list">Keine Mahlzeiten eingetragen</string>
     <string name="menu_meal_types_label">Mahlzeitentypen</string>
     <string name="meal_types_screen_title">Mahlzeitentypen</string>
     <string name="meal_type_editor_title_new">Neuer Mahlzeitentyp</string>
