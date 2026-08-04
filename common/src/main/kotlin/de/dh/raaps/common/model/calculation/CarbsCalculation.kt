@@ -104,7 +104,7 @@ class SampledCarbsCalculationCache(
             for (cccd in mealType.components) {
                 val ccc =
                     CarbCurveComponent(cccd.peakMinutes.value.toDouble())
-                result += ccc.absorbedFraction(intervalStartTime.toDouble()) * cccd.weight
+                result += ccc.absorbedFraction(intervalStartTime.toDouble()) * (cccd.weight / 100.0)
             }
             result
         }
