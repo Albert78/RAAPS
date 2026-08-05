@@ -24,7 +24,6 @@ import de.dh.raaps.core.repository.TherapyRepository
 import de.dh.raaps.core.repository.TreatmentRepository
 import de.dh.raaps.core.repository.db.AppDatabase
 import de.dh.raaps.core.system.AndroidNotifications
-import de.dh.raaps.core.system.NotificationManager
 import de.dh.raaps.core.system.SystemWakeService
 import de.dh.raaps.core.system.SystemWakeServiceImpl
 import de.dh.raaps.core.system.TimeServiceImpl
@@ -51,7 +50,6 @@ class SystemRegistryImpl(
     override val wakeService: SystemWakeService,
     override val timeService: TimeService,
     override val pumpManager: PumpManager,
-    override val notificationManager: NotificationManager,
     override val carbsInsulinCalculationModel: CarbsInsulinCalculationModel,
     override val permissionsChangedHandler: PermissionsChangedHandler,
     override val apsServiceClass: Class<out Service>
@@ -84,7 +82,6 @@ class SystemRegistryImpl(
             val settingsRepository = SettingsRepository(appDatabase)
 
             // Initialize Managers
-            val notificationManager = NotificationManager(androidNotifications)
             val wakeService = SystemWakeServiceImpl(application)
             val timeService = TimeServiceImpl(scope = scope)
             val pumpManager = PumpManagerImpl(scope = scope, wakeService = wakeService)
@@ -102,6 +99,7 @@ class SystemRegistryImpl(
                 wakeService = wakeService,
                 settingsRepository = settingsRepository,
                 timeService = timeService,
+                androidNotifications = androidNotifications,
                 scope = scope
             )
 
@@ -130,8 +128,6 @@ class SystemRegistryImpl(
                 context = application
             )
 
-            notificationManager.startInitialization(scope, glucoseSourceManager, therapyManager, timeService)
-
             val permissionsHandler = PermissionsChangedHandler {
                 pluginManager.triggerUpdatesAfterPermissionsChange()
                 onPermissionsChanged()
@@ -153,7 +149,6 @@ class SystemRegistryImpl(
                 wakeService = wakeService,
                 timeService = timeService,
                 pumpManager = pumpManager,
-                notificationManager = notificationManager,
                 carbsInsulinCalculationModel = carbsInsulinCalculationModel,
                 permissionsChangedHandler = permissionsHandler,
                 apsServiceClass = apsServiceClass

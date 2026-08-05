@@ -16,7 +16,6 @@ import de.dh.raaps.core.repository.GlucoseRepository
 import de.dh.raaps.core.repository.SettingsRepository
 import de.dh.raaps.core.repository.TherapyRepository
 import de.dh.raaps.core.repository.TreatmentRepository
-import de.dh.raaps.core.system.NotificationManager
 import de.dh.raaps.core.system.SystemWakeService
 
 /**
@@ -94,11 +93,6 @@ interface SystemRegistry {
      * Provides the system-wide time reference and handles synchronized ticking for background processes.
      */
     val timeService: TimeService
-
-    /**
-     * High-level manager for orchestrating APS-related user notifications and alerts.
-     */
-    val notificationManager: NotificationManager
 
     // Domain Managers and Services
 

@@ -17,7 +17,7 @@ import kotlinx.coroutines.cancel
  */
 class ApsService : Service() {
     private val serviceScope = CoroutineScope(Dispatchers.Main + SupervisorJob())
-    private val notificationManager = MainApplication.instance.registry.notificationManager
+    private val systemManager = MainApplication.instance.registry.systemManager
 
     override fun onCreate() {
         super.onCreate()
@@ -28,7 +28,7 @@ class ApsService : Service() {
     }
 
     private fun startServiceInForeground() {
-        val notification: Notification = notificationManager.createForegroundServiceNotification()
+        val notification: Notification = systemManager.createForegroundServiceNotification()
 
         startForeground(
             AndroidNotifications.FOREGROUND_NOTIFICATION_ID,

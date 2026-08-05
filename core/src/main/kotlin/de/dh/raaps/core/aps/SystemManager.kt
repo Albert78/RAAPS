@@ -1,14 +1,19 @@
 package de.dh.raaps.core.aps
 
+import android.app.Notification
 import android.content.Context
 import android.content.Intent
 import de.dh.raaps.AppPreferencesRepository
 import de.dh.raaps.common.model.ApsMode
 import de.dh.raaps.common.model.calculation.CarbsInsulinCalculationModel
+import de.dh.raaps.common.model.data.Tick
+import de.dh.raaps.common.model.data.TickHandler
+import de.dh.raaps.common.model.data.TickPriority
 import de.dh.raaps.common.model.data.TimeService
 import de.dh.raaps.common.model.data.Timestamp
 import de.dh.raaps.core.repository.SettingsRepository
 import de.dh.raaps.core.repository.TreatmentRepository
+import de.dh.raaps.core.system.AndroidNotifications
 import de.dh.raaps.core.system.SystemWakeService
 import de.dh.raaps.core.system.WakeupHandler
 import kotlinx.coroutines.CoroutineScope
@@ -73,6 +78,11 @@ interface SystemManager {
     )
 
     /**
+     * Creates a notification for the foreground service.
+     */
+    fun createForegroundServiceNotification(): Notification
+
+    /**
      * Gracefully stops the system.
      */
     fun stop()
@@ -86,6 +96,7 @@ class SystemManagerImpl(
     private val wakeService: SystemWakeService,
     private val settingsRepository: SettingsRepository,
     private val timeService: TimeService,
+    private val androidNotifications: AndroidNotifications,
     private val scope: CoroutineScope
 ) : SystemManager, WakeupHandler {
     // Threading: Single background thread to avoid race conditions in the core logic
@@ -104,28 +115,9 @@ class SystemManagerImpl(
     // Computation Core: Pure logic and state, completely thread-agnostic
     private lateinit var core: Core
 
-    init {
-        wakeService.registerHandler(WAKE_TAG, this)
-
-        scope.launch {
-            settingsRepository.observeCurrentSettings().collect { settings ->
-                if (settings != null) {
-                    _apsMode.value = settings.apsMode
-                }
-            }
-        }
-
-        scope.launch {
-            glucoseSourceManager.currentBg.drop(1).collect { bg ->
-                if (bg != null) {
-                    // Schedule stale check for the next window
-                    val nextCheck = nextBgStaleCheckAt()
-                    wakeService.scheduleWakeup(WAKE_TAG, WAKEUP_STALE_CHECK, nextCheck)
-
-                    // Synchronize our internal ticking grid to fire 20s after the BG reading.
-                    timeService.synchronize(Timestamp.now().plusSeconds(20))
-                }
-            }
+    private inner class NotificationTickHandler : TickHandler {
+        override suspend fun onTick(tick: Tick) {
+            androidNotifications.updateMainAppNotification(glucoseSourceManager)
         }
     }
 
@@ -155,6 +147,42 @@ class SystemManagerImpl(
         carbsInsulinCalculationModel: CarbsInsulinCalculationModel,
         context: Context
     ) {
+        wakeService.registerHandler(WAKE_TAG, this)
+
+        scope.launch {
+            settingsRepository.observeCurrentSettings().collect { settings ->
+                if (settings != null) {
+                    _apsMode.value = settings.apsMode
+                }
+            }
+        }
+
+        scope.launch {
+            glucoseSourceManager.currentBg.drop(1).collect { bg ->
+                if (bg != null) {
+                    // Schedule stale check for the next window
+                    val nextCheck = nextBgStaleCheckAt()
+                    wakeService.scheduleWakeup(WAKE_TAG, WAKEUP_STALE_CHECK, nextCheck)
+
+                    // Synchronize our internal ticking grid to fire 20s after the BG reading.
+                    timeService.synchronize(Timestamp.now().plusSeconds(20))
+                }
+            }
+        }
+
+        androidNotifications.createNotificationChannels()
+        timeService.registerTickHandler(TickPriority.UI, NotificationTickHandler())
+
+        scope.launch {
+            therapyManager.recommendations.collect { recommendations ->
+                if (recommendations.isEmpty()) {
+                    androidNotifications.cancelRecommendationNotification()
+                } else {
+                    androidNotifications.showRecommendationNotification(recommendations.first())
+                }
+            }
+        }
+
         core = Core.createProductiveCore(
             therapyManager = therapyManager,
             treatmentRepository = treatmentRepository,
@@ -162,7 +190,7 @@ class SystemManagerImpl(
             carbsInsulinCalculationModel = carbsInsulinCalculationModel,
             glucoseSourceManager = glucoseSourceManager,
 
-            onCoreStateChanged = { emitCoreStateChangedEvent() },
+            onCoreStateChanged = { handleCoreStateChanged() },
             onAcquireBusyState = { acquireBusyState() },
             onReleaseBusyState = { releaseBusyState() },
 
@@ -213,8 +241,14 @@ class SystemManagerImpl(
         wakeService.releaseBusyState(WAKE_TAG)
     }
 
-    private fun emitCoreStateChangedEvent() = inExternalDispatcher {
-        _coreState.emit(core.coreState)
+    private fun handleCoreStateChanged() {
+        inExternalDispatcher {
+            _coreState.emit(core.coreState)
+        }
+    }
+
+    override fun createForegroundServiceNotification(): Notification {
+        return androidNotifications.createMainAppNotification(glucoseSourceManager)
     }
 
     override fun stop() {
