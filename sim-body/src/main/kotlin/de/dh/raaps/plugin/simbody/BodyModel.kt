@@ -9,7 +9,6 @@ import de.dh.raaps.common.model.MealEntry
 import de.dh.raaps.common.model.MealType
 import de.dh.raaps.common.model.calculation.CarbCurveComponent
 import de.dh.raaps.common.model.calculation.InsulinCurve
-import de.dh.raaps.common.model.data.BgValue
 import de.dh.raaps.common.model.data.Block
 import de.dh.raaps.common.model.data.Minutes
 import de.dh.raaps.common.model.data.Timestamp
@@ -148,14 +147,14 @@ class BodyModel(
     val isLoadedFlow: StateFlow<Boolean> = _isLoaded.asStateFlow()
 
     // Current state
-    private val _bloodGlucose = MutableStateFlow(BgValue.INVALID)
-    var bloodGlucose: BgValue
+    private val _bloodGlucose = MutableStateFlow(0.0)
+    var bloodGlucose: Double
         get() = _bloodGlucose.value
         set(value) {
             _bloodGlucose.value = value
             persistState()
         }
-    val bloodGlucoseFlow: StateFlow<BgValue> = _bloodGlucose.asStateFlow()
+    val bloodGlucoseFlow: StateFlow<Double> = _bloodGlucose.asStateFlow()
 
     private val _lastTickTimestamp = MutableStateFlow(Timestamp.now())
     var lastTickTimestamp: Timestamp
@@ -174,14 +173,14 @@ class BodyModel(
             // Load simulation state
             val state = dao.getSimulationState()
             if (state != null) {
-                _bloodGlucose.value = BgValue.fromMgDl(state.currentBgMgDl)
+                _bloodGlucose.value = state.currentBgMgDl
                 _lastTickTimestamp.value = Timestamp(state.lastTickTimestampMs)
                 _exerciseIntensity.value = state.exerciseIntensity
                 _stressLevel.value = state.stressLevel
                 _illnessFactor.value = state.illnessFactor
             } else {
                 // First run defaults
-                _bloodGlucose.value = BgValue.fromMgDl(120)
+                _bloodGlucose.value = 120.0
                 _lastTickTimestamp.value = Timestamp.now()
             }
 
@@ -258,7 +257,7 @@ class BodyModel(
         scope.launch {
             dao.updateSimulationState(
                 SimulationStateEntity(
-                    currentBgMgDl = bloodGlucose.mgdl.toInt(),
+                    currentBgMgDl = bloodGlucose,
                     lastTickTimestampMs = lastTickTimestamp.ms,
                     exerciseIntensity = exerciseIntensity,
                     stressLevel = stressLevel,
@@ -312,8 +311,8 @@ class BodyModel(
         }
 
         // Update BG state
-        val newMgDl = bloodGlucose.mgdl + bgDelta
-        bloodGlucose = BgValue.fromMgDl(newMgDl.coerceIn(20.0, 500.0).toInt())
+        val newMgDl = bloodGlucose + bgDelta
+        bloodGlucose = newMgDl.coerceIn(20.0, 500.0)
 
         lastTickTimestamp = currentTimestamp
         cleanup(currentTimestamp)

@@ -13,7 +13,7 @@ class SimBodyRepository(private val simBodyDao: SimBodyDao) {
     suspend fun getSimulationState() = simBodyDao.getSimulationState()
 
     suspend fun updateSimulationState(
-        currentBgMgDl: Int,
+        currentBgMgDl: Double,
         lastTickTimestampMs: Long,
         exerciseIntensity: Double,
         stressLevel: Double,

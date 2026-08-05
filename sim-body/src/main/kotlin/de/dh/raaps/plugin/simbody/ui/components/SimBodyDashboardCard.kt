@@ -26,7 +26,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.tooling.preview.Preview
-import de.dh.raaps.common.model.data.BgValue
 import de.dh.raaps.common.model.data.Block
 import de.dh.raaps.common.model.data.Minutes
 import de.dh.raaps.common.ui.theme.AppTheme
@@ -74,7 +73,7 @@ fun SimBodyDashboardCard(
 
             ParameterRow(
                 "Blood Glucose",
-                if (isLoaded) "${bg.mgdl} mg/dL" else "---"
+                if (isLoaded) String.format(Locale.US, "%.1f mg/dL", bg) else "---"
             ) { if (isLoaded) showEditDialog = "bg" }
 
             ParameterRow(
@@ -140,8 +139,8 @@ fun SimBodyDashboardCard(
     }
 
     when (showEditDialog) {
-        "bg" -> EditDoubleDialog("BG (mg/dL)", bg.mgdl.toDouble(), { showEditDialog = null }) {
-            bodyModel.bloodGlucose = BgValue.fromMgDl(it.toInt())
+        "bg" -> EditDoubleDialog("BG (mg/dL)", bg, { showEditDialog = null }) {
+            bodyModel.bloodGlucose = it
         }
         "exercise" -> EditDoubleDialog("Exercise Intensity (0-1)", exercise, { showEditDialog = null }) {
             bodyModel.exerciseIntensity = it.coerceIn(0.0, 1.0)
@@ -214,7 +213,7 @@ fun SimBodyDashboardCardPreview() {
     )
     val bodyModel = remember {
         BodyModel(mockProfile).apply {
-            bloodGlucose = BgValue.fromMgDl(140)
+            bloodGlucose = 140.0
             exerciseIntensity = 0.2
             illnessFactor = 1.1
             stressLevel = 0.5

@@ -19,7 +19,7 @@ data class ImpactHistoryEntity(
 @Entity(tableName = "simulation_state")
 data class SimulationStateEntity(
     @PrimaryKey val id: Int = 0, // Only one state entry
-    val currentBgMgDl: Int,
+    val currentBgMgDl: Double,
     val lastTickTimestampMs: Long,
     val exerciseIntensity: Double,
     val stressLevel: Double,
