@@ -27,7 +27,9 @@ abstract class SimBodyDatabase : RoomDatabase() {
                     context.applicationContext,
                     SimBodyDatabase::class.java,
                     DATABASE_NAME
-                ).build().also { INSTANCE = it }
+                )
+                    .fallbackToDestructiveMigration()
+                    .build().also { INSTANCE = it }
             }
         }
     }

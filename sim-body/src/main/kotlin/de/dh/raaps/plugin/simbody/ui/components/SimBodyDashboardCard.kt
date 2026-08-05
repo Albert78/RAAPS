@@ -10,6 +10,7 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
+import androidx.compose.material3.Checkbox
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
@@ -43,6 +44,8 @@ fun SimBodyDashboardCard(
     val illness by bodyModel.illnessFactorFlow.collectAsState()
     val stress by bodyModel.stressLevelFlow.collectAsState()
     val bg by bodyModel.bloodGlucoseFlow.collectAsState()
+    val isSensorEnabled by bodyModel.isSensorEnabledFlow.collectAsState()
+    val sensorNoiseFactor by bodyModel.sensorNoiseFactorFlow.collectAsState()
     val isLoaded by bodyModel.isLoadedFlow.collectAsState()
     val activeProfile by bodyModel.activeProfileFlow.collectAsState()
 
@@ -101,6 +104,32 @@ fun SimBodyDashboardCard(
             }
 
             Text(
+                "Sensor Config",
+                style = MaterialTheme.typography.titleSmall,
+                modifier = Modifier.padding(top = 8.dp)
+            )
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 4.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Text("Sensor Enabled", style = MaterialTheme.typography.bodyMedium)
+                Checkbox(
+                    checked = isSensorEnabled,
+                    onCheckedChange = { bodyModel.isSensorEnabled = it },
+                    enabled = isLoaded
+                )
+            }
+            ParameterRow(
+                "Noise Factor",
+                if (isLoaded) String.format(Locale.US, "%.2f", sensorNoiseFactor) else "---"
+            ) {
+                if (isLoaded) showEditDialog = "noise"
+            }
+
+            Text(
                 "Body Profile",
                 style = MaterialTheme.typography.titleSmall,
                 modifier = Modifier.padding(top = 8.dp)
@@ -150,6 +179,9 @@ fun SimBodyDashboardCard(
         }
         "stress" -> EditDoubleDialog("Stress Level (0-1)", stress, { showEditDialog = null }) {
             bodyModel.stressLevel = it.coerceIn(0.0, 1.0)
+        }
+        "noise" -> EditDoubleDialog("Noise Factor (>= 0)", sensorNoiseFactor, { showEditDialog = null }) {
+            bodyModel.sensorNoiseFactor = it.coerceAtLeast(0.0)
         }
     }
 }

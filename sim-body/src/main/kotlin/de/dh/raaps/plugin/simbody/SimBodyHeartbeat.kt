@@ -79,15 +79,33 @@ class SimBodyHeartbeat(
         }
     }
 
+    private val random = java.util.Random()
+
     private fun performTick() {
         val now = Timestamp.now()
         Log.d(TAG, "SimBody Heartbeat Tick at $now")
 
+        if (!bodyModel.isSensorEnabled) {
+            Log.d(TAG, "Sensor is disabled, skipping BG reading emission")
+            return
+        }
+
         // Ensure the system stays awake during emission
         wakeService.acquireBusyState(WAKE_TAG)
         try {
+            val baseBg = bodyModel.bloodGlucose
+            val noiseFactor = bodyModel.sensorNoiseFactor
+            
+            val finalBg = if (noiseFactor > 0) {
+                // Apply Gaussian noise with the noise factor as standard deviation
+                val noise = random.nextGaussian() * noiseFactor
+                (baseBg + noise).coerceIn(20.0, 500.0)
+            } else {
+                baseBg
+            }
+
             val reading = BgReading(
-                value = BgValue.fromMgDl(bodyModel.bloodGlucose.toInt()),
+                value = BgValue.fromMgDl(finalBg.toInt()),
                 sampleKind = BgSampleKind.Value,
                 timestamp = now
             )

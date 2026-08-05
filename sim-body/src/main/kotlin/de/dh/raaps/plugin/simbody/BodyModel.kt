@@ -96,6 +96,24 @@ class BodyModel(
         }
     val stressLevelFlow: StateFlow<Double> = _stressLevel.asStateFlow()
 
+    private val _isSensorEnabled = MutableStateFlow(true)
+    var isSensorEnabled: Boolean
+        get() = _isSensorEnabled.value
+        set(value) {
+            _isSensorEnabled.value = value
+            persistState()
+        }
+    val isSensorEnabledFlow: StateFlow<Boolean> = _isSensorEnabled.asStateFlow()
+
+    private val _sensorNoiseFactor = MutableStateFlow(0.0)
+    var sensorNoiseFactor: Double
+        get() = _sensorNoiseFactor.value
+        set(value) {
+            _sensorNoiseFactor.value = value
+            persistState()
+        }
+    val sensorNoiseFactorFlow: StateFlow<Double> = _sensorNoiseFactor.asStateFlow()
+
     // Simulated Person Profile (metabolic parameters)
     private val _activeProfile = MutableStateFlow(initialProfile)
     var activeProfile: BodyProfile
@@ -178,6 +196,8 @@ class BodyModel(
                 _exerciseIntensity.value = state.exerciseIntensity
                 _stressLevel.value = state.stressLevel
                 _illnessFactor.value = state.illnessFactor
+                _isSensorEnabled.value = state.isSensorEnabled
+                _sensorNoiseFactor.value = state.sensorNoiseFactor
             } else {
                 // First run defaults
                 _bloodGlucose.value = 120.0
@@ -261,7 +281,9 @@ class BodyModel(
                     lastTickTimestampMs = lastTickTimestamp.ms,
                     exerciseIntensity = exerciseIntensity,
                     stressLevel = stressLevel,
-                    illnessFactor = illnessFactor
+                    illnessFactor = illnessFactor,
+                    isSensorEnabled = isSensorEnabled,
+                    sensorNoiseFactor = sensorNoiseFactor
                 )
             )
         }

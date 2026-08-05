@@ -23,7 +23,9 @@ data class SimulationStateEntity(
     val lastTickTimestampMs: Long,
     val exerciseIntensity: Double,
     val stressLevel: Double,
-    val illnessFactor: Double
+    val illnessFactor: Double,
+    val isSensorEnabled: Boolean = true,
+    val sensorNoiseFactor: Double = 0.0
 )
 
 @Entity(tableName = "sim_events")
