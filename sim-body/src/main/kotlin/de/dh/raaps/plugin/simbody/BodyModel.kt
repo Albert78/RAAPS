@@ -188,74 +188,83 @@ class BodyModel(
             return
         }
         scope.launch {
-            // Load simulation state
-            val state = dao.getSimulationState()
-            if (state != null) {
-                _bloodGlucose.value = state.currentBgMgDl
-                _lastTickTimestamp.value = Timestamp(state.lastTickTimestampMs)
-                _exerciseIntensity.value = state.exerciseIntensity
-                _stressLevel.value = state.stressLevel
-                _illnessFactor.value = state.illnessFactor
-                _isSensorEnabled.value = state.isSensorEnabled
-                _sensorNoiseFactor.value = state.sensorNoiseFactor
-            } else {
-                // First run defaults
-                _bloodGlucose.value = 120.0
-                _lastTickTimestamp.value = Timestamp.now()
+            try {
+                // Load simulation state
+                val state = dao.getSimulationState()
+                if (state != null) {
+                    _bloodGlucose.value = state.currentBgMgDl
+                    _lastTickTimestamp.value = Timestamp(state.lastTickTimestampMs)
+                    _exerciseIntensity.value = state.exerciseIntensity
+                    _stressLevel.value = state.stressLevel
+                    _illnessFactor.value = state.illnessFactor
+                    _isSensorEnabled.value = state.isSensorEnabled
+                    _sensorNoiseFactor.value = state.sensorNoiseFactor
+                } else {
+                    // First run defaults
+                    _bloodGlucose.value = 120.0
+                    // Set last tick to 5 minutes ago so heartbeat triggers immediately on start
+                    _lastTickTimestamp.value = Timestamp(Timestamp.now().ms - 5 * 60 * 1000L)
+                    _isSensorEnabled.value = true
+                    _sensorNoiseFactor.value = 0.0
+                }
+
+                // Load active profile if exists
+                dao.getActiveBodyProfile()?.let { entity ->
+                    activeProfile = BodyProfile(
+                        crBlocks = parseBlocks(entity.crBlocks),
+                        isfBlocks = parseBlocks(entity.isfBlocks),
+                        liverGlucoseOutputBlocks = parseBlocks(entity.liverGlucoseOutputBlocks)
+                    )
+                }
+
+                val horizonMs = 10 * 60 * 60 * 1000L
+                val threshold = Timestamp.now().ms - horizonMs
+
+                // Load events (meals and boluses) from the last 10 hours
+                val events = dao.getEventsSince(threshold)
+
+                val loadedMeals = events.filter { it.type == "MEAL" }.map { event ->
+                    MealEntry(
+                        timestamp = Timestamp(event.timestampMs),
+                        carbGrams = event.amount,
+                        mealType = if (event.detailId == defaultMealType.id) defaultMealType else defaultMealType
+                    )
+                }
+                meals.clear()
+                meals.addAll(loadedMeals)
+
+                val loadedInsulin = events.filter { it.type == "BOLUS" }.map { event ->
+                    InsulinApplication(
+                        timestamp = Timestamp(event.timestampMs),
+                        amount = event.amount,
+                        insulinType = if (event.detailId == defaultInsulinType.id) defaultInsulinType else defaultInsulinType,
+                        origin = event.insulinOrigin ?: InsulinOrigin.Pump,
+                        provisional = false
+                    )
+                }
+                insulinApplications.clear()
+                insulinApplications.addAll(loadedInsulin)
+
+                // Load impact history
+                val history = dao.getImpactsSince(threshold).map { entity ->
+                    Impacts(
+                        carbImpact = entity.carbImpact,
+                        insulinImpact = entity.insulinImpact,
+                        endogenousImpact = entity.endogenousImpact,
+                        exerciseImpact = entity.exerciseImpact,
+                        stressImpact = entity.stressImpact,
+                        currentTimestamp = Timestamp(entity.timestampMs)
+                    )
+                }
+                impactHistory.clear()
+                impactHistory.addAll(history)
+            } catch (e: Exception) {
+                android.util.Log.e("BodyModel", "Error loading state from database", e)
+                // Fallback defaults if DB fails
+                if (_bloodGlucose.value == 0.0) _bloodGlucose.value = 120.0
+            } finally {
+                _isLoaded.value = true
             }
-
-            // Load active profile if exists
-            dao.getActiveBodyProfile()?.let { entity ->
-                activeProfile = BodyProfile(
-                    crBlocks = parseBlocks(entity.crBlocks),
-                    isfBlocks = parseBlocks(entity.isfBlocks),
-                    liverGlucoseOutputBlocks = parseBlocks(entity.liverGlucoseOutputBlocks)
-                )
-            }
-
-            val horizonMs = 10 * 60 * 60 * 1000L
-            val threshold = Timestamp.now().ms - horizonMs
-
-            // Load events (meals and boluses) from the last 10 hours
-            val events = dao.getEventsSince(threshold)
-
-            val loadedMeals = events.filter { it.type == "MEAL" }.map { event ->
-                MealEntry(
-                    timestamp = Timestamp(event.timestampMs),
-                    carbGrams = event.amount,
-                    mealType = if (event.detailId == defaultMealType.id) defaultMealType else defaultMealType
-                )
-            }
-            meals.clear()
-            meals.addAll(loadedMeals)
-
-            val loadedInsulin = events.filter { it.type == "BOLUS" }.map { event ->
-                InsulinApplication(
-                    timestamp = Timestamp(event.timestampMs),
-                    amount = event.amount,
-                    insulinType = if (event.detailId == defaultInsulinType.id) defaultInsulinType else defaultInsulinType,
-                    origin = event.insulinOrigin ?: InsulinOrigin.Pump,
-                    provisional = false
-                )
-            }
-            insulinApplications.clear()
-            insulinApplications.addAll(loadedInsulin)
-
-            // Load impact history
-            val history = dao.getImpactsSince(threshold).map { entity ->
-                Impacts(
-                    carbImpact = entity.carbImpact,
-                    insulinImpact = entity.insulinImpact,
-                    endogenousImpact = entity.endogenousImpact,
-                    exerciseImpact = entity.exerciseImpact,
-                    stressImpact = entity.stressImpact,
-                    currentTimestamp = Timestamp(entity.timestampMs)
-                )
-            }
-            impactHistory.clear()
-            impactHistory.addAll(history)
-
-            _isLoaded.value = true
         }
     }
 

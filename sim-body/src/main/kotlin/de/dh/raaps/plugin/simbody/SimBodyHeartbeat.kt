@@ -10,9 +10,10 @@ import de.dh.raaps.core.system.SystemWakeService
 import de.dh.raaps.core.system.WakeupHandler
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.flow.filter
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
+import kotlin.time.Duration.Companion.milliseconds
 
 /**
  * Handles the periodic wakeup of the SimBody simulation using the central [SystemWakeService].
@@ -38,19 +39,21 @@ class SimBodyHeartbeat(
         if (started) return
         started = true
         Log.d(TAG, "SimBody Heartbeat waiting for loading...")
-        
+
         scope.launch {
-            bodyModel.isLoadedFlow.filter { it }.first()
+            bodyModel.isLoadedFlow.first { it }
+            // Small delay to allow the system to settle before the first emission
+            delay(1000.milliseconds)
             Log.d(TAG, "SimBody Heartbeat starting (model loaded)")
-            
+
             val now = Timestamp.now()
             val lastTick = bodyModel.lastTickTimestamp
             val intervalMs = TICK_INTERVAL_MINUTES * 60 * 1000L
-            
+
             // The system tick happens approx 20s after emission.
             // We try to maintain the rhythm relative to the last known tick.
             val nextEmissionMs = lastTick.ms - 20000L + intervalMs
-            
+
             if (now.ms >= nextEmissionMs) {
                 // We are past the next expected emission, or it's the first run
                 performTick()
@@ -95,7 +98,7 @@ class SimBodyHeartbeat(
         try {
             val baseBg = bodyModel.bloodGlucose
             val noiseFactor = bodyModel.sensorNoiseFactor
-            
+
             val finalBg = if (noiseFactor > 0) {
                 // Apply Gaussian noise with the noise factor as standard deviation
                 val noise = random.nextGaussian() * noiseFactor
@@ -117,14 +120,14 @@ class SimBodyHeartbeat(
 
     private fun scheduleNext(targetTime: Timestamp? = null) {
         if (!started) return
-        
+
         val nextTick = if (targetTime != null) {
             targetTime
         } else {
             val now = Timestamp.now()
             val lastTick = bodyModel.lastTickTimestamp
             val intervalMs = TICK_INTERVAL_MINUTES * 60 * 1000L
-            
+
             // Calculate next tick based on last tick to maintain rhythm
             var next = lastTick.ms - 20000L + intervalMs
             while (next <= now.ms + 5000) { // 5s buffer
@@ -132,7 +135,7 @@ class SimBodyHeartbeat(
             }
             Timestamp(next)
         }
-        
+
         Log.d(TAG, "Scheduling next tick at $nextTick")
         wakeService.scheduleWakeup(WAKE_TAG, WAKEUP_ID_TICK, nextTick)
     }
