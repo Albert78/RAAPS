@@ -99,6 +99,10 @@ class GlucoseSourceManager(
         return history.last()?.timestamp
     }
 
+    fun predictNextValueTimestamp(): Timestamp {
+        return (getLastDataTime() ?: Timestamp.now()) + readingsTimeDelay
+    }
+
     fun stop() {
         glucoseSource?.stop()
         glucoseSource = null

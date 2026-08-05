@@ -2,6 +2,7 @@ package de.dh.raaps.ui.controls.state
 
 import android.content.res.Configuration
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -17,6 +18,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowForward
+import androidx.compose.material.icons.filled.HourglassEmpty
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -33,6 +35,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
@@ -120,134 +123,183 @@ fun CurrentStateView(
         color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
         border = BorderStroke(2.dp, AppColorBlue.copy(alpha = 0.3f))
     ) {
-        Column(
-            modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(4.dp)
-        ) {
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                Text(
-                    text = bgText,
-                    style = MaterialTheme.typography.headlineLarge.copy(fontWeight = FontWeight.Bold),
-                    color = textColor
-                )
-                Text(
-                    text = stringResource(R.string.glucose_unit_mgdl),
-                    style = MaterialTheme.typography.labelSmall,
-                    color = Color.Gray
-                )
-                Spacer(
-                    modifier = Modifier.height(16.dp)
-                )
-                Text(
-                    text = deltaText,
-                    style = MaterialTheme.typography.titleMedium,
-                    color = MaterialTheme.colorScheme.onSurface
-                )
-
-                if (currentBgValue?.trend != null && currentBgValue.trend != BgTrend.NotComputable) {
-                    Icon(
-                        imageVector = Icons.AutoMirrored.Filled.ArrowForward,
-                        contentDescription = null,
-                        modifier = Modifier
-                            .size(24.dp)
-                            .rotate(trendRotation),
-                        tint = MaterialTheme.colorScheme.onSurface
-                    )
-                }
-            }
-
-            if (timeAgoText.isNotEmpty()) {
-                Text(
-                    text = timeAgoText,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = Color.Gray
-                )
-            }
-
-            HorizontalDivider(
-                modifier = Modifier.padding(vertical = 4.dp),
-                thickness = 1.dp,
-                color = Color.Gray.copy(alpha = 0.3f)
-            )
-
-            Row(
-                modifier = Modifier.fillMaxWidth().height(IntrinsicSize.Min),
-                verticalAlignment = Alignment.CenterVertically
+        Box {
+            Column(
+                modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(4.dp)
             ) {
                 Row(
-                    modifier = Modifier.weight(1f),
-                    horizontalArrangement = Arrangement.Center,
-                    verticalAlignment = Alignment.CenterVertically
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     Text(
-                        text = stringResource(R.string.approx_prefix),
+                        text = bgText,
+                        style = MaterialTheme.typography.headlineLarge.copy(fontWeight = FontWeight.Bold),
+                        color = textColor
+                    )
+                    Text(
+                        text = stringResource(R.string.glucose_unit_mgdl),
+                        style = MaterialTheme.typography.labelSmall,
+                        color = Color.Gray
+                    )
+                    Spacer(
+                        modifier = Modifier.height(16.dp)
+                    )
+                    Text(
+                        text = deltaText,
+                        style = MaterialTheme.typography.titleMedium,
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+
+                    if (currentBgValue?.trend != null && currentBgValue.trend != BgTrend.NotComputable) {
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Filled.ArrowForward,
+                            contentDescription = null,
+                            modifier = Modifier
+                                .size(24.dp)
+                                .rotate(trendRotation),
+                            tint = MaterialTheme.colorScheme.onSurface
+                        )
+                    }
+                }
+
+                if (timeAgoText.isNotEmpty()) {
+                    Text(
+                        text = timeAgoText,
                         style = MaterialTheme.typography.bodySmall,
                         color = Color.Gray
                     )
-                    Spacer(Modifier.width(4.dp))
-                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        Text(
-                            text = cobText,
-                            style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
-                            color = MaterialTheme.colorScheme.onSurface
-                        )
-                        Text(
-                            text = stringResource(R.string.active_carbs_label),
-                            style = MaterialTheme.typography.labelSmall,
-                            color = Color.Gray
-                        )
-                    }
-                    Spacer(Modifier.width(16.dp))
-                    Surface(
-                        modifier = Modifier.size(18.dp).clickable { onCarbsToggle(!carbsVisible) },
-                        shape = RoundedCornerShape(4.dp),
-                        color = if (carbsVisible) Color(0xFFFFC107) else Color.Gray.copy(alpha = 0.3f),
-                        border = BorderStroke(1.dp, Color.Gray.copy(alpha = 0.5f))
-                    ) {}
                 }
 
-                VerticalDivider(
+                HorizontalDivider(
                     modifier = Modifier.padding(vertical = 4.dp),
                     thickness = 1.dp,
                     color = Color.Gray.copy(alpha = 0.3f)
                 )
 
                 Row(
-                    modifier = Modifier.weight(1f),
-                    horizontalArrangement = Arrangement.Center,
+                    modifier = Modifier.fillMaxWidth().height(IntrinsicSize.Min),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Text(
-                        text = stringResource(R.string.approx_prefix),
-                        style = MaterialTheme.typography.bodySmall,
-                        color = Color.Gray
-                    )
-                    Spacer(Modifier.width(4.dp))
-                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    Row(
+                        modifier = Modifier.weight(1f),
+                        horizontalArrangement = Arrangement.Center,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
                         Text(
-                            text = iobText,
-                            style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
-                            color = MaterialTheme.colorScheme.onSurface
-                        )
-                        Text(
-                            text = stringResource(R.string.active_insulin_label),
-                            style = MaterialTheme.typography.labelSmall,
+                            text = stringResource(R.string.approx_prefix),
+                            style = MaterialTheme.typography.bodySmall,
                             color = Color.Gray
                         )
+                        Spacer(Modifier.width(4.dp))
+                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                            Text(
+                                text = cobText,
+                                style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+                                color = MaterialTheme.colorScheme.onSurface
+                            )
+                            Text(
+                                text = stringResource(R.string.active_carbs_label),
+                                style = MaterialTheme.typography.labelSmall,
+                                color = Color.Gray
+                            )
+                        }
+                        Spacer(Modifier.width(16.dp))
+                        Surface(
+                            modifier = Modifier.size(18.dp).clickable { onCarbsToggle(!carbsVisible) },
+                            shape = RoundedCornerShape(4.dp),
+                            color = if (carbsVisible) Color(0xFFFFC107) else Color.Gray.copy(alpha = 0.3f),
+                            border = BorderStroke(1.dp, Color.Gray.copy(alpha = 0.5f))
+                        ) {}
                     }
-                    Spacer(Modifier.width(16.dp))
-                    Surface(
-                        modifier = Modifier.size(18.dp).clickable { onInsulinToggle(!insulinVisible) },
-                        shape = RoundedCornerShape(4.dp),
-                        color = if (insulinVisible) Color(0xFFF44336) else Color.Gray.copy(alpha = 0.3f),
-                        border = BorderStroke(1.dp, Color.Gray.copy(alpha = 0.5f))
-                    ) {}
+
+                    VerticalDivider(
+                        modifier = Modifier.padding(vertical = 4.dp),
+                        thickness = 1.dp,
+                        color = Color.Gray.copy(alpha = 0.3f)
+                    )
+
+                    Row(
+                        modifier = Modifier.weight(1f),
+                        horizontalArrangement = Arrangement.Center,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            text = stringResource(R.string.approx_prefix),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = Color.Gray
+                        )
+                        Spacer(Modifier.width(4.dp))
+                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                            Text(
+                                text = iobText,
+                                style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+                                color = MaterialTheme.colorScheme.onSurface
+                            )
+                            Text(
+                                text = stringResource(R.string.active_insulin_label),
+                                style = MaterialTheme.typography.labelSmall,
+                                color = Color.Gray
+                            )
+                        }
+                        Spacer(Modifier.width(16.dp))
+                        Surface(
+                            modifier = Modifier.size(18.dp).clickable { onInsulinToggle(!insulinVisible) },
+                            shape = RoundedCornerShape(4.dp),
+                            color = if (insulinVisible) Color(0xFFF44336) else Color.Gray.copy(alpha = 0.3f),
+                            border = BorderStroke(1.dp, Color.Gray.copy(alpha = 0.5f))
+                        ) {}
+                    }
                 }
             }
+
+            NextReadingIcon(
+                diffMs = diffMs,
+                readingsTimeDelayMs = currentBgUiState.readingsTimeDelay.inMs(),
+                modifier = Modifier
+                    .align(Alignment.TopEnd)
+                    .padding(8.dp)
+            )
+        }
+    }
+}
+
+@Composable
+private fun NextReadingIcon(
+    diffMs: Long?,
+    readingsTimeDelayMs: Long,
+    modifier: Modifier = Modifier
+) {
+    if (diffMs == null) return
+
+    val isHourglass = diffMs > readingsTimeDelayMs + 20000
+
+    val tintColor = MaterialTheme.colorScheme.onSurfaceVariant
+    val borderColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.5f)
+    val backgroundColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.1f)
+
+    if (isHourglass) {
+        Icon(
+            imageVector = Icons.Default.HourglassEmpty,
+            contentDescription = null,
+            modifier = modifier.size(16.dp),
+            tint = tintColor
+        )
+    } else {
+        val progress = (diffMs.toFloat() / readingsTimeDelayMs.toFloat()).coerceIn(0f, 1f)
+        Canvas(modifier = modifier.size(16.dp)) {
+            // Background circle (subtle)
+            drawCircle(color = backgroundColor)
+            // Progress arc (filling from 12 o'clock)
+            drawArc(
+                color = tintColor,
+                startAngle = -90f,
+                sweepAngle = progress * 360f,
+                useCenter = true
+            )
+            // Outline
+            drawCircle(color = borderColor, style = Stroke(width = 1.dp.toPx()))
         }
     }
 }

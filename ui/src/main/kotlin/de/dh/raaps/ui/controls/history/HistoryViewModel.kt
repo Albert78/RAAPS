@@ -13,6 +13,7 @@ import de.dh.raaps.common.model.data.BgReading
 import de.dh.raaps.common.model.data.BgSampleKind
 import de.dh.raaps.common.model.data.BgValue
 import de.dh.raaps.common.model.data.GlucoseUnit
+import de.dh.raaps.common.model.data.Minutes
 import de.dh.raaps.common.model.data.Tick
 import de.dh.raaps.common.model.data.TickHandler
 import de.dh.raaps.common.model.data.TickPriority
@@ -79,7 +80,9 @@ data class CurrentBgData (
 data class CurrentBgUiState(
     val isLoading: Boolean,
     val isError: Boolean,
-    val currentBgValue: CurrentBgData? = null
+    val currentBgValue: CurrentBgData? = null,
+    val nextExpectedTimestamp: Timestamp = Timestamp(0),
+    val readingsTimeDelay: Minutes = Minutes(5)
 )
 
 data class HistoryUiState(
@@ -168,6 +171,9 @@ class HistoryViewModel(
 
         val latest = recentReadings.lastOrNull()
 
+        val nextExpectedTimestamp = systemRegistry.glucoseSourceManager.predictNextValueTimestamp()
+        val readingsTimeDelay = systemRegistry.glucoseSourceManager.readingsTimeDelay
+
         _currentBgUiState.update {
             if (latest == null) {
                 val limit2HoursMs = timestampNowMs - 2 * 60 * 60 * 1000L
@@ -175,7 +181,13 @@ class HistoryViewModel(
                     .lastOrNull { it.sampleKind == BgSampleKind.Value && it.timestamp.ms > limit2HoursMs }
 
                 if (olderReading == null) {
-                    CurrentBgUiState(isLoading = false, isError = false, currentBgValue = CurrentBgData.invalid())
+                    CurrentBgUiState(
+                        isLoading = false,
+                        isError = false,
+                        currentBgValue = CurrentBgData.invalid(),
+                        nextExpectedTimestamp = nextExpectedTimestamp,
+                        readingsTimeDelay = readingsTimeDelay
+                    )
                 } else {
                     CurrentBgUiState(
                         isLoading = false,
@@ -183,7 +195,9 @@ class HistoryViewModel(
                         currentBgValue = CurrentBgData.oldValue(
                             bgValue = olderReading.value,
                             timestamp = olderReading.timestamp
-                        )
+                        ),
+                        nextExpectedTimestamp = nextExpectedTimestamp,
+                        readingsTimeDelay = readingsTimeDelay
                     )
                 }
             } else {
@@ -232,7 +246,9 @@ class HistoryViewModel(
                         trend = trend,
                         timestamp = latest.timestamp,
                         glucoseUnit = glucoseUnit
-                    )
+                    ),
+                    nextExpectedTimestamp = nextExpectedTimestamp,
+                    readingsTimeDelay = readingsTimeDelay
                 )
             }
         }
