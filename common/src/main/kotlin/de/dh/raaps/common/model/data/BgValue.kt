@@ -26,7 +26,7 @@ value class BgValue(val mgdl: Short): Comparable<BgValue> {
         }
 
     fun isValid(): Boolean = mgdl > 0
-    fun isInvalid(): Boolean = mgdl == 0.toShort()
+    fun isInvalid(): Boolean = !isValid()
 
     companion object {
         val INVALID = BgValue(0)

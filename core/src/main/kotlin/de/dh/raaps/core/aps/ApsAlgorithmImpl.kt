@@ -278,7 +278,7 @@ class ApsAlgorithmImpl(
         // Get out of a current or impending low by suggesting carbs
         // Find the next occurrence where the value falls below the minimum; find the minimum with time
         predictionModel.findNext(startAt = nowTick, until = nowTick.plusMinutes(LOW_WARNING_THRESHOLD.value.toInt())) {
-            it.predictedBg < lowThreshold + LOW_BG_SAFETY_MARGIN
+            it.predictedBg.isValid() && it.predictedBg < lowThreshold + LOW_BG_SAFETY_MARGIN
         }?.let { _ ->
             var carbsInGHint: Int? = null
 
@@ -301,9 +301,10 @@ class ApsAlgorithmImpl(
         val recentCarbsInG = meals.
             filter { meal -> meal.timestamp > now.minusMinutes(20) }.
             sumOf { meal -> meal.carbGrams }
-        val lookAheadStateAtPeak = predictionModel.tryGetTickState(nowTick + insulinPeakTicks)
-            ?: return@doRecalculate CalculationResult.safetyBasal() // This should never happen if we have BG values. If not, fall back to safety basal.
-        val predictedBgAtPeak = lookAheadStateAtPeak.predictedBg
+        val predictedBgAtPeak = predictionModel.tryGetTickState(nowTick + insulinPeakTicks)?.
+            predictedBg?.
+            takeIf { it.isValid() } ?:
+            return CalculationResult.safetyBasal() // This should never happen if we have BG values. If not, fall back to safety basal.
         val bgErrorAtPeak = predictedBgAtPeak - targetBg // < 0 if too low
 
         // Low protection for "lower than target" situations
