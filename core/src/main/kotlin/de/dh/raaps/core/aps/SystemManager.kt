@@ -206,11 +206,11 @@ class SystemManagerImpl(
     }
 
     private fun acquireBusyState() {
-        wakeService.acquireBusyState(APS_WAKE_TAG)
+        wakeService.acquireBusyState(WAKE_TAG)
     }
 
     private fun releaseBusyState() {
-        wakeService.releaseBusyState(APS_WAKE_TAG)
+        wakeService.releaseBusyState(WAKE_TAG)
     }
 
     private fun emitCoreStateChangedEvent() = inExternalDispatcher {
@@ -266,7 +266,6 @@ class SystemManagerImpl(
 
     companion object {
         const val WAKE_TAG = "SystemManager"
-        const val APS_WAKE_TAG = "APS"
         const val WAKEUP_STALE_CHECK = 0u
     }
 }

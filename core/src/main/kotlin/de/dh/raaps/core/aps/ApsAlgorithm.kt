@@ -1,10 +1,15 @@
 package de.dh.raaps.core.aps
 
+sealed class AlgorithmIssue {
+    data class NoRecentValues(val minutes: Int) : AlgorithmIssue()
+    data object NoisyValues : AlgorithmIssue()
+}
+
 interface ApsAlgorithm {
     suspend fun updateTherapySettings()
     suspend fun updateMeals()
     suspend fun updateInsulin()
-    suspend fun recalculate(treatmentLock: TreatmentLock)
+    suspend fun recalculate(treatmentLock: TreatmentLock): List<AlgorithmIssue>
 }
 
 class NoopAlgorithm: ApsAlgorithm {
@@ -20,7 +25,7 @@ class NoopAlgorithm: ApsAlgorithm {
         // Do nothing
     }
 
-    override suspend fun recalculate(treatmentLock: TreatmentLock) {
-        // Do nothing
+    override suspend fun recalculate(treatmentLock: TreatmentLock): List<AlgorithmIssue> {
+        return emptyList()
     }
 }

@@ -70,7 +70,7 @@ class PredictionModel(
      * @return `true` if values have changed compared to the previous settings; next stages must be
      * calculated. Else `false`.
      */
-    inline suspend fun calculate(
+    suspend inline fun calculate(
         currentBG: BgValue,
         avgCurrentDeviationPerTick: BgDelta,
         meals: List<MealEntry>,
@@ -106,10 +106,10 @@ class PredictionModel(
             }
 
             val insulinEquivalentOfCarbs = convertToUnitsFromCarbs(state.effectiveCarbs!!, state.cr!!)
-            // Absolute BGI: Carbs - Insulin + Basal Requirement
-            // Basal rate is converted to units per tick.
-            val basalUnitsPerTick = state.basalRateUph!! / timeline.ticksPerHour()
-            val bgi = (insulinEquivalentOfCarbs - state.effectiveInsulin!! + basalUnitsPerTick) * state.isf!!
+            // Absolute BGI: Carbs - Insulin
+            // We don't include the basal requirement in BGI, so a BGI of 0 should
+            // come true if we deliver standard basal rates.
+            val bgi = (insulinEquivalentOfCarbs - state.effectiveInsulin!!) * state.isf!!
 
             if (bgi != state.bgi) {
                 state.bgi = bgi
@@ -135,7 +135,7 @@ class PredictionModel(
         var min: BgValue = BgValue.INVALID
         var minState: PredictionTickState? = null
         rollingHistory.forEach(from = startAt, to = until) { tick, state ->
-            var currentBg = state.predictedBg
+            val currentBg = state.predictedBg
             if (min.isInvalid() || (currentBg.isValid() && currentBg.mgdl < min.mgdl)) {
                 min = currentBg
                 minState = state

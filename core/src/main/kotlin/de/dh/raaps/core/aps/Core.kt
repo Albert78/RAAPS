@@ -38,6 +38,11 @@ sealed interface CoreState {
      * The system is being shut down. No more calculation will take place anymore.
      */
     data object Shutdown : CoreState
+
+    /**
+     * The algorithm is blocked due to technical issues (e.g. missing values).
+     */
+    data class Blocked(val issue: AlgorithmIssue) : CoreState
 }
 
 /**
@@ -161,7 +166,12 @@ class Core(
                 atomic {
                     val alg = calculationAlgorithm
                     onWaitForAndResetInsulinJobs(treatmentLock)
-                    alg.recalculate(treatmentLock)
+                    val issues = alg.recalculate(treatmentLock)
+                    if (issues.isNotEmpty()) {
+                        setCoreState(CoreState.Blocked(issues.first()))
+                    } else if (coreState is CoreState.Blocked) {
+                        setCoreState(CoreState.Active)
+                    }
                 }
             }
             if (res is LockResult.Busy) {

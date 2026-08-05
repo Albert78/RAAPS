@@ -93,15 +93,29 @@ class ApsAlgorithmImpl(
         val tempBasal: TempBasalResult?,
         val clearTempBasal: Boolean,
         val bolus: InsulinAmount?,
-        val handledDeferredBoluses: List<DeferredBolus>?
+        val handledDeferredBoluses: List<DeferredBolus>?,
+        val algorithmIssues: List<AlgorithmIssue>?
     ) {
         companion object {
-            fun safetyBasal(): CalculationResult = CalculationResult( // This should never happen if we have BG values. If not, fall back to safety basal.
+            fun safetyBasal(): CalculationResult = CalculationResult(
                 carbsInGHint = null,
                 tempBasal = null,
                 clearTempBasal = true,
                 bolus = null,
                 handledDeferredBoluses = null,
+                algorithmIssues = null
+            )
+
+            fun tempBasal(unitsPerHour: Double, durationInHours: Int) = CalculationResult(
+                carbsInGHint = null,
+                tempBasal = TempBasalResult(
+                    unitsPerHour = unitsPerHour,
+                    durationInHours = durationInHours
+                ),
+                clearTempBasal = false,
+                bolus = null,
+                handledDeferredBoluses = null,
+                algorithmIssues = null
             )
 
             fun zeroTemp(durationInHours: Int): CalculationResult = CalculationResult(
@@ -109,7 +123,8 @@ class ApsAlgorithmImpl(
                 tempBasal = TempBasalResult(unitsPerHour = 0.0, durationInHours = durationInHours),
                 clearTempBasal = false,
                 bolus = null,
-                handledDeferredBoluses = null
+                handledDeferredBoluses = null,
+                algorithmIssues = null
             )
 
             fun carbsSuggestion(carbsInGHint: Int?) = CalculationResult(
@@ -117,7 +132,8 @@ class ApsAlgorithmImpl(
                 tempBasal = TempBasalResult(unitsPerHour = 0.0, durationInHours = 1),
                 clearTempBasal = false,
                 bolus = null,
-                handledDeferredBoluses = null
+                handledDeferredBoluses = null,
+                algorithmIssues = null
             )
 
             fun mealOrCorrectionBolus(
@@ -128,12 +144,22 @@ class ApsAlgorithmImpl(
                 tempBasal = null,
                 clearTempBasal = true,
                 bolus = bolusAmount,
-                handledDeferredBoluses = handledDeferredBoluses
+                handledDeferredBoluses = handledDeferredBoluses,
+                algorithmIssues = null
+            )
+
+            fun algorithmIssues(vararg issues: AlgorithmIssue) = CalculationResult(
+                carbsInGHint = null,
+                tempBasal = null,
+                clearTempBasal = true,
+                bolus = null,
+                handledDeferredBoluses = null,
+                algorithmIssues = issues.toList()
             )
         }
     }
 
-    override suspend fun recalculate(treatmentLock: TreatmentLock) {
+    override suspend fun recalculate(treatmentLock: TreatmentLock): List<AlgorithmIssue> {
         Log.d(TAG, "recalculate: onCancelInsulinJobs")
         onCancelInsulinJobs(treatmentLock)
 
@@ -154,6 +180,7 @@ class ApsAlgorithmImpl(
             Log.d(TAG, "recalculate: Deliver Bolus ${result.bolus.iu} IU")
             onDeliverBolus(treatmentLock, result.bolus, result.handledDeferredBoluses)
         }
+        return result.algorithmIssues ?: emptyList()
     }
 
     suspend fun doRecalculate(): CalculationResult {
@@ -184,7 +211,7 @@ class ApsAlgorithmImpl(
                 }
             }
             if (!receivedValidValue) {
-                onSwitchOffAlgorithm(reason = InvalidBgValues(SWITCH_OFF_ALGORITHM_INVALID_VALUES_THRESHOLD_IN_MINUTES))
+                return CalculationResult.algorithmIssues(AlgorithmIssue.NoRecentValues(SWITCH_OFF_ALGORITHM_INVALID_VALUES_THRESHOLD_IN_MINUTES))
             }
             // We cannot make any new predictions if we don't have fresh values.
             // Fallback to safe basal
@@ -293,15 +320,9 @@ class ApsAlgorithmImpl(
             }
             // Else go on with decreased basal
             val safetCorrectionUnits = convertToUnitsFromBgDelta(-bgErrorAtPeak, isf)
-            return CalculationResult(
-                carbsInGHint = null,
-                tempBasal = TempBasalResult(
-                    unitsPerHour = (defaultBasal - safetCorrectionUnits).coerceAtLeast(0.0),
-                    durationInHours = 1
-                ),
-                clearTempBasal = false,
-                bolus = null,
-                handledDeferredBoluses = null
+            return CalculationResult.tempBasal(
+                unitsPerHour = (defaultBasal - safetCorrectionUnits).coerceAtLeast(0.0),
+                durationInHours = 1
             )
         }
 
