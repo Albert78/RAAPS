@@ -23,6 +23,8 @@ data class InsulinType(
  */
 @JvmInline
 value class InsulinAmount(val iu: Double) {
+    operator fun plus(amount: InsulinAmount) = InsulinAmount(iu + amount.iu)
+
     /**
      * Calculates the physical amount that the pump must actually deliver.
      *

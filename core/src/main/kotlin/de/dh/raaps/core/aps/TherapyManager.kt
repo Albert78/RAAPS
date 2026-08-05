@@ -271,12 +271,12 @@ class TherapyManager(
      *
      * @param treatmentLock The lock held by the caller.
      * @param amount The amount of insulin to deliver.
-     * @param deferredBolus Optional deferred bolus that was handled by this delivery.
+     * @param handledDeferredBoluses Optional deferred boluses that were handled by this delivery.
      */
-    suspend fun issueBolus(treatmentLock: TreatmentLock, amount: InsulinAmount, deferredBolus: DeferredBolus? = null) {
+    suspend fun issueBolus(treatmentLock: TreatmentLock, amount: InsulinAmount, handledDeferredBoluses: List<DeferredBolus>? = null) {
         checkLock(treatmentLock)
-        if (deferredBolus != null) {
-            markDeferredBolusHandled(treatmentLock, deferredBolus)
+        handledDeferredBoluses?.forEach {
+            markDeferredBolusHandled(treatmentLock, it)
         }
         when (systemManager.apsMode.value) {
             ApsMode.Suspend -> return

@@ -167,7 +167,7 @@ class SystemManagerImpl(
             onReleaseBusyState = { releaseBusyState() },
 
             onCancelInsulinJobs = { treatmentLock -> therapyManager.coreCancelInsulinJobs(treatmentLock) },
-            onDeliverBolus = { treatmentLock, amount, deferredBolus -> therapyManager.issueBolus(treatmentLock, amount, deferredBolus) },
+            onDeliverBolus = { treatmentLock, amount, handledDeferredBoluses -> therapyManager.issueBolus(treatmentLock, amount, handledDeferredBoluses) },
             onSetTempBasal = { treatmentLock, durationInHours, unitsPerHour -> therapyManager.setTempBasal(treatmentLock, durationInHours, unitsPerHour) },
             onClearTempBasal = { treatmentLock -> therapyManager.clearTempBasal(treatmentLock) },
             onCarbsHint = { treatmentLock, amountInGram -> therapyManager.recommendCarbs(treatmentLock, amountInGram) },

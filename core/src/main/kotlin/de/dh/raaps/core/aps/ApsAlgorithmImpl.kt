@@ -12,7 +12,6 @@ import de.dh.raaps.common.model.data.Tick
 import de.dh.raaps.common.model.data.Timeline
 import de.dh.raaps.common.model.data.Timestamp
 import de.dh.raaps.core.repository.TreatmentRepository
-import kotlin.math.absoluteValue
 
 class ApsAlgorithmImpl(
     val timeline: Timeline,
@@ -22,17 +21,14 @@ class ApsAlgorithmImpl(
     val carbsInsulinCalculationModel: CarbsInsulinCalculationModel,
     val therapyManager: TherapyManager,
     val onCancelInsulinJobs: (treatmentLock: TreatmentLock) -> Unit,
-    val onDeliverBolus: suspend (treatmentLock: TreatmentLock, amount: InsulinAmount, handledDeferredBolus: DeferredBolus?) -> Unit,
+    val onDeliverBolus: suspend (treatmentLock: TreatmentLock, amount: InsulinAmount, handledDeferredBoluses: List<DeferredBolus>?) -> Unit,
     val onSetTempBasal: (treatmentLock: TreatmentLock, durationInHours: Int, unitsPerHour: Double) -> Unit,
     val onClearTempBasal: (treatmentLock: TreatmentLock) -> Unit,
     val onCarbsHint: (treatmentLock: TreatmentLock, Int) -> Unit,
 ): ApsAlgorithm {
     // --- Time-based extensions for Tick to provide a Timestamp-like API ---
     private fun Tick.plusMinutes(minutes: Int): Tick = this + (minutes / timeline.tickDuration.value.toInt())
-    private fun Tick.plusHours(hours: Int): Tick = plusMinutes(hours * 60)
     private fun Tick.minusMinutes(minutes: Int): Tick = this - (minutes / timeline.tickDuration.value.toInt())
-    private fun Tick.minusHours(hours: Int): Tick = minusMinutes(hours * 60)
-    private fun Tick.minusMs(ms: Long): Tick = this - (ms / timeline.tickSizeMs).toInt()
     private fun Tick.minus(minutes: Minutes): Tick = minusMinutes(minutes.value.toInt())
     private val Tick.timestamp get() = timeline.timestamp(this)
 
@@ -97,8 +93,45 @@ class ApsAlgorithmImpl(
         val tempBasal: TempBasalResult?,
         val clearTempBasal: Boolean,
         val bolus: InsulinAmount?,
-        val handledDeferredBolus: DeferredBolus?
-    )
+        val handledDeferredBoluses: List<DeferredBolus>?
+    ) {
+        companion object {
+            fun safetyBasal(): CalculationResult = CalculationResult( // This should never happen if we have BG values. If not, fall back to safety basal.
+                carbsInGHint = null,
+                tempBasal = null,
+                clearTempBasal = true,
+                bolus = null,
+                handledDeferredBoluses = null,
+            )
+
+            fun zeroTemp(durationInHours: Int): CalculationResult = CalculationResult(
+                carbsInGHint = null,
+                tempBasal = TempBasalResult(unitsPerHour = 0.0, durationInHours = durationInHours),
+                clearTempBasal = false,
+                bolus = null,
+                handledDeferredBoluses = null
+            )
+
+            fun carbsSuggestion(carbsInGHint: Int?) = CalculationResult(
+                carbsInGHint = carbsInGHint,
+                tempBasal = TempBasalResult(unitsPerHour = 0.0, durationInHours = 1),
+                clearTempBasal = false,
+                bolus = null,
+                handledDeferredBoluses = null
+            )
+
+            fun mealOrCorrectionBolus(
+                bolusAmount: InsulinAmount,
+                handledDeferredBoluses: MutableList<DeferredBolus>
+            ) = CalculationResult(
+                carbsInGHint = null,
+                tempBasal = null,
+                clearTempBasal = true,
+                bolus = bolusAmount,
+                handledDeferredBoluses = handledDeferredBoluses
+            )
+        }
+    }
 
     override suspend fun recalculate(treatmentLock: TreatmentLock) {
         Log.d(TAG, "recalculate: onCancelInsulinJobs")
@@ -119,7 +152,7 @@ class ApsAlgorithmImpl(
         }
         if (result.bolus != null && result.bolus.iu >= de.dh.raaps.common.model.INSULIN_EPSILON) {
             Log.d(TAG, "recalculate: Deliver Bolus ${result.bolus.iu} IU")
-            onDeliverBolus(treatmentLock, result.bolus, result.handledDeferredBolus)
+            onDeliverBolus(treatmentLock, result.bolus, result.handledDeferredBoluses)
         }
     }
 
@@ -141,17 +174,29 @@ class ApsAlgorithmImpl(
             currentBgFiltered = sampledBgReadings.calculatePTWMA(0.7)
         }
 
+        // ----------------------------- Switch off algorithm handling -----------------------------
         if (currentBgFiltered.isInvalid()) {
+            var receivedValidValue = false
+            for (tick in nowTick.minusMinutes(SWITCH_OFF_ALGORITHM_INVALID_VALUES_THRESHOLD_IN_MINUTES)..nowTick) {
+                if (sampledBgReadings.getAt(tick).isValid()) {
+                    receivedValidValue = true
+                    break
+                }
+            }
+            if (!receivedValidValue) {
+                onSwitchOffAlgorithm(reason = InvalidBgValues(SWITCH_OFF_ALGORITHM_INVALID_VALUES_THRESHOLD_IN_MINUTES))
+            }
             // We cannot make any new predictions if we don't have fresh values.
-            // So we'll stick with the old ones.
-            return CalculationResult(
-                carbsInGHint = null,
-                tempBasal = null,
-                clearTempBasal = false,
-                bolus = null,
-                handledDeferredBolus = null
-            )
+            // Fallback to safe basal
+            return CalculationResult.safetyBasal()
         }
+
+        // TODO: We should check if there is much more insulin then carbs, e.g. BG prediction dropping fast.
+        //  If this is the situation, tell the user to manually check the situation.
+
+        // TODO: We should check extremely high situation and switch off the algorithm.
+
+        // ------------------------------ Calculate predictions ------------------------------------
 
         // Most of our calculations below are based on a static prediction model for insulin and carbs.
         // To react to dynamic changes (e.g. unannounced snacks), we calculate an average deviation of our
@@ -194,6 +239,8 @@ class ApsAlgorithmImpl(
         val isf = therapyManager.getIsfFactor(now)
         val cr = therapyManager.getCrFactor(now)
 
+        // First handle low and high, then fall back to normal, smooth correction
+
         // -------------------------------- Low handling -------------------------------------------
 
         // Get out of a current or impending low by suggesting carbs
@@ -201,9 +248,6 @@ class ApsAlgorithmImpl(
         predictionModel.findNext(startAt = nowTick, until = nowTick.plusMinutes(LOW_WARNING_THRESHOLD.value.toInt())) {
             it.predictedBg < lowThreshold + LOW_BG_SAFETY_MARGIN
         }?.let { _ ->
-            // TODO: This handling is for "normal" lows. We should also check if there is much more insulin
-            // then carbs, e.g. BG prediction dropping fast. If this is the situation, tell the user to manually check the situation.
-            val tempBasalResult = TempBasalResult(unitsPerHour = 0.0, durationInHours = 1)
             var carbsInGHint: Int? = null
 
             // We're too low. Find out, now low we'll come to calculate the amount of suggested carbs.
@@ -212,169 +256,112 @@ class ApsAlgorithmImpl(
             val bgMin = predictionModel.findBgMin(startAt = nowTick, nowTick.plusMinutes(FAST_KE_DEFAULT_PEAK.value.toInt()))
             if (bgMin != null && bgMin.predictedBg.isValid()) {
                 val bgErrorAtMin = targetBg - bgMin.predictedBg
-                val lowCorrectionCarbsInG = convertToCarbsFromBgDelta(
+                val lowCorrectionCarbsForMinInG = convertToCarbsFromBgDelta(
                     bgDelta = bgErrorAtMin,
                     isf = isf,
                     cr = cr
                 )
-                carbsInGHint = lowCorrectionCarbsInG.toInt()
+                carbsInGHint = lowCorrectionCarbsForMinInG.toInt()
             }
-            return CalculationResult(
-                carbsInGHint = carbsInGHint,
-                tempBasal = tempBasalResult,
-                clearTempBasal = false,
-                bolus = null,
-                handledDeferredBolus = null
-            ) // Stop further processing when we're currently low
+            return CalculationResult.carbsSuggestion(carbsInGHint = carbsInGHint) // Stop further processing when we're currently low
         }
 
-        val bgMinus15 = sampledBgReadings.getAt(nowTick.minusMinutes(15))
-        val bg15Trend = if (bgMinus15.isValid() && currentBgFiltered.isValid())
-            currentBgFiltered - bgMinus15
-        else
-            BgDelta(0)
-        val recentCarbs = meals.
-            filter { meal -> meal.timestamp > now.minusMinutes(30) }.
+        val recentCarbsInG = meals.
+            filter { meal -> meal.timestamp > now.minusMinutes(20) }.
             sumOf { meal -> meal.carbGrams }
-
         val lookAheadStateAtPeak = predictionModel.tryGetTickState(nowTick + insulinPeakTicks)
-        val predictedBgAtPeak = lookAheadStateAtPeak?.predictedBg
+            ?: return CalculationResult.safetyBasal() // This should never happen if we have BG values. If not, fall back to safety basal.
+        val predictedBgAtPeak = lookAheadStateAtPeak.predictedBg
+        val bgErrorAtPeak = predictedBgAtPeak - targetBg // < 0 if too low
 
-        var tempBasal: TempBasalResult? = null
+        // Low protection for "lower than target" situations
+        if (bgErrorAtPeak < BgDelta(-10)) {
+            // Prediction is too low; Either BG is falling, or, raising too slow -> Lower basal rate and defer meals
 
-        // Prevent further falling BG
-        if (currentBgFiltered < targetBg && bg15Trend < BgDelta(0)) {
-            // If Bg is under normal and further falling
-            val bgErrorNow = targetBg - currentBgFiltered
-            val safetyCorrectionCarbs = convertToCarbsFromBgDelta(bgErrorNow, isf, cr)
-
-            if (recentCarbs < safetyCorrectionCarbs) {
-                if (currentBgFiltered < targetBg - BgDelta(20) && bg15Trend <= BgDelta(0)) {
-                    // Bg is too low and further falling -> Defer ongoing meal boluses
-                    return CalculationResult(
-                        carbsInGHint = null,
-                        tempBasal = TempBasalResult(unitsPerHour = 0.0, durationInHours = 1),
-                        clearTempBasal = false,
-                        bolus = null,
-                        handledDeferredBolus = null
-                    )
+            if (bgErrorAtPeak < BgDelta(-20)) {
+                // Prediction is too low -> Defer ongoing meal boluses
+                val safetyCorrectionCarbsInG = convertToCarbsFromBgDelta(-bgErrorAtPeak, isf, cr)
+                if (recentCarbsInG < safetyCorrectionCarbsInG) {
+                    // Bg is too low, further falling and not enough safety carbs -> Suggest carbs
+                    val lowCorrectionCarbsForPeakInG = safetyCorrectionCarbsInG - recentCarbsInG
+                    if (lowCorrectionCarbsForPeakInG > 5) {
+                        return CalculationResult.carbsSuggestion(carbsInGHint = lowCorrectionCarbsForPeakInG.toInt())
+                    }
                 }
-                // Else go on with decreased basal
-                val safetCorrectionUnits = convertToUnitsFromBgDelta(bgErrorNow, isf)
-
-                // Decrease basal
+                // Enough or almost enough safety carbs, wait for carbs to have effect
+                return CalculationResult.zeroTemp(durationInHours = 1)
+            }
+            // Else go on with decreased basal
+            val safetCorrectionUnits = convertToUnitsFromBgDelta(-bgErrorAtPeak, isf)
+            return CalculationResult(
+                carbsInGHint = null,
                 tempBasal = TempBasalResult(
                     unitsPerHour = (defaultBasal - safetCorrectionUnits).coerceAtLeast(0.0),
                     durationInHours = 1
-                )
-            }
-            // Else: Wait for correction carbs to have effect
-        }
-
-        var mealOrCorrectionBolus = InsulinAmount(0.0)
-
-        // -------------------------------- Meal boluses -------------------------------------------
-
-        // Administer scheduled meal boluses
-        val deferredBoluses = therapyManager.getDeferredBoluses()
-        var handleDeferredBolus: DeferredBolus? = null
-        var sumDeferredBolus = 0.0
-        for (deferredBolus in deferredBoluses) {
-            sumDeferredBolus += deferredBolus.amount.iu
-            if (deferredBolus.timestamp < now) {
-                handleDeferredBolus = deferredBolus
-                mealOrCorrectionBolus = deferredBolus.amount
-            }
-        }
-
-        val neutralCalculationResult = CalculationResult(
-            carbsInGHint = null,
-            tempBasal = tempBasal,
-            clearTempBasal = tempBasal == null,
-            bolus = mealOrCorrectionBolus,
-            handledDeferredBolus = handleDeferredBolus
-        )
-
-        // ------------------------ Good BG or neutral handling check ------------------------------
-
-        val currentCob = carbsInsulinCalculationModel.cob(meals, now)
-        val insulinEquivalentOfCarbs = convertToUnitsFromCarbs(carbs = currentCob, cr = cr)
-        val currentIob = carbsInsulinCalculationModel.iob(
-            insulinApplications = insulinApplications,
-            timestamp = now,
-            dia = dia,
-            peak = insulinPeak
-        )
-
-        // TODO: Validate this arbitrary check; Just want to make sure that we don't start correcting
-        // a high BG if we still have much IOB / deferred bolus
-        if (currentCob > SUSPEND_HIGH_CORRECTIONS_ON_HIGH_COB_THRESHOLD &&
-            (currentIob + sumDeferredBolus) > insulinEquivalentOfCarbs / 2.0) {
-            // We're under influence of a meal, which means we expect the blood sugar to rise; skip correction in that case
-            return neutralCalculationResult
-        }
-
-        mealOrCorrectionBolus = InsulinAmount(0.0) // Not relevant anymore from here on
-
-        if (bg15Trend < BgDelta(-10)) {
-            // BG falling fast but low handling above didn't trigger; don't correct and wait for BG trend to become normal
-            return neutralCalculationResult
-        }
-
-        // TODO: Validate this neutral handling, does it do a good job in combination with the
-        // high handling below to hold the blood sugar at a straight line when it is good?
-        // Or use another point instead of insulin peak time?
-        if (predictedBgAtPeak.mgdl <= targetBg.mgdl - 10) {
-            val bgError = targetBg - predictedBgAtPeak
-            val correction = convertToUnitsFromBgDelta(bgDelta = bgError, isf = isf)
-            return CalculationResult(
-                carbsInGHint = null,
-                tempBasal = TempBasalResult(unitsPerHour = (defaultBasal - correction).coerceAtLeast(0.0), durationInHours = 1),
+                ),
                 clearTempBasal = false,
                 bolus = null,
-                handledDeferredBolus = handleDeferredBolus
+                handledDeferredBoluses = null
             )
         }
 
-        if (handleDeferredBolus == null) {
-            if ((currentBgFiltered.mgdl - targetBg.mgdl).absoluteValue < 5 && bg15Trend < BgDelta(5)) {
-                // Absolute best case without (big) influences. Just use standard basal.
-                return CalculationResult(
-                    carbsInGHint = null,
-                    tempBasal = null,
-                    clearTempBasal = true,
-                    bolus = null,
-                    handledDeferredBolus = handleDeferredBolus
-                )
+        // *****************************************************************************************
+        // At this point, we're sure not to become (too) low, it's safe to have a normal basal rate and
+        // to administer meal boluses
+        // *****************************************************************************************
+
+        // -------------------------------- Meal & high handling -----------------------------------
+
+        // Calculate scheduled meal boluses
+        var dueMealBolusAmount = InsulinAmount(0.0)
+        val dueDeferredBoluses: MutableList<DeferredBolus> = mutableListOf()
+
+        val deferredBoluses = therapyManager.getDeferredBoluses()
+        var sumFutureDeferredBolus = InsulinAmount(0.0)
+        for (deferredBolus in deferredBoluses) {
+            if (deferredBolus.timestamp < now) {
+                dueMealBolusAmount += deferredBolus.amount
+                dueDeferredBoluses += deferredBolus
+            } else {
+                sumFutureDeferredBolus += deferredBolus.amount
             }
         }
 
-        // -------------------------------- High handling ------------------------------------------
-
-        // Correct high blood sugar by administering insulin
-
-        // TODO: Make configurable
-        val aggressiveness = 1.0
-
-        // This BG error must be corrected with insulin
-        val bgErrorAtPeak = (predictedBgAtPeak - targetBg) * aggressiveness
-
-        val correction = convertToUnitsFromBgDelta(bgDelta = bgErrorAtPeak, isf = isf)
+        val cobAtPeak = carbsInsulinCalculationModel.cob(meals, now.plus(insulinPeak))
         val iobAtPeak = carbsInsulinCalculationModel.iob(
             insulinApplications = insulinApplications,
             timestamp = now.plus(insulinPeak),
             dia = dia,
             peak = insulinPeak
         )
+        val insulinEquivalentOfCob = convertToUnitsFromCarbs(carbs = cobAtPeak, cr = cr)
 
-        val insulin = (correction + insulinEquivalentOfCarbs - iobAtPeak).coerceAtLeast(0.0)
-        return CalculationResult(
-            carbsInGHint = null,
-            tempBasal = TempBasalResult(unitsPerHour = 0.0, durationInHours = 1),
-            clearTempBasal = false,
-            bolus = InsulinAmount(insulin),
-            handledDeferredBolus = handleDeferredBolus
-        )
+        val bgErrorCorrectionUnits = convertToUnitsFromBgDelta(bgErrorAtPeak, isf).coerceAtLeast(0.0)
+        val futureInsulinU = iobAtPeak + dueMealBolusAmount.iu + sumFutureDeferredBolus.iu
+        val AGGRESSIVENESS_ERROR_CORRECTION = 0.9
+        val AGGRESSIVENESS_CARBS_CORRECTION = 0.8
+        if (futureInsulinU > insulinEquivalentOfCob + bgErrorCorrectionUnits * AGGRESSIVENESS_ERROR_CORRECTION) {
+            // The meal is already corrected or scheduled to be corrected.
+            // This which means we expect the blood sugar to rise;
+            // skip correction in that case and wait for carbs & deferred boluses to take effect
+            return if (dueDeferredBoluses.isEmpty())
+                CalculationResult.safetyBasal()
+            else
+                CalculationResult.mealOrCorrectionBolus(bolusAmount = dueMealBolusAmount, handledDeferredBoluses = dueDeferredBoluses)
+        } else {
+            // Insufficient correction: Try restrained correction
+            val neededInsulin = insulinEquivalentOfCob * AGGRESSIVENESS_CARBS_CORRECTION + bgErrorCorrectionUnits * AGGRESSIVENESS_ERROR_CORRECTION
+            val futureAvailableInsulin = iobAtPeak + dueMealBolusAmount.iu + sumFutureDeferredBolus.iu
+            return CalculationResult.mealOrCorrectionBolus(
+                bolusAmount = InsulinAmount(
+                    // Scheduled insulin
+                    dueMealBolusAmount.iu +
+                    // "Uncorrected rest"
+                    (neededInsulin - futureAvailableInsulin).coerceAtLeast(0.0)
+                ),
+                handledDeferredBoluses = dueDeferredBoluses
+            )
+        }
     }
 
     companion object {
@@ -393,7 +380,7 @@ class ApsAlgorithmImpl(
             sampledBgReadings: SampledBgReadings,
             therapyManager: TherapyManager,
             onCancelInsulinJobs: (treatmentLock: TreatmentLock) -> Unit,
-            onDeliverBolus: suspend (treatmentLock: TreatmentLock, amount: InsulinAmount, handledDeferredBolus: DeferredBolus?) -> Unit,
+            onDeliverBolus: suspend (treatmentLock: TreatmentLock, amount: InsulinAmount, handledDeferredBoluses: List<DeferredBolus>?) -> Unit,
             onSetTempBasal: (treatmentLock: TreatmentLock, durationInHours: Int, unitsPerHour: Double) -> Unit,
             onClearTempBasal: (treatmentLock: TreatmentLock) -> Unit,
             onCarbsHint: (treatmentLock: TreatmentLock, Int) -> Unit,

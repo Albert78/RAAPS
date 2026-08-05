@@ -7,6 +7,8 @@ import de.dh.raaps.common.model.data.Minutes
  */
 val STALE_BG_THRESHOLD = Minutes(12)
 
+val SWITCH_OFF_ALGORITHM_INVALID_VALUES_THRESHOLD_IN_MINUTES = 15
+
 val LOW_WARNING_THRESHOLD = Minutes(25)
 val FAST_KE_DEFAULT_PEAK = Minutes(25)
 
