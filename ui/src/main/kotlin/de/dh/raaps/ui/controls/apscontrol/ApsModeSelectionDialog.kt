@@ -1,5 +1,6 @@
 package de.dh.raaps.ui.controls.apscontrol
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -16,6 +17,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -120,13 +122,14 @@ private fun ModeOption(
                 }
             ),
             border = if (isSelected) {
-                androidx.compose.foundation.BorderStroke(4.dp, MaterialTheme.colorScheme.outline)
+                BorderStroke(6.dp, MaterialTheme.colorScheme.primary)
             } else null,
             contentPadding = PaddingValues(vertical = 12.dp)
         ) {
             Text(
                 text = mode.toDisplayStringFull(),
-                style = MaterialTheme.typography.titleMedium
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal
             )
         }
     }
