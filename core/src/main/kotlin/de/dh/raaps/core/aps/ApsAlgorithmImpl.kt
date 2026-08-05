@@ -1,7 +1,6 @@
 package de.dh.raaps.core.aps
 
 import android.util.Log
-import de.dh.raaps.common.model.DEFAULT_BG_TARGET_MGDL
 import de.dh.raaps.common.model.InsulinAmount
 import de.dh.raaps.common.model.calculation.CarbsInsulinCalculationModel
 import de.dh.raaps.common.model.convertToCarbsFromBgDelta
@@ -184,7 +183,7 @@ class ApsAlgorithmImpl(
         return result.algorithmIssues ?: emptyList()
     }
 
-    suspend fun doRecalculate(): CalculationResult {
+    suspend fun doRecalculate(): CalculationResult = try {
         val nowTick = timeline.getNowTick()
         val now = Timestamp.now()
 
@@ -296,14 +295,14 @@ class ApsAlgorithmImpl(
                 )
                 carbsInGHint = lowCorrectionCarbsForMinInG.toInt()
             }
-            return CalculationResult.carbsSuggestion(carbsInGHint = carbsInGHint) // Stop further processing when we're currently low
+            return@doRecalculate CalculationResult.carbsSuggestion(carbsInGHint = carbsInGHint) // Stop further processing when we're currently low
         }
 
         val recentCarbsInG = meals.
             filter { meal -> meal.timestamp > now.minusMinutes(20) }.
             sumOf { meal -> meal.carbGrams }
         val lookAheadStateAtPeak = predictionModel.tryGetTickState(nowTick + insulinPeakTicks)
-            ?: return CalculationResult.safetyBasal() // This should never happen if we have BG values. If not, fall back to safety basal.
+            ?: return@doRecalculate CalculationResult.safetyBasal() // This should never happen if we have BG values. If not, fall back to safety basal.
         val predictedBgAtPeak = lookAheadStateAtPeak.predictedBg
         val bgErrorAtPeak = predictedBgAtPeak - targetBg // < 0 if too low
 
@@ -318,15 +317,15 @@ class ApsAlgorithmImpl(
                     // Bg is too low, further falling and not enough safety carbs -> Suggest carbs
                     val lowCorrectionCarbsForPeakInG = safetyCorrectionCarbsInG - recentCarbsInG
                     if (lowCorrectionCarbsForPeakInG > 5) {
-                        return CalculationResult.carbsSuggestion(carbsInGHint = lowCorrectionCarbsForPeakInG.toInt())
+                        return@doRecalculate CalculationResult.carbsSuggestion(carbsInGHint = lowCorrectionCarbsForPeakInG.toInt())
                     }
                 }
                 // Enough or almost enough safety carbs, wait for carbs to have effect
-                return CalculationResult.zeroTemp(durationInHours = 1)
+                return@doRecalculate CalculationResult.zeroTemp(durationInHours = 1)
             }
             // Else go on with decreased basal
             val safetCorrectionUnits = convertToUnitsFromBgDelta(-bgErrorAtPeak, isf)
-            return CalculationResult.tempBasal(
+            return@doRecalculate CalculationResult.tempBasal(
                 unitsPerHour = (defaultBasal - safetCorrectionUnits).coerceAtLeast(0.0),
                 durationInHours = 1
             )
@@ -371,7 +370,7 @@ class ApsAlgorithmImpl(
             // The meal is already corrected or scheduled to be corrected.
             // This which means we expect the blood sugar to rise;
             // skip correction in that case and wait for carbs & deferred boluses to take effect
-            return if (dueDeferredBoluses.isEmpty())
+            if (dueDeferredBoluses.isEmpty())
                 CalculationResult.safetyBasal()
             else
                 CalculationResult.mealOrCorrectionBolus(bolusAmount = dueMealBolusAmount, handledDeferredBoluses = dueDeferredBoluses)
@@ -379,7 +378,7 @@ class ApsAlgorithmImpl(
             // Insufficient correction: Try restrained correction
             val neededInsulin = insulinEquivalentOfCob * AGGRESSIVENESS_CARBS_CORRECTION + bgErrorCorrectionUnits * AGGRESSIVENESS_ERROR_CORRECTION
             val futureAvailableInsulin = iobAtPeak + dueMealBolusAmount.iu + sumFutureDeferredBolus.iu
-            return CalculationResult.mealOrCorrectionBolus(
+            CalculationResult.mealOrCorrectionBolus(
                 bolusAmount = InsulinAmount(
                     // Scheduled insulin
                     dueMealBolusAmount.iu +
@@ -389,6 +388,8 @@ class ApsAlgorithmImpl(
                 handledDeferredBoluses = dueDeferredBoluses
             )
         }
+    } catch (e: Exception) {
+        CalculationResult.algorithmIssues(AlgorithmIssue.InternalError(e.message))
     }
 
     companion object {

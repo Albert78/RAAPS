@@ -131,6 +131,7 @@
     <string name="algorithm_issue_title">Eingriff erforderlich</string>
     <string name="algorithm_issue_no_recent_values">Keine aktuellen Glukosewerte seit %1$d Minuten. Bitte kontrolliere deine Werte manuell.</string>
     <string name="algorithm_issue_noisy_values">Die Glukosewerte sind zu verrauscht für eine sichere Berechnung. Bitte kontrolliere deine Werte manuell.</string>
+    <string name="algorithm_issue_internal_error">Interner Fehler im Algorithmus: %1$s</string>
 
     <string name="insulin_unit_label_format">%1$.1f I.E.</string>
 

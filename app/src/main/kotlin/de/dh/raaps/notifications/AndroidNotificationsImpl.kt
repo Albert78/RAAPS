@@ -150,6 +150,10 @@ class AndroidNotificationsImpl(
                 issue.minutes
             )
             is AlgorithmIssue.NoisyValues -> context.getString(UiR.string.algorithm_issue_noisy_values)
+            is AlgorithmIssue.InternalError -> context.getString(
+                UiR.string.algorithm_issue_internal_error,
+                issue.message ?: "Unknown"
+            )
         }
 
         val dashboardIntent = MainActivity.createStartDashboardIntent(context)

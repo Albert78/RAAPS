@@ -3,6 +3,7 @@ package de.dh.raaps.core.aps
 sealed class AlgorithmIssue {
     data class NoRecentValues(val minutes: Int) : AlgorithmIssue()
     data object NoisyValues : AlgorithmIssue()
+    data class InternalError(val message: String?) : AlgorithmIssue()
 }
 
 interface ApsAlgorithm {
