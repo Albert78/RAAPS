@@ -120,7 +120,7 @@ private fun ModeOption(
                 }
             ),
             border = if (isSelected) {
-                androidx.compose.foundation.BorderStroke(2.dp, MaterialTheme.colorScheme.outline)
+                androidx.compose.foundation.BorderStroke(4.dp, MaterialTheme.colorScheme.outline)
             } else null,
             contentPadding = PaddingValues(vertical = 12.dp)
         ) {
