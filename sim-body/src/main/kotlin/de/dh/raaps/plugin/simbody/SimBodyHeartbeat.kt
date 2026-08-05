@@ -42,8 +42,24 @@ class SimBodyHeartbeat(
         scope.launch {
             bodyModel.isLoadedFlow.filter { it }.first()
             Log.d(TAG, "SimBody Heartbeat starting (model loaded)")
-            performTick()
-            scheduleNext()
+            
+            val now = Timestamp.now()
+            val lastTick = bodyModel.lastTickTimestamp
+            val intervalMs = TICK_INTERVAL_MINUTES * 60 * 1000L
+            
+            // The system tick happens approx 20s after emission.
+            // We try to maintain the rhythm relative to the last known tick.
+            val nextEmissionMs = lastTick.ms - 20000L + intervalMs
+            
+            if (now.ms >= nextEmissionMs) {
+                // We are past the next expected emission, or it's the first run
+                performTick()
+                scheduleNext()
+            } else {
+                // It's not time yet, wait for the next regular turnus
+                Log.d(TAG, "Resuming rhythm, next emission at ${Timestamp(nextEmissionMs)}")
+                scheduleNext(Timestamp(nextEmissionMs))
+            }
         }
     }
 
@@ -81,9 +97,25 @@ class SimBodyHeartbeat(
         }
     }
 
-    private fun scheduleNext() {
+    private fun scheduleNext(targetTime: Timestamp? = null) {
         if (!started) return
-        val nextTick = Timestamp.now().plusMinutes(TICK_INTERVAL_MINUTES)
+        
+        val nextTick = if (targetTime != null) {
+            targetTime
+        } else {
+            val now = Timestamp.now()
+            val lastTick = bodyModel.lastTickTimestamp
+            val intervalMs = TICK_INTERVAL_MINUTES * 60 * 1000L
+            
+            // Calculate next tick based on last tick to maintain rhythm
+            var next = lastTick.ms - 20000L + intervalMs
+            while (next <= now.ms + 5000) { // 5s buffer
+                next += intervalMs
+            }
+            Timestamp(next)
+        }
+        
+        Log.d(TAG, "Scheduling next tick at $nextTick")
         wakeService.scheduleWakeup(WAKE_TAG, WAKEUP_ID_TICK, nextTick)
     }
 
