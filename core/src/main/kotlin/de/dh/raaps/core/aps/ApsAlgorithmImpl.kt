@@ -318,15 +318,15 @@ class ApsAlgorithmImpl(
                     // Bg is too low, further falling and not enough safety carbs -> Suggest carbs
                     val lowCorrectionCarbsForPeakInG = safetyCorrectionCarbsInG - recentCarbsInG
                     if (lowCorrectionCarbsForPeakInG > 5) {
-                        return@doRecalculate CalculationResult.carbsSuggestion(carbsInGHint = lowCorrectionCarbsForPeakInG.toInt())
+                        return CalculationResult.carbsSuggestion(carbsInGHint = lowCorrectionCarbsForPeakInG.toInt())
                     }
                 }
                 // Enough or almost enough safety carbs, wait for carbs to have effect
-                return@doRecalculate CalculationResult.zeroTemp(durationInHours = 1)
+                return CalculationResult.zeroTemp(durationInHours = 1)
             }
             // Else go on with decreased basal
             val safetCorrectionUnits = convertToUnitsFromBgDelta(-bgErrorAtPeak, isf)
-            return@doRecalculate CalculationResult.tempBasal(
+            return CalculationResult.tempBasal(
                 unitsPerHour = (defaultBasal - safetCorrectionUnits).coerceAtLeast(0.0),
                 durationInHours = 1
             )
@@ -365,8 +365,6 @@ class ApsAlgorithmImpl(
 
         val bgErrorCorrectionUnits = convertToUnitsFromBgDelta(bgErrorAtPeak, isf).coerceAtLeast(0.0)
         val futureInsulinU = iobAtPeak + dueMealBolusAmount.iu + sumFutureDeferredBolus.iu
-        val AGGRESSIVENESS_ERROR_CORRECTION = 0.9
-        val AGGRESSIVENESS_CARBS_CORRECTION = 0.8
         if (futureInsulinU > insulinEquivalentOfCob + bgErrorCorrectionUnits * AGGRESSIVENESS_ERROR_CORRECTION) {
             // The meal is already corrected or scheduled to be corrected.
             // This which means we expect the blood sugar to rise;
