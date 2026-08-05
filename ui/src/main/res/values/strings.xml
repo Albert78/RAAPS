@@ -127,6 +127,11 @@
     <string name="recommendation_text_carbs">Nimm %1$dg Kohlenhydrate zu dir, um eine Hypoglykämie zu vermeiden.</string>
     <string name="recommendation_text_bolus">Verabreiche dir %1$.2fU Insulin, um einen hohen Blutzucker zu korrigieren.</string>
 
+    <string name="algorithm_issue_notification_channel_name">Algorithmus-Warnungen</string>
+    <string name="algorithm_issue_title">Eingriff erforderlich</string>
+    <string name="algorithm_issue_no_recent_values">Keine aktuellen Glukosewerte seit %1$d Minuten. Bitte kontrolliere deine Werte manuell.</string>
+    <string name="algorithm_issue_noisy_values">Die Glukosewerte sind zu verrauscht für eine sichere Berechnung. Bitte kontrolliere deine Werte manuell.</string>
+
     <string name="insulin_unit_label_format">%1$.1f I.E.</string>
 
     <string name="aps_mode_dialog_title">Modus wählen</string>

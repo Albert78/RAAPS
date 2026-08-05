@@ -1,5 +1,7 @@
 package de.dh.raaps.common.model.data
 
+import de.dh.raaps.common.model.DEFAULT_BG_LOW_THRESHOLD_MGDL
+import de.dh.raaps.common.model.DEFAULT_BG_TARGET_MGDL
 import de.dh.raaps.common.model.MINUTES_PER_DAY
 
 data class BgBlock(val duration: Minutes, val target: BgValue, val lowThreshold: BgValue)
@@ -20,5 +22,7 @@ fun List<BgBlock>.getBgForMinute(minuteSinceMidnight: Minutes): Pair<BgValue, Bg
         }
     }
     val last = lastOrNull()
-    return if (last != null) Pair(last.target, last.lowThreshold) else Pair(BgValue(100), BgValue(70))
+    return if (last != null) Pair(last.target, last.lowThreshold) else Pair(
+        BgValue(DEFAULT_BG_TARGET_MGDL),
+        BgValue(DEFAULT_BG_LOW_THRESHOLD_MGDL))
 }

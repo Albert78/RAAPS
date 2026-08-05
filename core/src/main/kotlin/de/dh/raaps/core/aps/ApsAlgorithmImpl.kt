@@ -1,6 +1,7 @@
 package de.dh.raaps.core.aps
 
 import android.util.Log
+import de.dh.raaps.common.model.DEFAULT_BG_TARGET_MGDL
 import de.dh.raaps.common.model.InsulinAmount
 import de.dh.raaps.common.model.calculation.CarbsInsulinCalculationModel
 import de.dh.raaps.common.model.convertToCarbsFromBgDelta
@@ -191,37 +192,41 @@ class ApsAlgorithmImpl(
         // to be able to calculate deviations between the static predictions and the actual readings.
         predictionModel.advanceToTick(nowTick.minus(PRESERVE_PREDICTIONS_PAST_TIME))
 
-        // Default basal rate to be adapted by the following code
-        val defaultBasal = therapyManager.getBasalPerHour(now)
+        // ------------------------------- BG Filtering & Validation -------------------------------
 
-        // Filter BG values to avoid big jumps caused by measurement errors.
-        // If we have enough input values, we can use the better SavitzkyGolay filter, else fallback to PTWMA
-        var currentBgFiltered = sampledBgReadings.calculateSavitzkyGolayEndBorder3()
-        if (currentBgFiltered.isInvalid()) {
-            currentBgFiltered = sampledBgReadings.calculatePTWMA(0.7)
-        }
+        val currentBgMgDl = run {
+            // Filter BG values to avoid big jumps caused by measurement errors.
+            // If we have enough input values, we can use the better SavitzkyGolay filter, else fallback to PTWMA
+            var filtered = sampledBgReadings.calculateSavitzkyGolayEndBorder3()
+            if (filtered.isInvalid()) {
+                filtered = sampledBgReadings.calculatePTWMA(0.7)
+            }
 
-        // ----------------------------- Switch off algorithm handling -----------------------------
-        if (currentBgFiltered.isInvalid()) {
-            var receivedValidValue = false
-            for (tick in nowTick.minusMinutes(SWITCH_OFF_ALGORITHM_INVALID_VALUES_THRESHOLD_IN_MINUTES)..nowTick) {
-                if (sampledBgReadings.getAt(tick).isValid()) {
-                    receivedValidValue = true
-                    break
+            // ----------------------------- Switch off algorithm handling -----------------------------
+            if (filtered.isInvalid()) {
+                var receivedValidValue = false
+                for (tick in nowTick.minusMinutes(SWITCH_OFF_ALGORITHM_INVALID_VALUES_THRESHOLD_IN_MINUTES)..nowTick) {
+                    if (sampledBgReadings.getAt(tick).isValid()) {
+                        receivedValidValue = true
+                        break
+                    }
                 }
+                if (!receivedValidValue) {
+                    return@doRecalculate CalculationResult.algorithmIssues(
+                        AlgorithmIssue.NoRecentValues(SWITCH_OFF_ALGORITHM_INVALID_VALUES_THRESHOLD_IN_MINUTES)
+                    )
+                }
+                // We cannot make any new predictions if we don't have fresh values.
+                // Fallback to safe basal
+                return@doRecalculate CalculationResult.safetyBasal()
             }
-            if (!receivedValidValue) {
-                return CalculationResult.algorithmIssues(AlgorithmIssue.NoRecentValues(SWITCH_OFF_ALGORITHM_INVALID_VALUES_THRESHOLD_IN_MINUTES))
-            }
-            // We cannot make any new predictions if we don't have fresh values.
-            // Fallback to safe basal
-            return CalculationResult.safetyBasal()
+            filtered.mgdl
         }
 
         // TODO: We should check if there is much more insulin then carbs, e.g. BG prediction dropping fast.
         //  If this is the situation, tell the user to manually check the situation.
 
-        // TODO: We should check extremely high situation and switch off the algorithm.
+        // TODO: We should check extremely high BG and switch off the algorithm.
 
         // ------------------------------ Calculate predictions ------------------------------------
 
@@ -232,6 +237,7 @@ class ApsAlgorithmImpl(
         val avgCurrentDeviationPerTick = calcAvgDeviationPerTick(DEVIATION_TIME_BASE)
         // Assumption: That deviation will be continued in the future but will fade away
 
+        val defaultBasal = therapyManager.getBasalPerHour(now)
         val meals = treatmentRepository.getMeals()
         val insulinApplications = treatmentRepository.getInsulinApplications()
         val settings = therapyManager.getActiveTherapySettings()
@@ -247,7 +253,7 @@ class ApsAlgorithmImpl(
         // Prediction block:
         // Update predicted BGI, update predicted BG
         predictionModel.calculate(
-            currentBG = currentBgFiltered,
+            currentBGMgDl = currentBgMgDl,
             avgCurrentDeviationPerTick = avgCurrentDeviationPerTick,
             meals = meals,
             insulinApplications = insulinApplications,

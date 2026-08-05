@@ -71,7 +71,7 @@ class PredictionModel(
      * calculated. Else `false`.
      */
     suspend inline fun calculate(
-        currentBG: BgValue,
+        currentBGMgDl: Short,
         avgCurrentDeviationPerTick: BgDelta,
         meals: List<MealEntry>,
         insulinApplications: List<InsulinApplication>,
@@ -80,7 +80,7 @@ class PredictionModel(
         therapyManager: TherapyManager,
         carbsInsulinCalculationModel: CarbsInsulinCalculationModel
     ) {
-        var bg = currentBG
+        var bg = BgValue.fromMgDl(currentBGMgDl)
         var deviationPerTick = avgCurrentDeviationPerTick
         forEachS(from = timeline.getNowTick() + 1, to = getLastTick()) { tick, state ->
             if (state.effectiveCarbs == null) {

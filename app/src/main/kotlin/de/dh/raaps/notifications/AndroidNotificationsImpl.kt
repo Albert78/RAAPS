@@ -12,8 +12,9 @@ import androidx.core.content.getSystemService
 import de.dh.raaps.R
 import de.dh.raaps.common.model.ToDo
 import de.dh.raaps.common.model.data.BgValue
-import de.dh.raaps.core.aps.GlucoseSourceManager
+import de.dh.raaps.core.aps.AlgorithmIssue
 import de.dh.raaps.core.aps.ApsRecommendation
+import de.dh.raaps.core.aps.GlucoseSourceManager
 import de.dh.raaps.core.system.AndroidNotifications
 import de.dh.raaps.ui.activities.MainActivity
 import de.dh.raaps.ui.screens.permissions.canPostNotifications
@@ -32,7 +33,7 @@ class AndroidNotificationsImpl(
         // Channel for the foreground service (BG values)
         val serviceName = context.getString(UiR.string.aps_service_notification_channel_name)
         val serviceImportance = NotificationManager.IMPORTANCE_HIGH
-        val serviceChannel = NotificationChannel(CHANNEL_ID, serviceName, serviceImportance)
+        val serviceChannel = NotificationChannel(SERVICE_CHANNEL_ID, serviceName, serviceImportance)
         serviceChannel.setShowBadge(false)
 
         // Channel for recommendations (User interaction required)
@@ -42,9 +43,17 @@ class AndroidNotificationsImpl(
         recChannel.enableVibration(true)
         recChannel.setShowBadge(true)
 
+        // Channel for algorithm issues (Manual intervention required)
+        val issueName = context.getString(UiR.string.algorithm_issue_notification_channel_name)
+        val issueImportance = NotificationManager.IMPORTANCE_HIGH
+        val issueChannel = NotificationChannel(ALGORITHM_ISSUE_CHANNEL_ID, issueName, issueImportance)
+        issueChannel.enableVibration(true)
+        issueChannel.setShowBadge(true)
+
         val notificationManager = context.getSystemService(NOTIFICATION_SERVICE) as NotificationManager
         notificationManager.createNotificationChannel(serviceChannel)
         notificationManager.createNotificationChannel(recChannel)
+        notificationManager.createNotificationChannel(issueChannel)
     }
 
     fun getBgValueString(sample: BgValue?, forceSign: Boolean): String? {
@@ -75,7 +84,7 @@ class AndroidNotificationsImpl(
             dashboardIntent, PendingIntent.FLAG_IMMUTABLE
         )
 
-        return NotificationCompat.Builder(context, CHANNEL_ID)
+        return NotificationCompat.Builder(context, SERVICE_CHANNEL_ID)
             .setContentTitle(title)
             .setContentText(details)
             .setSmallIcon(R.mipmap.ic_launcher) // Use app icon for now
@@ -114,6 +123,7 @@ class AndroidNotificationsImpl(
             dashboardIntent, PendingIntent.FLAG_IMMUTABLE
         )
 
+        // TODO: Add content click handler which goes to add meal/insulin screen with prefilled value
         val notification = NotificationCompat.Builder(context, RECOMMENDATION_CHANNEL_ID)
             .setContentTitle(title)
             .setContentText(text)
@@ -124,13 +134,47 @@ class AndroidNotificationsImpl(
             .setCategory(NotificationCompat.CATEGORY_RECOMMENDATION)
             .build()
 
-        // Use a different ID for each type or just one for all recommendations?
-        // Let's use one ID for now to avoid flooding, or use hash of recommendation
+        // Use the same ID for all recommendations, we only support one at a time
         notify(RECOMMENDATION_NOTIFICATION_ID, notification)
     }
 
     override fun cancelRecommendationNotification() {
         manager.cancel(RECOMMENDATION_NOTIFICATION_ID)
+    }
+
+    override fun showAlgorithmIssueNotification(issue: AlgorithmIssue) {
+        val title = context.getString(UiR.string.algorithm_issue_title)
+        val text = when (issue) {
+            is AlgorithmIssue.NoRecentValues -> context.getString(
+                UiR.string.algorithm_issue_no_recent_values,
+                issue.minutes
+            )
+            is AlgorithmIssue.NoisyValues -> context.getString(UiR.string.algorithm_issue_noisy_values)
+        }
+
+        val dashboardIntent = MainActivity.createStartDashboardIntent(context)
+        val pendingIntent = PendingIntent.getActivity(
+            context, 0,
+            dashboardIntent, PendingIntent.FLAG_IMMUTABLE
+        )
+
+        // TODO: Let the user decide whether he wants to switch to manual mode. Show button in notification?
+        val notification = NotificationCompat.Builder(context, ALGORITHM_ISSUE_CHANNEL_ID)
+            .setContentTitle(title)
+            .setContentText(text)
+            .setSmallIcon(R.mipmap.ic_launcher)
+            .setContentIntent(pendingIntent)
+            .setAutoCancel(false) // Keep it until resolved
+            .setOngoing(true)
+            .setPriority(NotificationCompat.PRIORITY_HIGH)
+            .setCategory(NotificationCompat.CATEGORY_ALARM)
+            .build()
+
+        notify(ALGORITHM_ISSUE_NOTIFICATION_ID, notification)
+    }
+
+    override fun cancelAlgorithmIssueNotification() {
+        manager.cancel(ALGORITHM_ISSUE_NOTIFICATION_ID)
     }
 
     private fun notify(notificationId: Int, notification: Notification) {
@@ -149,7 +193,9 @@ class AndroidNotificationsImpl(
     companion object {
         val TAG = AndroidNotificationsImpl::class.simpleName
         const val RECOMMENDATION_NOTIFICATION_ID = 2
-        const val CHANNEL_ID = "aps_service_channel"
+        const val ALGORITHM_ISSUE_NOTIFICATION_ID = 3
+        const val SERVICE_CHANNEL_ID = "aps_service_channel"
         const val RECOMMENDATION_CHANNEL_ID = "aps_recommendation_channel"
+        const val ALGORITHM_ISSUE_CHANNEL_ID = "aps_algorithm_issue_channel"
     }
 }

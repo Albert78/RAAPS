@@ -183,6 +183,16 @@ class SystemManagerImpl(
             }
         }
 
+        scope.launch {
+            coreState.collect { state ->
+                if (state is CoreState.Blocked) {
+                    androidNotifications.showAlgorithmIssueNotification(state.issue)
+                } else {
+                    androidNotifications.cancelAlgorithmIssueNotification()
+                }
+            }
+        }
+
         core = Core.createProductiveCore(
             therapyManager = therapyManager,
             treatmentRepository = treatmentRepository,
