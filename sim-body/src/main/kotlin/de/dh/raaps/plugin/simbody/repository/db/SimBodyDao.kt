@@ -9,18 +9,21 @@ import kotlinx.coroutines.flow.Flow
 
 @Dao
 interface SimBodyDao {
-    // Impact History
-    @Query("SELECT * FROM impact_history ORDER BY timestampMs DESC")
-    fun observeAllImpacts(): Flow<List<ImpactHistoryEntity>>
+    // Simulation History (Combined BG and Impacts)
+    @Query("SELECT * FROM sim_history ORDER BY timestampMs DESC")
+    fun observeAllHistory(): Flow<List<SimHistoryEntity>>
 
-    @Query("SELECT * FROM impact_history WHERE timestampMs >= :sinceMs ORDER BY timestampMs DESC")
-    suspend fun getImpactsSince(sinceMs: Long): List<ImpactHistoryEntity>
+    @Query("SELECT * FROM sim_history WHERE timestampMs >= :sinceMs ORDER BY timestampMs DESC")
+    suspend fun getHistorySince(sinceMs: Long): List<SimHistoryEntity>
 
-    @Insert
-    suspend fun insertImpact(impact: ImpactHistoryEntity): Long
+    @Query("SELECT * FROM sim_history ORDER BY timestampMs DESC LIMIT 1")
+    suspend fun getLatestHistoryEntry(): SimHistoryEntity?
 
-    @Query("DELETE FROM impact_history WHERE timestampMs < :thresholdMs")
-    suspend fun deleteOldImpacts(thresholdMs: Long)
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertHistory(entry: SimHistoryEntity): Long
+
+    @Query("DELETE FROM sim_history WHERE timestampMs < :thresholdMs")
+    suspend fun deleteOldHistory(thresholdMs: Long)
 
     // Simulation State
     @Query("SELECT * FROM simulation_state WHERE id = 0")
@@ -51,11 +54,4 @@ interface SimBodyDao {
 
     @Update
     suspend fun updateBodyProfile(profile: BodyProfileEntity)
-
-    // Simulation Config
-    @Query("SELECT * FROM simulation_config WHERE id = 0")
-    suspend fun getSimulationConfig(): SimulationConfigEntity?
-
-    @Insert(onConflict = OnConflictStrategy.REPLACE)
-    suspend fun updateSimulationConfig(config: SimulationConfigEntity)
 }

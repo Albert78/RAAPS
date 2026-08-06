@@ -4,28 +4,28 @@ import androidx.room.Entity
 import androidx.room.PrimaryKey
 import de.dh.raaps.common.model.InsulinOrigin
 
-@Entity(tableName = "impact_history")
-data class ImpactHistoryEntity(
-    @PrimaryKey(autoGenerate = true)
-    val id: Long = 0,
+@Entity(tableName = "sim_history")
+data class SimHistoryEntity(
+    @PrimaryKey
+    val timestampMs: Long,
+    val bgMgDl: Double,
     val carbImpact: Double,
     val insulinImpact: Double,
     val endogenousImpact: Double,
     val exerciseImpact: Double,
-    val stressImpact: Double,
-    val timestampMs: Long
+    val stressImpact: Double
 )
 
 @Entity(tableName = "simulation_state")
 data class SimulationStateEntity(
     @PrimaryKey val id: Int = 0, // Only one state entry
-    val currentBgMgDl: Double,
     val lastTickTimestampMs: Long,
     val exerciseIntensity: Double,
     val stressLevel: Double,
     val illnessFactor: Double,
     val isSensorEnabled: Boolean = true,
-    val sensorNoiseFactor: Double = 0.0
+    val sensorNoiseFactor: Double = 0.0,
+    val sensorDrift: Double = 0.0
 )
 
 @Entity(tableName = "sim_events")
@@ -48,11 +48,4 @@ data class BodyProfileEntity(
     val crBlocks: String, // JSON
     val liverGlucoseOutputBlocks: String, // JSON
     val isActive: Boolean = false
-)
-
-@Entity(tableName = "simulation_config")
-data class SimulationConfigEntity(
-    @PrimaryKey val id: Int = 0,
-    val sensorNoiseLevel: Double,
-    val sensorDrift: Double
 )

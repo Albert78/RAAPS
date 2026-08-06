@@ -6,11 +6,10 @@ import androidx.room.Room
 import androidx.room.RoomDatabase
 
 @Database(entities = [
-    ImpactHistoryEntity::class,
+    SimHistoryEntity::class,
     SimulationStateEntity::class,
     SimEventEntity::class,
-    BodyProfileEntity::class,
-    SimulationConfigEntity::class
+    BodyProfileEntity::class
 ], version = 1)
 abstract class SimBodyDatabase : RoomDatabase() {
     abstract fun impactDao(): SimBodyDao

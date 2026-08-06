@@ -18,9 +18,9 @@ import de.dh.raaps.common.model.data.Minutes
 import de.dh.raaps.common.model.data.Timestamp
 import de.dh.raaps.common.model.data.getAmountForMinute
 import de.dh.raaps.plugin.simbody.model.BodyProfile
-import de.dh.raaps.plugin.simbody.repository.db.ImpactHistoryEntity
 import de.dh.raaps.plugin.simbody.repository.db.SimBodyDao
 import de.dh.raaps.plugin.simbody.repository.db.SimEventEntity
+import de.dh.raaps.plugin.simbody.repository.db.SimHistoryEntity
 import de.dh.raaps.plugin.simbody.repository.db.SimulationStateEntity
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -166,6 +166,8 @@ class BodyModel(
         get() = _bloodGlucose.value
         set(value) {
             _bloodGlucose.value = value
+            // Explicitly persist a history entry when BG is set manually
+            persistHistory(Timestamp.now(), value)
             persistState()
         }
     val bloodGlucoseFlow: StateFlow<Double> = _bloodGlucose.asStateFlow()
@@ -185,10 +187,9 @@ class BodyModel(
         }
         scope.launch {
             try {
-                // Load simulation state
+                // Load simulation state (UI settings)
                 val state = dao.getSimulationState()
                 if (state != null) {
-                    _bloodGlucose.value = state.currentBgMgDl
                     _lastTickTimestamp.value = Timestamp(state.lastTickTimestampMs)
                     _exerciseIntensity.value = state.exerciseIntensity
                     _stressLevel.value = state.stressLevel
@@ -197,11 +198,18 @@ class BodyModel(
                     _sensorNoiseFactor.value = state.sensorNoiseFactor
                 } else {
                     // First run defaults
-                    _bloodGlucose.value = 120.0
                     // Set last tick to 5 minutes ago so heartbeat triggers immediately on start
                     _lastTickTimestamp.value = Timestamp(Timestamp.now().ms - 5 * 60 * 1000L)
                     _isSensorEnabled.value = true
                     _sensorNoiseFactor.value = 0.0
+                }
+
+                // Load latest BG from history
+                val latestHistory = dao.getLatestHistoryEntry()
+                if (latestHistory != null) {
+                    _bloodGlucose.value = latestHistory.bgMgDl
+                } else {
+                    _bloodGlucose.value = 120.0
                 }
 
                 // Load active profile if exists
@@ -241,8 +249,8 @@ class BodyModel(
                 insulinApplications.clear()
                 insulinApplications.addAll(loadedInsulin)
 
-                // Load impact history
-                val history = dao.getImpactsSince(threshold).map { entity ->
+                // Load impact history from unified history table
+                val history = dao.getHistorySince(threshold).map { entity ->
                     Impacts(
                         carbImpact = entity.carbImpact,
                         insulinImpact = entity.insulinImpact,
@@ -282,13 +290,37 @@ class BodyModel(
         scope.launch {
             dao.updateSimulationState(
                 SimulationStateEntity(
-                    currentBgMgDl = bloodGlucose,
                     lastTickTimestampMs = lastTickTimestamp.ms,
                     exerciseIntensity = exerciseIntensity,
                     stressLevel = stressLevel,
                     illnessFactor = illnessFactor,
                     isSensorEnabled = isSensorEnabled,
                     sensorNoiseFactor = sensorNoiseFactor
+                )
+            )
+        }
+    }
+
+    private fun persistHistory(
+        timestamp: Timestamp,
+        bg: Double,
+        carbImpact: Double = 0.0,
+        insulinImpact: Double = 0.0,
+        endogenousImpact: Double = 0.0,
+        exerciseImpact: Double = 0.0,
+        stressImpact: Double = 0.0
+    ) {
+        val dao = simBodyDao ?: return
+        scope.launch {
+            dao.insertHistory(
+                SimHistoryEntity(
+                    timestampMs = timestamp.ms,
+                    bgMgDl = bg,
+                    carbImpact = carbImpact,
+                    insulinImpact = insulinImpact,
+                    endogenousImpact = endogenousImpact,
+                    exerciseImpact = exerciseImpact,
+                    stressImpact = stressImpact
                 )
             )
         }
@@ -322,24 +354,20 @@ class BodyModel(
         val newImpact = Impacts(carbImpact, insulinImpact, endogenousImpact, exerciseImpact, stressImpact, currentTimestamp)
         impactHistory.add(0, newImpact) // Add to top for history view
 
-        simBodyDao?.let { dao ->
-            scope.launch {
-                dao.insertImpact(
-                    ImpactHistoryEntity(
-                        carbImpact = newImpact.carbImpact,
-                        insulinImpact = newImpact.insulinImpact,
-                        endogenousImpact = newImpact.endogenousImpact,
-                        exerciseImpact = newImpact.exerciseImpact,
-                        stressImpact = newImpact.stressImpact,
-                        timestampMs = newImpact.currentTimestamp.ms
-                    )
-                )
-            }
-        }
-
         // Update BG state
         val newMgDl = bloodGlucose + bgDelta
         bloodGlucose = newMgDl.coerceIn(20.0, 500.0)
+
+        // Persist history entry
+        persistHistory(
+            timestamp = currentTimestamp,
+            bg = bloodGlucose,
+            carbImpact = newImpact.carbImpact,
+            insulinImpact = newImpact.insulinImpact,
+            endogenousImpact = newImpact.endogenousImpact,
+            exerciseImpact = newImpact.exerciseImpact,
+            stressImpact = newImpact.stressImpact
+        )
 
         lastTickTimestamp = currentTimestamp
         cleanup(currentTimestamp)
@@ -358,7 +386,7 @@ class BodyModel(
 
         simBodyDao?.let { dao ->
             scope.launch {
-                dao.deleteOldImpacts(threshold)
+                dao.deleteOldHistory(threshold)
                 dao.deleteOldEvents(threshold)
             }
         }
