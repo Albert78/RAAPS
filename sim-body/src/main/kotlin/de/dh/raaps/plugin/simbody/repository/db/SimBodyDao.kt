@@ -19,6 +19,12 @@ interface SimBodyDao {
     @Query("SELECT * FROM sim_history ORDER BY timestampMs DESC LIMIT 1")
     suspend fun getLatestHistoryEntry(): SimHistoryEntity?
 
+    @Query("SELECT * FROM sim_history WHERE timestampMs <= :sinceMs ORDER BY timestampMs DESC LIMIT 1")
+    suspend fun getHistoryNear(sinceMs: Long): SimHistoryEntity?
+
+    @Query("SELECT * FROM sim_history ORDER BY timestampMs ASC LIMIT 1")
+    suspend fun getEarliestHistoryEntry(): SimHistoryEntity?
+
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertHistory(entry: SimHistoryEntity): Long
 

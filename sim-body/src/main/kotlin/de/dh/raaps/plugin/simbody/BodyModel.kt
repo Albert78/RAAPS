@@ -172,6 +172,24 @@ class BodyModel(
         }
     val bloodGlucoseFlow: StateFlow<Double> = _bloodGlucose.asStateFlow()
 
+    /**
+     * Retrieves the blood glucose value from the past (delayed).
+     * Falls back to the earliest available value if the simulation hasn't run long enough.
+     */
+    suspend fun getDelayedBloodGlucose(delayMinutes: Int): Double {
+        val dao = simBodyDao ?: return bloodGlucose
+        val targetMs = Timestamp.now().ms - delayMinutes * 60 * 1000L
+        
+        // Try to find the value closest to the target time
+        val delayedEntry = dao.getHistoryNear(targetMs)
+        if (delayedEntry != null) {
+            return delayedEntry.bgMgDl
+        }
+        
+        // Fallback: earliest available value
+        return dao.getEarliestHistoryEntry()?.bgMgDl ?: bloodGlucose
+    }
+
     private val _lastTickTimestamp = MutableStateFlow(Timestamp.now())
     var lastTickTimestamp: Timestamp
         get() = _lastTickTimestamp.value
