@@ -8,7 +8,10 @@ import de.dh.raaps.common.model.data.Tick
 import de.dh.raaps.common.model.data.TickHandler
 import de.dh.raaps.common.model.data.TickPriority
 import de.dh.raaps.common.model.data.TimeService
+import de.dh.raaps.core.repository.AlgorithmInsightRepository
 import de.dh.raaps.core.repository.TreatmentRepository
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 
@@ -74,6 +77,8 @@ class Core(
     private val onCarbsHint: (treatmentLock: TreatmentLock, Int) -> Unit,
     private val onClearRecommendations: (treatmentLock: TreatmentLock) -> Unit,
     private val onWaitForAndResetInsulinJobs: suspend (treatmentLock: TreatmentLock) -> Unit,
+    private val algorithmInsightRepository: AlgorithmInsightRepository,
+    private val scope: CoroutineScope
 ) : TickHandler {
     private var calculationAlgorithm: ApsAlgorithm = NoopAlgorithm()
 
@@ -143,6 +148,11 @@ class Core(
                     onSetTempBasal = onSetTempBasal,
                     onClearTempBasal = onClearTempBasal,
                     onCarbsHint = onCarbsHint,
+                    onAlgorithmInsight = { insight ->
+                        scope.launch {
+                            algorithmInsightRepository.saveInsight(insight)
+                        }
+                    },
                     tickInterval = timeService.tickInterval,
                     carbsInsulinCalculationModel = carbsInsulinCalculationModel
                 )
@@ -231,6 +241,8 @@ class Core(
             onCarbsHint: (treatmentLock: TreatmentLock, amountInGram: Int) -> Unit,
             onClearRecommendations: (treatmentLock: TreatmentLock) -> Unit,
             onWaitForAndResetInsulinJobs: suspend (treatmentLock: TreatmentLock) -> Unit,
+            algorithmInsightRepository: AlgorithmInsightRepository,
+            scope: CoroutineScope
         ): Core {
             return Core(
                 treatmentRepository = treatmentRepository,
@@ -250,6 +262,8 @@ class Core(
                 onCarbsHint = onCarbsHint,
                 onClearRecommendations = onClearRecommendations,
                 onWaitForAndResetInsulinJobs = onWaitForAndResetInsulinJobs,
+                algorithmInsightRepository = algorithmInsightRepository,
+                scope = scope
             )
         }
     }

@@ -25,6 +25,7 @@ class ApsAlgorithmImpl(
     val onSetTempBasal: (treatmentLock: TreatmentLock, durationInHours: Int, unitsPerHour: Double) -> Unit,
     val onClearTempBasal: (treatmentLock: TreatmentLock) -> Unit,
     val onCarbsHint: (treatmentLock: TreatmentLock, Int) -> Unit,
+    private val onAlgorithmInsight: (AlgorithmInsight) -> Unit
 ): ApsAlgorithm {
     // --- Time-based extensions for Tick to provide a Timestamp-like API ---
     private fun Tick.plusMinutes(minutes: Int): Tick = this + (minutes / timeline.tickDuration.value.toInt())
@@ -94,7 +95,9 @@ class ApsAlgorithmImpl(
         val clearTempBasal: Boolean,
         val bolus: InsulinAmount?,
         val handledDeferredBoluses: List<DeferredBolus>?,
-        val algorithmIssues: List<AlgorithmIssue>?
+        val algorithmIssues: List<AlgorithmIssue>?,
+        val reasoning: AlgorithmReasoning,
+        val metrics: AlgorithmInsight? = null
     ) {
         companion object {
             fun safetyBasal(): CalculationResult = CalculationResult(
@@ -103,7 +106,18 @@ class ApsAlgorithmImpl(
                 clearTempBasal = true,
                 bolus = null,
                 handledDeferredBoluses = null,
-                algorithmIssues = null
+                algorithmIssues = null,
+                reasoning = AlgorithmReasoning.SAFETY_BASAL_FALLBACK
+            )
+
+            fun normalSafetyBasal(): CalculationResult = CalculationResult(
+                carbsInGHint = null,
+                tempBasal = null,
+                clearTempBasal = true,
+                bolus = null,
+                handledDeferredBoluses = null,
+                algorithmIssues = null,
+                reasoning = AlgorithmReasoning.NORMAL_CONDITION_SAFETY_BASAL
             )
 
             fun tempBasal(unitsPerHour: Double, durationInHours: Int) = CalculationResult(
@@ -115,7 +129,8 @@ class ApsAlgorithmImpl(
                 clearTempBasal = false,
                 bolus = null,
                 handledDeferredBoluses = null,
-                algorithmIssues = null
+                algorithmIssues = null,
+                reasoning = AlgorithmReasoning.LOW_PREDICTED_LOW_BASAL
             )
 
             fun zeroTemp(durationInHours: Int): CalculationResult = CalculationResult(
@@ -124,7 +139,8 @@ class ApsAlgorithmImpl(
                 clearTempBasal = false,
                 bolus = null,
                 handledDeferredBoluses = null,
-                algorithmIssues = null
+                algorithmIssues = null,
+                reasoning = AlgorithmReasoning.LOW_PREDICTED_ZERO_TEMP
             )
 
             fun carbsSuggestion(carbsInGHint: Int?) = CalculationResult(
@@ -133,7 +149,8 @@ class ApsAlgorithmImpl(
                 clearTempBasal = false,
                 bolus = null,
                 handledDeferredBoluses = null,
-                algorithmIssues = null
+                algorithmIssues = null,
+                reasoning = AlgorithmReasoning.LOW_PREDICTED_CARBS_SUGGESTION
             )
 
             fun mealOrCorrectionBolus(
@@ -145,7 +162,8 @@ class ApsAlgorithmImpl(
                 clearTempBasal = true,
                 bolus = bolusAmount,
                 handledDeferredBoluses = handledDeferredBoluses,
-                algorithmIssues = null
+                algorithmIssues = null,
+                reasoning = AlgorithmReasoning.NORMAL_CONDITION_MEAL_BOLUS
             )
 
             fun algorithmIssues(vararg issues: AlgorithmIssue) = CalculationResult(
@@ -154,7 +172,11 @@ class ApsAlgorithmImpl(
                 clearTempBasal = true,
                 bolus = null,
                 handledDeferredBoluses = null,
-                algorithmIssues = issues.toList()
+                algorithmIssues = issues.toList(),
+                reasoning = if (issues.any { it is AlgorithmIssue.NoRecentValues })
+                    AlgorithmReasoning.NO_RECENT_VALUES
+                else
+                    AlgorithmReasoning.INTERNAL_ERROR
             )
         }
     }
@@ -180,10 +202,21 @@ class ApsAlgorithmImpl(
             Log.d(TAG, "recalculate: Deliver Bolus ${result.bolus.iu} IU")
             onDeliverBolus(treatmentLock, result.bolus, result.handledDeferredBoluses)
         }
+
+        result.metrics?.let { metrics ->
+            onAlgorithmInsight(metrics.copy(
+                reasoning = result.reasoning,
+                actionBolus = result.bolus?.iu,
+                actionTempBasalUnitsPerHour = result.tempBasal?.unitsPerHour,
+                actionTempBasalDurationInHours = result.tempBasal?.durationInHours
+            ))
+        }
+
         return result.algorithmIssues ?: emptyList()
     }
 
     suspend fun doRecalculate(): CalculationResult = try {
+        Log.d(TAG, "Algorithm is calculating...")
         val nowTick = timeline.getNowTick()
         val now = Timestamp.now()
 
@@ -268,8 +301,8 @@ class ApsAlgorithmImpl(
 
         val pumpInsulinType = therapyManager.getPumpInsulinType()
         val insulinPeakTicks = timeline.inTicks(pumpInsulinType.peak)
-        val isf = therapyManager.getIsfFactor(now)
-        val cr = therapyManager.getCrFactor(now)
+        val isfValue = therapyManager.getIsfFactor(now)
+        val crValue = therapyManager.getCrFactor(now)
 
         // First handle low and high, then fall back to normal, smooth correction
 
@@ -290,13 +323,35 @@ class ApsAlgorithmImpl(
                 val bgErrorAtMin = targetBg - bgMin.predictedBg
                 val lowCorrectionCarbsForMinInG = convertToCarbsFromBgDelta(
                     bgDelta = bgErrorAtMin,
-                    isf = isf,
-                    cr = cr
+                    isf = isfValue,
+                    cr = crValue
                 )
                 carbsInGHint = lowCorrectionCarbsForMinInG.toInt()
             }
             return@doRecalculate CalculationResult.carbsSuggestion(carbsInGHint = carbsInGHint) // Stop further processing when we're currently low
         }
+
+        val cobAtPeak = carbsInsulinCalculationModel.cob(meals, now.plus(insulinPeak))
+        val iobAtPeak = carbsInsulinCalculationModel.iob(
+            insulinApplications = insulinApplications,
+            timestamp = now.plus(insulinPeak),
+            dia = dia,
+            peak = insulinPeak
+        )
+
+        val insightTemplate = AlgorithmInsight(
+            timestamp = now,
+            bgOriginal = sampledBgReadings.getAt(nowTick).mgdl,
+            bgFiltered = currentBgMgDl,
+            deviationPerTick = avgCurrentDeviationPerTick.mgdl.toDouble(),
+            iobAtPeak = iobAtPeak,
+            cobAtPeak = cobAtPeak,
+            predictedBgAtPeak = 0, // Will be filled below if available
+            targetBg = targetBg.mgdl,
+            isf = isfValue.mgdl.toDouble(),
+            cr = crValue,
+            reasoning = AlgorithmReasoning.INTERNAL_ERROR // Dummy, will be overwritten
+        )
 
         val recentCarbsInG = meals.
             filter { meal -> meal.timestamp > now.minusMinutes(20) }.
@@ -304,7 +359,9 @@ class ApsAlgorithmImpl(
         val predictedBgAtPeak = predictionModel.tryGetTickState(nowTick + insulinPeakTicks)?.
             predictedBg?.
             takeIf { it.isValid() } ?:
-            return CalculationResult.safetyBasal() // This should never happen if we have BG values. If not, fall back to safety basal.
+            return CalculationResult.safetyBasal().copy(metrics = insightTemplate) // This should never happen if we have BG values. If not, fall back to safety basal.
+
+        val insight = insightTemplate.copy(predictedBgAtPeak = predictedBgAtPeak.mgdl)
         val bgErrorAtPeak = predictedBgAtPeak - targetBg // < 0 if too low
 
         // Low protection for "lower than target" situations
@@ -313,23 +370,23 @@ class ApsAlgorithmImpl(
 
             if (bgErrorAtPeak < BgDelta(-20)) {
                 // Prediction is too low -> Defer ongoing meal boluses
-                val safetyCorrectionCarbsInG = convertToCarbsFromBgDelta(-bgErrorAtPeak, isf, cr)
+                val safetyCorrectionCarbsInG = convertToCarbsFromBgDelta(-bgErrorAtPeak, isfValue, crValue)
                 if (recentCarbsInG < safetyCorrectionCarbsInG) {
                     // Bg is too low, further falling and not enough safety carbs -> Suggest carbs
                     val lowCorrectionCarbsForPeakInG = safetyCorrectionCarbsInG - recentCarbsInG
                     if (lowCorrectionCarbsForPeakInG > 5) {
-                        return CalculationResult.carbsSuggestion(carbsInGHint = lowCorrectionCarbsForPeakInG.toInt())
+                        return CalculationResult.carbsSuggestion(carbsInGHint = lowCorrectionCarbsForPeakInG.toInt()).copy(metrics = insight)
                     }
                 }
                 // Enough or almost enough safety carbs, wait for carbs to have effect
-                return CalculationResult.zeroTemp(durationInHours = 1)
+                return CalculationResult.zeroTemp(durationInHours = 1).copy(metrics = insight)
             }
             // Else go on with decreased basal
-            val safetCorrectionUnits = convertToUnitsFromBgDelta(-bgErrorAtPeak, isf)
+            val safetCorrectionUnits = convertToUnitsFromBgDelta(-bgErrorAtPeak, isfValue)
             return CalculationResult.tempBasal(
                 unitsPerHour = (defaultBasal - safetCorrectionUnits).coerceAtLeast(0.0),
                 durationInHours = 1
-            )
+            ).copy(metrics = insight)
         }
 
         // *****************************************************************************************
@@ -354,25 +411,18 @@ class ApsAlgorithmImpl(
             }
         }
 
-        val cobAtPeak = carbsInsulinCalculationModel.cob(meals, now.plus(insulinPeak))
-        val iobAtPeak = carbsInsulinCalculationModel.iob(
-            insulinApplications = insulinApplications,
-            timestamp = now.plus(insulinPeak),
-            dia = dia,
-            peak = insulinPeak
-        )
-        val insulinEquivalentOfCob = convertToUnitsFromCarbs(carbs = cobAtPeak, cr = cr)
+        val insulinEquivalentOfCob = convertToUnitsFromCarbs(carbs = cobAtPeak, cr = crValue)
 
-        val bgErrorCorrectionUnits = convertToUnitsFromBgDelta(bgErrorAtPeak, isf).coerceAtLeast(0.0)
+        val bgErrorCorrectionUnits = convertToUnitsFromBgDelta(bgErrorAtPeak, isfValue).coerceAtLeast(0.0)
         val futureInsulinU = iobAtPeak + dueMealBolusAmount.iu + sumFutureDeferredBolus.iu
         if (futureInsulinU > insulinEquivalentOfCob + bgErrorCorrectionUnits * AGGRESSIVENESS_ERROR_CORRECTION) {
             // The meal is already corrected or scheduled to be corrected.
             // This which means we expect the blood sugar to rise;
             // skip correction in that case and wait for carbs & deferred boluses to take effect
             if (dueDeferredBoluses.isEmpty())
-                CalculationResult.safetyBasal()
+                CalculationResult.normalSafetyBasal().copy(metrics = insight)
             else
-                CalculationResult.mealOrCorrectionBolus(bolusAmount = dueMealBolusAmount, handledDeferredBoluses = dueDeferredBoluses)
+                CalculationResult.mealOrCorrectionBolus(bolusAmount = dueMealBolusAmount, handledDeferredBoluses = dueDeferredBoluses).copy(metrics = insight)
         } else {
             // Insufficient correction: Try restrained correction
             val neededInsulin = insulinEquivalentOfCob * AGGRESSIVENESS_CARBS_CORRECTION + bgErrorCorrectionUnits * AGGRESSIVENESS_ERROR_CORRECTION
@@ -385,7 +435,7 @@ class ApsAlgorithmImpl(
                     (neededInsulin - futureAvailableInsulin).coerceAtLeast(0.0)
                 ),
                 handledDeferredBoluses = dueDeferredBoluses
-            )
+            ).copy(metrics = insight)
         }
     } catch (e: Exception) {
         CalculationResult.algorithmIssues(AlgorithmIssue.InternalError(e.message))
@@ -411,6 +461,7 @@ class ApsAlgorithmImpl(
             onSetTempBasal: (treatmentLock: TreatmentLock, durationInHours: Int, unitsPerHour: Double) -> Unit,
             onClearTempBasal: (treatmentLock: TreatmentLock) -> Unit,
             onCarbsHint: (treatmentLock: TreatmentLock, Int) -> Unit,
+            onAlgorithmInsight: (AlgorithmInsight) -> Unit,
             tickInterval: Minutes,
             carbsInsulinCalculationModel: CarbsInsulinCalculationModel,
         ): ApsAlgorithm {
@@ -433,6 +484,7 @@ class ApsAlgorithmImpl(
                 onClearTempBasal = onClearTempBasal,
                 onCarbsHint = onCarbsHint,
                 onDeliverBolus = onDeliverBolus,
+                onAlgorithmInsight = onAlgorithmInsight
             )
         }
     }

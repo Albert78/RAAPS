@@ -15,6 +15,7 @@ import de.dh.raaps.core.repository.db.entities.CurrentSettingsEntity
 import de.dh.raaps.core.repository.db.entities.CurrentTherapySettingsEntity
 import de.dh.raaps.core.repository.db.entities.DataProviderEntity
 import de.dh.raaps.core.repository.db.entities.DeferredBolusEntity
+import de.dh.raaps.core.repository.db.entities.AlgorithmInsightEntity
 import de.dh.raaps.core.repository.db.entities.GlucoseReadingEntity
 import de.dh.raaps.core.repository.db.entities.InsulinEntity
 import de.dh.raaps.core.repository.db.entities.InsulinTypeEntity
@@ -200,6 +201,21 @@ interface MetabolicEventsDao {
     suspend fun deleteDeferredBolus(id: Long)
 }
 
+@Dao
+interface AlgorithmInsightDao {
+    @Insert
+    suspend fun insert(insight: AlgorithmInsightEntity): Long
+
+    @Query("SELECT * FROM algorithm_insights ORDER BY timestamp DESC")
+    fun observeAll(): Flow<List<AlgorithmInsightEntity>>
+
+    @Query("SELECT * FROM algorithm_insights ORDER BY timestamp DESC LIMIT :limit")
+    suspend fun getLatest(limit: Int): List<AlgorithmInsightEntity>
+
+    @Query("DELETE FROM algorithm_insights WHERE timestamp < :timestamp")
+    suspend fun pruneOlderThan(timestamp: Long)
+}
+
 @Database(entities = [
     // Providers
     SensorTypeEntity::class,
@@ -216,7 +232,8 @@ interface MetabolicEventsDao {
     MealEntity::class,
     InsulinTypeEntity::class,
     InsulinEntity::class,
-    DeferredBolusEntity::class
+    DeferredBolusEntity::class,
+    AlgorithmInsightEntity::class
 ], version = 1)
 @TypeConverters(
     DbTypeConverters::class
@@ -226,6 +243,7 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun therapyDao(): TherapyDao
     abstract fun metabolicEventsDao(): MetabolicEventsDao
     abstract fun settingsDao(): SettingsDao
+    abstract fun algorithmInsightDao(): AlgorithmInsightDao
 
     companion object {
         const val CURRENT_DATABASE_VERSION = "1.0"

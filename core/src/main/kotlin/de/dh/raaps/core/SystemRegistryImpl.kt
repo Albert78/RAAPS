@@ -18,6 +18,7 @@ import de.dh.raaps.core.pump.PumpManagerImpl
 import de.dh.raaps.core.repository.DatabaseInitializer
 import de.dh.raaps.core.repository.DeviceManagementRepository
 import de.dh.raaps.core.repository.FoodRepository
+import de.dh.raaps.core.repository.AlgorithmInsightRepository
 import de.dh.raaps.core.repository.GlucoseRepository
 import de.dh.raaps.core.repository.SettingsRepository
 import de.dh.raaps.core.repository.TherapyRepository
@@ -42,6 +43,7 @@ class SystemRegistryImpl(
     override val foodRepository: FoodRepository,
     override val deviceManagementRepository: DeviceManagementRepository,
     override val settingsRepository: SettingsRepository,
+    override val algorithmInsightRepository: AlgorithmInsightRepository,
     override val appPreferencesRepository: AppPreferencesRepository,
     override val glucoseSourceManager: GlucoseSourceManager,
     override val therapyManager: TherapyManager,
@@ -80,6 +82,7 @@ class SystemRegistryImpl(
             val foodRepository = FoodRepository(appDatabase)
             val deviceManagementRepository = DeviceManagementRepository(appDatabase)
             val settingsRepository = SettingsRepository(appDatabase)
+            val algorithmInsightRepository = AlgorithmInsightRepository(appDatabase)
 
             // Initialize Managers
             val wakeService = SystemWakeServiceImpl(application)
@@ -125,6 +128,7 @@ class SystemRegistryImpl(
                 therapyManager = therapyManager,
                 appPreferencesRepository = appPreferencesRepository,
                 carbsInsulinCalculationModel = carbsInsulinCalculationModel,
+                algorithmInsightRepository = algorithmInsightRepository,
                 context = application
             )
 
@@ -141,6 +145,7 @@ class SystemRegistryImpl(
                 foodRepository = foodRepository,
                 deviceManagementRepository = deviceManagementRepository,
                 settingsRepository = settingsRepository,
+                algorithmInsightRepository = algorithmInsightRepository,
                 appPreferencesRepository = appPreferencesRepository,
                 therapyManager = therapyManager,
                 glucoseSourceManager = glucoseSourceManager,
