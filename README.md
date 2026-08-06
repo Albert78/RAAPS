@@ -25,7 +25,7 @@ The project is actively **under development**.
 
 ## Development with the Sim-Body Module
 
-Since working on an AID system without hardware connectivity is difficult, RAAPS includes a specialized simulation module:
+Since working on an AID system without hardware connectivity is difficult, RAAPS includes a specialized simulation module. **To use the simulation features, the `app` module must be built using the `simDebug` build flavor.**
 
 *   **Simulated Body:** The `sim-body` module simulates the glucose response to insulin and carbohydrates.
 *   **Scenarios:** Various influences (meals, exercise, stress) can be simulated to test control algorithms under controlled conditions.
@@ -76,7 +76,7 @@ Das Projekt befindet sich aktiv **in der Entwicklung**.
 
 ## Entwicklung mit dem Sim-Body-Modul
 
-Da die Arbeit an einem AID-System ohne Hardware-Anbindung schwierig ist, enthält RAAPS ein spezialisiertes Simulations-Modul:
+Da die Arbeit an einem AID-System ohne Hardware-Anbindung schwierig ist, enthält RAAPS ein spezialisiertes Simulations-Modul. **Um die Simulationsfunktionen nutzen zu können, muss das `app`-Modul im Build-Flavor `simDebug` gebaut werden.**
 
 *   **Simulierter Körper:** Das `sim-body`-Modul simuliert die Glukose-Reaktion auf Insulin und Kohlenhydrate.
 *   **Szenarien:** Es können verschiedene Einflüsse (Mahlzeiten, Sport, Stress) simuliert werden, um die Regelalgorithmen unter kontrollierten Bedingungen zu testen.
