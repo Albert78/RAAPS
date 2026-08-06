@@ -201,7 +201,7 @@
     <string name="meal_bolus_calc_iob_part">IOB Abzug: -%1$.2f U</string>
     <string name="meal_bolus_calc_cob_part">COB Ausgleich: +%1$.2f U</string>
     <string name="meal_bolus_insulin_label">Insulinmenge (U)</string>
-    <string name="meal_bolus_administer_button">Insulin verabreichen</string>
+    <string name="meal_bolus_administer_button">Bestätigen</string>
 
     <string name="drawer_header_title">RAAPS</string>
     <string name="menu_meals_label">Mahlzeiten</string>
