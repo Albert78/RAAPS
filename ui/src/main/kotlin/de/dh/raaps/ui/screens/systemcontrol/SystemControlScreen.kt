@@ -168,19 +168,50 @@ fun InsightCard(insight: AlgorithmInsight) {
                     color = if (insight.reasoning == AlgorithmReasoning.INTERNAL_ERROR) Color.Red else MaterialTheme.colorScheme.secondary
                 )
             }
-            Spacer(modifier = Modifier.height(4.dp))
+            Spacer(modifier = Modifier.height(8.dp))
             Row(modifier = Modifier.fillMaxWidth()) {
-                MetricItem("BG", "${insight.bgFiltered} mg/dL")
+                MetricItem("BG", "${insight.bgFiltered} (raw: ${insight.bgOriginal})")
                 Spacer(modifier = Modifier.width(16.dp))
                 MetricItem("IOB", "%.2f U".format(insight.iobAtPeak))
                 Spacer(modifier = Modifier.width(16.dp))
                 MetricItem("COB", "%.1f g".format(insight.cobAtPeak))
             }
-            Spacer(modifier = Modifier.height(4.dp))
+            Spacer(modifier = Modifier.height(8.dp))
             Row(modifier = Modifier.fillMaxWidth()) {
                 MetricItem("Pred. Peak", "${insight.predictedBgAtPeak} mg/dL")
                 Spacer(modifier = Modifier.width(16.dp))
                 MetricItem("Dev", "%+.1f".format(insight.deviationPerTick))
+                Spacer(modifier = Modifier.width(16.dp))
+                MetricItem("Target", "${insight.targetBg} mg/dL")
+            }
+            Spacer(modifier = Modifier.height(8.dp))
+            Row(modifier = Modifier.fillMaxWidth()) {
+                MetricItem("ISF", "%.1f".format(insight.isf))
+                Spacer(modifier = Modifier.width(16.dp))
+                MetricItem("CR", "%.1f".format(insight.cr))
+            }
+
+            val actionText = when {
+                insight.actionBolus != null && insight.actionBolus!! > 0.0 -> {
+                    "Action: Bolus %.2f U".format(insight.actionBolus)
+                }
+                insight.actionTempBasalUnitsPerHour != null -> {
+                    "Action: Temp Basal %.2f U/h for %d h".format(
+                        insight.actionTempBasalUnitsPerHour,
+                        insight.actionTempBasalDurationInHours ?: 0
+                    )
+                }
+                else -> null
+            }
+
+            actionText?.let {
+                HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp), thickness = 0.5.dp)
+                Text(
+                    text = it,
+                    style = MaterialTheme.typography.bodySmall,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.tertiary
+                )
             }
         }
     }
@@ -190,7 +221,7 @@ fun InsightCard(insight: AlgorithmInsight) {
 fun MetricItem(label: String, value: String) {
     Column {
         Text(
-            text = label, 
+            text = label,
             style = MaterialTheme.typography.labelSmall.copy(fontSize = MaterialTheme.typography.labelSmall.fontSize * 0.8f)
         )
         Text(text = value, style = MaterialTheme.typography.bodySmall, fontWeight = FontWeight.Medium)
