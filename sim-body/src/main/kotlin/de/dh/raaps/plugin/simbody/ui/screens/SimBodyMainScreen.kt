@@ -43,8 +43,9 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
-import de.dh.raaps.common.R
+import de.dh.raaps.common.R as CommonR
 import de.dh.raaps.plugin.simbody.BodyModel
+import de.dh.raaps.plugin.simbody.R
 import de.dh.raaps.plugin.simbody.ui.components.SimBodyEatMealDialog
 import java.util.Locale
 
@@ -57,7 +58,7 @@ fun SimBodyMainScreen(
     onNavigateToHistory: () -> Unit = {}
 ) {
     if (bodyModel == null) {
-        Text("Body Model not available")
+        Text(stringResource(R.string.body_model_not_available))
         return
     }
 
@@ -73,13 +74,13 @@ fun SimBodyMainScreen(
         topBar = {
             TopAppBar(
                 title = {
-                    Text("Sim Body Details")
+                    Text(stringResource(R.string.sim_body_details_title))
                 },
                 navigationIcon = {
                     IconButton(onClick = onNavigateUp) {
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = stringResource(R.string.cd_navigate_up)
+                            contentDescription = stringResource(CommonR.string.cd_navigate_up)
                         )
                     }
                 }
@@ -104,13 +105,13 @@ fun SimBodyMainScreen(
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
                     Text(
-                        text = if (isLoaded) String.format(Locale.US, "%.1f mg/dL", bg) else "---",
+                        text = if (isLoaded) stringResource(R.string.unit_mg_dl, bg) else "---",
                         style = MaterialTheme.typography.displayMedium,
                         fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.primary
                     )
                     Text(
-                        text = "Aktueller Blutzucker",
+                        text = stringResource(R.string.label_current_bg),
                         style = MaterialTheme.typography.bodyMedium
                     )
                     
@@ -120,8 +121,8 @@ fun SimBodyMainScreen(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.SpaceEvenly
                     ) {
-                        StatusItem("IOB", String.format(Locale.US, "%.2f U", bodyModel.iob))
-                        StatusItem("COB", String.format(Locale.US, "%.1f g", bodyModel.cob))
+                        StatusItem(stringResource(R.string.label_iob), stringResource(R.string.unit_u, bodyModel.iob))
+                        StatusItem(stringResource(R.string.label_cob), stringResource(R.string.unit_g, bodyModel.cob))
                     }
                 }
             }
@@ -134,7 +135,7 @@ fun SimBodyMainScreen(
             ) {
                 Icon(Icons.Default.Restaurant, contentDescription = null)
                 Spacer(modifier = Modifier.width(8.dp))
-                Text("Mahlzeit essen")
+                Text(stringResource(R.string.btn_eat_meal))
             }
 
             Button(
@@ -144,7 +145,7 @@ fun SimBodyMainScreen(
             ) {
                 Icon(Icons.Default.Timeline, contentDescription = null)
                 Spacer(modifier = Modifier.width(8.dp))
-                Text("Physiologische Einflüsse")
+                Text(stringResource(R.string.btn_physiological_impacts))
             }
 
             Button(
@@ -154,7 +155,7 @@ fun SimBodyMainScreen(
             ) {
                 Icon(Icons.Default.History, contentDescription = null)
                 Spacer(modifier = Modifier.width(8.dp))
-                Text("Eingabe-Historie")
+                Text(stringResource(R.string.btn_input_history))
             }
 
             // Sensor Configuration Section
@@ -163,7 +164,7 @@ fun SimBodyMainScreen(
             ) {
                 Column(modifier = Modifier.padding(16.dp)) {
                     Text(
-                        text = "Sensor-Konfiguration",
+                        text = stringResource(R.string.title_sensor_config),
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Bold
                     )
@@ -174,7 +175,7 @@ fun SimBodyMainScreen(
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.SpaceBetween
                     ) {
-                        Text("Sensor Aktiviert", style = MaterialTheme.typography.bodyMedium)
+                        Text(stringResource(R.string.label_sensor_enabled), style = MaterialTheme.typography.bodyMedium)
                         Checkbox(
                             checked = isSensorEnabled,
                             onCheckedChange = { bodyModel.isSensorEnabled = it },
@@ -183,7 +184,7 @@ fun SimBodyMainScreen(
                     }
                     
                     ParameterRow(
-                        label = "Rauschfaktor (Noise)",
+                        label = stringResource(R.string.label_noise_factor),
                         value = if (isLoaded) String.format(Locale.US, "%.2f", sensorNoiseFactor) else "---"
                     ) {
                         if (isLoaded) showNoiseFactorDialog = true
@@ -202,7 +203,7 @@ fun SimBodyMainScreen(
 
     if (showNoiseFactorDialog) {
         EditDoubleDialog(
-            title = "Noise Factor (>= 0)",
+            title = stringResource(R.string.dialog_title_edit_noise),
             initialValue = sensorNoiseFactor,
             onDismiss = { showNoiseFactorDialog = false }
         ) {
@@ -235,7 +236,7 @@ private fun EditDoubleDialog(
     var textValue by remember { mutableStateOf(if (initialValue == 0.0) "" else initialValue.toString()) }
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Bearbeiten: $title") },
+        title = { Text(stringResource(R.string.dialog_title_edit_param, title)) },
         text = {
             OutlinedTextField(
                 value = textValue,
@@ -249,12 +250,12 @@ private fun EditDoubleDialog(
                 textValue.toDoubleOrNull()?.let { onConfirm(it) }
                 onDismiss()
             }) {
-                Text("OK")
+                Text(stringResource(R.string.btn_ok))
             }
         },
         dismissButton = {
             TextButton(onClick = onDismiss) {
-                Text("Abbrechen")
+                Text(stringResource(R.string.btn_cancel))
             }
         }
     )

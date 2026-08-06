@@ -1,0 +1,73 @@
+<resources>
+    <!-- General / Navigation -->
+    <string name="sim_body_title">Sim Body</string>
+    <string name="sim_body_details_title">Sim Body Details</string>
+    <string name="sim_body_status_title">Sim Body Status</string>
+    <string name="btn_details">Details</string>
+    <string name="body_model_not_available">Body Model nicht verfügbar</string>
+
+    <!-- Dashboard / Main Screen -->
+    <string name="label_blood_glucose">Blutzucker</string>
+    <string name="label_iob_cob">IOB / COB</string>
+    <string name="label_exercise_intensity">Sportintensität</string>
+    <string name="label_illness_factor">Krankheitsfaktor</string>
+    <string name="label_stress_level">Stresslevel</string>
+    <string name="label_body_profile">Körperprofil</string>
+    <string name="label_isf">ISF</string>
+    <string name="label_cr">CR</string>
+    <string name="label_liver_output">Leber-Ausstoß</string>
+    <string name="label_current_bg">Aktueller Blutzucker</string>
+    <string name="label_iob">IOB</string>
+    <string name="label_cob">COB</string>
+
+    <!-- Actions -->
+    <string name="btn_eat_meal">Mahlzeit essen</string>
+    <string name="btn_physiological_impacts">Physiologische Einflüsse</string>
+    <string name="btn_input_history">Eingabe-Historie</string>
+    <string name="btn_clear_history">Historie löschen</string>
+
+    <!-- Dialogs -->
+    <string name="dialog_title_eat_meal">Mahlzeit essen</string>
+    <string name="label_carbs_g">Kohlenhydrate (g):</string>
+    <string name="label_meal_type">Essenstyp:</string>
+    <string name="dialog_title_edit_param">Bearbeiten: %1$s</string>
+    <string name="dialog_title_edit_bg">BZ (mg/dL)</string>
+    <string name="dialog_title_edit_exercise">Sportintensität (0-1)</string>
+    <string name="dialog_title_edit_illness">Krankheitsfaktor (>= 1.0)</string>
+    <string name="dialog_title_edit_stress">Stresslevel (0-1)</string>
+    <string name="dialog_title_edit_noise">Rauschfaktor (>= 0)</string>
+    <string name="btn_ok">OK</string>
+    <string name="btn_cancel">Abbrechen</string>
+
+    <!-- Sensor Configuration -->
+    <string name="title_sensor_config">Sensor-Konfiguration</string>
+    <string name="label_sensor_enabled">Sensor aktiviert</string>
+    <string name="label_noise_factor">Rauschfaktor (Noise)</string>
+
+    <!-- History / Impacts -->
+    <string name="title_sim_body_history">Sim Body Eingabe-Historie</string>
+    <string name="title_metabolic_impacts">Stoffwechsel-Einflüsse Historie</string>
+    <string name="subtitle_bg_impact_over_time">Einfluss auf Blutzucker über die Zeit (letzte 10h)</string>
+    <string name="no_impacts_yet">Noch keine Einflüsse aufgezeichnet. Simulation muss laufen, um Daten zu generieren.</string>
+    <string name="label_meals">Mahlzeiten</string>
+    <string name="label_insulin">Insulin</string>
+    <string name="label_time">Zeit: %1$s</string>
+
+    <!-- Impact Rows -->
+    <string name="impact_carbs">Kohlenhydrate</string>
+    <string name="impact_insulin">Insulin</string>
+    <string name="impact_liver">Leber (Endogen)</string>
+    <string name="impact_exercise">Sport</string>
+    <string name="impact_stress">Stress</string>
+
+    <!-- Units -->
+    <string name="unit_mg_dl">%1$.1f mg/dL</string>
+    <string name="unit_u">%1$.2f U</string>
+    <string name="unit_g">%1$.1f g</string>
+    <string name="unit_iob_cob">%1$.2f U / %2$.1f g</string>
+    <string name="unit_isf">%1$.1f mg/dL/U</string>
+    <string name="unit_cr">%1$.1f g/U</string>
+    <string name="unit_liver_output">%1$s g/h</string>
+    <string name="unit_delta_bg_pos">+%1$.2f mg/dL</string>
+    <string name="unit_delta_bg_neg">-%1$.2f mg/dL</string>
+</resources>

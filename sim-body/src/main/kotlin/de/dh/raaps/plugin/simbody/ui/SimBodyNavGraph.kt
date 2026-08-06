@@ -9,6 +9,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.navigation3.runtime.NavEntry
 import androidx.navigation3.runtime.NavKey
+import androidx.compose.ui.res.stringResource
+import de.dh.raaps.plugin.simbody.R
 import de.dh.raaps.common.navigation.FeatureNavGraph
 import de.dh.raaps.common.navigation.NavigationViewModel
 import de.dh.raaps.plugin.simbody.BodyModel
@@ -55,7 +57,7 @@ class SimBodyNavGraph(
         if (bodyModel == null) return
 
         Text(
-            text = "Sim Body",
+            text = stringResource(R.string.sim_body_title),
             style = MaterialTheme.typography.bodyLarge
         )
 

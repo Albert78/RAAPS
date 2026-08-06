@@ -26,10 +26,12 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.res.stringResource
 import de.dh.raaps.common.model.data.Block
 import de.dh.raaps.common.model.data.Minutes
 import de.dh.raaps.common.ui.theme.AppTheme
 import de.dh.raaps.plugin.simbody.BodyModel
+import de.dh.raaps.plugin.simbody.R
 import de.dh.raaps.plugin.simbody.model.BodyProfile
 import java.util.Locale
 
@@ -58,7 +60,7 @@ fun SimBodyDashboardCard(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
-                    "Sim Body Status",
+                    stringResource(R.string.sim_body_status_title),
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold
                 )
@@ -66,70 +68,70 @@ fun SimBodyDashboardCard(
                     onClick = onDetailsClick,
                     enabled = isLoaded
                 ) {
-                    Text("Details")
+                    Text(stringResource(R.string.btn_details))
                 }
             }
 
             ParameterRow(
-                "Blood Glucose",
-                if (isLoaded) String.format(Locale.US, "%.1f mg/dL", bg) else "---"
+                stringResource(R.string.label_blood_glucose),
+                if (isLoaded) stringResource(R.string.unit_mg_dl, bg) else "---"
             ) { if (isLoaded) showEditDialog = "bg" }
 
             ParameterRow(
-                "IOB / COB",
-                if (isLoaded) String.format(Locale.US, "%.2f U / %.1f g", bodyModel.iob, bodyModel.cob) else "---"
+                stringResource(R.string.label_iob_cob),
+                if (isLoaded) stringResource(R.string.unit_iob_cob, bodyModel.iob, bodyModel.cob) else "---"
             ) { }
 
             ParameterRow(
-                "Exercise Intensity",
+                stringResource(R.string.label_exercise_intensity),
                 if (isLoaded) String.format(Locale.US, "%.2f", exercise) else "---"
             ) {
                 if (isLoaded) showEditDialog = "exercise"
             }
             ParameterRow(
-                "Illness Factor",
+                stringResource(R.string.label_illness_factor),
                 if (isLoaded) String.format(Locale.US, "%.2f", illness) else "---"
             ) {
                 if (isLoaded) showEditDialog = "illness"
             }
             ParameterRow(
-                "Stress Level",
+                stringResource(R.string.label_stress_level),
                 if (isLoaded) String.format(Locale.US, "%.1f", stress) else "---"
             ) {
                 if (isLoaded) showEditDialog = "stress"
             }
 
             Text(
-                "Body Profile",
+                stringResource(R.string.label_body_profile),
                 style = MaterialTheme.typography.titleSmall,
                 modifier = Modifier.padding(top = 8.dp)
             )
             ParameterRow(
-                "ISF",
-                if (isLoaded) String.format(Locale.US, "%.1f mg/dL/U", bodyModel.isf) else "---"
+                stringResource(R.string.label_isf),
+                if (isLoaded) stringResource(R.string.unit_isf, bodyModel.isf) else "---"
             ) { }
             ParameterRow(
-                "CR",
-                if (isLoaded) String.format(Locale.US, "%.1f g/U", bodyModel.cr) else "---"
+                stringResource(R.string.label_cr),
+                if (isLoaded) stringResource(R.string.unit_cr, bodyModel.cr) else "---"
             ) { }
             ParameterRow(
-                "Liver Output",
-                if (isLoaded) "${bodyModel.liverGlucoseOutputGph} g/h" else "---"
+                stringResource(R.string.label_liver_output),
+                if (isLoaded) stringResource(R.string.unit_liver_output, bodyModel.liverGlucoseOutputGph) else "---"
             ) { }
         }
     }
 
     when (showEditDialog) {
-        "bg" -> EditDoubleDialog("BG (mg/dL)", bg, { showEditDialog = null }) {
+        "bg" -> EditDoubleDialog(stringResource(R.string.dialog_title_edit_bg), bg, { showEditDialog = null }) {
             bodyModel.bloodGlucose = it
         }
-        "exercise" -> EditDoubleDialog("Exercise Intensity (0-1)", exercise, { showEditDialog = null }) {
+        "exercise" -> EditDoubleDialog(stringResource(R.string.dialog_title_edit_exercise), exercise, { showEditDialog = null }) {
             bodyModel.exerciseIntensity = it.coerceIn(0.0, 1.0)
         }
-        "illness" -> EditDoubleDialog("Illness Factor (>= 1.0)", illness, { showEditDialog = null }) {
+        "illness" -> EditDoubleDialog(stringResource(R.string.dialog_title_edit_illness), illness, { showEditDialog = null }) {
             bodyModel.illnessFactor = it.coerceAtLeast(1.0)
         }
-        "stress" -> EditDoubleDialog("Stress Level (0-1)", stress, { showEditDialog = null }) {
+        "stress" -> EditDoubleDialog(stringResource(R.string.dialog_title_edit_stress), stress, { showEditDialog = null }) {
             bodyModel.stressLevel = it.coerceIn(0.0, 1.0)
         }
     }
@@ -159,7 +161,7 @@ private fun EditDoubleDialog(
     var textValue by remember { mutableStateOf(if (initialValue == 0.0) "" else initialValue.toString()) }
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Edit $title") },
+        title = { Text(stringResource(R.string.dialog_title_edit_param, title)) },
         text = {
             OutlinedTextField(
                 value = textValue,
@@ -173,12 +175,12 @@ private fun EditDoubleDialog(
                 textValue.toDoubleOrNull()?.let { onConfirm(it) }
                 onDismiss()
             }) {
-                Text("OK")
+                Text(stringResource(R.string.btn_ok))
             }
         },
         dismissButton = {
             TextButton(onClick = onDismiss) {
-                Text("Cancel")
+                Text(stringResource(R.string.btn_cancel))
             }
         }
     )

@@ -26,11 +26,12 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import de.dh.raaps.common.R
+import de.dh.raaps.common.R as CommonR
 import de.dh.raaps.common.model.data.Timestamp
 import de.dh.raaps.plugin.simbody.BodyModel
 import de.dh.raaps.plugin.simbody.DEFAULT_SIM_BODY_PROFILE
 import de.dh.raaps.plugin.simbody.Impacts
+import de.dh.raaps.plugin.simbody.R
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -42,7 +43,7 @@ fun SimBodyImpactsScreen(
     onNavigateUp: () -> Unit = {}
 ) {
     if (bodyModel == null) {
-        Text("Body Model not available")
+        Text(stringResource(R.string.body_model_not_available))
         return
     }
 
@@ -52,13 +53,13 @@ fun SimBodyImpactsScreen(
         topBar = {
             TopAppBar(
                 title = {
-                    Text("Metabolic Impacts History")
+                    Text(stringResource(R.string.title_metabolic_impacts))
                 },
                 navigationIcon = {
                     IconButton(onClick = onNavigateUp) {
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = stringResource(R.string.cd_navigate_up)
+                            contentDescription = stringResource(CommonR.string.cd_navigate_up)
                         )
                     }
                 }
@@ -74,7 +75,7 @@ fun SimBodyImpactsScreen(
         ) {
             item {
                 Text(
-                    "Impact on Blood Glucose over time (last 10h)",
+                    stringResource(R.string.subtitle_bg_impact_over_time),
                     style = MaterialTheme.typography.titleMedium,
                     modifier = Modifier.padding(vertical = 8.dp)
                 )
@@ -82,7 +83,7 @@ fun SimBodyImpactsScreen(
 
             if (bodyModel.impactHistory.isEmpty()) {
                 item {
-                    Text("No impacts recorded yet. Simulation must run to generate data.")
+                    Text(stringResource(R.string.no_impacts_yet))
                 }
             } else {
                 items(bodyModel.impactHistory) { impact ->
@@ -104,14 +105,14 @@ private fun ImpactCard(impact: Impacts, timeFormat: SimpleDateFormat) {
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
                 Text(
-                    text = "Time: ${timeFormat.format(Date(impact.currentTimestamp.ms))}",
+                    text = stringResource(R.string.label_time, timeFormat.format(Date(impact.currentTimestamp.ms))),
                     style = MaterialTheme.typography.labelLarge,
                     fontWeight = FontWeight.Bold
                 )
                 
                 val totalDelta = impact.carbImpact - impact.insulinImpact + impact.endogenousImpact - impact.exerciseImpact + impact.stressImpact
                 Text(
-                    text = "${if (totalDelta >= 0) "+" else ""}${String.format(Locale.US, "%.2f", totalDelta)} mg/dL",
+                    text = if (totalDelta >= 0) stringResource(R.string.unit_delta_bg_pos, totalDelta) else stringResource(R.string.unit_delta_bg_neg, -totalDelta),
                     style = MaterialTheme.typography.labelLarge,
                     fontWeight = FontWeight.Bold,
                     color = if (totalDelta >= 0) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary
@@ -120,11 +121,11 @@ private fun ImpactCard(impact: Impacts, timeFormat: SimpleDateFormat) {
             
             HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
             
-            ImpactRow("Carbohydrates", "+${String.format(Locale.US, "%.2f", impact.carbImpact)} mg/dL")
-            ImpactRow("Insulin", "-${String.format(Locale.US, "%.2f", impact.insulinImpact)} mg/dL")
-            ImpactRow("Liver (Endogenous)", "+${String.format(Locale.US, "%.2f", impact.endogenousImpact)} mg/dL")
-            ImpactRow("Exercise", "-${String.format(Locale.US, "%.2f", impact.exerciseImpact)} mg/dL")
-            ImpactRow("Stress", "+${String.format(Locale.US, "%.2f", impact.stressImpact)} mg/dL")
+            ImpactRow(stringResource(R.string.impact_carbs), stringResource(R.string.unit_delta_bg_pos, impact.carbImpact))
+            ImpactRow(stringResource(R.string.impact_insulin), stringResource(R.string.unit_delta_bg_neg, impact.insulinImpact))
+            ImpactRow(stringResource(R.string.impact_liver), stringResource(R.string.unit_delta_bg_pos, impact.endogenousImpact))
+            ImpactRow(stringResource(R.string.impact_exercise), stringResource(R.string.unit_delta_bg_neg, impact.exerciseImpact))
+            ImpactRow(stringResource(R.string.impact_stress), stringResource(R.string.unit_delta_bg_pos, impact.stressImpact))
         }
     }
 }

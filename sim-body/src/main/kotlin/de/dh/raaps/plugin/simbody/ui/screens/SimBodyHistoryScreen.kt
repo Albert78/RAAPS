@@ -30,10 +30,11 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import de.dh.raaps.common.R
+import de.dh.raaps.common.R as CommonR
 import de.dh.raaps.common.ui.theme.AppTheme
 import de.dh.raaps.plugin.simbody.BodyModel
 import de.dh.raaps.plugin.simbody.DEFAULT_SIM_BODY_PROFILE
+import de.dh.raaps.plugin.simbody.R
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -45,7 +46,7 @@ fun SimBodyHistoryScreen(
     onNavigateUp: () -> Unit = {}
 ) {
     if (bodyModel == null) {
-        Text("Body Model not available")
+        Text(stringResource(R.string.body_model_not_available))
         return
     }
 
@@ -56,13 +57,13 @@ fun SimBodyHistoryScreen(
         topBar = {
             TopAppBar(
                 title = {
-                    Text("Sim Body Historical Inputs")
+                    Text(stringResource(R.string.title_sim_body_history))
                 },
                 navigationIcon = {
                     IconButton(onClick = onNavigateUp) {
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = stringResource(R.string.cd_navigate_up)
+                            contentDescription = stringResource(CommonR.string.cd_navigate_up)
                         )
                     }
                 }
@@ -76,7 +77,7 @@ fun SimBodyHistoryScreen(
                 .padding(16.dp)
         ) {
             item {
-                Text("Meals", style = MaterialTheme.typography.titleLarge)
+                Text(stringResource(R.string.label_meals), style = MaterialTheme.typography.titleLarge)
                 HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
             }
             items(bodyModel.meals) { meal ->
@@ -86,8 +87,7 @@ fun SimBodyHistoryScreen(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
-                        val carbs = String.format(Locale.US, "%.1f", meal.carbGrams)
-                        Text("${carbs}g")
+                        Text(stringResource(R.string.unit_g, meal.carbGrams))
                         Spacer(modifier = Modifier.width(8.dp))
                         Text(
                             text = meal.mealType.name,
@@ -111,7 +111,7 @@ fun SimBodyHistoryScreen(
             }
 
             item {
-                Text("Insulin", style = MaterialTheme.typography.titleLarge, modifier = Modifier.padding(top = 16.dp))
+                Text(stringResource(R.string.label_insulin), style = MaterialTheme.typography.titleLarge, modifier = Modifier.padding(top = 16.dp))
                 HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
             }
             items(bodyModel.insulinApplications) { insulin ->
@@ -121,8 +121,7 @@ fun SimBodyHistoryScreen(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
-                        val units = String.format(Locale.US, "%.2f", insulin.amount)
-                        Text("${units}U")
+                        Text(stringResource(R.string.unit_u, insulin.amount))
                         Spacer(modifier = Modifier.width(8.dp))
                         Text(
                             text = "(${insulin.origin})",
@@ -153,7 +152,7 @@ fun SimBodyHistoryScreen(
                     },
                     modifier = Modifier.padding(top = 16.dp)
                 ) {
-                    Text("Clear History")
+                    Text(stringResource(R.string.btn_clear_history))
                 }
             }
         }

@@ -15,12 +15,14 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import de.dh.raaps.common.model.ID_MEAL_STANDARD
 import de.dh.raaps.common.model.MealType
 import de.dh.raaps.common.ui.composables.EditableValueStepper
 import de.dh.raaps.common.ui.theme.AppTheme
 import de.dh.raaps.plugin.simbody.BodyModel
+import de.dh.raaps.plugin.simbody.R
 import de.dh.raaps.ui.controls.meal.FoodTypeSelector
 import androidx.compose.ui.tooling.preview.Preview
 
@@ -35,10 +37,10 @@ fun SimBodyEatMealDialog(
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Mahlzeit essen") },
+        title = { Text(stringResource(R.string.dialog_title_eat_meal)) },
         text = {
             Column(modifier = Modifier.fillMaxWidth()) {
-                Text("Kohlenhydrate (g):", style = MaterialTheme.typography.bodyMedium)
+                Text(stringResource(R.string.label_carbs_g), style = MaterialTheme.typography.bodyMedium)
                 Spacer(modifier = Modifier.height(16.dp))
                 EditableValueStepper(
                     currentValue = carbs,
@@ -49,7 +51,7 @@ fun SimBodyEatMealDialog(
                     modifier = Modifier.fillMaxWidth()
                 )
                 Spacer(modifier = Modifier.height(24.dp))
-                Text("Essenstyp:", style = MaterialTheme.typography.bodyMedium)
+                Text(stringResource(R.string.label_meal_type), style = MaterialTheme.typography.bodyMedium)
                 Spacer(modifier = Modifier.height(8.dp))
                 FoodTypeSelector(
                     mealTypes = mealTypes,
@@ -63,12 +65,12 @@ fun SimBodyEatMealDialog(
                 if (carbs > 0) onConfirm(carbs, selectedType)
                 onDismiss()
             }) {
-                Text("OK")
+                Text(stringResource(R.string.btn_ok))
             }
         },
         dismissButton = {
             TextButton(onClick = onDismiss) {
-                Text("Abbrechen")
+                Text(stringResource(R.string.btn_cancel))
             }
         }
     )
