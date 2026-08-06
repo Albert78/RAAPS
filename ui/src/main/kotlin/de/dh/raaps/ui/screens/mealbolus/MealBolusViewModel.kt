@@ -7,6 +7,7 @@ import androidx.lifecycle.viewmodel.CreationExtras
 import de.dh.raaps.common.model.ApsMode
 import de.dh.raaps.common.model.DEFAULT_CR_GRAM_PER_UNIT
 import de.dh.raaps.common.model.DEFAULT_ISF_MGDL_PER_UNIT
+import de.dh.raaps.common.model.ID_MEAL_STANDARD
 import de.dh.raaps.common.model.ID_UNDEFINED
 import de.dh.raaps.common.model.InsulinAmount
 import de.dh.raaps.common.model.InsulinApplication
@@ -101,7 +102,7 @@ class MealBolusViewModel(
                     originalMealId = existingMeal?.id ?: ID_UNDEFINED,
                     carbsKe = existingMeal?.let { meal -> meal.carbGrams / 10.0 } ?: 0.0,
                     mealTypes = mealTypes,
-                    selectedMealType = existingMeal?.mealType ?: mealTypes.firstOrNull(),
+                    selectedMealType = existingMeal?.mealType ?: mealTypes.find { it.id == ID_MEAL_STANDARD } ?: mealTypes.firstOrNull(),
                     currentBg = currentBg,
                     targetBg = bgSettings.first.mgdl.toInt(),
                     isf = if (isf == 0) DEFAULT_ISF_MGDL_PER_UNIT.toInt() else isf,

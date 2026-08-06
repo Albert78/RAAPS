@@ -15,6 +15,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import de.dh.raaps.common.model.ID_MEAL_STANDARD
 import de.dh.raaps.common.model.MealType
 import de.dh.raaps.common.ui.composables.EditableValueStepper
 import de.dh.raaps.common.ui.theme.AppTheme
@@ -29,7 +30,7 @@ fun SimBodyEatMealDialog(
 ) {
     val mealTypes = BodyModel.SIM_MEAL_TYPES
     var carbs by remember { mutableStateOf(0.0) }
-    var selectedType by remember { mutableStateOf(mealTypes.first()) }
+    var selectedType by remember { mutableStateOf(mealTypes.find { it.id == ID_MEAL_STANDARD } ?: mealTypes.first()) }
 
     AlertDialog(
         onDismissRequest = onDismiss,

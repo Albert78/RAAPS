@@ -22,6 +22,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -31,6 +32,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import de.dh.raaps.common.model.ID_MEAL_STANDARD
 import de.dh.raaps.common.model.MealType
 import de.dh.raaps.ui.R
 import de.dh.raaps.ui.screens.meals.getIcon
@@ -43,6 +45,15 @@ fun FoodTypeSelector(
     onTypeSelected: (MealType) -> Unit
 ) {
     var expanded by remember { mutableStateOf(false) }
+
+    val effectiveSelected = selectedType ?: mealTypes.find { it.id == ID_MEAL_STANDARD } ?: mealTypes.firstOrNull()
+
+    // Sync default selection if nothing is selected
+    LaunchedEffect(selectedType, mealTypes) {
+        if (selectedType == null && effectiveSelected != null) {
+            onTypeSelected(effectiveSelected)
+        }
+    }
 
     Card(
         modifier = Modifier.fillMaxWidth(),
@@ -64,7 +75,7 @@ fun FoodTypeSelector(
                 ) {
                     // Show icons of all meal types, highlight selected
                     mealTypes.forEach { type ->
-                        val isSelected = type == selectedType
+                        val isSelected = type == effectiveSelected
                         IconButton(
                             onClick = { onTypeSelected(type) },
                             modifier = Modifier.size(40.dp)
@@ -121,7 +132,7 @@ fun FoodTypeSelector(
                 ) {
                     mealTypes.forEach { type ->
                         FilterChip(
-                            selected = (type == selectedType),
+                            selected = (type == effectiveSelected),
                             onClick = {
                                 onTypeSelected(type)
                                 expanded = false
