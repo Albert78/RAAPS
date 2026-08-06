@@ -1,7 +1,13 @@
 package de.dh.raaps.plugin.simbody.ui.screens
 
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
@@ -17,11 +23,17 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import de.dh.raaps.common.R
+import de.dh.raaps.common.ui.theme.AppTheme
 import de.dh.raaps.plugin.simbody.BodyModel
+import de.dh.raaps.plugin.simbody.DEFAULT_SIM_BODY_PROFILE
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -37,7 +49,8 @@ fun SimBodyHistoryScreen(
         return
     }
 
-    val dateTimeFormat = remember { SimpleDateFormat("dd.MM.yyyy HH:mm", Locale.getDefault()) }
+    val timeFormat = remember { SimpleDateFormat("HH:mm", Locale.getDefault()) }
+    val dateFormat = remember { SimpleDateFormat("dd.MM.yyyy", Locale.getDefault()) }
 
     Scaffold(
         topBar = {
@@ -67,8 +80,34 @@ fun SimBodyHistoryScreen(
                 HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
             }
             items(bodyModel.meals) { meal ->
-                val carbs = String.format(Locale.US, "%.2f", meal.carbGrams)
-                Text("${carbs}g at ${dateTimeFormat.format(Date(meal.timestamp.ms))}")
+                Row(
+                    modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        val carbs = String.format(Locale.US, "%.1f", meal.carbGrams)
+                        Text("${carbs}g")
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(
+                            text = meal.mealType.name,
+                            style = MaterialTheme.typography.bodySmall,
+                            color = Color.Gray
+                        )
+                    }
+                    Column(horizontalAlignment = Alignment.End) {
+                        Text(
+                            text = timeFormat.format(Date(meal.timestamp.ms)),
+                            style = MaterialTheme.typography.bodyLarge,
+                            fontWeight = FontWeight.Bold
+                        )
+                        Text(
+                            text = dateFormat.format(Date(meal.timestamp.ms)),
+                            style = MaterialTheme.typography.labelSmall,
+                            color = Color.Gray
+                        )
+                    }
+                }
             }
 
             item {
@@ -76,8 +115,34 @@ fun SimBodyHistoryScreen(
                 HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
             }
             items(bodyModel.insulinApplications) { insulin ->
-                val units = String.format(Locale.US, "%.2f", insulin.amount)
-                Text("${units}U at ${dateTimeFormat.format(Date(insulin.timestamp.ms))} (${insulin.origin})")
+                Row(
+                    modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        val units = String.format(Locale.US, "%.2f", insulin.amount)
+                        Text("${units}U")
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(
+                            text = "(${insulin.origin})",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = Color.Gray
+                        )
+                    }
+                    Column(horizontalAlignment = Alignment.End) {
+                        Text(
+                            text = timeFormat.format(Date(insulin.timestamp.ms)),
+                            style = MaterialTheme.typography.bodyLarge,
+                            fontWeight = FontWeight.Bold
+                        )
+                        Text(
+                            text = dateFormat.format(Date(insulin.timestamp.ms)),
+                            style = MaterialTheme.typography.labelSmall,
+                            color = Color.Gray
+                        )
+                    }
+                }
             }
 
             item {
@@ -92,5 +157,21 @@ fun SimBodyHistoryScreen(
                 }
             }
         }
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+fun SimBodyHistoryScreenPreview() {
+    val bodyModel = remember {
+        BodyModel(DEFAULT_SIM_BODY_PROFILE).apply {
+            eat(50.0, BodyModel.SIM_MEAL_TYPES[0])
+            eat(25.0, BodyModel.SIM_MEAL_TYPES[1])
+            bolus(5.0)
+            bolus(2.5)
+        }
+    }
+    AppTheme {
+        SimBodyHistoryScreen(bodyModel = bodyModel)
     }
 }
