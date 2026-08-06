@@ -9,10 +9,13 @@ import androidx.room.RoomDatabase
     SimHistoryEntity::class,
     SimulationStateEntity::class,
     SimEventEntity::class,
-    BodyProfileEntity::class
+    BodyProfileEntity::class,
+    PumpStateEntity::class,
+    PumpHistoryEntity::class
 ], version = 1)
 abstract class SimBodyDatabase : RoomDatabase() {
     abstract fun impactDao(): SimBodyDao
+    abstract fun pumpDao(): PumpDao
 
     companion object {
         private const val DATABASE_NAME = "SimBodyDatabase.db"

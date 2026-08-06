@@ -30,7 +30,7 @@ class SimBodyPlugin(
 ) : Plugin, TickHandler {
     private val database = SimBodyDatabase.getInstance(application)
     val bodyModel = BodyModel(DEFAULT_SIM_BODY_PROFILE, database.impactDao())
-    val pumpDevice = SimBodyPumpDevice(bodyModel, DEFAULT_SIM_INSULIN_PROFILE)
+    val pumpDevice = SimBodyPumpDevice(bodyModel, DEFAULT_SIM_INSULIN_PROFILE, database.pumpDao())
 
     private val _glucoseReadings = MutableSharedFlow<BgReading>(
         replay = 1,
@@ -48,6 +48,7 @@ class SimBodyPlugin(
 
     override fun initialize(pluginManager: PluginManager) {
         bodyModel.loadState()
+        pumpDevice.loadState()
 PersistentLogger.log("SimBodyPlugin", "------------ calling registerTickHandler: priority=${TickPriority.PRE_CORE}, handler=SimBodyPlugin")
         timeService.registerTickHandler(TickPriority.PRE_CORE, this)
         heartbeat.start()

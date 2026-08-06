@@ -49,3 +49,26 @@ data class BodyProfileEntity(
     val liverGlucoseOutputBlocks: String, // JSON
     val isActive: Boolean = false
 )
+
+@Entity(tableName = "pump_state")
+data class PumpStateEntity(
+    @PrimaryKey val id: Int = 0,
+    val batteryLevel: Double,
+    val reservoirLevel: Double,
+    val isOccluded: Boolean,
+    val isPrimed: Boolean,
+    val hasHardwareError: Boolean,
+    val isBroken: Boolean,
+    val lastBasalDeliveryTimestampMs: Long,
+    val tempBasalRate: Double?,
+    val tempBasalExpiryMs: Long? = null
+)
+
+@Entity(tableName = "pump_history")
+data class PumpHistoryEntity(
+    @PrimaryKey(autoGenerate = true)
+    val id: Long = 0,
+    val timestampMs: Long,
+    val amount: Double,
+    val deliveryType: String // "BOLUS", "BASAL", "TBR"
+)
