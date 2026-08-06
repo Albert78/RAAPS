@@ -291,11 +291,11 @@ private fun NextReadingIcon(
         Canvas(modifier = modifier.size(16.dp)) {
             // Background circle (subtle)
             drawCircle(color = backgroundColor)
-            // Progress arc (filling from 12 o'clock)
+            // Progress arc (remaining time, prominent, shrinking clockwise)
             drawArc(
                 color = tintColor,
-                startAngle = -90f,
-                sweepAngle = progress * 360f,
+                startAngle = -90f + (progress * 360f),
+                sweepAngle = (1f - progress) * 360f,
                 useCenter = true
             )
             // Outline
