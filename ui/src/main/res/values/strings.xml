@@ -238,5 +238,23 @@
     <string name="bolus_origin_manual">Manuell</string>
     <string name="cd_edit">Bearbeiten</string>
     <string name="system_control_screen_title">Systemsteuerung</string>
+    <string name="system_control_cgm_subsystem">CGM-Teilsystem</string>
+    <string name="system_control_pump_subsystem">Pumpen-Teilsystem</string>
+    <string name="system_control_algorithm_subsystem">Algorithmus</string>
+    <string name="system_control_algorithm_history_button">Verlauf</string>
+
+    <string name="algorithm_decisions_screen_title">Algorithmus-Entscheidungen</string>
+    <string name="algorithm_decisions_no_insights">Noch keine Erkenntnisse verfügbar.</string>
+    <string name="algorithm_insight_label_bg">BZ</string>
+    <string name="algorithm_insight_label_iob">IOB</string>
+    <string name="algorithm_insight_label_cob">COB</string>
+    <string name="algorithm_insight_label_pred_peak">Vorherges. Peak</string>
+    <string name="algorithm_insight_label_dev">Abweich.</string>
+    <string name="algorithm_insight_label_target">Ziel</string>
+    <string name="algorithm_insight_label_isf">ISF</string>
+    <string name="algorithm_insight_label_cr">CR</string>
+    <string name="algorithm_insight_action_bolus">Aktion: Bolus %1$.2f U</string>
+    <string name="algorithm_insight_action_temp_basal">Aktion: Temp-Basal %1$.2f U/h für %2$d h</string>
+
     <string name="alarms_screen_title">Warnungen und Alarme</string>
 </resources>

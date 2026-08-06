@@ -14,6 +14,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation3.runtime.NavEntry
 import androidx.navigation3.runtime.NavKey
 import de.dh.raaps.common.navigation.AlarmsRoute
+import de.dh.raaps.common.navigation.AlgorithmDecisionsRoute
 import de.dh.raaps.common.navigation.BgEditorRoute
 import de.dh.raaps.common.navigation.BolusHistoryRoute
 import de.dh.raaps.common.navigation.CurrentTherapySettingsRoute
@@ -60,6 +61,7 @@ import de.dh.raaps.ui.screens.permissions.openNotificationSettings
 import de.dh.raaps.ui.screens.permissions.requestIgnoreBatteryOptimizations
 import de.dh.raaps.ui.screens.preferences.PreferencesScreen
 import de.dh.raaps.ui.screens.preferences.PreferencesViewModel
+import de.dh.raaps.ui.screens.systemcontrol.AlgorithmDecisionsScreen
 import de.dh.raaps.ui.screens.systemcontrol.SystemControlScreen
 import de.dh.raaps.ui.screens.systemcontrol.SystemControlViewModel
 import de.dh.raaps.ui.screens.therapy.BgEditorScreen
@@ -285,10 +287,17 @@ class MainFeatureNavGraph(
             }
 
             is SystemControlRoute -> NavEntry(key) {
+                SystemControlScreen(
+                    onNavigateUp = { navViewModel.pop() },
+                    onNavigateToAlgorithmDecisions = { navViewModel.push(AlgorithmDecisionsRoute) }
+                )
+            }
+
+            is AlgorithmDecisionsRoute -> NavEntry(key) {
                 val vm: SystemControlViewModel = viewModel(
                     factory = SystemControlViewModel.Companion.Factory(registry)
                 )
-                SystemControlScreen(
+                AlgorithmDecisionsScreen(
                     viewModel = vm,
                     onNavigateUp = { navViewModel.pop() }
                 )
