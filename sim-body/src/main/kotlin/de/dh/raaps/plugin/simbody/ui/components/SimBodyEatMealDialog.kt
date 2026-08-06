@@ -10,6 +10,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableDoubleStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -29,7 +30,7 @@ fun SimBodyEatMealDialog(
     onConfirm: (Double, MealType) -> Unit
 ) {
     val mealTypes = BodyModel.SIM_MEAL_TYPES
-    var carbs by remember { mutableStateOf(0.0) }
+    var carbs by remember { mutableDoubleStateOf(0.0) }
     var selectedType by remember { mutableStateOf(mealTypes.find { it.id == ID_MEAL_STANDARD } ?: mealTypes.first()) }
 
     AlertDialog(

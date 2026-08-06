@@ -4,15 +4,12 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
-import androidx.compose.material3.Checkbox
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
@@ -27,11 +24,10 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
-import androidx.compose.ui.unit.dp
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.dp
 import de.dh.raaps.common.model.data.Block
 import de.dh.raaps.common.model.data.Minutes
-import de.dh.raaps.common.ui.composables.EditableValueStepper
 import de.dh.raaps.common.ui.theme.AppTheme
 import de.dh.raaps.plugin.simbody.BodyModel
 import de.dh.raaps.plugin.simbody.model.BodyProfile
@@ -46,8 +42,6 @@ fun SimBodyDashboardCard(
     val illness by bodyModel.illnessFactorFlow.collectAsState()
     val stress by bodyModel.stressLevelFlow.collectAsState()
     val bg by bodyModel.bloodGlucoseFlow.collectAsState()
-    val isSensorEnabled by bodyModel.isSensorEnabledFlow.collectAsState()
-    val sensorNoiseFactor by bodyModel.sensorNoiseFactorFlow.collectAsState()
     val isLoaded by bodyModel.isLoadedFlow.collectAsState()
     val activeProfile by bodyModel.activeProfileFlow.collectAsState()
 
@@ -100,35 +94,9 @@ fun SimBodyDashboardCard(
             }
             ParameterRow(
                 "Stress Level",
-                if (isLoaded) String.format(Locale.US, "%.2f", stress) else "---"
+                if (isLoaded) String.format(Locale.US, "%.1f", stress) else "---"
             ) {
                 if (isLoaded) showEditDialog = "stress"
-            }
-
-            Text(
-                "Sensor Config",
-                style = MaterialTheme.typography.titleSmall,
-                modifier = Modifier.padding(top = 8.dp)
-            )
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(vertical = 4.dp),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.SpaceBetween
-            ) {
-                Text("Sensor Enabled", style = MaterialTheme.typography.bodyMedium)
-                Checkbox(
-                    checked = isSensorEnabled,
-                    onCheckedChange = { bodyModel.isSensorEnabled = it },
-                    enabled = isLoaded
-                )
-            }
-            ParameterRow(
-                "Noise Factor",
-                if (isLoaded) String.format(Locale.US, "%.2f", sensorNoiseFactor) else "---"
-            ) {
-                if (isLoaded) showEditDialog = "noise"
             }
 
             Text(
@@ -163,9 +131,6 @@ fun SimBodyDashboardCard(
         }
         "stress" -> EditDoubleDialog("Stress Level (0-1)", stress, { showEditDialog = null }) {
             bodyModel.stressLevel = it.coerceIn(0.0, 1.0)
-        }
-        "noise" -> EditDoubleDialog("Noise Factor (>= 0)", sensorNoiseFactor, { showEditDialog = null }) {
-            bodyModel.sensorNoiseFactor = it.coerceAtLeast(0.0)
         }
     }
 }
