@@ -2,7 +2,7 @@
   "formatVersion": 1,
   "database": {
     "version": 1,
-    "identityHash": "3af0ec0aa46c6541ce5bf103300a3ad5",
+    "identityHash": "44d93441396d6b6d6082eea06be23349",
     "entities": [
       {
         "tableName": "sensor_type",
@@ -522,11 +522,110 @@
             "id"
           ]
         }
+      },
+      {
+        "tableName": "algorithm_insights",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `timestamp` INTEGER NOT NULL, `bgOriginal` INTEGER NOT NULL, `bgFiltered` INTEGER NOT NULL, `deviationPerTick` REAL NOT NULL, `iobAtPeak` REAL NOT NULL, `cobAtPeak` REAL NOT NULL, `predictedBgAtPeak` INTEGER NOT NULL, `targetBg` INTEGER NOT NULL, `isf` REAL NOT NULL, `cr` REAL NOT NULL, `reasoning` TEXT NOT NULL, `actionBolus` REAL, `actionTempBasalUnitsPerHour` REAL, `actionTempBasalDurationInHours` INTEGER)",
+        "fields": [
+          {
+            "fieldPath": "id",
+            "columnName": "id",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "timestamp",
+            "columnName": "timestamp",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "bgOriginal",
+            "columnName": "bgOriginal",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "bgFiltered",
+            "columnName": "bgFiltered",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "deviationPerTick",
+            "columnName": "deviationPerTick",
+            "affinity": "REAL",
+            "notNull": true
+          },
+          {
+            "fieldPath": "iobAtPeak",
+            "columnName": "iobAtPeak",
+            "affinity": "REAL",
+            "notNull": true
+          },
+          {
+            "fieldPath": "cobAtPeak",
+            "columnName": "cobAtPeak",
+            "affinity": "REAL",
+            "notNull": true
+          },
+          {
+            "fieldPath": "predictedBgAtPeak",
+            "columnName": "predictedBgAtPeak",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "targetBg",
+            "columnName": "targetBg",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "isf",
+            "columnName": "isf",
+            "affinity": "REAL",
+            "notNull": true
+          },
+          {
+            "fieldPath": "cr",
+            "columnName": "cr",
+            "affinity": "REAL",
+            "notNull": true
+          },
+          {
+            "fieldPath": "reasoning",
+            "columnName": "reasoning",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "actionBolus",
+            "columnName": "actionBolus",
+            "affinity": "REAL"
+          },
+          {
+            "fieldPath": "actionTempBasalUnitsPerHour",
+            "columnName": "actionTempBasalUnitsPerHour",
+            "affinity": "REAL"
+          },
+          {
+            "fieldPath": "actionTempBasalDurationInHours",
+            "columnName": "actionTempBasalDurationInHours",
+            "affinity": "INTEGER"
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": true,
+          "columnNames": [
+            "id"
+          ]
+        }
       }
     ],
     "setupQueries": [
       "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
-      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '3af0ec0aa46c6541ce5bf103300a3ad5')"
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '44d93441396d6b6d6082eea06be23349')"
     ]
   }
 }

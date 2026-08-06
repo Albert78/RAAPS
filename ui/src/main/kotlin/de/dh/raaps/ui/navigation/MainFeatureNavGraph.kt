@@ -61,6 +61,7 @@ import de.dh.raaps.ui.screens.permissions.requestIgnoreBatteryOptimizations
 import de.dh.raaps.ui.screens.preferences.PreferencesScreen
 import de.dh.raaps.ui.screens.preferences.PreferencesViewModel
 import de.dh.raaps.ui.screens.systemcontrol.SystemControlScreen
+import de.dh.raaps.ui.screens.systemcontrol.SystemControlViewModel
 import de.dh.raaps.ui.screens.therapy.BgEditorScreen
 import de.dh.raaps.ui.screens.therapy.CurrentTherapySettingsScreen
 import de.dh.raaps.ui.screens.therapy.TherapyAdjustmentScreen
@@ -284,7 +285,13 @@ class MainFeatureNavGraph(
             }
 
             is SystemControlRoute -> NavEntry(key) {
-                SystemControlScreen(onNavigateUp = { navViewModel.pop() })
+                val vm: SystemControlViewModel = viewModel(
+                    factory = SystemControlViewModel.Companion.Factory(registry)
+                )
+                SystemControlScreen(
+                    viewModel = vm,
+                    onNavigateUp = { navViewModel.pop() }
+                )
             }
 
             is AlarmsRoute -> NavEntry(key) {
