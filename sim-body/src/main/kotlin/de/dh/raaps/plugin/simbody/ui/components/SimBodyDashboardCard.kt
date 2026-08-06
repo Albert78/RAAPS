@@ -4,8 +4,10 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
@@ -29,6 +31,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.tooling.preview.Preview
 import de.dh.raaps.common.model.data.Block
 import de.dh.raaps.common.model.data.Minutes
+import de.dh.raaps.common.ui.composables.EditableValueStepper
 import de.dh.raaps.common.ui.theme.AppTheme
 import de.dh.raaps.plugin.simbody.BodyModel
 import de.dh.raaps.plugin.simbody.model.BodyProfile
@@ -50,6 +53,7 @@ fun SimBodyDashboardCard(
     val activeProfile by bodyModel.activeProfileFlow.collectAsState()
 
     var showEditDialog by remember { mutableStateOf<String?>(null) }
+    var showEatMealDialog by remember { mutableStateOf(false) }
 
     Card(
         modifier = Modifier
@@ -66,11 +70,20 @@ fun SimBodyDashboardCard(
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold
                 )
-                Button(
-                    onClick = onDetailsClick,
-                    enabled = isLoaded
-                ) {
-                    Text("Details")
+                Row {
+                    Button(
+                        onClick = { showEatMealDialog = true },
+                        enabled = isLoaded
+                    ) {
+                        Text("Essen")
+                    }
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Button(
+                        onClick = onDetailsClick,
+                        enabled = isLoaded
+                    ) {
+                        Text("Details")
+                    }
                 }
             }
 
@@ -184,6 +197,13 @@ fun SimBodyDashboardCard(
             bodyModel.sensorNoiseFactor = it.coerceAtLeast(0.0)
         }
     }
+
+    if (showEatMealDialog) {
+        SimBodyEatMealDialog(
+            onDismiss = { showEatMealDialog = false },
+            onConfirm = { carbs, type -> bodyModel.eat(carbs, type) }
+        )
+    }
 }
 
 @Composable
@@ -207,7 +227,7 @@ private fun EditDoubleDialog(
     onDismiss: () -> Unit,
     onConfirm: (Double) -> Unit
 ) {
-    var textValue by remember { mutableStateOf(initialValue.toString()) }
+    var textValue by remember { mutableStateOf(if (initialValue == 0.0) "" else initialValue.toString()) }
     AlertDialog(
         onDismissRequest = onDismiss,
         title = { Text("Edit $title") },
