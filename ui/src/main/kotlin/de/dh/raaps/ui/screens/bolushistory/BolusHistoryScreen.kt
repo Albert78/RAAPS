@@ -49,6 +49,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import de.dh.raaps.common.model.BOLUS_MAX
@@ -69,7 +70,6 @@ import de.dh.raaps.common.R as CommonR
 import java.time.Instant
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
-import java.time.format.FormatStyle
 import java.util.Locale
 
 @Composable
@@ -196,12 +196,18 @@ fun BolusItem(
     onEditClick: () -> Unit,
     onDeleteClick: () -> Unit
 ) {
-    val timeFormatter = remember { DateTimeFormatter.ofLocalizedDateTime(FormatStyle.SHORT) }
+    val timeFormatter = remember { DateTimeFormatter.ofPattern("HH:mm", Locale.getDefault()) }
+    val dateFormatter = remember { DateTimeFormatter.ofPattern("dd.MM.yyyy", Locale.getDefault()) }
+
     val timeString = remember(entry.timestamp) {
         Instant.ofEpochMilli(entry.timestamp.ms)
             .atZone(ZoneId.systemDefault())
-            .toLocalDateTime()
             .format(timeFormatter)
+    }
+    val dateString = remember(entry.timestamp) {
+        Instant.ofEpochMilli(entry.timestamp.ms)
+            .atZone(ZoneId.systemDefault())
+            .format(dateFormatter)
     }
 
     val originString = when (entry.origin) {
@@ -226,11 +232,18 @@ fun BolusItem(
         },
         trailingContent = {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Text(
-                    text = timeString,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
+                Column(horizontalAlignment = Alignment.End) {
+                    Text(
+                        text = timeString,
+                        style = MaterialTheme.typography.bodyLarge,
+                        fontWeight = FontWeight.Bold
+                    )
+                    Text(
+                        text = dateString,
+                        style = MaterialTheme.typography.labelSmall,
+                        color = Color.Gray
+                    )
+                }
                 if (isEditable) {
                     Spacer(Modifier.width(8.dp))
                     IconButton(onClick = onEditClick, modifier = Modifier.size(24.dp)) {
