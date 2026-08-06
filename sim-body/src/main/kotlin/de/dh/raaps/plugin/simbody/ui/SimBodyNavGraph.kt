@@ -13,7 +13,7 @@ import de.dh.raaps.common.navigation.FeatureNavGraph
 import de.dh.raaps.common.navigation.NavigationViewModel
 import de.dh.raaps.plugin.simbody.BodyModel
 import de.dh.raaps.plugin.simbody.ui.components.SimBodyDashboardCard
-import de.dh.raaps.plugin.simbody.ui.screens.SimBodyDetailScreen
+import de.dh.raaps.plugin.simbody.ui.screens.SimBodyHistoryScreen
 import de.dh.raaps.plugin.simbody.ui.screens.SimBodyImpactsScreen
 import de.dh.raaps.plugin.simbody.ui.screens.SimBodyMainScreen
 
@@ -41,7 +41,7 @@ class SimBodyNavGraph(
                 )
             }
             is SimBodyHistoryRoute -> NavEntry(key) {
-                SimBodyDetailScreen(
+                SimBodyHistoryScreen(
                     bodyModel = bodyModel,
                     onNavigateUp = { navViewModel.pop() }
                 )

@@ -28,7 +28,7 @@ import java.util.Locale
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun SimBodyDetailScreen(
+fun SimBodyHistoryScreen(
     bodyModel: BodyModel?,
     onNavigateUp: () -> Unit = {}
 ) {
