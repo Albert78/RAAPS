@@ -3,7 +3,9 @@ package de.dh.raaps.core.aps
 import de.dh.raaps.AppPreferencesRepository
 import de.dh.raaps.common.model.ApsMode
 import de.dh.raaps.common.model.InsulinAmount
+import de.dh.raaps.common.model.InsulinApplication
 import de.dh.raaps.common.model.InsulinHistory
+import de.dh.raaps.common.model.InsulinOrigin
 import de.dh.raaps.common.model.InsulinType
 import de.dh.raaps.common.model.data.BgBlock
 import de.dh.raaps.common.model.data.BgDelta
@@ -287,6 +289,17 @@ class TherapyManager(
                         PumpCommand.DeliverBolus(amount),
                         isCancelableAPSCommand = true
                     )
+                    // Add to history manually for immediate feedback,
+                    // will be overwritten by pump history sync
+                    val insulinType = getPumpInsulinType()
+                    val application = InsulinApplication(
+                        timestamp = Timestamp.now(),
+                        amount = amount.iu,
+                        insulinType = insulinType,
+                        origin = InsulinOrigin.Pump,
+                        provisional = true
+                    )
+                    treatmentRepository.addInsulinApplication(application)
                 }
             }
         }

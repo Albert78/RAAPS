@@ -10,8 +10,6 @@ import de.dh.raaps.common.model.DEFAULT_ISF_MGDL_PER_UNIT
 import de.dh.raaps.common.model.ID_MEAL_STANDARD
 import de.dh.raaps.common.model.ID_UNDEFINED
 import de.dh.raaps.common.model.InsulinAmount
-import de.dh.raaps.common.model.InsulinApplication
-import de.dh.raaps.common.model.InsulinOrigin
 import de.dh.raaps.common.model.MealEntry
 import de.dh.raaps.common.model.MealType
 import de.dh.raaps.common.model.data.Minutes
@@ -220,17 +218,6 @@ class MealBolusViewModel(
                     val amount = InsulinAmount(state.manualBolus)
                     val lock = treatmentLock ?: throw IllegalStateException("Bolus delivery attempted without holding the lock")
                     therapyManager.issueBolus(lock, amount)
-
-                    // Add to history manually for immediate feedback
-                    val insulinType = therapyManager.getPumpInsulinType()
-                    val application = InsulinApplication(
-                        timestamp = now,
-                        amount = state.manualBolus,
-                        insulinType = insulinType,
-                        origin = InsulinOrigin.Manual,
-                        provisional = true
-                    )
-                    treatmentRepository.addInsulinApplication(application)
                 }
 
                 _uiState.update { it.copy(isSubmitting = false) }
