@@ -40,8 +40,7 @@ import java.util.Locale
 @Composable
 fun SimBodyDashboardCard(
     bodyModel: BodyModel,
-    onDetailsClick: () -> Unit,
-    onHistoryClick: () -> Unit
+    onDetailsClick: () -> Unit
 ) {
     val exercise by bodyModel.exerciseIntensityFlow.collectAsState()
     val illness by bodyModel.illnessFactorFlow.collectAsState()
@@ -53,7 +52,6 @@ fun SimBodyDashboardCard(
     val activeProfile by bodyModel.activeProfileFlow.collectAsState()
 
     var showEditDialog by remember { mutableStateOf<String?>(null) }
-    var showEatMealDialog by remember { mutableStateOf(false) }
 
     Card(
         modifier = Modifier
@@ -70,20 +68,11 @@ fun SimBodyDashboardCard(
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold
                 )
-                Row {
-                    Button(
-                        onClick = { showEatMealDialog = true },
-                        enabled = isLoaded
-                    ) {
-                        Text("Essen")
-                    }
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Button(
-                        onClick = onDetailsClick,
-                        enabled = isLoaded
-                    ) {
-                        Text("Details")
-                    }
+                Button(
+                    onClick = onDetailsClick,
+                    enabled = isLoaded
+                ) {
+                    Text("Details")
                 }
             }
 
@@ -159,24 +148,6 @@ fun SimBodyDashboardCard(
                 "Liver Output",
                 if (isLoaded) "${bodyModel.liverGlucoseOutputGph} g/h" else "---"
             ) { }
-
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clickable(enabled = isLoaded, onClick = onHistoryClick)
-                    .padding(top = 8.dp),
-                horizontalArrangement = Arrangement.SpaceBetween
-            ) {
-                Text(
-                    if (isLoaded) "Inputs: ${bodyModel.meals.size} meals, ${bodyModel.insulinApplications.size} boluses" else "Loading...",
-                    style = MaterialTheme.typography.bodySmall,
-                )
-                Text(
-                    "Show History",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.primary
-                )
-            }
         }
     }
 
@@ -196,13 +167,6 @@ fun SimBodyDashboardCard(
         "noise" -> EditDoubleDialog("Noise Factor (>= 0)", sensorNoiseFactor, { showEditDialog = null }) {
             bodyModel.sensorNoiseFactor = it.coerceAtLeast(0.0)
         }
-    }
-
-    if (showEatMealDialog) {
-        SimBodyEatMealDialog(
-            onDismiss = { showEatMealDialog = false },
-            onConfirm = { carbs, type -> bodyModel.eat(carbs, type) }
-        )
     }
 }
 
@@ -277,7 +241,6 @@ fun SimBodyDashboardCardPreview() {
             SimBodyDashboardCard(
                 bodyModel = bodyModel,
                 onDetailsClick = {},
-                onHistoryClick = {},
             )
         }
     }

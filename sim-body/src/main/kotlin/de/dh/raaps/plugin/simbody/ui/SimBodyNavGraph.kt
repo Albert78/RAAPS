@@ -15,6 +15,7 @@ import de.dh.raaps.plugin.simbody.BodyModel
 import de.dh.raaps.plugin.simbody.ui.components.SimBodyDashboardCard
 import de.dh.raaps.plugin.simbody.ui.screens.SimBodyDetailScreen
 import de.dh.raaps.plugin.simbody.ui.screens.SimBodyImpactsScreen
+import de.dh.raaps.plugin.simbody.ui.screens.SimBodyMainScreen
 
 /**
  * Navigation graph for the Sim-Body plugin.
@@ -25,6 +26,14 @@ class SimBodyNavGraph(
 ) : FeatureNavGraph {
     override fun getEntry(key: NavKey): NavEntry<NavKey>? {
         return when (key) {
+            is SimBodyMainRoute -> NavEntry(key) {
+                SimBodyMainScreen(
+                    bodyModel = bodyModel,
+                    onNavigateUp = { navViewModel.pop() },
+                    onNavigateToImpacts = { navViewModel.push(SimBodyImpactsRoute) },
+                    onNavigateToHistory = { navViewModel.push(SimBodyHistoryRoute) }
+                )
+            }
             is SimBodyImpactsRoute -> NavEntry(key) {
                 SimBodyImpactsScreen(
                     bodyModel = bodyModel,
@@ -54,8 +63,7 @@ class SimBodyNavGraph(
 
         SimBodyDashboardCard(
             bodyModel = bodyModel,
-            onDetailsClick = { navViewModel.push(SimBodyImpactsRoute) },
-            onHistoryClick = { navViewModel.push(SimBodyHistoryRoute) }
+            onDetailsClick = { navViewModel.push(SimBodyMainRoute) }
         )
     }
 }
