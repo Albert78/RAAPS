@@ -33,7 +33,6 @@ import androidx.compose.material.icons.outlined.Restaurant
 import androidx.compose.material.icons.outlined.Bolt
 import androidx.compose.material.icons.outlined.Fastfood
 import androidx.compose.material.icons.outlined.Timer
-import androidx.compose.material.icons.outlined.History
 import androidx.compose.material.icons.automirrored.outlined.MenuBook
 import androidx.compose.material.icons.outlined.Build
 import androidx.compose.material.icons.outlined.NotificationsActive
@@ -81,7 +80,7 @@ val Icon_Restore = Icons.Outlined.Restore
 
 // Menu Navigation Icons
 val Icon_Menu_Meals = Icons.Outlined.Restaurant
-val Icon_Menu_Bolus_History = Icons.Outlined.History
+val Icon_Menu_Bolus_History = Icons.Outlined.Syringe
 val Icon_Menu_Food_Database = Icons.AutoMirrored.Outlined.MenuBook
 val Icon_Menu_System_Control = Icons.Outlined.Build
 val Icon_Menu_Alarms = Icons.Outlined.NotificationsActive
