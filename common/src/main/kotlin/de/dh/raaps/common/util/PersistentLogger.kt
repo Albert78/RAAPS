@@ -26,7 +26,12 @@ object PersistentLogger {
      */
     fun init(context: Context) {
         if (logFile == null) {
-            logFile = File(context.filesDir, LOG_FILE_NAME)
+            // Use external files dir (Download subfolder) so it's accessible via USB/File Explorer
+            // without needing storage permissions.
+            val baseDir = context.getExternalFilesDir(android.os.Environment.DIRECTORY_DOWNLOADS)
+                ?: context.filesDir
+            
+            logFile = File(baseDir, LOG_FILE_NAME)
             log("PersistentLogger", "------------------------------------------------------------")
             log("PersistentLogger", "Logger initialized at ${logFile?.absolutePath}")
         }
