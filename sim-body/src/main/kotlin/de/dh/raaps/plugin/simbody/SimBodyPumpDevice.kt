@@ -9,6 +9,9 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import java.util.concurrent.CopyOnWriteArrayList
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 
 /**
  * Represents the physical (simulated) insulin pump device.
@@ -102,6 +105,8 @@ class SimBodyPumpDevice(
             val rate = _tempBasalRate.value ?: getProfileBasalRate(deliveryTimestamp)
             val basalToDeliver = rate / 3.0
 
+val time = SimpleDateFormat("HH:mm:ss", Locale.getDefault()).format(Date(deliveryTimestamp.ms))
+android.util.Log.d("SimBodyPumpDevice", "------------ advanceToTick: Calling deliverInternalBasal to create BOLUS at $time, amount=$basalToDeliver")
             deliverInternalBasal(basalToDeliver, deliveryTimestamp)
             lastBasalDeliveryTimestamp = deliveryTimestamp.ms
         }
@@ -122,6 +127,8 @@ class SimBodyPumpDevice(
         _reservoirLevel.value = (reservoirLevel.value - units).coerceAtLeast(0.0)
 
         // Report to body as a small bolus
+val time = SimpleDateFormat("HH:mm:ss", Locale.getDefault()).format(Date(timestamp.ms))
+android.util.Log.d("SimBodyPumpDevice", "------------ deliverInternalBasal: Calling BodyModel#bolus to create BOLUS at $time, amount=$units")
         bodyModel.bolus(units, timestamp = timestamp)
 
         // Record in history as an insulin delivery
@@ -150,6 +157,8 @@ class SimBodyPumpDevice(
         _reservoirLevel.value = (reservoirLevel.value - units).coerceAtLeast(0.0)
 
         // Report to body
+val time = SimpleDateFormat("HH:mm:ss", Locale.getDefault()).format(Date(System.currentTimeMillis()))
+android.util.Log.d("SimBodyPumpDevice", "------------ deliverBolus: Calling BodyModel#bolus to create BOLUS at $time, amount=$units")
         bodyModel.bolus(units)
 
         // Record in history

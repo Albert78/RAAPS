@@ -14,6 +14,9 @@ import de.dh.raaps.core.system.SystemWakeService
 import de.dh.raaps.plugin.simbody.repository.db.SimBodyDatabase
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.asSharedFlow
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 
 /**
  * A plugin which provides a glucose source and a pump instance which are connected to a
@@ -44,6 +47,7 @@ class SimBodyPlugin(
 
     override fun initialize(pluginManager: PluginManager) {
         bodyModel.loadState()
+android.util.Log.d("SimBodyPlugin", "------------ calling registerTickHandler: priority=${TickPriority.PRE_CORE}, handler=SimBodyPlugin")
         timeService.registerTickHandler(TickPriority.PRE_CORE, this)
         heartbeat.start()
     }
@@ -53,6 +57,8 @@ class SimBodyPlugin(
 
         wakeService.acquireBusyState(WAKE_TAG)
         try {
+val time = SimpleDateFormat("HH:mm:ss", Locale.getDefault()).format(Date(timestamp.ms))
+android.util.Log.d("SimBodyPlugin", "------------ onTick: Calling SimBodyPumpDevice#advanceToTick to create BOLUS at $time, amount=basal_flow")
             pumpDevice.advanceToTick(timestamp)
             bodyModel.advanceToTick(timestamp)
         } finally {

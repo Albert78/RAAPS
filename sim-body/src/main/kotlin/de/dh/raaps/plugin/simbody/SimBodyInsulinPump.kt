@@ -21,6 +21,9 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import kotlin.time.Duration.Companion.milliseconds
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 
 class SimBodyInsulinPump(
     private val device: SimBodyPumpDevice,
@@ -124,6 +127,8 @@ class SimBodyInsulinPump(
     override suspend fun bolus(amount: Double) {
         if (!_isConnected.value) throw Exception("Pump not connected to App")
 
+val time = SimpleDateFormat("HH:mm:ss", Locale.getDefault()).format(Date(System.currentTimeMillis()))
+android.util.Log.d("SimBodyInsulinPump", "------------ bolus: Calling SimBodyPumpDevice#deliverBolus to create BOLUS at $time, amount=$amount")
         if (device.deliverBolus(amount)) {
             // Success - device level handled reporting to body and history
             refreshStatus()

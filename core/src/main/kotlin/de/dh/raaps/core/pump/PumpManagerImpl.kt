@@ -13,6 +13,9 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 
 /**
  * Implementation of [PumpManager].
@@ -77,6 +80,10 @@ class PumpManagerImpl(
         }
 
     override suspend fun issueCommand(command: PumpCommand, isCancelableAPSCommand: Boolean) {
+if (command is PumpCommand.DeliverBolus) {
+val time = SimpleDateFormat("HH:mm:ss", Locale.getDefault()).format(Date(System.currentTimeMillis()))
+Log.d(TAG, "------------ issueCommand: Calling PumpCoordinator#issueCommand to create BOLUS at $time, amount=${command.amount.iu}")
+}
         pumpCoordinator?.issueCommand(command, isCancelableAPSCommand)
     }
 

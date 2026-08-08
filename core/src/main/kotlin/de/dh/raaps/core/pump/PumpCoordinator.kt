@@ -2,8 +2,8 @@ package de.dh.raaps.core.pump
 
 import de.dh.raaps.common.model.InsulinAmount
 import de.dh.raaps.common.model.InsulinPump
-import de.dh.raaps.common.model.data.Minutes
 import de.dh.raaps.common.model.data.InsulinProfile
+import de.dh.raaps.common.model.data.Minutes
 import de.dh.raaps.common.model.data.Timestamp
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -16,6 +16,9 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 import java.util.UUID
 import kotlin.time.Duration.Companion.milliseconds
 
@@ -163,6 +166,11 @@ class PumpCoordinator(
             expiresAt = expiresAt
         )
 
+if (command is PumpCommand.DeliverBolus) {
+val time = SimpleDateFormat("HH:mm:ss", Locale.getDefault()).format(Date(System.currentTimeMillis()))
+android.util.Log.d("PumpCoordinator", "------------ issueCommand: Queueing DeliverBolus to eventually create BOLUS at $time, amount=${command.amount.iu}")
+}
+
         _pendingJobs.update { it + job }
         wakeup()
     }
@@ -252,7 +260,11 @@ class PumpCoordinator(
 
     private suspend fun executeOnPump(command: PumpCommand) {
         when (command) {
-            is PumpCommand.DeliverBolus -> pump.bolus(command.amount.iu)
+            is PumpCommand.DeliverBolus -> {
+                val time = SimpleDateFormat("HH:mm:ss", Locale.getDefault()).format(Date(System.currentTimeMillis()))
+                android.util.Log.d("PumpCoordinator", "------------ executeOnPump: Calling InsulinPump#bolus to create BOLUS at $time, amount=${command.amount.iu}")
+                pump.bolus(command.amount.iu)
+            }
             is PumpCommand.SetTempBasal -> {
                 pump.tempBasal(command.absoluteUnits, command.durationHours)
             }

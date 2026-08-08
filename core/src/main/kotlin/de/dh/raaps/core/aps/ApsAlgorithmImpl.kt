@@ -12,6 +12,9 @@ import de.dh.raaps.common.model.data.Tick
 import de.dh.raaps.common.model.data.Timeline
 import de.dh.raaps.common.model.data.Timestamp
 import de.dh.raaps.core.repository.TreatmentRepository
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 
 class ApsAlgorithmImpl(
     val timeline: Timeline,
@@ -200,6 +203,8 @@ class ApsAlgorithmImpl(
         }
         if (result.bolus != null && result.bolus.iu >= de.dh.raaps.common.model.INSULIN_EPSILON) {
             Log.d(TAG, "recalculate: Deliver Bolus ${result.bolus.iu} IU")
+val time = SimpleDateFormat("HH:mm:ss", Locale.getDefault()).format(Date(System.currentTimeMillis()))
+Log.d("ApsAlgorithmImpl", "------------ recalculate: Calling onDeliverBolus to create BOLUS at $time, amount=${result.bolus.iu}")
             onDeliverBolus(treatmentLock, result.bolus, result.handledDeferredBoluses)
         }
 

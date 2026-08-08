@@ -38,6 +38,7 @@ class TimeServiceImpl(
     private val firstSyncDeferred = CompletableDeferred<Unit>()
 
     override fun registerTickHandler(priority: Int, handler: TickHandler) {
+Log.d(TAG, "------------ registerTickHandler: priority=$priority, handler=${handler.javaClass.canonicalName ?: handler.javaClass.name}")
         handlers.add(HandlerEntry(priority, handler))
         handlers.sortBy { it.priority }
     }

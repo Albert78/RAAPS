@@ -3,6 +3,7 @@ package de.dh.raaps.core.aps
 import android.app.Notification
 import android.content.Context
 import android.content.Intent
+import android.util.Log
 import de.dh.raaps.AppPreferencesRepository
 import de.dh.raaps.common.model.ApsMode
 import de.dh.raaps.common.model.calculation.CarbsInsulinCalculationModel
@@ -28,6 +29,9 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.drop
 import kotlinx.coroutines.launch
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 import java.util.concurrent.Executors
 
 enum class ApsIssue {
@@ -174,7 +178,9 @@ class SystemManagerImpl(
         }
 
         androidNotifications.createNotificationChannels()
-        timeService.registerTickHandler(TickPriority.UI, NotificationTickHandler())
+val handler = NotificationTickHandler()
+Log.d("SystemManager", "------------ calling registerTickHandler: priority=${TickPriority.UI}, handler=NotificationTickHandler")
+timeService.registerTickHandler(TickPriority.UI, handler)
 
         scope.launch {
             therapyManager.recommendations.collect { recommendations ->
@@ -208,7 +214,11 @@ class SystemManagerImpl(
             onReleaseBusyState = { releaseBusyState() },
 
             onCancelInsulinJobs = { treatmentLock -> therapyManager.coreCancelInsulinJobs(treatmentLock) },
-            onDeliverBolus = { treatmentLock, amount, handledDeferredBoluses -> therapyManager.issueBolus(treatmentLock, amount, handledDeferredBoluses) },
+            onDeliverBolus = { treatmentLock, amount, handledDeferredBoluses ->
+val time = SimpleDateFormat("HH:mm:ss", Locale.getDefault()).format(Date(System.currentTimeMillis()))
+android.util.Log.d("SystemManager", "------------ onDeliverBolus: Calling therapyManager.issueBolus to create BOLUS at $time, amount=${amount.iu}")
+                therapyManager.issueBolus(treatmentLock, amount, handledDeferredBoluses)
+            },
             onSetTempBasal = { treatmentLock, durationInHours, unitsPerHour -> therapyManager.setTempBasal(treatmentLock, durationInHours, unitsPerHour) },
             onClearTempBasal = { treatmentLock -> therapyManager.clearTempBasal(treatmentLock) },
             onCarbsHint = { treatmentLock, amountInGram -> therapyManager.recommendCarbs(treatmentLock, amountInGram) },

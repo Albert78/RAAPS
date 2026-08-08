@@ -127,6 +127,7 @@ class HistoryViewModel(
     }
 
     init {
+Log.d("HistoryViewModel", "------------ calling registerTickHandler: priority=${TickPriority.UI}, handler=HistoryViewModel")
         systemRegistry.timeService.registerTickHandler(TickPriority.UI, this)
 
         viewModelScope.launch {

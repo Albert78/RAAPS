@@ -30,6 +30,9 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlin.time.Duration.Companion.seconds
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 
 /**
  * Recommendations for manual treatments, which are displayed as notifications to the user.
@@ -285,6 +288,8 @@ class TherapyManager(
             ApsMode.BasalOnly -> recommendBolus(treatmentLock, amount)
             ApsMode.AutoCorrection -> {
                 scope.launch {
+val time = SimpleDateFormat("HH:mm:ss", Locale.getDefault()).format(Date(System.currentTimeMillis()))
+android.util.Log.d("TherapyManager", "------------ issueBolus: Calling PumpManager#issueCommand to create BOLUS at $time, amount=${amount.iu}")
                     pumpManager.issueCommand(
                         PumpCommand.DeliverBolus(amount),
                         isCancelableAPSCommand = true

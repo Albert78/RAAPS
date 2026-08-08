@@ -14,6 +14,9 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 
 sealed interface CoreState {
     /**
@@ -144,7 +147,11 @@ class Core(
                     glucoseSourceManager.sampledBgReadings,
                     therapyManager,
                     onCancelInsulinJobs = onCancelInsulinJobs,
-                    onDeliverBolus = onDeliverBolus,
+                    onDeliverBolus = { lock, amount, deferred ->
+val time = SimpleDateFormat("HH:mm:ss", Locale.getDefault()).format(Date(System.currentTimeMillis()))
+Log.d("Core", "------------ onDeliverBolus Callback: Forwarding to create BOLUS at $time, amount=${amount.iu}")
+                        onDeliverBolus(lock, amount, deferred)
+                    },
                     onSetTempBasal = onSetTempBasal,
                     onClearTempBasal = onClearTempBasal,
                     onCarbsHint = onCarbsHint,
@@ -157,6 +164,7 @@ class Core(
                     carbsInsulinCalculationModel = carbsInsulinCalculationModel
                 )
 
+Log.d("Core", "------------ calling registerTickHandler: priority=${TickPriority.APS}, handler=Core")
                 timeService.registerTickHandler(TickPriority.APS, this@Core)
 
                 Log.d(TAG, "Finished initialization...")

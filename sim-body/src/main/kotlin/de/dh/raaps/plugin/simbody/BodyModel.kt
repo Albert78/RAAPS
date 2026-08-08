@@ -29,6 +29,9 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import org.json.JSONArray
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 
 data class Impacts(
     val carbImpact: Double,
@@ -179,13 +182,13 @@ class BodyModel(
     suspend fun getDelayedBloodGlucose(delayMinutes: Int): Double {
         val dao = simBodyDao ?: return bloodGlucose
         val targetMs = Timestamp.now().ms - delayMinutes * 60 * 1000L
-        
+
         // Try to find the value closest to the target time
         val delayedEntry = dao.getHistoryNear(targetMs)
         if (delayedEntry != null) {
             return delayedEntry.bgMgDl
         }
-        
+
         // Fallback: earliest available value
         return dao.getEarliestHistoryEntry()?.bgMgDl ?: bloodGlucose
     }
@@ -456,6 +459,8 @@ class BodyModel(
 
         simBodyDao?.let { dao ->
             scope.launch {
+val time = SimpleDateFormat("HH:mm:ss", Locale.getDefault()).format(Date(entry.timestamp.ms))
+android.util.Log.d("BodyModel", "------------ bolus: Creating SimEventEntity for BOLUS at $time, amount=${entry.amount}")
                 dao.insertEvent(
                     SimEventEntity(
                         type = "BOLUS",
