@@ -244,7 +244,7 @@
     <string name="system_control_algorithm_history_button">Verlauf</string>
 
     <string name="algorithm_decisions_screen_title">Algorithmus-Entscheidungen</string>
-    <string name="algorithm_decisions_no_insights">Noch keine Erkenntnisse verfügbar.</string>
+    <string name="algorithm_decisions_no_insights">Keine Daten verfügbar</string>
     <string name="algorithm_insight_label_bg">BZ</string>
     <string name="algorithm_insight_label_iob">IOB</string>
     <string name="algorithm_insight_label_cob">COB</string>
