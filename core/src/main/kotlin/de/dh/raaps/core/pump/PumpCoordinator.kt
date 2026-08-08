@@ -128,7 +128,6 @@ class PumpCoordinator(
     private fun startPumpConnection() {
         scope.launch {
             onAcquireBusyState()
-            _pumpCoordinatorState.value = PumpCoordinatorState.Running
             try {
                 sync()
                 scheduleNextWakeup()
@@ -188,7 +187,7 @@ PersistentLogger.log("PumpCoordinator", "------------ issueCommand: Queueing Del
      * This should be called by the system when a requested wakeup time (via [onRequestWakeup]) is reached.
      */
     fun wakeup() {
-        if (pumpCoordinatorState.value == PumpCoordinatorState.Idle) {
+        if (_pumpCoordinatorState.compareAndSet(PumpCoordinatorState.Idle, PumpCoordinatorState.Running)) {
             startPumpConnection()
         }
     }

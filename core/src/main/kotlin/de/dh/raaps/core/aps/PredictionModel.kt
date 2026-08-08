@@ -81,8 +81,11 @@ class PredictionModel(
         carbsInsulinCalculationModel: CarbsInsulinCalculationModel
     ) {
         var bg = BgValue.fromMgDl(currentBGMgDl)
+        val nowTick = timeline.getNowTick()
+        tryGetTickState(nowTick)?.predictedBg = bg
+
         var deviationPerTick = avgCurrentDeviationPerTick
-        forEachS(from = timeline.getNowTick() + 1, to = getLastTick()) { tick, state ->
+        forEachS(from = nowTick + 1, to = getLastTick()) { tick, state ->
             if (state.effectiveCarbs == null) {
                 state.effectiveCarbs = carbsInsulinCalculationModel.carbAbsorption(
                     meals,

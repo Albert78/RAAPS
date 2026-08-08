@@ -76,16 +76,19 @@ class ApsAlgorithmImpl(
         val bgEnd = sampledBgReadings.getAt(endTick)
         if (!bgEnd.isValid()) return BgDelta(0)
 
-        var sumDeviationsMgdl = 0.0
-        val numValues = endTick.value - startTick.value
+        val actualChange = bgEnd.mgdl - bgStart.mgdl
 
-        if (numValues == 0) return BgDelta(0)
+        var sumPredictedBgi = 0.0
+        val numTicks = endTick.value - startTick.value
 
-        predictionModel.forEach(from = startTick, to = endTick) { _, state ->
-            sumDeviationsMgdl += state.bgi.mgdl
+        if (numTicks <= 0) return BgDelta(0)
+
+        predictionModel.forEach(from = startTick + 1, to = endTick) { _, state ->
+            sumPredictedBgi += state.bgi.mgdl
         }
 
-        return BgDelta.fromMgDl((sumDeviationsMgdl / numValues).toInt())
+        val totalDeviation = actualChange - sumPredictedBgi
+        return BgDelta.fromMgDl((totalDeviation / numTicks).toInt())
     }
 
     data class TempBasalResult(
@@ -305,8 +308,7 @@ PersistentLogger.log("ApsAlgorithmImpl", "------------ recalculate: Calling onDe
         val targetBg = bgSettings.first
         val lowThreshold = bgSettings.second
 
-        val pumpInsulinType = therapyManager.getPumpInsulinType()
-        val insulinPeakTicks = timeline.inTicks(pumpInsulinType.peak)
+        val insulinPeakTicks = timeline.inTicks(insulinPeak)
         val isfValue = therapyManager.getIsfFactor(now)
         val crValue = therapyManager.getCrFactor(now)
 

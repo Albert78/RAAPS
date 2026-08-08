@@ -35,11 +35,12 @@ class RollingPredictionWindow(
             anchorTick = newAnchorTick
             return true
         } else if (newAnchorTick > anchorTick) {
-            // Clear the slots that have become "stale" due to time advancing
-            val ticksToClear = (newAnchorTick.value - anchorTick.value).coerceAtMost(capacity)
-            for (i in 0 until ticksToClear) {
-                val tick = Tick(anchorTick.value + i)
-                buffer[bufferIndex(tick)].initializeToTick(tick)
+            // Clear the slots that have become "stale" due to time advancing and prepare them for the future
+            val ticksToAdvance = (newAnchorTick.value - anchorTick.value).coerceAtMost(capacity)
+            for (i in 0 until ticksToAdvance) {
+                val oldTickValue = anchorTick.value + i
+                val newFutureTick = Tick(oldTickValue + capacity)
+                buffer[bufferIndex(newFutureTick)].initializeToTick(newFutureTick)
             }
             anchorTick = newAnchorTick
             return true
@@ -72,7 +73,7 @@ class RollingPredictionWindow(
     }
 
     suspend fun forEachS(from: Tick = getFirstTick(), to: Tick = getLastTick(), action: suspend (Tick, PredictionTickState) -> Unit) {
-        for (tick in getFirstTick()..getLastTick()) {
+        for (tick in from..to) {
             tryGetTickState(tick)?.let { action(tick, it) }
         }
     }

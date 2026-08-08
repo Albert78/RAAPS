@@ -21,21 +21,22 @@ class PredictionTickState {
     var cr: Double? = 0.0 // CR at the time of this tick, from profile
     var basalRateUph: Double? = 0.0 // Normal basal rate in units per hour for this tick, from profile
 
-    // Prediction block: BGI values depend on blocks 1 and 2.
+    // Prediction block:
+    // BGI values depend on blocks 1 and 2.
     // Includes Carb Impact, Insulin Impact and Basal Requirement (from profile).
     // The BGI is calculated as if no basal rate would be injected, i.e. without correcting, BGI will rise.
     // With all basal applications registered as insulin applications, we get the actual prediction.
     var bgi: BgDelta = BgDelta(0)
 
-    // Block 4: Predicted BG depends on block 3 and current BG.
+    // Predicted BG depends on block 3 and current BG.
     var predictedBg: BgValue = BgValue.INVALID // Calculated from a starting BG, applying BGIs of previous ticks
 
     fun initializeToTick(tick: Tick) {
         this.tick = tick
-        effectiveCarbs = 0.0
-        effectiveInsulin = 0.0
-        isf = BgDelta(0)
-        cr = 0.0
+        effectiveCarbs = null
+        effectiveInsulin = null
+        isf = null
+        cr = null
         bgi = BgDelta(0)
         predictedBg = BgValue.INVALID
     }
