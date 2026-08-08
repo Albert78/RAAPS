@@ -13,6 +13,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenu
@@ -76,6 +77,7 @@ fun DashboardScreen(
     onNavigateToAlarms: () -> Unit,
     onNavigateToTherapySettings: () -> Unit,
     onNavigateToMealBolus: () -> Unit,
+    onNavigateToPersistentLogs: () -> Unit,
     onAdjustmentClick: () -> Unit,
     onHistoryChartClick: () -> Unit,
     extraContent: @Composable () -> Unit = {}
@@ -100,6 +102,7 @@ fun DashboardScreen(
         onNavigateToPermissions = onNavigateToPermissions,
         onNavigateToPreferences = onNavigateToPreferences,
         onNavigateToAlarms = onNavigateToAlarms,
+        onNavigateToPersistentLogs = onNavigateToPersistentLogs,
         onNavigateToTherapySettings = onNavigateToTherapySettings,
         onNavigateToMealBolus = onNavigateToMealBolus,
         onHistoryChartClick = onHistoryChartClick,
@@ -123,6 +126,7 @@ fun DashboardContent(
     onNavigateToPermissions: () -> Unit,
     onNavigateToPreferences: () -> Unit,
     onNavigateToAlarms: () -> Unit,
+    onNavigateToPersistentLogs: () -> Unit,
     onNavigateToTherapySettings: () -> Unit,
     onNavigateToMealBolus: () -> Unit,
     onHistoryChartClick: (() -> Unit)?,
@@ -176,6 +180,14 @@ fun DashboardContent(
                                 onClick = {
                                     menuExpanded = false
                                     onNavigateToAlarms()
+                                }
+                            )
+                            DropdownMenuItem(
+                                text = { Text("Persistent Logs") },
+                                leadingIcon = { Icon(imageVector = Icons.Default.Refresh, contentDescription = null) },
+                                onClick = {
+                                    menuExpanded = false
+                                    onNavigateToPersistentLogs()
                                 }
                             )
                         }
@@ -327,7 +339,8 @@ fun DashboardPreview() {
             onHistoryChartClick = {},
             onApsModeSelect = {},
             onAdjustmentClick = {},
-            onNavigateToMealBolus = {}
+            onNavigateToMealBolus = {},
+            onNavigateToPersistentLogs = {}
         )
     }
 }
@@ -381,7 +394,8 @@ fun DashboardPermissionsWarningPreview() {
             onHistoryChartClick = {},
             onApsModeSelect = {},
             onAdjustmentClick = {},
-            onNavigateToMealBolus = {}
+            onNavigateToMealBolus = {},
+            onNavigateToPersistentLogs = {}
         )
     }
 }
