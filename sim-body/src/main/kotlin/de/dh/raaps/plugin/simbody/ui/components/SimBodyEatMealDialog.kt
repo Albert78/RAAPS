@@ -7,7 +7,6 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableDoubleStateOf
@@ -22,6 +21,7 @@ import de.dh.raaps.common.model.ID_MEAL_STANDARD
 import de.dh.raaps.common.model.MealType
 import de.dh.raaps.common.ui.DefaultSteppingStrategy
 import de.dh.raaps.common.ui.composables.EditableValueStepper
+import de.dh.raaps.common.ui.composables.NormalTextButton
 import de.dh.raaps.common.ui.theme.AppTheme
 import de.dh.raaps.plugin.simbody.BodyModel
 import de.dh.raaps.plugin.simbody.R
@@ -64,7 +64,7 @@ fun SimBodyEatMealDialog(
             }
         },
         confirmButton = {
-            TextButton(onClick = {
+            NormalTextButton(onClick = {
                 if (carbs > 0) onConfirm(carbs, selectedType)
                 onDismiss()
             }) {
@@ -72,7 +72,7 @@ fun SimBodyEatMealDialog(
             }
         },
         dismissButton = {
-            TextButton(onClick = onDismiss) {
+            NormalTextButton(onClick = onDismiss) {
                 Text(stringResource(R.string.btn_cancel))
             }
         }

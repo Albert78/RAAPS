@@ -20,7 +20,6 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Save
-import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
@@ -44,6 +43,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import de.dh.raaps.common.model.CarbCurveComponentData
 import de.dh.raaps.common.model.data.Minutes
+import de.dh.raaps.common.ui.composables.PrimaryButton
 import de.dh.raaps.common.ui.composables.screenTitle
 import de.dh.raaps.common.ui.theme.AppTheme
 import de.dh.raaps.ui.R
@@ -147,7 +147,7 @@ fun MealTypeEditorScreen(
                     )
                 }
                 item {
-                    Button(
+                    PrimaryButton(
                         onClick = {
                             val newList = uiState.components.toMutableList()
                             newList.add(CarbCurveComponentData(0, Minutes(60)))

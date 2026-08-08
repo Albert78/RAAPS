@@ -12,7 +12,6 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -31,6 +30,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import de.dh.raaps.common.R as CommonR
+import de.dh.raaps.common.ui.composables.NormalButton
 import de.dh.raaps.common.ui.theme.AppTheme
 import de.dh.raaps.plugin.simbody.BodyModel
 import de.dh.raaps.plugin.simbody.DEFAULT_SIM_BODY_PROFILE
@@ -145,7 +145,7 @@ fun SimBodyHistoryScreen(
             }
 
             item {
-                Button(
+                NormalButton(
                     onClick = {
                         bodyModel.meals.clear()
                         bodyModel.insulinApplications.clear()

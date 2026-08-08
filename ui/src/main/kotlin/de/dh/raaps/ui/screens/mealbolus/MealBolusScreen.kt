@@ -27,7 +27,6 @@ import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.KeyboardArrowUp
-import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -75,6 +74,7 @@ import de.dh.raaps.common.ui.DefaultSteppingStrategy
 import de.dh.raaps.common.ui.ValueDisplayStrategy
 import de.dh.raaps.common.ui.composables.EditableValueStepper
 import de.dh.raaps.common.ui.composables.LightGreenA700
+import de.dh.raaps.common.ui.composables.PrimaryButton
 import de.dh.raaps.common.ui.composables.Red
 import de.dh.raaps.common.ui.composables.Yellow
 import de.dh.raaps.common.ui.theme.AppTheme
@@ -268,7 +268,7 @@ fun MealBolusContent(
                                 color = MaterialTheme.colorScheme.onErrorContainer
                             )
                             Spacer(Modifier.height(16.dp))
-                            Button(onClick = onNavigateUp) {
+                            PrimaryButton(onClick = onNavigateUp) {
                                 Text("Zurück")
                             }
                         }
@@ -366,7 +366,7 @@ fun MealBolusContent(
 
                 // Bottom Button
                 val isInputValid = uiState.carbsKe > 0.0 || uiState.manualBolus > 0.0
-                Button(
+                PrimaryButton(
                     onClick = onSubmit,
                     modifier = Modifier
                         .fillMaxWidth()

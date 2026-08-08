@@ -37,7 +37,6 @@ import androidx.compose.material3.MediumTopAppBar
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.VerticalDivider
 import androidx.compose.runtime.Composable
@@ -63,6 +62,7 @@ import de.dh.raaps.common.model.data.InsulinProfile
 import de.dh.raaps.common.model.data.Minutes
 import de.dh.raaps.common.ui.ConfigurableDisplayStrategy
 import de.dh.raaps.common.ui.composables.InsulinProfileSelectionDialog
+import de.dh.raaps.common.ui.composables.NormalTextButton
 import de.dh.raaps.common.ui.composables.contentScrollIndicator
 import de.dh.raaps.common.ui.composables.screenTitle
 import de.dh.raaps.common.ui.theme.AppTheme
@@ -224,7 +224,7 @@ private fun TherapySettingsHelpDialog(
     AlertDialog(
         onDismissRequest = onDismiss,
         confirmButton = {
-            TextButton(onClick = onDismiss) {
+            NormalTextButton(onClick = onDismiss) {
                 Text(text = stringResource(id = android.R.string.ok))
             }
         },
@@ -426,9 +426,8 @@ private fun ActiveInsulinProfileCard(
                 horizontalArrangement = Arrangement.End,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                TextButton(
-                    onClick = onManageInsulinProfilesClick,
-                    shape = RoundedCornerShape(12.dp)
+                NormalTextButton(
+                    onClick = onManageInsulinProfilesClick
                 ) {
                     Icon(
                         imageVector = Icons.Default.Edit,

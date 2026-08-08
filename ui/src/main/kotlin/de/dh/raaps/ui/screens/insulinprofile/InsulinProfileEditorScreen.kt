@@ -46,7 +46,6 @@ import androidx.compose.material3.SecondaryTabRow
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Tab
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
@@ -83,6 +82,7 @@ import de.dh.raaps.common.model.data.Minutes
 import de.dh.raaps.common.ui.DefaultSteppingStrategy
 import de.dh.raaps.common.ui.ValueDisplayStrategy
 import de.dh.raaps.common.ui.composables.EditableValueStepper
+import de.dh.raaps.common.ui.composables.NormalTextButton
 import de.dh.raaps.common.ui.composables.StepperDefaults
 import de.dh.raaps.common.ui.composables.TimeHourSelector
 import de.dh.raaps.common.ui.composables.contentScrollIndicator
@@ -145,12 +145,12 @@ fun InsulinProfileEditorScreen(
             title = { Text(stringResource(id = R.string.delete_profile_title)) },
             text = { Text(stringResource(id = R.string.delete_profile_message, profile.name)) },
             confirmButton = {
-                TextButton(onClick = { viewModel.deleteInsulinProfile(profile) }) {
+                NormalTextButton(onClick = { viewModel.deleteInsulinProfile(profile) }) {
                     Text(stringResource(id = android.R.string.ok))
                 }
             },
             dismissButton = {
-                TextButton(onClick = { viewModel.cancelDelete() }) {
+                NormalTextButton(onClick = { viewModel.cancelDelete() }) {
                     Text(stringResource(id = android.R.string.cancel))
                 }
             }
@@ -409,7 +409,7 @@ fun InsulinProfileDetailEditor(
             title = { Text(stringResource(id = R.string.insulin_profile_editor_discard_title)) },
             text = { Text(stringResource(id = R.string.insulin_profile_editor_discard_message)) },
             confirmButton = {
-                TextButton(
+                NormalTextButton(
                     onClick = {
                         showDiscardConfirmation = false
                         saveChanges()
@@ -420,7 +420,7 @@ fun InsulinProfileDetailEditor(
                 }
             },
             dismissButton = {
-                TextButton(onClick = {
+                NormalTextButton(onClick = {
                     showDiscardConfirmation = false
                     onCancel()
                 }) {
@@ -638,7 +638,7 @@ fun InsulinProfileHelpDialog(onDismiss: () -> Unit) {
             )
         },
         confirmButton = {
-            TextButton(onClick = onDismiss) {
+            NormalTextButton(onClick = onDismiss) {
                 Text(stringResource(id = android.R.string.ok))
             }
         }

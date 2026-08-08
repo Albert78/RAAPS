@@ -11,7 +11,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -29,6 +28,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import de.dh.raaps.common.ui.composables.PrimaryButton
 import de.dh.raaps.common.ui.composables.screenTitle
 import de.dh.raaps.common.ui.theme.AppTheme
 import de.dh.raaps.ui.R
@@ -128,7 +128,7 @@ fun SystemControlContent(
                     ) {
                         Text("TODO: Algorithm Status & Control", style = MaterialTheme.typography.bodyMedium)
                         Spacer(modifier = Modifier.height(8.dp))
-                        Button(onClick = onNavigateToAlgorithmDecisions) {
+                        PrimaryButton(onClick = onNavigateToAlgorithmDecisions) {
                             Text(stringResource(id = R.string.system_control_algorithm_history_button))
                         }
                     }

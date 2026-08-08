@@ -20,12 +20,10 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Adjust
 import androidx.compose.material.icons.filled.UnfoldMore
 import androidx.compose.material.icons.filled.VerticalAlignBottom
-import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.VerticalDivider
@@ -49,6 +47,8 @@ import de.dh.raaps.common.model.data.Minutes
 import de.dh.raaps.common.model.data.BgDelta
 import de.dh.raaps.common.model.data.BgValue
 import de.dh.raaps.common.ui.composables.AppColorBlue
+import de.dh.raaps.common.ui.composables.NormalButton
+import de.dh.raaps.common.ui.composables.PrimaryButton
 import de.dh.raaps.common.ui.theme.AppTheme
 import de.dh.raaps.common.ui.theme.SoftBlue
 import de.dh.raaps.common.ui.theme.SoftGreen
@@ -217,18 +217,16 @@ fun ApsControlCard(
                 // Mode Button
                 var showModeDialog by remember { mutableStateOf(false) }
                 Box {
-                    Button(
+                    PrimaryButton(
                         onClick = { showModeDialog = true },
                         modifier = Modifier.fillMaxWidth(),
-                        shape = MaterialTheme.shapes.small,
                         colors = ButtonDefaults.buttonColors(
                             containerColor = when (selectedMode) {
                                 ApsMode.AutoCorrection -> SoftGreen
                                 ApsMode.BasalOnly -> SoftBlue
                                 ApsMode.Suspend -> SoftRed
                             }
-                        ),
-                        contentPadding = PaddingValues(horizontal = 8.dp, vertical = 8.dp)
+                        )
                     ) {
                         Text(selectedMode.toDisplayStringShort(), style = MaterialTheme.typography.titleMedium)
                     }
@@ -257,27 +255,23 @@ fun ApsControlCard(
                 }
 
                 if (isNeutral && adjustmentHint == null) {
-                    OutlinedButton(
+                    NormalButton(
                         onClick = onAdjustmentClick,
                         enabled = !isSuspended,
-                        modifier = Modifier.fillMaxWidth(),
-                        shape = MaterialTheme.shapes.small,
-                        contentPadding = PaddingValues(horizontal = 8.dp, vertical = 8.dp)
+                        modifier = Modifier.fillMaxWidth()
                     ) {
                         Icon(Icons.Default.UnfoldMore, null, modifier = Modifier.size(18.dp))
                         Spacer(Modifier.width(8.dp))
                         Text(adjustmentText, style = MaterialTheme.typography.titleMedium)
                     }
                 } else {
-                    Button(
+                    PrimaryButton(
                         onClick = onAdjustmentClick,
                         enabled = !isSuspended,
                         modifier = Modifier.fillMaxWidth(),
-                        shape = MaterialTheme.shapes.small,
                         colors = ButtonDefaults.buttonColors(
                             containerColor = displayStrategy.color(insulinAdjustmentPercentage.toDouble())
-                        ),
-                        contentPadding = PaddingValues(horizontal = 8.dp, vertical = 8.dp)
+                        )
                     ) {
                         Icon(Icons.Default.UnfoldMore, null, modifier = Modifier.size(18.dp))
                         Spacer(Modifier.width(8.dp))

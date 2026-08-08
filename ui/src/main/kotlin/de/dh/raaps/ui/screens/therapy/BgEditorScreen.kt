@@ -31,7 +31,6 @@ import androidx.compose.material3.MediumTopAppBar
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
@@ -52,6 +51,7 @@ import de.dh.raaps.common.model.data.BgValue
 import de.dh.raaps.common.model.data.Minutes
 import de.dh.raaps.common.ui.DefaultSteppingStrategy
 import de.dh.raaps.common.ui.composables.EditableValueStepper
+import de.dh.raaps.common.ui.composables.NormalTextButton
 import de.dh.raaps.common.ui.composables.StepperDefaults
 import de.dh.raaps.common.ui.composables.TimeHourSelector
 import de.dh.raaps.common.ui.composables.contentScrollIndicator
@@ -178,7 +178,7 @@ fun BgEditorContent(
             title = { Text(stringResource(id = R.string.bg_editor_discard_title)) },
             text = { Text(stringResource(id = R.string.bg_editor_discard_message)) },
             confirmButton = {
-                TextButton(onClick = {
+                NormalTextButton(onClick = {
                     showDiscardConfirmation = false
                     onSave()
                 }) {
@@ -186,7 +186,7 @@ fun BgEditorContent(
                 }
             },
             dismissButton = {
-                TextButton(onClick = {
+                NormalTextButton(onClick = {
                     showDiscardConfirmation = false
                     onNavigateUp()
                 }) {
@@ -214,7 +214,7 @@ fun BgEditorHelpDialog(onDismiss: () -> Unit) {
             )
         },
         confirmButton = {
-            TextButton(onClick = onDismiss) {
+            NormalTextButton(onClick = onDismiss) {
                 Text(stringResource(id = android.R.string.ok))
             }
         }

@@ -21,7 +21,6 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Button
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExposedDropdownMenuAnchorType
@@ -36,7 +35,6 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
@@ -62,6 +60,8 @@ import de.dh.raaps.common.model.data.Timestamp
 import de.dh.raaps.common.ui.DefaultSteppingStrategy
 import de.dh.raaps.common.ui.ValueDisplayStrategy
 import de.dh.raaps.common.ui.composables.EditableValueStepper
+import de.dh.raaps.common.ui.composables.NormalTextButton
+import de.dh.raaps.common.ui.composables.PrimaryButton
 import de.dh.raaps.common.ui.composables.contentScrollIndicator
 import de.dh.raaps.common.ui.composables.screenTitle
 import de.dh.raaps.common.ui.theme.AppTheme
@@ -351,7 +351,7 @@ fun AddManualBolusDialog(
             }
         },
         confirmButton = {
-            Button(
+            PrimaryButton(
                 onClick = {
                     val type = selectedInsulinType
                     if (amount > 0 && type != null) {
@@ -364,7 +364,7 @@ fun AddManualBolusDialog(
             }
         },
         dismissButton = {
-            TextButton(onClick = onDismiss) {
+            NormalTextButton(onClick = onDismiss) {
                 Text(text = stringResource(id = CommonR.string.cd_cancel))
             }
         }

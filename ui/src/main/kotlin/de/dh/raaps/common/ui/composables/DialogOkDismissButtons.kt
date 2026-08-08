@@ -5,11 +5,8 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
@@ -33,20 +30,15 @@ fun DialogOkDismissButtons(
         Spacer(
             modifier = Modifier.weight(1f)
         )
-        TextButton(
-            onClick = onDismiss,
-            colors = ButtonDefaults.textButtonColors(
-                contentColor = MaterialTheme.colorScheme.primary
-            )
+        NormalTextButton(
+            onClick = onDismiss
         ) {
             Text(cancelButtonText)
         }
         Spacer(modifier = Modifier.padding(start = 8.dp))
-        TextButton(
+        NormalTextButton(
             onClick = onConfirm,
-            colors = ButtonDefaults.textButtonColors(
-                contentColor = MaterialTheme.colorScheme.primary
-            )
+            enabled = isOkEnabled
         ) {
             Text(okButtonText)
         }
@@ -67,11 +59,9 @@ fun DialogOkButton(
         Spacer(
             modifier = Modifier.weight(1f)
         )
-        TextButton(
+        NormalTextButton(
             onClick = onConfirm,
-            colors = ButtonDefaults.textButtonColors(
-                contentColor = MaterialTheme.colorScheme.primary
-            )
+            enabled = isOkEnabled
         ) {
             Text(okButtonText)
         }

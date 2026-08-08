@@ -19,7 +19,6 @@ import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.Restaurant
 import androidx.compose.material.icons.filled.Timeline
 import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -29,7 +28,6 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
@@ -44,6 +42,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import de.dh.raaps.common.R as CommonR
+import de.dh.raaps.common.ui.composables.NormalTextButton
+import de.dh.raaps.common.ui.composables.PrimaryButton
 import de.dh.raaps.plugin.simbody.BodyModel
 import de.dh.raaps.plugin.simbody.R
 import de.dh.raaps.plugin.simbody.ui.components.SimBodyEatMealDialog
@@ -128,7 +128,7 @@ fun SimBodyMainScreen(
             }
 
             // Action Buttons
-            Button(
+            PrimaryButton(
                 onClick = { showEatMealDialog = true },
                 modifier = Modifier.fillMaxWidth(),
                 enabled = isLoaded
@@ -138,7 +138,7 @@ fun SimBodyMainScreen(
                 Text(stringResource(R.string.btn_eat_meal))
             }
 
-            Button(
+            PrimaryButton(
                 onClick = onNavigateToImpacts,
                 modifier = Modifier.fillMaxWidth(),
                 enabled = isLoaded
@@ -148,7 +148,7 @@ fun SimBodyMainScreen(
                 Text(stringResource(R.string.btn_physiological_impacts))
             }
 
-            Button(
+            PrimaryButton(
                 onClick = onNavigateToHistory,
                 modifier = Modifier.fillMaxWidth(),
                 enabled = isLoaded
@@ -246,7 +246,7 @@ private fun EditDoubleDialog(
             )
         },
         confirmButton = {
-            TextButton(onClick = {
+            NormalTextButton(onClick = {
                 textValue.toDoubleOrNull()?.let { onConfirm(it) }
                 onDismiss()
             }) {
@@ -254,7 +254,7 @@ private fun EditDoubleDialog(
             }
         },
         dismissButton = {
-            TextButton(onClick = onDismiss) {
+            NormalTextButton(onClick = onDismiss) {
                 Text(stringResource(R.string.btn_cancel))
             }
         }

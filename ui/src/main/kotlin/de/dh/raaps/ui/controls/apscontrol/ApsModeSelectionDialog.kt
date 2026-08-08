@@ -7,12 +7,9 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -22,6 +19,8 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import de.dh.raaps.common.model.ApsMode
+import de.dh.raaps.common.ui.composables.NormalTextButton
+import de.dh.raaps.common.ui.composables.PrimaryButton
 import de.dh.raaps.common.ui.theme.AppTheme
 import de.dh.raaps.common.ui.theme.SoftBlue
 import de.dh.raaps.common.ui.theme.SoftGreen
@@ -55,7 +54,7 @@ fun ApsModeSelectionDialog(
             )
         },
         confirmButton = {
-            TextButton(onClick = onDismissRequest) {
+            NormalTextButton(onClick = onDismissRequest) {
                 Text(stringResource(android.R.string.cancel))
             }
         }
@@ -108,13 +107,12 @@ private fun ModeOption(
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier.padding(horizontal = 8.dp)
         )
-        Button(
+        PrimaryButton(
             onClick = onClick,
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(horizontal = 24.dp),
-            shape = MaterialTheme.shapes.small,
-            colors = ButtonDefaults.buttonColors(
+            colors = androidx.compose.material3.ButtonDefaults.buttonColors(
                 containerColor = when (mode) {
                     ApsMode.AutoCorrection -> SoftGreen
                     ApsMode.BasalOnly -> SoftBlue
@@ -123,8 +121,7 @@ private fun ModeOption(
             ),
             border = if (isSelected) {
                 BorderStroke(6.dp, MaterialTheme.colorScheme.primary)
-            } else null,
-            contentPadding = PaddingValues(vertical = 12.dp)
+            } else null
         ) {
             Text(
                 text = mode.toDisplayStringFull(),

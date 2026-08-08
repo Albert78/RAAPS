@@ -14,7 +14,6 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Refresh
-import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
@@ -42,6 +41,7 @@ import de.dh.raaps.common.model.data.BgDelta
 import de.dh.raaps.common.model.data.BgValue
 import de.dh.raaps.common.model.data.Minutes
 import de.dh.raaps.common.ui.composables.WarningBanner
+import de.dh.raaps.common.ui.composables.PrimaryButton
 import de.dh.raaps.common.ui.composables.screenTitle
 import de.dh.raaps.common.ui.icons.Icon_Menu_Alarms
 import de.dh.raaps.common.ui.icons.Icon_Menu_Permissions
@@ -272,10 +272,9 @@ fun DashboardContent(
 
             Spacer(modifier = Modifier.height(24.dp))
 
-            Button(
+            PrimaryButton(
                 onClick = onNavigateToMealBolus,
-                modifier = Modifier.fillMaxWidth(),
-                shape = MaterialTheme.shapes.small
+                modifier = Modifier.fillMaxWidth()
             ) {
                 Text(
                     text = stringResource(R.string.dashboard_meal_bolus_button),

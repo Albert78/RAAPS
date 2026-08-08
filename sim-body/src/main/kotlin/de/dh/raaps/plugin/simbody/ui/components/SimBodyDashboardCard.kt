@@ -8,12 +8,10 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -29,6 +27,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.res.stringResource
 import de.dh.raaps.common.model.data.Block
 import de.dh.raaps.common.model.data.Minutes
+import de.dh.raaps.common.ui.composables.NormalTextButton
+import de.dh.raaps.common.ui.composables.PrimaryButton
 import de.dh.raaps.common.ui.theme.AppTheme
 import de.dh.raaps.plugin.simbody.BodyModel
 import de.dh.raaps.plugin.simbody.R
@@ -64,7 +64,7 @@ fun SimBodyDashboardCard(
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold
                 )
-                Button(
+                PrimaryButton(
                     onClick = onDetailsClick,
                     enabled = isLoaded
                 ) {
@@ -171,7 +171,7 @@ private fun EditDoubleDialog(
             )
         },
         confirmButton = {
-            TextButton(onClick = {
+            NormalTextButton(onClick = {
                 textValue.toDoubleOrNull()?.let { onConfirm(it) }
                 onDismiss()
             }) {
@@ -179,7 +179,7 @@ private fun EditDoubleDialog(
             }
         },
         dismissButton = {
-            TextButton(onClick = onDismiss) {
+            NormalTextButton(onClick = onDismiss) {
                 Text(stringResource(R.string.btn_cancel))
             }
         }
