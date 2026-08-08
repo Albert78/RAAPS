@@ -180,7 +180,11 @@ fun BolusHistoryContent(
                 modifier = Modifier
                     .fillMaxSize()
                     .padding(innerPadding)
-                    .contentScrollIndicator(listState)
+                    .contentScrollIndicator(
+                        scrollableState = listState,
+                        showTopGradient = false,
+                        topIconPadding = 48.dp
+                    )
             ) {
                 groupedEntries.forEach { (date, entries) ->
                     stickyHeader {

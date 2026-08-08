@@ -29,7 +29,9 @@ fun Modifier.contentScrollIndicator(
     iconSize: Dp = 64.dp,
     topIconPadding: Dp = 16.dp,
     bottomIconPadding: Dp = 16.dp,
-    surfaceAlpha: Float = 0.8f
+    surfaceAlpha: Float = 0.8f,
+    showTopGradient: Boolean = true,
+    showBottomGradient: Boolean = true
 ): Modifier {
     val surfaceColor =
         MaterialTheme.colorScheme.surface.copy(alpha = surfaceAlpha)
@@ -49,7 +51,9 @@ fun Modifier.contentScrollIndicator(
             indicatorHeight = indicatorHeight,
             iconSize = iconSize,
             topIconPadding = topIconPadding,
-            bottomIconPadding = bottomIconPadding
+            bottomIconPadding = bottomIconPadding,
+            showTopGradient = showTopGradient,
+            showBottomGradient = showBottomGradient
         )
     )
 }
@@ -63,7 +67,9 @@ private fun Modifier.scrollIndicatorDrawModifier(
     indicatorHeight: Dp,
     iconSize: Dp,
     topIconPadding: Dp,
-    bottomIconPadding: Dp
+    bottomIconPadding: Dp,
+    showTopGradient: Boolean,
+    showBottomGradient: Boolean
 ): Modifier = this.drawWithContent {
     drawContent()
 
@@ -76,14 +82,16 @@ private fun Modifier.scrollIndicatorDrawModifier(
     val bottomIconPaddingPx = bottomIconPadding.toPx()
 
     if (canScrollUp) {
-        drawRect(
-            brush = Brush.verticalGradient(
-                colors = listOf(surfaceColor, Color.Transparent),
-                startY = 0f,
-                endY = indicatorHeightPx
-            ),
-            size = Size(size.width, indicatorHeightPx)
-        )
+        if (showTopGradient) {
+            drawRect(
+                brush = Brush.verticalGradient(
+                    colors = listOf(surfaceColor, Color.Transparent),
+                    startY = 0f,
+                    endY = indicatorHeightPx
+                ),
+                size = Size(size.width, indicatorHeightPx)
+            )
+        }
 
         with(upPainter) {
             translate(
@@ -99,15 +107,17 @@ private fun Modifier.scrollIndicatorDrawModifier(
     }
 
     if (canScrollDown) {
-        drawRect(
-            brush = Brush.verticalGradient(
-                colors = listOf(Color.Transparent, surfaceColor),
-                startY = size.height - indicatorHeightPx,
-                endY = size.height
-            ),
-            topLeft = Offset(0f, size.height - indicatorHeightPx),
-            size = Size(size.width, indicatorHeightPx)
-        )
+        if (showBottomGradient) {
+            drawRect(
+                brush = Brush.verticalGradient(
+                    colors = listOf(Color.Transparent, surfaceColor),
+                    startY = size.height - indicatorHeightPx,
+                    endY = size.height
+                ),
+                topLeft = Offset(0f, size.height - indicatorHeightPx),
+                size = Size(size.width, indicatorHeightPx)
+            )
+        }
 
         with(downPainter) {
             translate(
