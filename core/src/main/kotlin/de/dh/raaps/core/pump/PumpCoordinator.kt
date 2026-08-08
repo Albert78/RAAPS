@@ -222,15 +222,38 @@ PersistentLogger.log("PumpCoordinator", "------------ issueCommand: Queueing Del
                 .filter { it.isReady() && !it.isExpired() }
                 .minByOrNull { it.nextAttemptAt } ?: break
 
+if (job.command is PumpCommand.DeliverBolus) {
+val time = SimpleDateFormat("HH:mm:ss", Locale.getDefault()).format(Date(System.currentTimeMillis()))
+PersistentLogger.log("PumpCoordinator", "------------ processJobs: Trying to execute BOLUS job at $time, amount=${job.command.amount.iu}")
+}
+
             val success = tryExecuteJobWithRetries(job)
+
+if (job.command is PumpCommand.DeliverBolus) {
+val time = SimpleDateFormat("HH:mm:ss", Locale.getDefault()).format(Date(System.currentTimeMillis()))
+PersistentLogger.log("PumpCoordinator", "------------ processJobs: Finished BOLUS job at $time, amount=${job.command.amount.iu}")
+}
+
             if (success) {
                 _pendingJobs.update { it - job }
+
+if (job.command is PumpCommand.DeliverBolus) {
+val time = SimpleDateFormat("HH:mm:ss", Locale.getDefault()).format(Date(System.currentTimeMillis()))
+PersistentLogger.log("PumpCoordinator", "------------ processJobs: Success: Job dequeued")
+}
+
             } else {
                 // Schedule for 1 minute later
                 val updatedJob = job.copy(
                     retryCount = job.retryCount + 3,
                     nextAttemptAt = Timestamp.now().plusMinutes(1)
                 )
+
+if (job.command is PumpCommand.DeliverBolus) {
+val time = SimpleDateFormat("HH:mm:ss", Locale.getDefault()).format(Date(System.currentTimeMillis()))
+PersistentLogger.log("PumpCoordinator", "------------ processJobs: Failed: Queuing Job again in 1 minute")
+}
+
                 _pendingJobs.update { (it - job) + updatedJob }
                 // Break loop and try again next time
                 break
