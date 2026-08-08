@@ -86,7 +86,7 @@ class SystemRegistryImpl(
 
             // Initialize Managers
             val wakeService = SystemWakeServiceImpl(application)
-            val timeService = TimeServiceImpl(scope = scope)
+            val timeService = TimeServiceImpl(wakeService = wakeService, scope = scope)
             val pumpManager = PumpManagerImpl(scope = scope, wakeService = wakeService)
 
             val glucoseSourceManager = GlucoseSourceManager(

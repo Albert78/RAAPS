@@ -1,5 +1,6 @@
 package de.dh.raaps.core.system
 
+import android.content.Intent
 import android.util.Log
 import de.dh.raaps.common.model.data.Minutes
 import de.dh.raaps.common.model.data.Tick
@@ -23,8 +24,9 @@ import kotlin.time.Duration.Companion.milliseconds
  */
 class TimeServiceImpl(
     override val tickInterval: Minutes = Timeline.DEFAULT_TICK_INTERVAL,
+    private val wakeService: SystemWakeService,
     scope: CoroutineScope
-) : TimeService {
+) : TimeService, WakeupHandler {
     override val timeline = Timeline(tickInterval)
 
     private val _tickFlow = MutableStateFlow(timeline.getNowTick())
@@ -42,6 +44,11 @@ class TimeServiceImpl(
 PersistentLogger.log(TAG, "------------ registerTickHandler: priority=$priority, handler=${handler.javaClass.canonicalName ?: handler.javaClass.name}")
         handlers.add(HandlerEntry(priority, handler))
         handlers.sortBy { it.priority }
+    }
+
+    override fun onWakeup(wakeupId: UInt?, intent: Intent?) {
+        Log.d(TAG, "System wakeup received (wakeupId=$wakeupId)")
+        // The loop is already waiting or processing. The wakeup ensures the CPU is awake.
     }
 
     override fun unregisterTickHandler(handler: TickHandler) {
@@ -71,6 +78,8 @@ PersistentLogger.log(TAG, "------------ registerTickHandler: priority=$priority,
     }
 
     init {
+        wakeService.registerHandler(TAG, this)
+
         scope.launch {
             Log.d(TAG, "Waiting for initial synchronization...")
             firstSyncDeferred.await()
@@ -87,6 +96,9 @@ PersistentLogger.log(TAG, "------------ registerTickHandler: priority=$priority,
                 if (nextTickTimeMs <= now.ms) {
                     nextTickTimeMs += timeline.tickSizeMs
                 }
+
+                val nextTickTimestamp = Timestamp(nextTickTimeMs)
+                wakeService.scheduleWakeup(TAG, null, nextTickTimestamp)
 
                 val delayMs = nextTickTimeMs - now.ms
                 if (delayMs > 0) {
