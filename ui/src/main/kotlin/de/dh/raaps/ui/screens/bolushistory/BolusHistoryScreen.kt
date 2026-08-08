@@ -1,6 +1,7 @@
 package de.dh.raaps.ui.screens.bolushistory
 
 import android.content.res.Configuration
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -34,6 +35,7 @@ import androidx.compose.material3.ListItem
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
@@ -68,6 +70,7 @@ import de.dh.raaps.common.ui.theme.AppTheme
 import de.dh.raaps.ui.R
 import de.dh.raaps.common.R as CommonR
 import java.time.Instant
+import java.time.LocalDate
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.util.Locale
@@ -88,7 +91,7 @@ fun BolusHistoryScreen(
     )
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
 @Composable
 fun BolusHistoryContent(
     uiState: BolusHistoryUiState,
@@ -164,6 +167,14 @@ fun BolusHistoryContent(
             }
         } else {
             val listState = rememberLazyListState()
+            val groupedEntries = remember(uiState.bolusEntries) {
+                uiState.bolusEntries.groupBy {
+                    Instant.ofEpochMilli(it.timestamp.ms)
+                        .atZone(ZoneId.systemDefault())
+                        .toLocalDate()
+                }
+            }
+
             LazyColumn(
                 state = listState,
                 modifier = Modifier
@@ -171,21 +182,44 @@ fun BolusHistoryContent(
                     .padding(innerPadding)
                     .contentScrollIndicator(listState)
             ) {
-                items(uiState.bolusEntries) { entry ->
-                    val isEditable = remember(entry.timestamp, entry.origin, uiState.editThresholdHours) {
-                        (entry.origin == InsulinOrigin.Manual) && (entry.timestamp >= Timestamp.now().minusHours(uiState.editThresholdHours))
+                groupedEntries.forEach { (date, entries) ->
+                    stickyHeader {
+                        DateHeader(date)
                     }
+                    items(entries) { entry ->
+                        val isEditable = remember(entry.timestamp, entry.origin, uiState.editThresholdHours) {
+                            (entry.origin == InsulinOrigin.Manual) && (entry.timestamp >= Timestamp.now().minusHours(uiState.editThresholdHours))
+                        }
 
-                    BolusItem(
-                        entry = entry,
-                        isEditable = isEditable,
-                        onEditClick = { editingBolus = entry },
-                        onDeleteClick = { onDeleteBolus(entry) }
-                    )
-                    HorizontalDivider()
+                        BolusItem(
+                            entry = entry,
+                            isEditable = isEditable,
+                            onEditClick = { editingBolus = entry },
+                            onDeleteClick = { onDeleteBolus(entry) }
+                        )
+                        HorizontalDivider()
+                    }
                 }
             }
         }
+    }
+}
+
+@Composable
+fun DateHeader(date: LocalDate) {
+    val formatter = remember { DateTimeFormatter.ofPattern("EEEE, dd. MMMM yyyy", Locale.getDefault()) }
+    val dateString = remember(date) { date.format(formatter) }
+
+    Surface(
+        color = MaterialTheme.colorScheme.surfaceVariant,
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        Text(
+            text = dateString,
+            style = MaterialTheme.typography.titleSmall,
+            modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
     }
 }
 
@@ -197,17 +231,11 @@ fun BolusItem(
     onDeleteClick: () -> Unit
 ) {
     val timeFormatter = remember { DateTimeFormatter.ofPattern("HH:mm", Locale.getDefault()) }
-    val dateFormatter = remember { DateTimeFormatter.ofPattern("dd.MM.yyyy", Locale.getDefault()) }
 
     val timeString = remember(entry.timestamp) {
         Instant.ofEpochMilli(entry.timestamp.ms)
             .atZone(ZoneId.systemDefault())
             .format(timeFormatter)
-    }
-    val dateString = remember(entry.timestamp) {
-        Instant.ofEpochMilli(entry.timestamp.ms)
-            .atZone(ZoneId.systemDefault())
-            .format(dateFormatter)
     }
 
     val originString = when (entry.origin) {
@@ -231,36 +259,30 @@ fun BolusItem(
             }
         },
         trailingContent = {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Column(horizontalAlignment = Alignment.End) {
-                    Text(
-                        text = timeString,
-                        style = MaterialTheme.typography.bodyLarge,
-                        fontWeight = FontWeight.Bold
-                    )
-                    Text(
-                        text = dateString,
-                        style = MaterialTheme.typography.labelSmall,
-                        color = Color.Gray
-                    )
-                }
+            Column(horizontalAlignment = Alignment.End) {
+                Text(
+                    text = timeString,
+                    style = MaterialTheme.typography.bodyLarge,
+                    fontWeight = FontWeight.Bold
+                )
                 if (isEditable) {
-                    Spacer(Modifier.width(8.dp))
-                    IconButton(onClick = onEditClick, modifier = Modifier.size(24.dp)) {
-                        Icon(
-                            imageVector = Icons.Default.Edit,
-                            contentDescription = stringResource(id = R.string.cd_edit),
-                            tint = MaterialTheme.colorScheme.primary,
-                            modifier = Modifier.size(16.dp)
-                        )
-                    }
-                    IconButton(onClick = onDeleteClick, modifier = Modifier.size(24.dp)) {
-                        Icon(
-                            imageVector = Icons.Default.Delete,
-                            contentDescription = stringResource(id = R.string.cd_delete_profile),
-                            tint = MaterialTheme.colorScheme.error,
-                            modifier = Modifier.size(16.dp)
-                        )
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        IconButton(onClick = onEditClick, modifier = Modifier.size(24.dp)) {
+                            Icon(
+                                imageVector = Icons.Default.Edit,
+                                contentDescription = stringResource(id = R.string.cd_edit),
+                                tint = MaterialTheme.colorScheme.primary,
+                                modifier = Modifier.size(16.dp)
+                            )
+                        }
+                        IconButton(onClick = onDeleteClick, modifier = Modifier.size(24.dp)) {
+                            Icon(
+                                imageVector = Icons.Default.Delete,
+                                contentDescription = stringResource(id = R.string.cd_delete_profile),
+                                tint = MaterialTheme.colorScheme.error,
+                                modifier = Modifier.size(16.dp)
+                            )
+                        }
                     }
                 }
             }
