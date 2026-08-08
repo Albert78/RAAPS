@@ -16,15 +16,16 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import de.dh.raaps.common.model.ID_MEAL_STANDARD
 import de.dh.raaps.common.model.MealType
+import de.dh.raaps.common.ui.DefaultSteppingStrategy
 import de.dh.raaps.common.ui.composables.EditableValueStepper
 import de.dh.raaps.common.ui.theme.AppTheme
 import de.dh.raaps.plugin.simbody.BodyModel
 import de.dh.raaps.plugin.simbody.R
 import de.dh.raaps.ui.controls.meal.FoodTypeSelector
-import androidx.compose.ui.tooling.preview.Preview
 
 @Composable
 fun SimBodyEatMealDialog(
@@ -47,9 +48,11 @@ fun SimBodyEatMealDialog(
                     onValueChange = { carbs = it },
                     minValue = 0.0,
                     maxValue = 200.0,
+                    steppingStrategy = DefaultSteppingStrategy(step = 5.0),
                     suffix = "g",
                     modifier = Modifier.fillMaxWidth()
                 )
+
                 Spacer(modifier = Modifier.height(24.dp))
                 Text(stringResource(R.string.label_meal_type), style = MaterialTheme.typography.bodyMedium)
                 Spacer(modifier = Modifier.height(8.dp))
