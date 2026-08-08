@@ -11,7 +11,6 @@ import de.dh.raaps.common.model.data.Timestamp
 import de.dh.raaps.common.util.PersistentLogger
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -25,7 +24,7 @@ import kotlin.time.Duration.Companion.milliseconds
 class TimeServiceImpl(
     override val tickInterval: Minutes = Timeline.DEFAULT_TICK_INTERVAL,
     private val wakeService: SystemWakeService,
-    scope: CoroutineScope
+    private val scope: CoroutineScope
 ) : TimeService, WakeupHandler {
     override val timeline = Timeline(tickInterval)
 
@@ -48,7 +47,47 @@ PersistentLogger.log(TAG, "------------ registerTickHandler: priority=$priority,
 
     override fun onWakeup(wakeupId: UInt?, intent: Intent?) {
         Log.d(TAG, "System wakeup received (wakeupId=$wakeupId)")
-        // The loop is already waiting or processing. The wakeup ensures the CPU is awake.
+        
+        scope.launch {
+            try {
+                wakeService.acquireBusyState(TAG)
+                
+                val tick = timeline.getNowTick()
+                Log.d(TAG, "Tick triggered via system wakeup: $tick (timelineOffset=${timeline.offsetMs})")
+
+                // Sequential execution of handlers
+                handlers.forEach { entry ->
+                    try {
+                        entry.handler.onTick(tick)
+                    } catch (e: Exception) {
+                        Log.e(TAG, "Error in tick handler ${entry.handler}", e)
+                    }
+                }
+
+                _tickFlow.value = tick
+            } finally {
+                // Schedule next tick before releasing busy state
+                scheduleNextTick()
+                wakeService.releaseBusyState(TAG)
+            }
+        }
+    }
+
+    private fun scheduleNextTick() {
+        val now = Timestamp.now()
+        val currentTick = timeline.getNowTick()
+
+        // Calculate next scheduled tick time based on the synchronized timeline
+        var nextTickTimeMs = timeline.timestamp(currentTick + 1).ms
+
+        // Safety: If we already passed the next tick time, go to the one after
+        if (nextTickTimeMs <= now.ms) {
+            nextTickTimeMs += timeline.tickSizeMs
+        }
+
+        val nextTickTimestamp = Timestamp(nextTickTimeMs)
+        wakeService.scheduleWakeup(TAG, null, nextTickTimestamp)
+        Log.d(TAG, "Scheduled next system wakeup at $nextTickTimestamp")
     }
 
     override fun unregisterTickHandler(handler: TickHandler) {
@@ -74,6 +113,9 @@ PersistentLogger.log(TAG, "------------ registerTickHandler: priority=$priority,
             val adjustment = (diff * 0.2).toLong()
             timeline.offsetMs += adjustment
             Log.d(TAG, "Sync adjustment: targetOffset=$targetOffsetMs, currentOffset=${timeline.offsetMs}, adj=$adjustment")
+            
+            // Re-schedule next tick to align with new offset
+            scheduleNextTick()
         }
     }
 
@@ -83,42 +125,9 @@ PersistentLogger.log(TAG, "------------ registerTickHandler: priority=$priority,
         scope.launch {
             Log.d(TAG, "Waiting for initial synchronization...")
             firstSyncDeferred.await()
-            Log.d(TAG, "Starting ticking loop with offset ${timeline.offsetMs}")
-
-            while (true) {
-                val now = Timestamp.now()
-                val currentTick = timeline.tick(now)
-
-                // Calculate next scheduled tick time based on the synchronized timeline
-                var nextTickTimeMs = timeline.timestamp(currentTick + 1).ms
-
-                // Safety: If we already passed the next tick time, go to the one after
-                if (nextTickTimeMs <= now.ms) {
-                    nextTickTimeMs += timeline.tickSizeMs
-                }
-
-                val nextTickTimestamp = Timestamp(nextTickTimeMs)
-                wakeService.scheduleWakeup(TAG, null, nextTickTimestamp)
-
-                val delayMs = nextTickTimeMs - now.ms
-                if (delayMs > 0) {
-                    delay(delayMs.milliseconds)
-                }
-
-                val tick = timeline.getNowTick()
-                Log.d(TAG, "Tick triggered: $tick (timelineOffset=${timeline.offsetMs})")
-
-                // Sequential execution of handlers
-                handlers.forEach { entry ->
-                    try {
-                        entry.handler.onTick(tick)
-                    } catch (e: Exception) {
-                        Log.e(TAG, "Error in tick handler ${entry.handler}", e)
-                    }
-                }
-
-                _tickFlow.value = tick
-            }
+            Log.d(TAG, "Starting event-driven ticking cycle with offset ${timeline.offsetMs}")
+            
+            scheduleNextTick()
         }
     }
 
