@@ -10,6 +10,7 @@ import de.dh.raaps.common.model.data.Tick
 import de.dh.raaps.common.model.data.TickHandler
 import de.dh.raaps.common.model.data.TickPriority
 import de.dh.raaps.common.model.data.TimeService
+import de.dh.raaps.common.util.PersistentLogger
 import de.dh.raaps.core.system.SystemWakeService
 import de.dh.raaps.plugin.simbody.repository.db.SimBodyDatabase
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -47,7 +48,7 @@ class SimBodyPlugin(
 
     override fun initialize(pluginManager: PluginManager) {
         bodyModel.loadState()
-android.util.Log.d("SimBodyPlugin", "------------ calling registerTickHandler: priority=${TickPriority.PRE_CORE}, handler=SimBodyPlugin")
+PersistentLogger.log("SimBodyPlugin", "------------ calling registerTickHandler: priority=${TickPriority.PRE_CORE}, handler=SimBodyPlugin")
         timeService.registerTickHandler(TickPriority.PRE_CORE, this)
         heartbeat.start()
     }
@@ -58,7 +59,7 @@ android.util.Log.d("SimBodyPlugin", "------------ calling registerTickHandler: p
         wakeService.acquireBusyState(WAKE_TAG)
         try {
 val time = SimpleDateFormat("HH:mm:ss", Locale.getDefault()).format(Date(timestamp.ms))
-android.util.Log.d("SimBodyPlugin", "------------ onTick: Calling SimBodyPumpDevice#advanceToTick to create BOLUS at $time, amount=basal_flow")
+PersistentLogger.log("SimBodyPlugin", "------------ onTick: Calling SimBodyPumpDevice#advanceToTick to create BOLUS at $time, amount=basal_flow")
             pumpDevice.advanceToTick(timestamp)
             bodyModel.advanceToTick(timestamp)
         } finally {

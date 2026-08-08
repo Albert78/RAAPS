@@ -15,6 +15,7 @@ import de.dh.raaps.common.model.data.Timestamp
 import de.dh.raaps.core.repository.AlgorithmInsightRepository
 import de.dh.raaps.core.repository.SettingsRepository
 import de.dh.raaps.core.repository.TreatmentRepository
+import de.dh.raaps.common.util.PersistentLogger
 import de.dh.raaps.core.system.AndroidNotifications
 import de.dh.raaps.core.system.SystemWakeService
 import de.dh.raaps.core.system.WakeupHandler
@@ -179,7 +180,7 @@ class SystemManagerImpl(
 
         androidNotifications.createNotificationChannels()
 val handler = NotificationTickHandler()
-Log.d("SystemManager", "------------ calling registerTickHandler: priority=${TickPriority.UI}, handler=NotificationTickHandler")
+PersistentLogger.log("SystemManager", "------------ calling registerTickHandler: priority=${TickPriority.UI}, handler=NotificationTickHandler")
 timeService.registerTickHandler(TickPriority.UI, handler)
 
         scope.launch {
@@ -216,7 +217,7 @@ timeService.registerTickHandler(TickPriority.UI, handler)
             onCancelInsulinJobs = { treatmentLock -> therapyManager.coreCancelInsulinJobs(treatmentLock) },
             onDeliverBolus = { treatmentLock, amount, handledDeferredBoluses ->
 val time = SimpleDateFormat("HH:mm:ss", Locale.getDefault()).format(Date(System.currentTimeMillis()))
-android.util.Log.d("SystemManager", "------------ onDeliverBolus: Calling therapyManager.issueBolus to create BOLUS at $time, amount=${amount.iu}")
+PersistentLogger.log("SystemManager", "------------ onDeliverBolus: Calling therapyManager.issueBolus to create BOLUS at $time, amount=${amount.iu}")
                 therapyManager.issueBolus(treatmentLock, amount, handledDeferredBoluses)
             },
             onSetTempBasal = { treatmentLock, durationInHours, unitsPerHour -> therapyManager.setTempBasal(treatmentLock, durationInHours, unitsPerHour) },

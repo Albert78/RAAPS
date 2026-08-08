@@ -10,6 +10,7 @@ import de.dh.raaps.common.model.PumpCapabilities
 import de.dh.raaps.common.model.data.InsulinProfile
 import de.dh.raaps.common.model.data.Timestamp
 import de.dh.raaps.common.model.data.getAmountForMinute
+import de.dh.raaps.common.util.PersistentLogger
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -20,10 +21,10 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
-import kotlin.time.Duration.Companion.milliseconds
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
+import kotlin.time.Duration.Companion.milliseconds
 
 class SimBodyInsulinPump(
     private val device: SimBodyPumpDevice,
@@ -128,7 +129,7 @@ class SimBodyInsulinPump(
         if (!_isConnected.value) throw Exception("Pump not connected to App")
 
 val time = SimpleDateFormat("HH:mm:ss", Locale.getDefault()).format(Date(System.currentTimeMillis()))
-android.util.Log.d("SimBodyInsulinPump", "------------ bolus: Calling SimBodyPumpDevice#deliverBolus to create BOLUS at $time, amount=$amount")
+PersistentLogger.log("SimBodyInsulinPump", "------------ bolus: Calling SimBodyPumpDevice#deliverBolus to create BOLUS at $time, amount=$amount")
         if (device.deliverBolus(amount)) {
             // Success - device level handled reporting to body and history
             refreshStatus()

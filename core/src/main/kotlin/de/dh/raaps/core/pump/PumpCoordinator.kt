@@ -5,6 +5,7 @@ import de.dh.raaps.common.model.InsulinPump
 import de.dh.raaps.common.model.data.InsulinProfile
 import de.dh.raaps.common.model.data.Minutes
 import de.dh.raaps.common.model.data.Timestamp
+import de.dh.raaps.common.util.PersistentLogger
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -168,7 +169,7 @@ class PumpCoordinator(
 
 if (command is PumpCommand.DeliverBolus) {
 val time = SimpleDateFormat("HH:mm:ss", Locale.getDefault()).format(Date(System.currentTimeMillis()))
-android.util.Log.d("PumpCoordinator", "------------ issueCommand: Queueing DeliverBolus to eventually create BOLUS at $time, amount=${command.amount.iu}")
+PersistentLogger.log("PumpCoordinator", "------------ issueCommand: Queueing DeliverBolus to eventually create BOLUS at $time, amount=${command.amount.iu}")
 }
 
         _pendingJobs.update { it + job }
@@ -262,7 +263,7 @@ android.util.Log.d("PumpCoordinator", "------------ issueCommand: Queueing Deliv
         when (command) {
             is PumpCommand.DeliverBolus -> {
                 val time = SimpleDateFormat("HH:mm:ss", Locale.getDefault()).format(Date(System.currentTimeMillis()))
-                android.util.Log.d("PumpCoordinator", "------------ executeOnPump: Calling InsulinPump#bolus to create BOLUS at $time, amount=${command.amount.iu}")
+PersistentLogger.log("PumpCoordinator", "------------ executeOnPump: Calling InsulinPump#bolus to create BOLUS at $time, amount=${command.amount.iu}")
                 pump.bolus(command.amount.iu)
             }
             is PumpCommand.SetTempBasal -> {

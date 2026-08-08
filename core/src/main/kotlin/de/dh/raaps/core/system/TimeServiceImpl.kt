@@ -7,6 +7,7 @@ import de.dh.raaps.common.model.data.TickHandler
 import de.dh.raaps.common.model.data.TimeService
 import de.dh.raaps.common.model.data.Timeline
 import de.dh.raaps.common.model.data.Timestamp
+import de.dh.raaps.common.util.PersistentLogger
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.delay
@@ -38,7 +39,7 @@ class TimeServiceImpl(
     private val firstSyncDeferred = CompletableDeferred<Unit>()
 
     override fun registerTickHandler(priority: Int, handler: TickHandler) {
-Log.d(TAG, "------------ registerTickHandler: priority=$priority, handler=${handler.javaClass.canonicalName ?: handler.javaClass.name}")
+PersistentLogger.log(TAG, "------------ registerTickHandler: priority=$priority, handler=${handler.javaClass.canonicalName ?: handler.javaClass.name}")
         handlers.add(HandlerEntry(priority, handler))
         handlers.sortBy { it.priority }
     }

@@ -6,6 +6,7 @@ import android.content.Intent
 import androidx.core.content.ContextCompat
 import de.dh.raaps.core.SystemRegistry
 import de.dh.raaps.core.SystemRegistryImpl
+import de.dh.raaps.common.util.PersistentLogger
 import de.dh.raaps.core.system.RegistryProvider
 import de.dh.raaps.notifications.AndroidNotificationsImpl
 import de.dh.raaps.pluginmanager.PluginManagerImpl
@@ -38,6 +39,8 @@ class MainApplication : Application(), RegistryProvider {
     override fun onCreate() {
         super.onCreate()
         instance = this
+
+        PersistentLogger.init(this)
 
         androidNotifications = AndroidNotificationsImpl(this)
 

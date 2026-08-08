@@ -18,6 +18,7 @@ import de.dh.raaps.common.model.data.getBgForMinute
 import de.dh.raaps.core.pump.PumpCommand
 import de.dh.raaps.core.pump.PumpManager
 import de.dh.raaps.core.repository.TherapyRepository
+import de.dh.raaps.common.util.PersistentLogger
 import de.dh.raaps.core.repository.TreatmentRepository
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.delay
@@ -289,7 +290,7 @@ class TherapyManager(
             ApsMode.AutoCorrection -> {
                 scope.launch {
 val time = SimpleDateFormat("HH:mm:ss", Locale.getDefault()).format(Date(System.currentTimeMillis()))
-android.util.Log.d("TherapyManager", "------------ issueBolus: Calling PumpManager#issueCommand to create BOLUS at $time, amount=${amount.iu}")
+PersistentLogger.log("TherapyManager", "------------ issueBolus: Calling PumpManager#issueCommand to create BOLUS at $time, amount=${amount.iu}")
                     pumpManager.issueCommand(
                         PumpCommand.DeliverBolus(amount),
                         isCancelableAPSCommand = true

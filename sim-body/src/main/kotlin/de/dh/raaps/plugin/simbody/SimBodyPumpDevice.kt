@@ -4,6 +4,7 @@ import de.dh.raaps.common.model.InsulinHistoryPoint
 import de.dh.raaps.common.model.MS_PER_DAY
 import de.dh.raaps.common.model.data.InsulinProfile
 import de.dh.raaps.common.model.data.Timestamp
+import de.dh.raaps.common.util.PersistentLogger
 import de.dh.raaps.common.model.data.getAmountForMinute
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -106,7 +107,7 @@ class SimBodyPumpDevice(
             val basalToDeliver = rate / 3.0
 
 val time = SimpleDateFormat("HH:mm:ss", Locale.getDefault()).format(Date(deliveryTimestamp.ms))
-android.util.Log.d("SimBodyPumpDevice", "------------ advanceToTick: Calling deliverInternalBasal to create BOLUS at $time, amount=$basalToDeliver")
+PersistentLogger.log("SimBodyPumpDevice", "------------ advanceToTick: Calling deliverInternalBasal to create BOLUS at $time, amount=$basalToDeliver")
             deliverInternalBasal(basalToDeliver, deliveryTimestamp)
             lastBasalDeliveryTimestamp = deliveryTimestamp.ms
         }
@@ -128,7 +129,7 @@ android.util.Log.d("SimBodyPumpDevice", "------------ advanceToTick: Calling del
 
         // Report to body as a small bolus
 val time = SimpleDateFormat("HH:mm:ss", Locale.getDefault()).format(Date(timestamp.ms))
-android.util.Log.d("SimBodyPumpDevice", "------------ deliverInternalBasal: Calling BodyModel#bolus to create BOLUS at $time, amount=$units")
+PersistentLogger.log("SimBodyPumpDevice", "------------ deliverInternalBasal: Calling BodyModel#bolus to create BOLUS at $time, amount=$units")
         bodyModel.bolus(units, timestamp = timestamp)
 
         // Record in history as an insulin delivery
@@ -158,7 +159,7 @@ android.util.Log.d("SimBodyPumpDevice", "------------ deliverInternalBasal: Call
 
         // Report to body
 val time = SimpleDateFormat("HH:mm:ss", Locale.getDefault()).format(Date(System.currentTimeMillis()))
-android.util.Log.d("SimBodyPumpDevice", "------------ deliverBolus: Calling BodyModel#bolus to create BOLUS at $time, amount=$units")
+PersistentLogger.log("SimBodyPumpDevice", "------------ deliverBolus: Calling BodyModel#bolus to create BOLUS at $time, amount=$units")
         bodyModel.bolus(units)
 
         // Record in history
