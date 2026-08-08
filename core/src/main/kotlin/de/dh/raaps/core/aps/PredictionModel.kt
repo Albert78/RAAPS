@@ -109,10 +109,15 @@ class PredictionModel(
             }
 
             val insulinEquivalentOfCarbs = convertToUnitsFromCarbs(state.effectiveCarbs!!, state.cr!!)
-            // Absolute BGI: Carbs - Insulin
-            // We don't include the basal requirement in BGI, so a BGI of 0 should
-            // come true if we deliver standard basal rates.
-            val bgi = (insulinEquivalentOfCarbs - state.effectiveInsulin!!) * state.isf!!
+
+            // The liver continuously releases glucose. This "basal requirement" is countered by
+            // the basal rate. We add it here to the insulin equivalent calculation as "negative insulin".
+            val basalUnitsPerTick = state.basalRateUph!! * (timeline.tickDuration.value.toDouble() / 60.0)
+
+            // Absolute BGI: Carbs - Insulin + Liver
+            // We include the basal requirement (liver) in BGI, so a BGI of 0 should
+            // come true if we deliver standard basal rates and have no active carbs.
+            val bgi = (insulinEquivalentOfCarbs - state.effectiveInsulin!! + basalUnitsPerTick) * state.isf!!
 
             if (bgi != state.bgi) {
                 state.bgi = bgi
