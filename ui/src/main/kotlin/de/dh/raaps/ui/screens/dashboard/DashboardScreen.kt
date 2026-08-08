@@ -167,19 +167,19 @@ fun DashboardContent(
                                 }
                             )
                             DropdownMenuItem(
-                                text = { Text(stringResource(id = R.string.menu_item_preferences_label)) },
-                                leadingIcon = { Icon(imageVector = Icon_Settings, contentDescription = null) },
-                                onClick = {
-                                    menuExpanded = false
-                                    onNavigateToPreferences()
-                                }
-                            )
-                            DropdownMenuItem(
                                 text = { Text(stringResource(id = R.string.menu_alarms_label)) },
                                 leadingIcon = { Icon(imageVector = Icon_Menu_Alarms, contentDescription = null) },
                                 onClick = {
                                     menuExpanded = false
                                     onNavigateToAlarms()
+                                }
+                            )
+                            DropdownMenuItem(
+                                text = { Text(stringResource(id = R.string.menu_item_preferences_label)) },
+                                leadingIcon = { Icon(imageVector = Icon_Settings, contentDescription = null) },
+                                onClick = {
+                                    menuExpanded = false
+                                    onNavigateToPreferences()
                                 }
                             )
                             DropdownMenuItem(
