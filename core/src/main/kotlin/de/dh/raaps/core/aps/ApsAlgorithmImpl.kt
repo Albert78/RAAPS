@@ -11,6 +11,7 @@ import de.dh.raaps.common.model.data.Minutes
 import de.dh.raaps.common.model.data.Tick
 import de.dh.raaps.common.model.data.Timeline
 import de.dh.raaps.common.model.data.Timestamp
+import de.dh.raaps.common.model.data.getAmountForMinute
 import de.dh.raaps.common.util.PersistentLogger
 import de.dh.raaps.core.repository.TreatmentRepository
 import java.text.SimpleDateFormat
@@ -346,6 +347,16 @@ PersistentLogger.log("ApsAlgorithmImpl", "------------ recalculate: Calling onDe
             dia = dia,
             peak = insulinPeak
         )
+        val cobEquivalentOfBasalAtPeak = run {
+            var totalBasalCarbs = 0.0
+            for (m in insulinPeak.value.toInt() until (insulinPeak.value.toInt() + dia.value.toInt())) {
+                val t = now.plusMinutes(m)
+                val baseBasal = settings.insulinProfile.basalBlocks.getAmountForMinute(t.minutesSinceMidnight())
+                val baseCr = settings.insulinProfile.crBlocks.getAmountForMinute(t.minutesSinceMidnight())
+                totalBasalCarbs += (baseBasal / 60.0) * baseCr
+            }
+            totalBasalCarbs
+        }
 
         val insightTemplate = AlgorithmInsight(
             timestamp = now,
@@ -354,6 +365,7 @@ PersistentLogger.log("ApsAlgorithmImpl", "------------ recalculate: Calling onDe
             deviationPerTick = avgCurrentDeviationPerTick.mgdl.toDouble(),
             iobAtPeak = iobAtPeak,
             cobAtPeak = cobAtPeak,
+            cobEquivalentOfBasalAtPeak = cobEquivalentOfBasalAtPeak,
             predictedBgAtPeak = 0, // Will be filled below if available
             targetBg = targetBg.mgdl,
             isf = isfValue.mgdl.toDouble(),
@@ -419,7 +431,7 @@ PersistentLogger.log("ApsAlgorithmImpl", "------------ recalculate: Calling onDe
             }
         }
 
-        val insulinEquivalentOfCob = convertToUnitsFromCarbs(carbs = cobAtPeak, cr = crValue)
+        val insulinEquivalentOfCob = convertToUnitsFromCarbs(carbs = cobAtPeak + cobEquivalentOfBasalAtPeak, cr = crValue)
 
         val bgErrorCorrectionUnits = convertToUnitsFromBgDelta(bgErrorAtPeak, isfValue).coerceAtLeast(0.0)
         val futureInsulinU = iobAtPeak + dueMealBolusAmount.iu + sumFutureDeferredBolus.iu

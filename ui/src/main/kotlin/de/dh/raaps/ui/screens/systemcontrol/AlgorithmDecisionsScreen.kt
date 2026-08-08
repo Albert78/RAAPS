@@ -142,6 +142,8 @@ fun InsightCard(insight: AlgorithmInsight) {
                 MetricItem(stringResource(id = R.string.algorithm_insight_label_isf), "%.1f".format(insight.isf))
                 Spacer(modifier = Modifier.width(16.dp))
                 MetricItem(stringResource(id = R.string.algorithm_insight_label_cr), "%.1f".format(insight.cr))
+                Spacer(modifier = Modifier.width(16.dp))
+                MetricItem(stringResource(id = R.string.algorithm_insight_label_basal_cob), "%.1f g".format(insight.cobEquivalentOfBasalAtPeak))
             }
 
             val actionText = when {

@@ -26,6 +26,7 @@ data class AlgorithmInsight(
     val deviationPerTick: Double,
     val iobAtPeak: Double,
     val cobAtPeak: Double,
+    val cobEquivalentOfBasalAtPeak: Double,
     val predictedBgAtPeak: Short,
     val targetBg: Short,
     val isf: Double,

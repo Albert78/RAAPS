@@ -253,6 +253,7 @@
     <string name="algorithm_insight_label_target">Ziel</string>
     <string name="algorithm_insight_label_isf">ISF</string>
     <string name="algorithm_insight_label_cr">CR</string>
+    <string name="algorithm_insight_label_basal_cob">Basal-KH</string>
     <string name="algorithm_insight_action_bolus">Aktion: Bolus %1$.2f U</string>
     <string name="algorithm_insight_action_temp_basal">Aktion: Temp-Basal %1$.2f U/h für %2$d h</string>
 
