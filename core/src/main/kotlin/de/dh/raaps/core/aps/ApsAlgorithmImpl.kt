@@ -170,7 +170,7 @@ class ApsAlgorithmImpl(
                 bolus = bolusAmount,
                 handledDeferredBoluses = handledDeferredBoluses,
                 algorithmIssues = null,
-                reasoning = AlgorithmReasoning.NORMAL_CONDITION_MEAL_BOLUS
+                reasoning = AlgorithmReasoning.MEAL_OR_CORRECTION_BOLUS
             )
 
             fun algorithmIssues(vararg issues: AlgorithmIssue) = CalculationResult(
