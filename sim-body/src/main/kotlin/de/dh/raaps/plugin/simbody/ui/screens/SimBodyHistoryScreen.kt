@@ -80,32 +80,44 @@ fun SimBodyHistoryScreen(
                 Text(stringResource(R.string.label_meals), style = MaterialTheme.typography.titleLarge)
                 HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
             }
-            items(bodyModel.meals) { meal ->
-                Row(
-                    modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Text(stringResource(R.string.unit_g, meal.carbGrams))
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Text(
-                            text = meal.mealType.name,
-                            style = MaterialTheme.typography.bodySmall,
-                            color = Color.Gray
-                        )
-                    }
-                    Column(horizontalAlignment = Alignment.End) {
-                        Text(
-                            text = timeFormat.format(Date(meal.timestamp.ms)),
-                            style = MaterialTheme.typography.bodyLarge,
-                            fontWeight = FontWeight.Bold
-                        )
-                        Text(
-                            text = dateFormat.format(Date(meal.timestamp.ms)),
-                            style = MaterialTheme.typography.labelSmall,
-                            color = Color.Gray
-                        )
+
+            if (bodyModel.meals.isEmpty()) {
+                item {
+                    Text(
+                        text = stringResource(R.string.no_entries),
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = Color.Gray,
+                        modifier = Modifier.padding(vertical = 4.dp)
+                    )
+                }
+            } else {
+                items(bodyModel.meals) { meal ->
+                    Row(
+                        modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Text(stringResource(R.string.unit_g, meal.carbGrams))
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text(
+                                text = meal.mealType.name,
+                                style = MaterialTheme.typography.bodySmall,
+                                color = Color.Gray
+                            )
+                        }
+                        Column(horizontalAlignment = Alignment.End) {
+                            Text(
+                                text = timeFormat.format(Date(meal.timestamp.ms)),
+                                style = MaterialTheme.typography.bodyLarge,
+                                fontWeight = FontWeight.Bold
+                            )
+                            Text(
+                                text = dateFormat.format(Date(meal.timestamp.ms)),
+                                style = MaterialTheme.typography.labelSmall,
+                                color = Color.Gray
+                            )
+                        }
                     }
                 }
             }
@@ -114,32 +126,44 @@ fun SimBodyHistoryScreen(
                 Text(stringResource(R.string.label_insulin), style = MaterialTheme.typography.titleLarge, modifier = Modifier.padding(top = 16.dp))
                 HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
             }
-            items(bodyModel.insulinApplications) { insulin ->
-                Row(
-                    modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Text(stringResource(R.string.unit_u, insulin.amount))
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Text(
-                            text = "(${insulin.origin})",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = Color.Gray
-                        )
-                    }
-                    Column(horizontalAlignment = Alignment.End) {
-                        Text(
-                            text = timeFormat.format(Date(insulin.timestamp.ms)),
-                            style = MaterialTheme.typography.bodyLarge,
-                            fontWeight = FontWeight.Bold
-                        )
-                        Text(
-                            text = dateFormat.format(Date(insulin.timestamp.ms)),
-                            style = MaterialTheme.typography.labelSmall,
-                            color = Color.Gray
-                        )
+
+            if (bodyModel.insulinApplications.isEmpty()) {
+                item {
+                    Text(
+                        text = stringResource(R.string.no_entries),
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = Color.Gray,
+                        modifier = Modifier.padding(vertical = 4.dp)
+                    )
+                }
+            } else {
+                items(bodyModel.insulinApplications) { insulin ->
+                    Row(
+                        modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Text(stringResource(R.string.unit_u, insulin.amount))
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text(
+                                text = "(${insulin.origin})",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = Color.Gray
+                            )
+                        }
+                        Column(horizontalAlignment = Alignment.End) {
+                            Text(
+                                text = timeFormat.format(Date(insulin.timestamp.ms)),
+                                style = MaterialTheme.typography.bodyLarge,
+                                fontWeight = FontWeight.Bold
+                            )
+                            Text(
+                                text = dateFormat.format(Date(insulin.timestamp.ms)),
+                                style = MaterialTheme.typography.labelSmall,
+                                color = Color.Gray
+                            )
+                        }
                     }
                 }
             }
