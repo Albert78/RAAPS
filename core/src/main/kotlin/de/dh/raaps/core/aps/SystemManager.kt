@@ -220,7 +220,7 @@ val time = SimpleDateFormat("HH:mm:ss", Locale.getDefault()).format(Date(System.
 PersistentLogger.log("SystemManager", "------------ onDeliverBolus: Calling therapyManager.issueBolus to create BOLUS at $time, amount=${amount.iu}")
                 therapyManager.issueBolus(treatmentLock, amount, handledDeferredBoluses)
             },
-            onSetTempBasal = { treatmentLock, durationInHours, unitsPerHour -> therapyManager.setTempBasal(treatmentLock, durationInHours, unitsPerHour) },
+            onSetTempBasal = { treatmentLock, durationInHours, percent -> therapyManager.setTempBasal(treatmentLock, durationInHours, percent) },
             onClearTempBasal = { treatmentLock -> therapyManager.clearTempBasal(treatmentLock) },
             onCarbsHint = { treatmentLock, amountInGram -> therapyManager.recommendCarbs(treatmentLock, amountInGram) },
             onClearRecommendations = { treatmentLock -> therapyManager.clearRecommendations(treatmentLock) },

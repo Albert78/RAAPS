@@ -76,7 +76,7 @@ class Core(
 
     private val onCancelInsulinJobs: (treatmentLock: TreatmentLock) -> Unit,
     private val onDeliverBolus: suspend (treatmentLock: TreatmentLock, amount: InsulinAmount, handledDeferredBoluses: List<DeferredBolus>?) -> Unit,
-    private val onSetTempBasal: (treatmentLock: TreatmentLock, durationInHours: Int, unitsPerHour: Double) -> Unit,
+    private val onSetTempBasal: (treatmentLock: TreatmentLock, durationInHours: Int, percent: Int) -> Unit,
     private val onClearTempBasal: (treatmentLock: TreatmentLock) -> Unit,
     private val onCarbsHint: (treatmentLock: TreatmentLock, Int) -> Unit,
     private val onClearRecommendations: (treatmentLock: TreatmentLock) -> Unit,
@@ -250,7 +250,7 @@ PersistentLogger.log("Core", "------------ onTick: Calling ApsAlgorithmImpl#reca
 
             onCancelInsulinJobs: (treatmentLock: TreatmentLock) -> Unit,
             onDeliverBolus: suspend (treatmentLock: TreatmentLock, amount: InsulinAmount, handledDeferredBoluses: List<DeferredBolus>?) -> Unit,
-            onSetTempBasal: (treatmentLock: TreatmentLock, durationInHours: Int, unitsPerHour: Double) -> Unit,
+            onSetTempBasal: (treatmentLock: TreatmentLock, durationInHours: Int, percent: Int) -> Unit,
             onClearTempBasal: (treatmentLock: TreatmentLock) -> Unit,
             onCarbsHint: (treatmentLock: TreatmentLock, amountInGram: Int) -> Unit,
             onClearRecommendations: (treatmentLock: TreatmentLock) -> Unit,

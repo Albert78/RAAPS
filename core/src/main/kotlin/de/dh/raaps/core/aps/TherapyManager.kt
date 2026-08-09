@@ -302,9 +302,9 @@ PersistentLogger.log("TherapyManager", "------------ issueBolus: Calling PumpMan
      *
      * @param treatmentLock The lock held by the caller.
      * @param durationInHours The duration for the temporary basal rate.
-     * @param unitsPerHour The absolute basal rate in units per hour.
+     * @param percent The relative basal rate in percent.
      */
-    fun setTempBasal(treatmentLock: TreatmentLock, durationInHours: Int, unitsPerHour: Double) {
+    fun setTempBasal(treatmentLock: TreatmentLock, durationInHours: Int, percent: Int) {
         checkLock(treatmentLock)
         when (systemManager.apsMode.value) {
             ApsMode.Suspend -> return
@@ -313,7 +313,7 @@ PersistentLogger.log("TherapyManager", "------------ issueBolus: Calling PumpMan
                 scope.launch {
                     pumpManager.issueCommand(
                         PumpCommand.SetTempBasal(
-                            absoluteUnits = unitsPerHour,
+                            percent = percent,
                             durationHours = durationInHours
                         ),
                         isCancelableAPSCommand = true

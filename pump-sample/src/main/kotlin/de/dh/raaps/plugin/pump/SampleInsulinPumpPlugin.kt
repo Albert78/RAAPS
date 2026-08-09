@@ -64,7 +64,7 @@ class SampleInsulinPumpPlugin : InsulinPump, Plugin {
         // TODO: Stop ongoing bolus
     }
 
-    override suspend fun tempBasal(absoluteUnits: Double, durationHours: Int) {
+    override suspend fun tempBasal(percent: Int, durationHours: Int) {
         // TODO: Set temporary basal rate
     }
 

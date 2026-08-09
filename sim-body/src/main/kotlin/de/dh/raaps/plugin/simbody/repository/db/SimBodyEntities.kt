@@ -60,7 +60,7 @@ data class PumpStateEntity(
     val hasHardwareError: Boolean,
     val isBroken: Boolean,
     val lastBasalDeliveryTimestampMs: Long,
-    val tempBasalRate: Double?,
+    val tempBasalPercent: Int?,
     val tempBasalExpiryMs: Long? = null
 )
 

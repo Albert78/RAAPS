@@ -1,6 +1,7 @@
 package de.dh.raaps.core.aps
 
 import android.util.Log
+import de.dh.raaps.common.model.INSULIN_EPSILON
 import de.dh.raaps.common.model.InsulinAmount
 import de.dh.raaps.common.model.calculation.CarbsInsulinCalculationModel
 import de.dh.raaps.common.model.convertToCarbsFromBgDelta
@@ -27,7 +28,7 @@ class ApsAlgorithmImpl(
     val therapyManager: TherapyManager,
     val onCancelInsulinJobs: (treatmentLock: TreatmentLock) -> Unit,
     val onDeliverBolus: suspend (treatmentLock: TreatmentLock, amount: InsulinAmount, handledDeferredBoluses: List<DeferredBolus>?) -> Unit,
-    val onSetTempBasal: (treatmentLock: TreatmentLock, durationInHours: Int, unitsPerHour: Double) -> Unit,
+    val onSetTempBasal: (treatmentLock: TreatmentLock, durationInHours: Int, percent: Int) -> Unit,
     val onClearTempBasal: (treatmentLock: TreatmentLock) -> Unit,
     val onCarbsHint: (treatmentLock: TreatmentLock, Int) -> Unit,
     private val onAlgorithmInsight: (AlgorithmInsight) -> Unit
@@ -93,7 +94,7 @@ class ApsAlgorithmImpl(
     }
 
     data class TempBasalResult(
-        val unitsPerHour: Double,
+        val percent: Int,
         val durationInHours: Int
     )
 
@@ -128,10 +129,10 @@ class ApsAlgorithmImpl(
                 reasoning = AlgorithmReasoning.NORMAL_CONDITION_SAFETY_BASAL
             )
 
-            fun tempBasal(unitsPerHour: Double, durationInHours: Int) = CalculationResult(
+            fun tempBasal(percent: Int, durationInHours: Int) = CalculationResult(
                 carbsInGHint = null,
                 tempBasal = TempBasalResult(
-                    unitsPerHour = unitsPerHour,
+                    percent = percent,
                     durationInHours = durationInHours
                 ),
                 clearTempBasal = false,
@@ -143,7 +144,7 @@ class ApsAlgorithmImpl(
 
             fun zeroTemp(durationInHours: Int): CalculationResult = CalculationResult(
                 carbsInGHint = null,
-                tempBasal = TempBasalResult(unitsPerHour = 0.0, durationInHours = durationInHours),
+                tempBasal = TempBasalResult(percent = 0, durationInHours = durationInHours),
                 clearTempBasal = false,
                 bolus = null,
                 handledDeferredBoluses = null,
@@ -153,7 +154,7 @@ class ApsAlgorithmImpl(
 
             fun carbsSuggestion(carbsInGHint: Int?) = CalculationResult(
                 carbsInGHint = carbsInGHint,
-                tempBasal = TempBasalResult(unitsPerHour = 0.0, durationInHours = 1),
+                tempBasal = TempBasalResult(percent = 0, durationInHours = 1),
                 clearTempBasal = false,
                 bolus = null,
                 handledDeferredBoluses = null,
@@ -190,24 +191,20 @@ class ApsAlgorithmImpl(
     }
 
     override suspend fun recalculate(treatmentLock: TreatmentLock): List<AlgorithmIssue> {
-        Log.d(TAG, "recalculate: onCancelInsulinJobs")
         onCancelInsulinJobs(treatmentLock)
 
         val result = doRecalculate()
         if (result.carbsInGHint != null) {
-            Log.d(TAG, "recalculate: Carbs Hint ${result.carbsInGHint} g")
             onCarbsHint(treatmentLock, result.carbsInGHint)
         }
         if (result.tempBasal != null) {
-            Log.d(TAG, "recalculate: Set Temp Basal ${result.tempBasal.durationInHours} h ${result.tempBasal.unitsPerHour} IU/h")
-            onSetTempBasal(treatmentLock, result.tempBasal.durationInHours, result.tempBasal.unitsPerHour)
+            onSetTempBasal(treatmentLock, result.tempBasal.durationInHours, result.tempBasal.percent)
         }
+
         if (result.clearTempBasal) {
-            Log.d(TAG, "recalculate: Clear Temp Basal")
             onClearTempBasal(treatmentLock)
         }
-        if (result.bolus != null && result.bolus.iu >= de.dh.raaps.common.model.INSULIN_EPSILON) {
-            Log.d(TAG, "recalculate: Deliver Bolus ${result.bolus.iu} IU")
+        if (result.bolus != null && result.bolus.iu >= INSULIN_EPSILON) {
 val time = SimpleDateFormat("HH:mm:ss", Locale.getDefault()).format(Date(System.currentTimeMillis()))
 PersistentLogger.log("ApsAlgorithmImpl", "------------ recalculate: Calling onDeliverBolus to create BOLUS at $time, amount=${result.bolus.iu}")
             onDeliverBolus(treatmentLock, result.bolus, result.handledDeferredBoluses)
@@ -217,7 +214,7 @@ PersistentLogger.log("ApsAlgorithmImpl", "------------ recalculate: Calling onDe
             onAlgorithmInsight(metrics.copy(
                 reasoning = result.reasoning,
                 actionBolus = result.bolus?.iu,
-                actionTempBasalUnitsPerHour = result.tempBasal?.unitsPerHour,
+                actionTempBasalPercent = result.tempBasal?.percent,
                 actionTempBasalDurationInHours = result.tempBasal?.durationInHours
             ))
         }
@@ -407,8 +404,14 @@ PersistentLogger.log("ApsAlgorithmImpl", "------------ recalculate: Calling onDe
             }
             // Else go on with decreased basal
             val safetCorrectionUnits = convertToUnitsFromBgDelta(-bgErrorAtPeak, isfValue)
+            val unitsPerHour = (defaultBasal - safetCorrectionUnits).coerceAtLeast(0.0)
+            val percent = if (defaultBasal > 0.0) {
+                (unitsPerHour / defaultBasal * 100.0).toInt()
+            } else {
+                0
+            }
             return CalculationResult.tempBasal(
-                unitsPerHour = (defaultBasal - safetCorrectionUnits).coerceAtLeast(0.0),
+                percent = percent,
                 durationInHours = 1
             ).copy(metrics = insight)
         }
@@ -424,7 +427,7 @@ PersistentLogger.log("ApsAlgorithmImpl", "------------ recalculate: Calling onDe
 
             // Return to normal basal rate (clear temp basal) but do not calculate
             // any correction boluses yet to avoid overshooting during recovery.
-            return@doRecalculate CalculationResult.normalSafetyBasal().copy(metrics = insight)
+            return CalculationResult.normalSafetyBasal().copy(metrics = insight)
         }
 
         // *****************************************************************************************
@@ -498,7 +501,7 @@ PersistentLogger.log("ApsAlgorithmImpl", "------------ recalculate: Calling onDe
             therapyManager: TherapyManager,
             onCancelInsulinJobs: (treatmentLock: TreatmentLock) -> Unit,
             onDeliverBolus: suspend (treatmentLock: TreatmentLock, amount: InsulinAmount, handledDeferredBoluses: List<DeferredBolus>?) -> Unit,
-            onSetTempBasal: (treatmentLock: TreatmentLock, durationInHours: Int, unitsPerHour: Double) -> Unit,
+            onSetTempBasal: (treatmentLock: TreatmentLock, durationInHours: Int, percent: Int) -> Unit,
             onClearTempBasal: (treatmentLock: TreatmentLock) -> Unit,
             onCarbsHint: (treatmentLock: TreatmentLock, Int) -> Unit,
             onAlgorithmInsight: (AlgorithmInsight) -> Unit,

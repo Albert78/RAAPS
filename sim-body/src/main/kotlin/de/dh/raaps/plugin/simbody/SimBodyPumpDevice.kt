@@ -60,8 +60,8 @@ class SimBodyPumpDevice(
     // Internal history storage
     private val _history = CopyOnWriteArrayList<HistoryEntry>()
 
-    private val _tempBasalRate = MutableStateFlow<Double?>(null)
-    val tempBasalRate: StateFlow<Double?> = _tempBasalRate.asStateFlow()
+    private val _tempBasalPercent = MutableStateFlow<Int?>(null)
+    val tempBasalPercent: StateFlow<Int?> = _tempBasalPercent.asStateFlow()
 
     private var lastBasalDeliveryTimestamp: Long = 0L // Initialize on first tick
 
@@ -77,7 +77,7 @@ class SimBodyPumpDevice(
                     _hasHardwareError.value = state.hasHardwareError
                     _isBroken.value = state.isBroken
                     lastBasalDeliveryTimestamp = state.lastBasalDeliveryTimestampMs
-                    _tempBasalRate.value = state.tempBasalRate
+                    _tempBasalPercent.value = state.tempBasalPercent
                     // TODO: Handle tempBasalExpiryMs if needed
                 }
 
@@ -110,7 +110,7 @@ class SimBodyPumpDevice(
                     hasHardwareError = _hasHardwareError.value,
                     isBroken = _isBroken.value,
                     lastBasalDeliveryTimestampMs = lastBasalDeliveryTimestamp,
-                    tempBasalRate = _tempBasalRate.value
+                    tempBasalPercent = _tempBasalPercent.value
                 )
             )
         }
@@ -174,12 +174,18 @@ class SimBodyPumpDevice(
 
         while (currentTimestamp.ms - lastBasalDeliveryTimestamp >= twentyMinutesMs) {
             val deliveryTimestamp = Timestamp(lastBasalDeliveryTimestamp + twentyMinutesMs)
-            val rate = _tempBasalRate.value ?: getProfileBasalRate(deliveryTimestamp)
+            val profileRate = getProfileBasalRate(deliveryTimestamp)
+            val currentPercent = _tempBasalPercent.value
+            val rate = if (currentPercent != null) {
+                profileRate * (currentPercent / 100.0)
+            } else {
+                profileRate
+            }
             val basalToDeliver = rate / 3.0
 
 val time = SimpleDateFormat("HH:mm:ss", Locale.getDefault()).format(Date(deliveryTimestamp.ms))
 PersistentLogger.log("SimBodyPumpDevice", "------------ advanceToTick: Calling deliverInternalBasal to create BOLUS at $time, amount=$basalToDeliver")
-            deliverInternalBasal(basalToDeliver, deliveryTimestamp, if (_tempBasalRate.value != null) PumpDeliveryType.Tbr else PumpDeliveryType.Basal)
+            deliverInternalBasal(basalToDeliver, deliveryTimestamp, if (_tempBasalPercent.value != null) PumpDeliveryType.Tbr else PumpDeliveryType.Basal)
             lastBasalDeliveryTimestamp = deliveryTimestamp.ms
             persistState()
         }
@@ -272,8 +278,8 @@ PersistentLogger.log("SimBodyPumpDevice", "------------ deliverBolus: Calling Bo
         return true
     }
 
-    fun updateBasalRate(unitsPerHour: Double?) {
-        _tempBasalRate.value = unitsPerHour
+    fun updateTempBasalPercent(percent: Int?) {
+        _tempBasalPercent.value = percent
         persistState()
     }
 

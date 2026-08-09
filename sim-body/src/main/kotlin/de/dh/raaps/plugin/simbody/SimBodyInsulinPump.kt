@@ -110,14 +110,17 @@ class SimBodyInsulinPump(
     }.stateIn(scope, SharingStarted.Eagerly, PumpAlerts())
 
     override val basalStatus: StateFlow<BasalStatus> = combine(
-        device.tempBasalRate,
+        device.tempBasalPercent,
         device.activeProfile,
         combine(device.isBroken, device.hasHardwareError, device.isOccluded) { b, h, o -> b || h || o }
-    ) { tempRate, profile, isSuspended ->
+    ) { tempPercent, profile, isSuspended ->
         val normalRate = profile.basalBlocks.getAmountForMinute(Timestamp.now().minutesSinceMidnight())
         BasalStatus(
-            activeRate = if (isSuspended) 0.0 else (tempRate ?: normalRate),
-            isTempBasal = tempRate != null,
+            activeRate = if (isSuspended) 0.0 else {
+                if (tempPercent != null) normalRate * (tempPercent / 100.0) else normalRate
+            },
+            isTempBasal = tempPercent != null,
+            tempBasalPercent = tempPercent,
             isSuspended = isSuspended
         )
     }.stateIn(scope, SharingStarted.Eagerly, BasalStatus())
@@ -150,20 +153,20 @@ PersistentLogger.log("SimBodyInsulinPump", "------------ bolus: Calling SimBodyP
         // Simple simulator: bolus is instant
     }
 
-    override suspend fun tempBasal(absoluteUnits: Double, durationHours: Int) {
+    override suspend fun tempBasal(percent: Int, durationHours: Int) {
         if (!_isConnected.value) throw Exception("Pump not connected to App")
 
         if (device.isBroken.value || device.hasHardwareError.value) {
             throw Exception("Pump hardware error - cannot set temp basal")
         }
 
-        device.updateBasalRate(absoluteUnits)
+        device.updateTempBasalPercent(percent)
         refreshStatus()
     }
 
     override suspend fun cancelTempBasal() {
         if (!_isConnected.value) throw Exception("Pump not connected to App")
-        device.updateBasalRate(null) // Clear temp basal override
+        device.updateTempBasalPercent(null) // Clear temp basal override
         refreshStatus()
     }
 

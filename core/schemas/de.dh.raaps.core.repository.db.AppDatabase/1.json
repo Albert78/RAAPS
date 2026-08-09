@@ -2,7 +2,7 @@
   "formatVersion": 1,
   "database": {
     "version": 1,
-    "identityHash": "bfba5064f8864bc9843870bedbcbb14f",
+    "identityHash": "b63faf46bbd5f1268e14d417fba4b5d2",
     "entities": [
       {
         "tableName": "sensor_type",
@@ -525,7 +525,7 @@
       },
       {
         "tableName": "algorithm_insights",
-        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `timestamp` INTEGER NOT NULL, `bgOriginal` INTEGER NOT NULL, `bgFiltered` INTEGER NOT NULL, `deviationPerTick` REAL NOT NULL, `iobAtPeak` REAL NOT NULL, `cobAtPeak` REAL NOT NULL, `cobEquivalentOfBasalAtPeak` REAL NOT NULL, `predictedBgAtPeak` INTEGER NOT NULL, `targetBg` INTEGER NOT NULL, `isf` REAL NOT NULL, `cr` REAL NOT NULL, `reasoning` TEXT NOT NULL, `actionBolus` REAL, `actionTempBasalUnitsPerHour` REAL, `actionTempBasalDurationInHours` INTEGER)",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `timestamp` INTEGER NOT NULL, `bgOriginal` INTEGER NOT NULL, `bgFiltered` INTEGER NOT NULL, `deviationPerTick` REAL NOT NULL, `iobAtPeak` REAL NOT NULL, `cobAtPeak` REAL NOT NULL, `cobEquivalentOfBasalAtPeak` REAL NOT NULL, `predictedBgAtPeak` INTEGER NOT NULL, `targetBg` INTEGER NOT NULL, `isf` REAL NOT NULL, `cr` REAL NOT NULL, `reasoning` TEXT NOT NULL, `actionBolus` REAL, `actionTempBasalPercent` INTEGER, `actionTempBasalDurationInHours` INTEGER)",
         "fields": [
           {
             "fieldPath": "id",
@@ -611,9 +611,9 @@
             "affinity": "REAL"
           },
           {
-            "fieldPath": "actionTempBasalUnitsPerHour",
-            "columnName": "actionTempBasalUnitsPerHour",
-            "affinity": "REAL"
+            "fieldPath": "actionTempBasalPercent",
+            "columnName": "actionTempBasalPercent",
+            "affinity": "INTEGER"
           },
           {
             "fieldPath": "actionTempBasalDurationInHours",
@@ -631,7 +631,7 @@
     ],
     "setupQueries": [
       "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
-      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, 'bfba5064f8864bc9843870bedbcbb14f')"
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, 'b63faf46bbd5f1268e14d417fba4b5d2')"
     ]
   }
 }

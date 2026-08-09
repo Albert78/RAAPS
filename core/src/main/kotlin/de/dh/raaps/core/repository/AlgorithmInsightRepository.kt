@@ -38,7 +38,7 @@ class AlgorithmInsightRepository(private val appDatabase: AppDatabase) {
         cr = cr,
         reasoning = reasoning,
         actionBolus = actionBolus,
-        actionTempBasalUnitsPerHour = actionTempBasalUnitsPerHour,
+        actionTempBasalPercent = actionTempBasalPercent,
         actionTempBasalDurationInHours = actionTempBasalDurationInHours
     )
 
@@ -56,7 +56,7 @@ class AlgorithmInsightRepository(private val appDatabase: AppDatabase) {
         cr = cr,
         reasoning = reasoning,
         actionBolus = actionBolus,
-        actionTempBasalUnitsPerHour = actionTempBasalUnitsPerHour,
+        actionTempBasalPercent = actionTempBasalPercent,
         actionTempBasalDurationInHours = actionTempBasalDurationInHours
     )
 }

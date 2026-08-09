@@ -32,7 +32,7 @@ enum class PumpCoordinatorState {
  */
 sealed class PumpCommand {
     data class SetProfile(val profile: InsulinProfile) : PumpCommand()
-    data class SetTempBasal(val absoluteUnits: Double, val durationHours: Int) : PumpCommand()
+    data class SetTempBasal(val percent: Int, val durationHours: Int) : PumpCommand()
     object CancelTempBasal : PumpCommand()
     data class DeliverBolus(val amount: InsulinAmount) : PumpCommand()
     object CancelBolus : PumpCommand()
@@ -289,7 +289,7 @@ PersistentLogger.log("PumpCoordinator", "------------ executeOnPump: Calling Ins
                 pump.bolus(command.amount.iu)
             }
             is PumpCommand.SetTempBasal -> {
-                pump.tempBasal(command.absoluteUnits, command.durationHours)
+                pump.tempBasal(command.percent, command.durationHours)
             }
             is PumpCommand.SetProfile -> {
                 pump.setProfile(command.profile)

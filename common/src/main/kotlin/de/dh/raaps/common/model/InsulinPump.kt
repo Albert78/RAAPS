@@ -63,6 +63,12 @@ data class BasalStatus(
     val isTempBasal: Boolean = false,
 
     /**
+     * The relative amount of insulin in percent (%) compared to the profile basal rate.
+     * Only set if [isTempBasal] is true.
+     */
+    val tempBasalPercent: Int? = null,
+
+    /**
      * True if insulin delivery is globally suspended on the hardware level.
      * While suspended, [activeRate] is always 0.0. This state is distinct
      * from a 0% temporary basal rate as it usually requires a manual 'resume' action.
@@ -127,7 +133,7 @@ interface InsulinPump {
      *
      * @throws Exception if the command cannot be sent or the pump connection fails.
      */
-    suspend fun tempBasal(absoluteUnits: Double, durationHours: Int)
+    suspend fun tempBasal(percent: Int, durationHours: Int)
 
     /**
      * Cancels the currently active temporary basal rate.

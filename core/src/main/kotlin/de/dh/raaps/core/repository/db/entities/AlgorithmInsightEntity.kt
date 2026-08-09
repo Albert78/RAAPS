@@ -23,6 +23,6 @@ data class AlgorithmInsightEntity(
     val cr: Double,
     val reasoning: AlgorithmReasoning,
     val actionBolus: Double? = null,
-    val actionTempBasalUnitsPerHour: Double? = null,
+    val actionTempBasalPercent: Int? = null,
     val actionTempBasalDurationInHours: Int? = null
 )

@@ -150,10 +150,10 @@ fun InsightCard(insight: AlgorithmInsight) {
                 insight.actionBolus != null && insight.actionBolus!! > 0.0 -> {
                     stringResource(id = R.string.algorithm_insight_action_bolus, insight.actionBolus!!)
                 }
-                insight.actionTempBasalUnitsPerHour != null -> {
+                insight.actionTempBasalPercent != null -> {
                     stringResource(
                         id = R.string.algorithm_insight_action_temp_basal,
-                        insight.actionTempBasalUnitsPerHour!!,
+                        insight.actionTempBasalPercent!!,
                         insight.actionTempBasalDurationInHours ?: 0
                     )
                 }
