@@ -51,7 +51,6 @@
     <string name="no_impacts_yet">Noch keine Einflüsse aufgezeichnet. Simulation muss laufen, um Daten zu generieren.</string>
     <string name="label_meals">Mahlzeiten</string>
     <string name="label_insulin">Insulin</string>
-    <string name="label_time">Zeit: %1$s</string>
 
     <!-- Impact Rows -->
     <string name="impact_carbs">Kohlenhydrate</string>

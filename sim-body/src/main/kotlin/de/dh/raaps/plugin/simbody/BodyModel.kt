@@ -355,7 +355,6 @@ class BodyModel(
      */
     fun advanceToTick(currentTimestamp: Timestamp = Timestamp.now()) {
         val durationMs = currentTimestamp.ms - lastTickTimestamp.ms
-        if (durationMs <= 0) return
 
         val durationHours = durationMs / (1000.0 * 60 * 60)
 
@@ -377,14 +376,14 @@ class BodyModel(
         val newImpact = Impacts(carbImpact, insulinImpact, endogenousImpact, exerciseImpact, stressImpact, currentTimestamp)
         impactHistory.add(0, newImpact) // Add to top for history view
 
-        // Update BG state
-        val newMgDl = bloodGlucose + bgDelta
-        bloodGlucose = newMgDl.coerceIn(20.0, 500.0)
+        // Update BG state - bypass setter to avoid duplicate history entry
+        val newMgDl = (bloodGlucose + bgDelta).coerceIn(20.0, 500.0)
+        _bloodGlucose.value = newMgDl
 
         // Persist history entry
         persistHistory(
             timestamp = currentTimestamp,
-            bg = bloodGlucose,
+            bg = newMgDl,
             carbImpact = newImpact.carbImpact,
             insulinImpact = newImpact.insulinImpact,
             endogenousImpact = newImpact.endogenousImpact,
@@ -392,7 +391,9 @@ class BodyModel(
             stressImpact = newImpact.stressImpact
         )
 
-        lastTickTimestamp = currentTimestamp
+        // Bypass setter to avoid redundant persistState calls
+        _lastTickTimestamp.value = currentTimestamp
+        persistState()
         cleanup(currentTimestamp)
     }
 

@@ -105,11 +105,11 @@ private fun ImpactCard(impact: Impacts, timeFormat: SimpleDateFormat) {
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
                 Text(
-                    text = stringResource(R.string.label_time, timeFormat.format(Date(impact.currentTimestamp.ms))),
+                    text = timeFormat.format(Date(impact.currentTimestamp.ms)),
                     style = MaterialTheme.typography.labelLarge,
                     fontWeight = FontWeight.Bold
                 )
-                
+
                 val totalDelta = impact.carbImpact - impact.insulinImpact + impact.endogenousImpact - impact.exerciseImpact + impact.stressImpact
                 Text(
                     text = if (totalDelta >= 0) stringResource(R.string.unit_delta_bg_pos, totalDelta) else stringResource(R.string.unit_delta_bg_neg, -totalDelta),
@@ -118,9 +118,9 @@ private fun ImpactCard(impact: Impacts, timeFormat: SimpleDateFormat) {
                     color = if (totalDelta >= 0) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary
                 )
             }
-            
+
             HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
-            
+
             ImpactRow(stringResource(R.string.impact_carbs), stringResource(R.string.unit_delta_bg_pos, impact.carbImpact))
             ImpactRow(stringResource(R.string.impact_insulin), stringResource(R.string.unit_delta_bg_neg, impact.insulinImpact))
             ImpactRow(stringResource(R.string.impact_liver), stringResource(R.string.unit_delta_bg_pos, impact.endogenousImpact))
