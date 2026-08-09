@@ -70,8 +70,7 @@ data class InsulinEntity(
     val timestamp: Timestamp,
     val amount: Double,
     val category: InsulinCategory,
-    val origin: InsulinOrigin,
-    val provisional: Boolean
+    val origin: InsulinOrigin
 )
 
 @Entity(

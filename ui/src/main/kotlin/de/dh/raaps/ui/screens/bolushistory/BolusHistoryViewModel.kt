@@ -75,8 +75,7 @@ class BolusHistoryViewModel(
                 amount = amount,
                 insulinType = insulinType,
                 category = InsulinCategory.Bolus,
-                origin = InsulinOrigin.Manual,
-                provisional = false
+                origin = InsulinOrigin.Manual
             )
             treatmentRepository.addInsulinApplication(application)
         }

@@ -2,7 +2,7 @@
   "formatVersion": 1,
   "database": {
     "version": 1,
-    "identityHash": "73ba2244d1eeb3e98619f9ec5c55c41b",
+    "identityHash": "bfba5064f8864bc9843870bedbcbb14f",
     "entities": [
       {
         "tableName": "sensor_type",
@@ -423,7 +423,7 @@
       },
       {
         "tableName": "insulin",
-        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `insulin_type_id` TEXT NOT NULL, `timestamp` INTEGER NOT NULL, `amount` REAL NOT NULL, `category` TEXT NOT NULL, `origin` TEXT NOT NULL, `provisional` INTEGER NOT NULL, FOREIGN KEY(`insulin_type_id`) REFERENCES `insulin_type`(`id`) ON UPDATE NO ACTION ON DELETE RESTRICT )",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `insulin_type_id` TEXT NOT NULL, `timestamp` INTEGER NOT NULL, `amount` REAL NOT NULL, `category` TEXT NOT NULL, `origin` TEXT NOT NULL, FOREIGN KEY(`insulin_type_id`) REFERENCES `insulin_type`(`id`) ON UPDATE NO ACTION ON DELETE RESTRICT )",
         "fields": [
           {
             "fieldPath": "id",
@@ -459,12 +459,6 @@
             "fieldPath": "origin",
             "columnName": "origin",
             "affinity": "TEXT",
-            "notNull": true
-          },
-          {
-            "fieldPath": "provisional",
-            "columnName": "provisional",
-            "affinity": "INTEGER",
             "notNull": true
           }
         ],
@@ -637,7 +631,7 @@
     ],
     "setupQueries": [
       "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
-      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '73ba2244d1eeb3e98619f9ec5c55c41b')"
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, 'bfba5064f8864bc9843870bedbcbb14f')"
     ]
   }
 }

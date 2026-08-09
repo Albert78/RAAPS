@@ -266,8 +266,7 @@ class BodyModel(
                         amount = event.amount,
                         insulinType = if (event.detailId == defaultInsulinType.id) defaultInsulinType else defaultInsulinType,
                         category = InsulinCategory.Bolus,
-                        origin = event.insulinOrigin ?: InsulinOrigin.Pump,
-                        provisional = false
+                        origin = event.insulinOrigin ?: InsulinOrigin.Pump
                     )
                 }
                 insulinApplications.clear()
@@ -456,8 +455,7 @@ class BodyModel(
             amount = amount,
             insulinType = type ?: defaultInsulinType,
             category = InsulinCategory.Bolus,
-            origin = InsulinOrigin.Pump,
-            provisional = false
+            origin = InsulinOrigin.Pump
         )
         insulinApplications.add(entry)
 

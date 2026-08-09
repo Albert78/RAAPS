@@ -186,8 +186,6 @@ interface MetabolicEventsDao {
 
     @Query("DELETE FROM insulin WHERE origin = :origin AND timestamp >= :from AND timestamp <= :to")
     suspend fun deleteInsulinApplicationsInRange(from: Long, to: Long, origin: InsulinOrigin)
-    @Query("DELETE FROM insulin WHERE origin = :origin AND timestamp <= :to AND provisional = 1")
-    suspend fun deleteProvisionalInsulinApplicationsBefore(to: Long, origin: InsulinOrigin)
 
     @Query("DELETE FROM meal WHERE timestamp >= :from AND timestamp <= :to")
     suspend fun deleteMealsInRange(from: Long, to: Long)

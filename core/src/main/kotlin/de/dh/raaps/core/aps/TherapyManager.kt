@@ -3,10 +3,7 @@ package de.dh.raaps.core.aps
 import de.dh.raaps.AppPreferencesRepository
 import de.dh.raaps.common.model.ApsMode
 import de.dh.raaps.common.model.InsulinAmount
-import de.dh.raaps.common.model.InsulinApplication
-import de.dh.raaps.common.model.InsulinCategory
 import de.dh.raaps.common.model.InsulinHistory
-import de.dh.raaps.common.model.InsulinOrigin
 import de.dh.raaps.common.model.InsulinType
 import de.dh.raaps.common.model.data.BgBlock
 import de.dh.raaps.common.model.data.BgDelta
@@ -16,10 +13,10 @@ import de.dh.raaps.common.model.data.InsulinProfile
 import de.dh.raaps.common.model.data.Timestamp
 import de.dh.raaps.common.model.data.getAmountForMinute
 import de.dh.raaps.common.model.data.getBgForMinute
+import de.dh.raaps.common.util.PersistentLogger
 import de.dh.raaps.core.pump.PumpCommand
 import de.dh.raaps.core.pump.PumpManager
 import de.dh.raaps.core.repository.TherapyRepository
-import de.dh.raaps.common.util.PersistentLogger
 import de.dh.raaps.core.repository.TreatmentRepository
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.delay
@@ -30,10 +27,10 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
-import kotlin.time.Duration.Companion.seconds
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
+import kotlin.time.Duration.Companion.seconds
 
 /**
  * Recommendations for manual treatments, which are displayed as notifications to the user.
@@ -295,18 +292,6 @@ PersistentLogger.log("TherapyManager", "------------ issueBolus: Calling PumpMan
                         PumpCommand.DeliverBolus(amount),
                         isCancelableAPSCommand = true
                     )
-                    // Add to history manually for immediate feedback,
-                    // will be overwritten by pump history sync
-                    val insulinType = getPumpInsulinType()
-                    val application = InsulinApplication(
-                        timestamp = Timestamp.now(),
-                        amount = amount.iu,
-                        insulinType = insulinType,
-                        category = InsulinCategory.Bolus,
-                        origin = InsulinOrigin.Pump,
-                        provisional = true
-                    )
-                    treatmentRepository.addInsulinApplication(application)
                 }
             }
         }

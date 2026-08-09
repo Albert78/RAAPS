@@ -140,8 +140,7 @@ fun InsulinApplication.toEntity() = InsulinEntity(
     amount = this.amount,
     insulin_type_id = this.insulinType.id,
     category = this.category,
-    origin = this.origin,
-    provisional = this.provisional
+    origin = this.origin
 )
 
 fun InsulinEntity.toModel(type: InsulinType) = InsulinApplication(
@@ -150,8 +149,7 @@ fun InsulinEntity.toModel(type: InsulinType) = InsulinApplication(
     amount = this.amount,
     insulinType = type,
     category = this.category,
-    origin = this.origin,
-    provisional = this.provisional
+    origin = this.origin
 )
 
 // Deferred Bolus Converters

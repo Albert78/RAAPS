@@ -126,27 +126,20 @@ class TreatmentRepository(
                 amount = point.amount,
                 insulinType = insulinType,
                 category = point.category,
-                origin = InsulinOrigin.Pump,
-                provisional = false
+                origin = InsulinOrigin.Pump
             )
         }.filter { it.amount > INSULIN_EPSILON }
 
         // 1. Database sync
         metabolicEventsDao.deleteInsulinApplicationsInRange(from.ms, to.ms, InsulinOrigin.Pump)
 
-        // This deletes provisional entries before the real history entry
-        metabolicEventsDao.deleteProvisionalInsulinApplicationsBefore(to.ms, InsulinOrigin.Pump)
         newApplications.forEach { metabolicEventsDao.insertInsulinApplication(it.toEntity()) }
 
         // 2. In-memory sync
         if (to >= historyStart) {
             val effectiveFrom = if (from < historyStart) historyStart else from
             insulinHistory.removeIf {
-                it.origin == InsulinOrigin.Pump && (
-                        it.timestamp in effectiveFrom..to ||
-                        // This check avoids provisional "ghost" entries some ms before the real history entry
-                        it.provisional && it.timestamp < to.plusMinutes(1)
-                        )
+                it.origin == InsulinOrigin.Pump && it.timestamp in effectiveFrom..to
             }
             insulinHistory.addAll(newApplications.filter { it.timestamp >= historyStart })
             insulinHistory.sortBy { it.timestamp }

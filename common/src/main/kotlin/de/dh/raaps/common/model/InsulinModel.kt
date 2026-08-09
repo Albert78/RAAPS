@@ -93,8 +93,7 @@ data class InsulinApplication(
     val amount: Double,
     val insulinType: InsulinType,
     val category: InsulinCategory,
-    val origin: InsulinOrigin,
-    val provisional: Boolean = false
+    val origin: InsulinOrigin
 )
 
 /**
