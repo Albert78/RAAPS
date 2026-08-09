@@ -8,9 +8,9 @@ import de.dh.raaps.common.model.data.Tick
 import de.dh.raaps.common.model.data.TickHandler
 import de.dh.raaps.common.model.data.TickPriority
 import de.dh.raaps.common.model.data.TimeService
+import de.dh.raaps.common.util.PersistentLogger
 import de.dh.raaps.core.repository.AlgorithmInsightRepository
 import de.dh.raaps.core.repository.TreatmentRepository
-import de.dh.raaps.common.util.PersistentLogger
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
@@ -80,7 +80,7 @@ class Core(
     private val onClearTempBasal: (treatmentLock: TreatmentLock) -> Unit,
     private val onCarbsHint: (treatmentLock: TreatmentLock, Int) -> Unit,
     private val onClearRecommendations: (treatmentLock: TreatmentLock) -> Unit,
-    private val onWaitForAndResetInsulinJobs: suspend (treatmentLock: TreatmentLock) -> Unit,
+    private val onWaitForInsulinJobs: suspend (treatmentLock: TreatmentLock) -> Boolean,
     private val algorithmInsightRepository: AlgorithmInsightRepository,
     private val scope: CoroutineScope
 ) : TickHandler {
@@ -184,7 +184,10 @@ PersistentLogger.log("Core", "------------ calling registerTickHandler: priority
                 onClearRecommendations(treatmentLock)
                 atomic {
                     val alg = calculationAlgorithm
-                    onWaitForAndResetInsulinJobs(treatmentLock)
+                    if (!onWaitForInsulinJobs(treatmentLock)) {
+                        Log.i(TAG, "onTick: Recalculation skipped: Insulin jobs are still pending.")
+                        return@atomic
+                    }
 val time = SimpleDateFormat("HH:mm:ss", Locale.getDefault()).format(Date(System.currentTimeMillis()))
 PersistentLogger.log("Core", "------------ onTick: Calling ApsAlgorithmImpl#recalculate to create BOLUS at $time")
                     val issues = alg.recalculate(treatmentLock)
@@ -251,7 +254,7 @@ PersistentLogger.log("Core", "------------ onTick: Calling ApsAlgorithmImpl#reca
             onClearTempBasal: (treatmentLock: TreatmentLock) -> Unit,
             onCarbsHint: (treatmentLock: TreatmentLock, amountInGram: Int) -> Unit,
             onClearRecommendations: (treatmentLock: TreatmentLock) -> Unit,
-            onWaitForAndResetInsulinJobs: suspend (treatmentLock: TreatmentLock) -> Unit,
+            onWaitForInsulinJobs: suspend (treatmentLock: TreatmentLock) -> Boolean,
             algorithmInsightRepository: AlgorithmInsightRepository,
             scope: CoroutineScope
         ): Core {
@@ -272,7 +275,7 @@ PersistentLogger.log("Core", "------------ onTick: Calling ApsAlgorithmImpl#reca
                 onClearTempBasal = onClearTempBasal,
                 onCarbsHint = onCarbsHint,
                 onClearRecommendations = onClearRecommendations,
-                onWaitForAndResetInsulinJobs = onWaitForAndResetInsulinJobs,
+                onWaitForInsulinJobs = onWaitForInsulinJobs,
                 algorithmInsightRepository = algorithmInsightRepository,
                 scope = scope
             )

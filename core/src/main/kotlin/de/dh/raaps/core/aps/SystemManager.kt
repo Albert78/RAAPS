@@ -224,7 +224,7 @@ PersistentLogger.log("SystemManager", "------------ onDeliverBolus: Calling ther
             onClearTempBasal = { treatmentLock -> therapyManager.clearTempBasal(treatmentLock) },
             onCarbsHint = { treatmentLock, amountInGram -> therapyManager.recommendCarbs(treatmentLock, amountInGram) },
             onClearRecommendations = { treatmentLock -> therapyManager.clearRecommendations(treatmentLock) },
-            onWaitForAndResetInsulinJobs = { treatmentLock -> therapyManager.waitForAndResetInsulinJobs(treatmentLock) },
+            onWaitForInsulinJobs = { treatmentLock -> therapyManager.waitForInsulinJobs(treatmentLock) },
             algorithmInsightRepository = algorithmInsightRepository,
             scope = scope
         )

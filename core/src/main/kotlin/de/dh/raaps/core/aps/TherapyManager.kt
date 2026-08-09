@@ -394,19 +394,14 @@ PersistentLogger.log("TherapyManager", "------------ issueBolus: Calling PumpMan
         }
     }
 
-    suspend fun waitForAndResetInsulinJobs(treatmentLock: TreatmentLock) {
+    suspend fun waitForInsulinJobs(treatmentLock: TreatmentLock): Boolean {
         checkLock(treatmentLock)
         if (pumpManager.hasPendingJobs()) {
             pumpManager.wakeup()
             pumpManager.waitForIdle()
             delay(10.seconds)
         }
-        if (systemManager.apsMode.value == ApsMode.AutoCorrection) {
-            if (pumpManager.hasPendingJobs()) {
-                // This issue will now be handled by PumpManager
-                pumpManager.cancelJobs({ it.isCancelableAPSCommand })
-            }
-        }
+        return !pumpManager.hasPendingJobs()
     }
 
     /**
