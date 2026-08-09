@@ -451,9 +451,10 @@ PersistentLogger.log("ApsAlgorithmImpl", "------------ recalculate: Calling onDe
 
         val insulinEquivalentOfCob = convertToUnitsFromCarbs(carbs = cobAtPeak + cobEquivalentOfBasalAtPeak, cr = crValue)
 
-        val bgErrorCorrectionUnits = convertToUnitsFromBgDelta(bgErrorAtPeak, isfValue).coerceAtLeast(0.0)
+        val bgErrorCorrectionUnits = convertToUnitsFromBgDelta(bgErrorAtPeak, isfValue).
+            coerceAtLeast(0.0) * AGGRESSIVENESS_ERROR_CORRECTION
         val futureInsulinU = iobAtPeak + dueMealBolusAmount.iu + sumFutureDeferredBolus.iu
-        if (futureInsulinU > insulinEquivalentOfCob + bgErrorCorrectionUnits * AGGRESSIVENESS_ERROR_CORRECTION) {
+        if (futureInsulinU > insulinEquivalentOfCob + bgErrorCorrectionUnits) {
             // Meals and BG error are covered by IOB/planned boluses.
             // Return to normal basal rate and wait for insulin/carbs to act.
             if (dueDeferredBoluses.isEmpty())
@@ -463,7 +464,7 @@ PersistentLogger.log("ApsAlgorithmImpl", "------------ recalculate: Calling onDe
         } else {
             // Insufficient insulin: Calculate the delta needed to cover the gap.
             val neededInsulin = insulinEquivalentOfCob * AGGRESSIVENESS_CARBS_CORRECTION +
-                    bgErrorCorrectionUnits * AGGRESSIVENESS_ERROR_CORRECTION
+                    bgErrorCorrectionUnits
             val futureAvailableInsulin = iobAtPeak + dueMealBolusAmount.iu + sumFutureDeferredBolus.iu
             val bolusAmount = InsulinAmount(
                 // Scheduled insulin

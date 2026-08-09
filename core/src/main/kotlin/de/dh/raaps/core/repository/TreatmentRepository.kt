@@ -7,9 +7,9 @@ import de.dh.raaps.common.model.InsulinOrigin
 import de.dh.raaps.common.model.InsulinType
 import de.dh.raaps.common.model.MealEntry
 import de.dh.raaps.common.model.MealType
-import de.dh.raaps.core.aps.DeferredBolus
 import de.dh.raaps.common.model.data.Minutes
 import de.dh.raaps.common.model.data.Timestamp
+import de.dh.raaps.core.aps.DeferredBolus
 import de.dh.raaps.core.repository.db.AppDatabase
 import de.dh.raaps.core.repository.db.MetabolicEventsDao
 import de.dh.raaps.core.repository.db.toEntity
@@ -127,17 +127,26 @@ class TreatmentRepository(
                 origin = InsulinOrigin.Pump,
                 provisional = false
             )
-        }.filter { it.amount > INSULIN_EPSILON && it.timestamp >= from && it.timestamp <= to }
+        }.filter { it.amount > INSULIN_EPSILON }
 
         // 1. Database sync
         metabolicEventsDao.deleteInsulinApplicationsInRange(from.ms, to.ms, InsulinOrigin.Pump)
+
+        // This deletes provisional entries some ms before the real history entry
+        metabolicEventsDao.deleteProvisionalInsulinApplicationsBefore(to.ms, InsulinOrigin.Pump)
         newApplications.forEach { metabolicEventsDao.insertInsulinApplication(it.toEntity()) }
 
         // 2. In-memory sync
         if (to >= historyStart) {
             val effectiveFrom = if (from < historyStart) historyStart else from
             mutex.withLock {
-                insulinHistory.removeIf { it.origin == InsulinOrigin.Pump && it.timestamp >= effectiveFrom && it.timestamp <= to }
+                insulinHistory.removeIf {
+                    it.origin == InsulinOrigin.Pump && (
+                            it.timestamp in effectiveFrom..to ||
+                            // This check avoids provisional "ghost" entries some ms before the real history entry
+                            it.provisional && it.timestamp < to
+                            )
+                }
                 insulinHistory.addAll(newApplications.filter { it.timestamp >= historyStart })
                 insulinHistory.sortBy { it.timestamp }
             }

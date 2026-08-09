@@ -11,17 +11,17 @@ import androidx.room.RoomDatabase
 import androidx.room.TypeConverters
 import androidx.room.Update
 import de.dh.raaps.common.model.InsulinOrigin
+import de.dh.raaps.core.repository.db.entities.AlgorithmInsightEntity
 import de.dh.raaps.core.repository.db.entities.CurrentSettingsEntity
 import de.dh.raaps.core.repository.db.entities.CurrentTherapySettingsEntity
 import de.dh.raaps.core.repository.db.entities.DataProviderEntity
 import de.dh.raaps.core.repository.db.entities.DeferredBolusEntity
-import de.dh.raaps.core.repository.db.entities.AlgorithmInsightEntity
 import de.dh.raaps.core.repository.db.entities.GlucoseReadingEntity
 import de.dh.raaps.core.repository.db.entities.InsulinEntity
+import de.dh.raaps.core.repository.db.entities.InsulinProfileEntity
 import de.dh.raaps.core.repository.db.entities.InsulinTypeEntity
 import de.dh.raaps.core.repository.db.entities.MealEntity
 import de.dh.raaps.core.repository.db.entities.MealTypeEntity
-import de.dh.raaps.core.repository.db.entities.InsulinProfileEntity
 import de.dh.raaps.core.repository.db.entities.SensorTypeEntity
 import kotlinx.coroutines.flow.Flow
 import java.util.concurrent.Executors
@@ -186,6 +186,8 @@ interface MetabolicEventsDao {
 
     @Query("DELETE FROM insulin WHERE origin = :origin AND timestamp >= :from AND timestamp <= :to")
     suspend fun deleteInsulinApplicationsInRange(from: Long, to: Long, origin: InsulinOrigin)
+    @Query("DELETE FROM insulin WHERE origin = :origin AND timestamp <= :to AND provisional = 1")
+    suspend fun deleteProvisionalInsulinApplicationsBefore(to: Long, origin: InsulinOrigin)
 
     @Query("DELETE FROM meal WHERE timestamp >= :from AND timestamp <= :to")
     suspend fun deleteMealsInRange(from: Long, to: Long)
