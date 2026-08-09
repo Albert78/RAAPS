@@ -2,6 +2,7 @@ package de.dh.raaps.core.repository
 
 import de.dh.raaps.common.model.INSULIN_EPSILON
 import de.dh.raaps.common.model.InsulinApplication
+import de.dh.raaps.common.model.InsulinCategory
 import de.dh.raaps.common.model.InsulinHistory
 import de.dh.raaps.common.model.InsulinOrigin
 import de.dh.raaps.common.model.InsulinType
@@ -124,6 +125,7 @@ class TreatmentRepository(
                 timestamp = Timestamp(point.timestamp),
                 amount = point.amount,
                 insulinType = insulinType,
+                category = point.category,
                 origin = InsulinOrigin.Pump,
                 provisional = false
             )
@@ -132,7 +134,7 @@ class TreatmentRepository(
         // 1. Database sync
         metabolicEventsDao.deleteInsulinApplicationsInRange(from.ms, to.ms, InsulinOrigin.Pump)
 
-        // This deletes provisional entries some ms before the real history entry
+        // This deletes provisional entries before the real history entry
         metabolicEventsDao.deleteProvisionalInsulinApplicationsBefore(to.ms, InsulinOrigin.Pump)
         newApplications.forEach { metabolicEventsDao.insertInsulinApplication(it.toEntity()) }
 

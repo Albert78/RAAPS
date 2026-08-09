@@ -64,11 +64,15 @@ data class PumpStateEntity(
     val tempBasalExpiryMs: Long? = null
 )
 
+enum class PumpDeliveryType {
+    Bolus, Basal, Tbr
+}
+
 @Entity(tableName = "pump_history")
 data class PumpHistoryEntity(
     @PrimaryKey(autoGenerate = true)
     val id: Long = 0,
     val timestampMs: Long,
     val amount: Double,
-    val deliveryType: String // "BOLUS", "BASAL", "TBR"
+    val deliveryType: PumpDeliveryType
 )

@@ -5,6 +5,7 @@ import androidx.room.ForeignKey
 import androidx.room.Index
 import androidx.room.PrimaryKey
 import de.dh.raaps.common.model.InsulinOrigin
+import de.dh.raaps.common.model.InsulinCategory
 import de.dh.raaps.common.model.ID_UNDEFINED
 import de.dh.raaps.common.model.data.Minutes
 import de.dh.raaps.common.model.data.Timestamp
@@ -68,6 +69,7 @@ data class InsulinEntity(
     val insulin_type_id: String,
     val timestamp: Timestamp,
     val amount: Double,
+    val category: InsulinCategory,
     val origin: InsulinOrigin,
     val provisional: Boolean
 )

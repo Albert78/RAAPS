@@ -139,6 +139,7 @@ fun InsulinApplication.toEntity() = InsulinEntity(
     timestamp = this.timestamp,
     amount = this.amount,
     insulin_type_id = this.insulinType.id,
+    category = this.category,
     origin = this.origin,
     provisional = this.provisional
 )
@@ -148,6 +149,7 @@ fun InsulinEntity.toModel(type: InsulinType) = InsulinApplication(
     timestamp = this.timestamp,
     amount = this.amount,
     insulinType = type,
+    category = this.category,
     origin = this.origin,
     provisional = this.provisional
 )

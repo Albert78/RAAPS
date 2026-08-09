@@ -66,8 +66,22 @@ value class InsulinConcentration(val factor: Double) {
 }
 
 enum class InsulinOrigin {
+    /**
+     * An insulin dose delivered by the insulin pump.
+     */
     Pump,
+
+    /**
+     * An insulin dose administered manually using a pen or a syringe.
+     */
     Manual
+}
+
+/**
+ * Distinguishing between Basal and Bolus insulin.
+ */
+enum class InsulinCategory {
+    Basal, Bolus
 }
 
 /**
@@ -78,6 +92,7 @@ data class InsulinApplication(
     val timestamp: Timestamp,
     val amount: Double,
     val insulinType: InsulinType,
+    val category: InsulinCategory,
     val origin: InsulinOrigin,
     val provisional: Boolean = false
 )
@@ -88,6 +103,7 @@ data class InsulinApplication(
 interface InsulinHistoryPoint {
     val timestamp: Long
     val amount: Double
+    val category: InsulinCategory
 }
 
 /**

@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import de.dh.raaps.common.model.InsulinApplication
+import de.dh.raaps.common.model.InsulinCategory
 import de.dh.raaps.common.model.InsulinOrigin
 import de.dh.raaps.common.model.InsulinType
 import de.dh.raaps.common.model.MEAL_EDIT_THRESHOLD_HOURS
@@ -73,6 +74,7 @@ class BolusHistoryViewModel(
                 timestamp = Timestamp.now(),
                 amount = amount,
                 insulinType = insulinType,
+                category = InsulinCategory.Bolus,
                 origin = InsulinOrigin.Manual,
                 provisional = false
             )

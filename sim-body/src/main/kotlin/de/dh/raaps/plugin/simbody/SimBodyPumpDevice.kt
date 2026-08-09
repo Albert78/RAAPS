@@ -1,5 +1,6 @@
 package de.dh.raaps.plugin.simbody
 
+import de.dh.raaps.common.model.InsulinCategory
 import de.dh.raaps.common.model.InsulinHistoryPoint
 import de.dh.raaps.common.model.MS_PER_DAY
 import de.dh.raaps.common.model.data.InsulinProfile
@@ -7,6 +8,7 @@ import de.dh.raaps.common.model.data.Timestamp
 import de.dh.raaps.common.util.PersistentLogger
 import de.dh.raaps.common.model.data.getAmountForMinute
 import de.dh.raaps.plugin.simbody.repository.db.PumpDao
+import de.dh.raaps.plugin.simbody.repository.db.PumpDeliveryType
 import de.dh.raaps.plugin.simbody.repository.db.PumpHistoryEntity
 import de.dh.raaps.plugin.simbody.repository.db.PumpStateEntity
 import kotlinx.coroutines.CoroutineScope
@@ -82,7 +84,11 @@ class SimBodyPumpDevice(
                 val horizonMs = 3 * MS_PER_DAY
                 val threshold = System.currentTimeMillis() - horizonMs
                 val loadedHistory = dao.getHistorySince(threshold).map {
-                    HistoryEntry(it.timestampMs, it.amount)
+                    HistoryEntry(
+                        it.timestampMs,
+                        it.amount,
+                        if (it.deliveryType == PumpDeliveryType.Bolus) InsulinCategory.Bolus else InsulinCategory.Basal
+                    )
                 }
                 _history.clear()
                 _history.addAll(loadedHistory)
@@ -173,13 +179,13 @@ class SimBodyPumpDevice(
 
 val time = SimpleDateFormat("HH:mm:ss", Locale.getDefault()).format(Date(deliveryTimestamp.ms))
 PersistentLogger.log("SimBodyPumpDevice", "------------ advanceToTick: Calling deliverInternalBasal to create BOLUS at $time, amount=$basalToDeliver")
-            deliverInternalBasal(basalToDeliver, deliveryTimestamp, if (_tempBasalRate.value != null) "TBR" else "BASAL")
+            deliverInternalBasal(basalToDeliver, deliveryTimestamp, if (_tempBasalRate.value != null) PumpDeliveryType.Tbr else PumpDeliveryType.Basal)
             lastBasalDeliveryTimestamp = deliveryTimestamp.ms
             persistState()
         }
     }
 
-    private fun deliverInternalBasal(units: Double, timestamp: Timestamp, type: String = "BASAL") {
+    private fun deliverInternalBasal(units: Double, timestamp: Timestamp, type: PumpDeliveryType = PumpDeliveryType.Basal) {
         // Active delivery only works if hardware is OK
         if (isBroken.value || hasHardwareError.value || isOccluded.value || !isPrimed.value) {
             return
@@ -202,7 +208,8 @@ PersistentLogger.log("SimBodyPumpDevice", "------------ deliverInternalBasal: Ca
         // Record in history as an insulin delivery
         val entry = HistoryEntry(
             timestamp = timestamp.ms,
-            amount = units
+            amount = units,
+            category = InsulinCategory.Basal
         )
         _history.add(entry)
         
@@ -245,7 +252,8 @@ PersistentLogger.log("SimBodyPumpDevice", "------------ deliverBolus: Calling Bo
         // Record in history
         val entry = HistoryEntry(
             timestamp = System.currentTimeMillis(),
-            amount = units
+            amount = units,
+            category = InsulinCategory.Bolus
         )
         _history.add(entry)
 
@@ -254,7 +262,7 @@ PersistentLogger.log("SimBodyPumpDevice", "------------ deliverBolus: Calling Bo
                 dao.insertHistoryEntry(PumpHistoryEntity(
                     timestampMs = entry.timestamp,
                     amount = entry.amount,
-                    deliveryType = "BOLUS"
+                    deliveryType = PumpDeliveryType.Bolus
                 ))
             }
         }
@@ -306,6 +314,7 @@ PersistentLogger.log("SimBodyPumpDevice", "------------ deliverBolus: Calling Bo
 
     private data class HistoryEntry(
         override val timestamp: Long,
-        override val amount: Double
+        override val amount: Double,
+        override val category: InsulinCategory
     ) : InsulinHistoryPoint
 }

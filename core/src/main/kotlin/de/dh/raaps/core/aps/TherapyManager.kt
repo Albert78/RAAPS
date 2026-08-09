@@ -4,6 +4,7 @@ import de.dh.raaps.AppPreferencesRepository
 import de.dh.raaps.common.model.ApsMode
 import de.dh.raaps.common.model.InsulinAmount
 import de.dh.raaps.common.model.InsulinApplication
+import de.dh.raaps.common.model.InsulinCategory
 import de.dh.raaps.common.model.InsulinHistory
 import de.dh.raaps.common.model.InsulinOrigin
 import de.dh.raaps.common.model.InsulinType
@@ -301,6 +302,7 @@ PersistentLogger.log("TherapyManager", "------------ issueBolus: Calling PumpMan
                         timestamp = Timestamp.now(),
                         amount = amount.iu,
                         insulinType = insulinType,
+                        category = InsulinCategory.Bolus,
                         origin = InsulinOrigin.Pump,
                         provisional = true
                     )

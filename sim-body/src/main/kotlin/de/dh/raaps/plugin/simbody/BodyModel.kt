@@ -7,6 +7,7 @@ import de.dh.raaps.common.model.ID_MEAL_HIGH_FAT
 import de.dh.raaps.common.model.ID_MEAL_SLOW
 import de.dh.raaps.common.model.ID_MEAL_STANDARD
 import de.dh.raaps.common.model.InsulinApplication
+import de.dh.raaps.common.model.InsulinCategory
 import de.dh.raaps.common.model.InsulinOrigin
 import de.dh.raaps.common.model.InsulinType
 import de.dh.raaps.common.model.MealEntry
@@ -264,6 +265,7 @@ class BodyModel(
                         timestamp = Timestamp(event.timestampMs),
                         amount = event.amount,
                         insulinType = if (event.detailId == defaultInsulinType.id) defaultInsulinType else defaultInsulinType,
+                        category = InsulinCategory.Bolus,
                         origin = event.insulinOrigin ?: InsulinOrigin.Pump,
                         provisional = false
                     )
@@ -453,6 +455,7 @@ class BodyModel(
             timestamp = timestamp,
             amount = amount,
             insulinType = type ?: defaultInsulinType,
+            category = InsulinCategory.Bolus,
             origin = InsulinOrigin.Pump,
             provisional = false
         )
