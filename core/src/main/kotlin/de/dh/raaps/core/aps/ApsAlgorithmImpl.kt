@@ -349,7 +349,11 @@ PersistentLogger.log("ApsAlgorithmImpl", "------------ recalculate: Calling onDe
         )
         val cobEquivalentOfBasalAtPeak = run {
             var totalBasalCarbs = 0.0
-            for (m in insulinPeak.value.toInt() until (insulinPeak.value.toInt() + dia.value.toInt())) {
+            // We calculate the equivalent for a period relative to DIA.
+            // In a steady state, the IOB reservoir is approx. DIA / 1.6.
+            // For a 5h (300m) DIA, this is 180m (factor 0.6).
+            val windowMinutes = (dia.value.toInt() * 0.6).toInt()
+            for (m in insulinPeak.value.toInt() until (insulinPeak.value.toInt() + windowMinutes)) {
                 val t = now.plusMinutes(m)
                 val baseBasal = settings.insulinProfile.basalBlocks.getAmountForMinute(t.minutesSinceMidnight())
                 val baseCr = settings.insulinProfile.crBlocks.getAmountForMinute(t.minutesSinceMidnight())
@@ -409,6 +413,20 @@ PersistentLogger.log("ApsAlgorithmImpl", "------------ recalculate: Calling onDe
             ).copy(metrics = insight)
         }
 
+        // Calculation of recovery phase
+        val isRecoveringFromLow = currentBgMgDl < targetBg.mgdl - 10 &&
+                bgErrorAtPeak >= BgDelta(-10)
+
+        if (isRecoveringFromLow) {
+            // If current BG is still below target but the prediction at peak has already reached
+            // the target, we stop basal reduction early to avoid a rebound high caused by the
+            // insulin's action delay.
+
+            // Return to normal basal rate (clear temp basal) but do not calculate
+            // any correction boluses yet to avoid overshooting during recovery.
+            return@doRecalculate CalculationResult.normalSafetyBasal().copy(metrics = insight)
+        }
+
         // *****************************************************************************************
         // At this point, we're sure not to become (too) low, it's safe to have a normal basal rate and
         // to administer meal boluses
@@ -436,24 +454,25 @@ PersistentLogger.log("ApsAlgorithmImpl", "------------ recalculate: Calling onDe
         val bgErrorCorrectionUnits = convertToUnitsFromBgDelta(bgErrorAtPeak, isfValue).coerceAtLeast(0.0)
         val futureInsulinU = iobAtPeak + dueMealBolusAmount.iu + sumFutureDeferredBolus.iu
         if (futureInsulinU > insulinEquivalentOfCob + bgErrorCorrectionUnits * AGGRESSIVENESS_ERROR_CORRECTION) {
-            // The meal is already corrected or scheduled to be corrected.
-            // This which means we expect the blood sugar to rise;
-            // skip correction in that case and wait for carbs & deferred boluses to take effect
+            // Meals and BG error are covered by IOB/planned boluses.
+            // Return to normal basal rate and wait for insulin/carbs to act.
             if (dueDeferredBoluses.isEmpty())
                 CalculationResult.normalSafetyBasal().copy(metrics = insight)
             else
                 CalculationResult.mealOrCorrectionBolus(bolusAmount = dueMealBolusAmount, handledDeferredBoluses = dueDeferredBoluses).copy(metrics = insight)
         } else {
-            // Insufficient correction: Try restrained correction
-            val neededInsulin = insulinEquivalentOfCob * AGGRESSIVENESS_CARBS_CORRECTION + bgErrorCorrectionUnits * AGGRESSIVENESS_ERROR_CORRECTION
+            // Insufficient insulin: Calculate the delta needed to cover the gap.
+            val neededInsulin = insulinEquivalentOfCob * AGGRESSIVENESS_CARBS_CORRECTION +
+                    bgErrorCorrectionUnits * AGGRESSIVENESS_ERROR_CORRECTION
             val futureAvailableInsulin = iobAtPeak + dueMealBolusAmount.iu + sumFutureDeferredBolus.iu
+            val bolusAmount = InsulinAmount(
+                // Scheduled insulin
+                dueMealBolusAmount.iu +
+                        // "Uncorrected rest"
+                        (neededInsulin - futureAvailableInsulin).coerceAtLeast(0.0)
+            )
             CalculationResult.mealOrCorrectionBolus(
-                bolusAmount = InsulinAmount(
-                    // Scheduled insulin
-                    dueMealBolusAmount.iu +
-                    // "Uncorrected rest"
-                    (neededInsulin - futureAvailableInsulin).coerceAtLeast(0.0)
-                ),
+                bolusAmount = bolusAmount,
                 handledDeferredBoluses = dueDeferredBoluses
             ).copy(metrics = insight)
         }
