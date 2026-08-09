@@ -114,7 +114,7 @@ class TreatmentRepository(
      * Merges a range of insulin history from the pump.
      * Replaces all existing Pump entries in the given range.
      */
-    suspend fun mergeInsulinHistory(history: InsulinHistory, insulinType: InsulinType) {
+    suspend fun mergeInsulinHistory(history: InsulinHistory, insulinType: InsulinType) = mutex.withLock {
         val from = Timestamp(history.from)
         val to = Timestamp(history.to)
         val historyStart = historyStart()
@@ -139,17 +139,15 @@ class TreatmentRepository(
         // 2. In-memory sync
         if (to >= historyStart) {
             val effectiveFrom = if (from < historyStart) historyStart else from
-            mutex.withLock {
-                insulinHistory.removeIf {
-                    it.origin == InsulinOrigin.Pump && (
-                            it.timestamp in effectiveFrom..to ||
-                            // This check avoids provisional "ghost" entries some ms before the real history entry
-                            it.provisional && it.timestamp < to
-                            )
-                }
-                insulinHistory.addAll(newApplications.filter { it.timestamp >= historyStart })
-                insulinHistory.sortBy { it.timestamp }
+            insulinHistory.removeIf {
+                it.origin == InsulinOrigin.Pump && (
+                        it.timestamp in effectiveFrom..to ||
+                        // This check avoids provisional "ghost" entries some ms before the real history entry
+                        it.provisional && it.timestamp < to.plusMinutes(1)
+                        )
             }
+            insulinHistory.addAll(newApplications.filter { it.timestamp >= historyStart })
+            insulinHistory.sortBy { it.timestamp }
         }
     }
 

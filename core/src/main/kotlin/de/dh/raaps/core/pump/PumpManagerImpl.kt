@@ -106,6 +106,9 @@ PersistentLogger.log(TAG, "------------ issueCommand: Calling PumpCoordinator#is
 
     override fun setOnHistoryUpdateListener(listener: suspend (InsulinHistory) -> Unit) {
         historyUpdateListener = listener
+        scope.launch {
+            pumpCoordinator?.pump?.history?.value?.let { listener(it) }
+        }
     }
 
     override fun onWakeup(wakeupId: UInt?, intent: Intent?) {
