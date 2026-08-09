@@ -425,7 +425,7 @@ class BodyModel(
             carbGrams = carbs,
             mealType = type ?: defaultMealType
         )
-        meals.add(entry)
+        meals.add(0, entry)
 
         simBodyDao?.let { dao ->
             scope.launch {
@@ -458,7 +458,7 @@ class BodyModel(
             category = InsulinCategory.Bolus,
             origin = InsulinOrigin.Pump
         )
-        insulinApplications.add(entry)
+        insulinApplications.add(0, entry)
 
         simBodyDao?.let { dao ->
             scope.launch {

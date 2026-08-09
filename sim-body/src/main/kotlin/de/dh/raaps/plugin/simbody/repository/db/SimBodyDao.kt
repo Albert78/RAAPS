@@ -39,7 +39,7 @@ interface SimBodyDao {
     suspend fun updateSimulationState(state: SimulationStateEntity)
 
     // Simulation Events
-    @Query("SELECT * FROM sim_events WHERE timestampMs >= :sinceMs ORDER BY timestampMs ASC")
+    @Query("SELECT * FROM sim_events WHERE timestampMs >= :sinceMs ORDER BY timestampMs DESC")
     suspend fun getEventsSince(sinceMs: Long): List<SimEventEntity>
 
     @Insert
