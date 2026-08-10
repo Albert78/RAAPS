@@ -1,5 +1,6 @@
 package de.dh.raaps.core.pump
 
+import android.util.Log
 import de.dh.raaps.common.model.InsulinAmount
 import de.dh.raaps.common.model.InsulinPump
 import de.dh.raaps.common.model.data.InsulinProfile
@@ -244,7 +245,8 @@ class PumpCoordinator(
             try {
                 executeOnPump(job.command)
                 return true
-            } catch (_: Exception) {
+            } catch (e: Exception) {
+                Log.w(TAG, "Exception while executing pump job", e)
                 // TODO: Handle different types of exceptions: Connection/Operation/Runtime
                 // Connection -> retry
                 // Operation, Runtime -> User message, algorithm issue
@@ -293,6 +295,7 @@ class PumpCoordinator(
     }
 
     companion object {
+        val TAG = PumpCoordinator::class.simpleName
         private val HEARTBEAT_INTERVAL = Minutes(15)
         private const val RETRY_INTERVAL_MS: Long = 10_000
 
