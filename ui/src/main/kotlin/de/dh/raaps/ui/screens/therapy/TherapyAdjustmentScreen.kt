@@ -62,17 +62,17 @@ import de.dh.raaps.common.model.LOW_THRESHOLD_MIN
 import de.dh.raaps.common.model.TARGET_MAX
 import de.dh.raaps.common.model.TARGET_MIN
 import de.dh.raaps.common.model.data.BgValue
-import de.dh.raaps.common.ui.ConfigurableDisplayStrategy
-import de.dh.raaps.common.ui.ModuloSteppingStrategy
-import de.dh.raaps.common.ui.composables.EditableValueStepper
-import de.dh.raaps.common.ui.composables.StepperDefaults
-import de.dh.raaps.common.ui.composables.contentScrollIndicator
-import de.dh.raaps.common.ui.composables.screenTitle
-import de.dh.raaps.common.ui.theme.AppTheme
-import de.dh.raaps.common.ui.theme.NeutralGrey
-import de.dh.raaps.common.ui.theme.SoftBlue
-import de.dh.raaps.common.ui.theme.SoftRed
 import de.dh.raaps.ui.R
+import de.dh.raaps.ui.common.ConfigurableDisplayStrategy
+import de.dh.raaps.ui.common.ModuloSteppingStrategy
+import de.dh.raaps.ui.common.composables.EditableValueStepper
+import de.dh.raaps.ui.common.composables.StepperDefaults
+import de.dh.raaps.ui.common.composables.contentScrollIndicator
+import de.dh.raaps.ui.common.composables.screenTitle
+import de.dh.raaps.ui.common.theme.AppTheme
+import de.dh.raaps.ui.common.theme.NeutralGrey
+import de.dh.raaps.ui.common.theme.SoftBlue
+import de.dh.raaps.ui.common.theme.SoftRed
 import de.dh.raaps.ui.controls.profile.CurrentTherapyViewModel
 import de.dh.raaps.ui.controls.profile.TherapyAdjustment
 

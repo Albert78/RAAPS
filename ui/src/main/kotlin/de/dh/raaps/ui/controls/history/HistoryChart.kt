@@ -63,10 +63,10 @@ import de.dh.raaps.common.model.MS_PER_MINUTE
 import de.dh.raaps.common.model.data.BgReading
 import de.dh.raaps.common.model.data.BgSampleKind
 import de.dh.raaps.common.model.data.Timestamp
-import de.dh.raaps.common.ui.composables.BlueA200
-import de.dh.raaps.common.ui.composables.DeepOrangeA700
-import de.dh.raaps.common.ui.composables.RedA700
-import de.dh.raaps.common.ui.theme.AppTheme
+import de.dh.raaps.ui.common.composables.BlueA200
+import de.dh.raaps.ui.common.composables.DeepOrangeA700
+import de.dh.raaps.ui.common.composables.RedA700
+import de.dh.raaps.ui.common.theme.AppTheme
 import kotlinx.coroutines.launch
 import java.util.Calendar
 import java.util.Locale

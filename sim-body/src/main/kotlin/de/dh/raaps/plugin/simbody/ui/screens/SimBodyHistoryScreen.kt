@@ -29,16 +29,16 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import de.dh.raaps.common.R as CommonR
-import de.dh.raaps.common.ui.composables.NormalButton
-import de.dh.raaps.common.ui.theme.AppTheme
 import de.dh.raaps.common.model.InsulinAmount
 import de.dh.raaps.plugin.simbody.BodyModel
 import de.dh.raaps.plugin.simbody.DEFAULT_SIM_BODY_PROFILE
 import de.dh.raaps.plugin.simbody.R
+import de.dh.raaps.ui.common.composables.NormalButton
+import de.dh.raaps.ui.common.theme.AppTheme
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
+import de.dh.raaps.common.R as CommonR
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable

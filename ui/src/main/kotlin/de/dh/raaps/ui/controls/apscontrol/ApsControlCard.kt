@@ -7,7 +7,6 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.IntrinsicSize
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -42,21 +41,21 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import de.dh.raaps.common.model.InsulinAmount
 import de.dh.raaps.common.model.ApsMode
-import de.dh.raaps.common.model.data.Minutes
+import de.dh.raaps.common.model.InsulinAmount
 import de.dh.raaps.common.model.data.BgDelta
 import de.dh.raaps.common.model.data.BgValue
-import de.dh.raaps.common.ui.composables.AppColorBlue
-import de.dh.raaps.common.ui.composables.NormalButton
-import de.dh.raaps.common.ui.composables.PrimaryButton
-import de.dh.raaps.common.ui.theme.AppTheme
-import de.dh.raaps.common.ui.theme.SoftBlue
-import de.dh.raaps.common.ui.theme.SoftGreen
-import de.dh.raaps.common.ui.theme.SoftRed
-import de.dh.raaps.common.ui.ConfigurableDisplayStrategy
-import de.dh.raaps.common.ui.theme.NeutralGrey
+import de.dh.raaps.common.model.data.Minutes
 import de.dh.raaps.ui.R
+import de.dh.raaps.ui.common.ConfigurableDisplayStrategy
+import de.dh.raaps.ui.common.composables.AppColorBlue
+import de.dh.raaps.ui.common.composables.NormalButton
+import de.dh.raaps.ui.common.composables.PrimaryButton
+import de.dh.raaps.ui.common.theme.AppTheme
+import de.dh.raaps.ui.common.theme.NeutralGrey
+import de.dh.raaps.ui.common.theme.SoftBlue
+import de.dh.raaps.ui.common.theme.SoftGreen
+import de.dh.raaps.ui.common.theme.SoftRed
 import de.dh.raaps.ui.controls.profile.InsulinProfileUiState
 
 @Composable

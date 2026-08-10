@@ -27,8 +27,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import de.dh.raaps.common.model.data.GlucoseUnit
 import de.dh.raaps.common.model.data.InsulinProfile
-import de.dh.raaps.common.ui.composables.InsulinProfileSelectionDialog
 import de.dh.raaps.ui.R
+import de.dh.raaps.ui.common.composables.InsulinProfileSelectionDialog
 
 @Composable
 fun CurrentTherapyView(

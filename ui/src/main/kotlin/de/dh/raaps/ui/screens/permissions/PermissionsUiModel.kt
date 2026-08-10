@@ -1,9 +1,8 @@
 package de.dh.raaps.ui.screens.permissions
 
-import android.content.Context
 import android.content.res.Resources
 import de.dh.raaps.ui.R
-import de.dh.raaps.common.ui.DisplayTextUtils
+import de.dh.raaps.ui.common.DisplayTextUtils
 
 sealed class PermissionStatus {
     /**

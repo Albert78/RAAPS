@@ -3,12 +3,13 @@ package de.dh.raaps.ui.controls.apscontrol
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -19,13 +20,13 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import de.dh.raaps.common.model.ApsMode
-import de.dh.raaps.common.ui.composables.NormalTextButton
-import de.dh.raaps.common.ui.composables.PrimaryButton
-import de.dh.raaps.common.ui.theme.AppTheme
-import de.dh.raaps.common.ui.theme.SoftBlue
-import de.dh.raaps.common.ui.theme.SoftGreen
-import de.dh.raaps.common.ui.theme.SoftRed
 import de.dh.raaps.ui.R
+import de.dh.raaps.ui.common.composables.NormalTextButton
+import de.dh.raaps.ui.common.composables.PrimaryButton
+import de.dh.raaps.ui.common.theme.AppTheme
+import de.dh.raaps.ui.common.theme.SoftBlue
+import de.dh.raaps.ui.common.theme.SoftGreen
+import de.dh.raaps.ui.common.theme.SoftRed
 
 @Composable
 fun ApsModeSelectionDialog(
@@ -112,7 +113,7 @@ private fun ModeOption(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(horizontal = 24.dp),
-            colors = androidx.compose.material3.ButtonDefaults.buttonColors(
+            colors = ButtonDefaults.buttonColors(
                 containerColor = when (mode) {
                     ApsMode.AutoCorrection -> SoftGreen
                     ApsMode.BasalOnly -> SoftBlue
@@ -150,7 +151,7 @@ private fun ApsMode.toDescriptionString(): String = stringResource(id = when (th
 @Composable
 private fun PreviewApsModeSelectionContent() {
     AppTheme {
-        androidx.compose.material3.Surface(modifier = Modifier.padding(16.dp)) {
+        Surface(modifier = Modifier.padding(16.dp)) {
             ApsModeSelectionContent(
                 selectedMode = ApsMode.AutoCorrection,
                 availableModes = ApsMode.entries,

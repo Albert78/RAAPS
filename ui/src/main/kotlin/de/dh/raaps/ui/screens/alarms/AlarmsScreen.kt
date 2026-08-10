@@ -18,9 +18,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
-import de.dh.raaps.common.ui.composables.screenTitle
-import de.dh.raaps.common.ui.theme.AppTheme
 import de.dh.raaps.ui.R
+import de.dh.raaps.ui.common.composables.screenTitle
+import de.dh.raaps.ui.common.theme.AppTheme
 
 @Composable
 fun AlarmsScreen(

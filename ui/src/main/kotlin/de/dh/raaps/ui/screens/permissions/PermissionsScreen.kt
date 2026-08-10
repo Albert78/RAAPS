@@ -29,20 +29,19 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.nestedscroll.nestedScroll
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import de.dh.raaps.ui.R
-import de.dh.raaps.common.ui.composables.contentScrollIndicator
-import de.dh.raaps.common.ui.composables.screenTitle
-import de.dh.raaps.common.ui.icons.Icon_Check_No
-import de.dh.raaps.common.ui.icons.Icon_Check_Yes
-import de.dh.raaps.common.ui.icons.Icon_Info
-import de.dh.raaps.common.ui.icons.Icon_Screen_Back
-import de.dh.raaps.common.ui.theme.AppTheme
+import de.dh.raaps.ui.common.composables.contentScrollIndicator
+import de.dh.raaps.ui.common.composables.screenTitle
+import de.dh.raaps.ui.common.icons.Icon_Check_No
+import de.dh.raaps.ui.common.icons.Icon_Check_Yes
+import de.dh.raaps.ui.common.icons.Icon_Info
+import de.dh.raaps.ui.common.icons.Icon_Screen_Back
+import de.dh.raaps.ui.common.theme.AppTheme
 
 @Composable
 fun PermissionsScreen(

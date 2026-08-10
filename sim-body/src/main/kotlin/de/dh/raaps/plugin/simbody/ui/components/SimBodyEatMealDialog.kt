@@ -19,12 +19,12 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import de.dh.raaps.common.model.ID_MEAL_STANDARD
 import de.dh.raaps.common.model.MealType
-import de.dh.raaps.common.ui.DefaultSteppingStrategy
-import de.dh.raaps.common.ui.composables.EditableValueStepper
-import de.dh.raaps.common.ui.composables.NormalTextButton
-import de.dh.raaps.common.ui.theme.AppTheme
 import de.dh.raaps.plugin.simbody.BodyModel
 import de.dh.raaps.plugin.simbody.R
+import de.dh.raaps.ui.common.DefaultSteppingStrategy
+import de.dh.raaps.ui.common.composables.EditableValueStepper
+import de.dh.raaps.ui.common.composables.NormalTextButton
+import de.dh.raaps.ui.common.theme.AppTheme
 import de.dh.raaps.ui.controls.meal.FoodTypeSelector
 
 @Composable

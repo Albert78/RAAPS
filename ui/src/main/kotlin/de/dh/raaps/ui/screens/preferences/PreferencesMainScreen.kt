@@ -40,13 +40,13 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import de.dh.raaps.ui.R
-import de.dh.raaps.common.ui.ThemeMode
-import de.dh.raaps.common.ui.composables.DialogDismissButton
-import de.dh.raaps.common.ui.composables.DialogSurface
-import de.dh.raaps.common.ui.composables.DialogTitle
-import de.dh.raaps.common.ui.composables.screenTitle
-import de.dh.raaps.common.ui.icons.Icon_Screen_Back
-import de.dh.raaps.common.ui.theme.AppTheme
+import de.dh.raaps.ui.common.ThemeMode
+import de.dh.raaps.ui.common.composables.DialogDismissButton
+import de.dh.raaps.ui.common.composables.DialogSurface
+import de.dh.raaps.ui.common.composables.DialogTitle
+import de.dh.raaps.ui.common.composables.screenTitle
+import de.dh.raaps.ui.common.icons.Icon_Screen_Back
+import de.dh.raaps.ui.common.theme.AppTheme
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable

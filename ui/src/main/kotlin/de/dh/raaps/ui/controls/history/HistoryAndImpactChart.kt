@@ -71,11 +71,11 @@ import de.dh.raaps.common.model.data.BgSampleKind
 import de.dh.raaps.common.model.data.Minutes
 import de.dh.raaps.common.model.data.Timeline
 import de.dh.raaps.common.model.data.Timestamp
-import de.dh.raaps.common.ui.theme.AppTheme
-import de.dh.raaps.common.ui.theme.ColorBg
-import de.dh.raaps.common.ui.theme.ColorCarbs
-import de.dh.raaps.common.ui.theme.ColorInsulin
 import de.dh.raaps.ui.R
+import de.dh.raaps.ui.common.theme.AppTheme
+import de.dh.raaps.ui.common.theme.ColorBg
+import de.dh.raaps.ui.common.theme.ColorCarbs
+import de.dh.raaps.ui.common.theme.ColorInsulin
 import java.util.Calendar
 import java.util.Locale
 

@@ -303,8 +303,6 @@ class ApsAlgorithmImpl(
         val isfValue = therapyManager.getIsfFactor(now)
         val crValue = therapyManager.getCrFactor(now)
 
-        // First handle low and high, then fall back to normal, smooth correction
-
         // -------------------------------- Low handling -------------------------------------------
 
         // Get out of a current or impending low by suggesting carbs

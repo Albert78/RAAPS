@@ -46,16 +46,16 @@ import de.dh.raaps.common.model.MealEntry
 import de.dh.raaps.common.model.MealType
 import de.dh.raaps.common.model.data.Minutes
 import de.dh.raaps.common.model.data.Timestamp
-import de.dh.raaps.common.ui.composables.contentScrollIndicator
-import de.dh.raaps.common.ui.composables.screenTitle
-import de.dh.raaps.common.ui.icons.Icon_Menu_Meal_Types
-import de.dh.raaps.common.ui.theme.AppTheme
 import de.dh.raaps.ui.R
-import de.dh.raaps.common.R as CommonR
+import de.dh.raaps.ui.common.composables.contentScrollIndicator
+import de.dh.raaps.ui.common.composables.screenTitle
+import de.dh.raaps.ui.common.icons.Icon_Menu_Meal_Types
+import de.dh.raaps.ui.common.theme.AppTheme
 import java.time.Instant
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.time.format.FormatStyle
+import de.dh.raaps.common.R as CommonR
 
 @Composable
 fun MealsScreen(

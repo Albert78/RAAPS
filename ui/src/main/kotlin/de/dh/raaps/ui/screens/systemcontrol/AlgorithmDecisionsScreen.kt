@@ -31,11 +31,11 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import de.dh.raaps.common.ui.composables.screenTitle
-import de.dh.raaps.core.aps.AlgorithmInsight
 import de.dh.raaps.common.model.InsulinAmount
+import de.dh.raaps.core.aps.AlgorithmInsight
 import de.dh.raaps.core.aps.AlgorithmReasoning
 import de.dh.raaps.ui.R
+import de.dh.raaps.ui.common.composables.screenTitle
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale

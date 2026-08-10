@@ -41,13 +41,13 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
-import de.dh.raaps.common.R as CommonR
-import de.dh.raaps.common.ui.composables.NormalTextButton
-import de.dh.raaps.common.ui.composables.PrimaryButton
 import de.dh.raaps.plugin.simbody.BodyModel
 import de.dh.raaps.plugin.simbody.R
 import de.dh.raaps.plugin.simbody.ui.components.SimBodyEatMealDialog
+import de.dh.raaps.ui.common.composables.NormalTextButton
+import de.dh.raaps.ui.common.composables.PrimaryButton
 import java.util.Locale
+import de.dh.raaps.common.R as CommonR
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -66,7 +66,7 @@ fun SimBodyMainScreen(
     val isSensorEnabled by bodyModel.isSensorEnabledFlow.collectAsState()
     val sensorNoiseFactor by bodyModel.sensorNoiseFactorFlow.collectAsState()
     val isLoaded by bodyModel.isLoadedFlow.collectAsState()
-    
+
     var showEatMealDialog by remember { mutableStateOf(false) }
     var showNoiseFactorDialog by remember { mutableStateOf(false) }
 
@@ -114,9 +114,9 @@ fun SimBodyMainScreen(
                         text = stringResource(R.string.label_current_bg),
                         style = MaterialTheme.typography.bodyMedium
                     )
-                    
+
                     Spacer(modifier = Modifier.height(16.dp))
-                    
+
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.SpaceEvenly
@@ -169,7 +169,7 @@ fun SimBodyMainScreen(
                         fontWeight = FontWeight.Bold
                     )
                     Spacer(modifier = Modifier.height(8.dp))
-                    
+
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         verticalAlignment = Alignment.CenterVertically,
@@ -182,7 +182,7 @@ fun SimBodyMainScreen(
                             enabled = isLoaded
                         )
                     }
-                    
+
                     ParameterRow(
                         label = stringResource(R.string.label_noise_factor),
                         value = if (isLoaded) String.format(Locale.US, "%.2f", sensorNoiseFactor) else "---"

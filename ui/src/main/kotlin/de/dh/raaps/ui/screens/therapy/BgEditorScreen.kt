@@ -1,7 +1,7 @@
 package de.dh.raaps.ui.screens.therapy
 
-import androidx.activity.compose.BackHandler
 import android.content.res.Configuration
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -49,15 +49,15 @@ import de.dh.raaps.common.model.TARGET_MIN
 import de.dh.raaps.common.model.data.BgBlock
 import de.dh.raaps.common.model.data.BgValue
 import de.dh.raaps.common.model.data.Minutes
-import de.dh.raaps.common.ui.DefaultSteppingStrategy
-import de.dh.raaps.common.ui.composables.EditableValueStepper
-import de.dh.raaps.common.ui.composables.NormalTextButton
-import de.dh.raaps.common.ui.composables.StepperDefaults
-import de.dh.raaps.common.ui.composables.TimeHourSelector
-import de.dh.raaps.common.ui.composables.contentScrollIndicator
-import de.dh.raaps.common.ui.composables.screenTitle
 import de.dh.raaps.ui.R
-import de.dh.raaps.common.ui.theme.AppTheme
+import de.dh.raaps.ui.common.DefaultSteppingStrategy
+import de.dh.raaps.ui.common.composables.EditableValueStepper
+import de.dh.raaps.ui.common.composables.NormalTextButton
+import de.dh.raaps.ui.common.composables.StepperDefaults
+import de.dh.raaps.ui.common.composables.TimeHourSelector
+import de.dh.raaps.ui.common.composables.contentScrollIndicator
+import de.dh.raaps.ui.common.composables.screenTitle
+import de.dh.raaps.ui.common.theme.AppTheme
 import de.dh.raaps.ui.controls.profile.CurrentTherapyViewModel
 import de.dh.raaps.ui.screens.insulinprofile.InsertButton
 import kotlin.math.roundToInt

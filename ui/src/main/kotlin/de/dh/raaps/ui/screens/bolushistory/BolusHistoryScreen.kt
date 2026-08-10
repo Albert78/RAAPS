@@ -61,21 +61,21 @@ import de.dh.raaps.common.model.InsulinOrigin
 import de.dh.raaps.common.model.InsulinType
 import de.dh.raaps.common.model.data.Minutes
 import de.dh.raaps.common.model.data.Timestamp
-import de.dh.raaps.common.ui.DefaultSteppingStrategy
-import de.dh.raaps.common.ui.ValueDisplayStrategy
-import de.dh.raaps.common.ui.composables.EditableValueStepper
-import de.dh.raaps.common.ui.composables.NormalTextButton
-import de.dh.raaps.common.ui.composables.PrimaryButton
-import de.dh.raaps.common.ui.composables.contentScrollIndicator
-import de.dh.raaps.common.ui.composables.screenTitle
-import de.dh.raaps.common.ui.theme.AppTheme
 import de.dh.raaps.ui.R
-import de.dh.raaps.common.R as CommonR
+import de.dh.raaps.ui.common.DefaultSteppingStrategy
+import de.dh.raaps.ui.common.ValueDisplayStrategy
+import de.dh.raaps.ui.common.composables.EditableValueStepper
+import de.dh.raaps.ui.common.composables.NormalTextButton
+import de.dh.raaps.ui.common.composables.PrimaryButton
+import de.dh.raaps.ui.common.composables.contentScrollIndicator
+import de.dh.raaps.ui.common.composables.screenTitle
+import de.dh.raaps.ui.common.theme.AppTheme
 import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.util.Locale
+import de.dh.raaps.common.R as CommonR
 
 @Composable
 fun BolusHistoryScreen(

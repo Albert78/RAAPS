@@ -1,16 +1,13 @@
 package de.dh.raaps.ui.screens.meals
 
-import android.content.res.Configuration
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
@@ -22,7 +19,6 @@ import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Save
 import androidx.compose.material3.Card
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -43,10 +39,10 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import de.dh.raaps.common.model.CarbCurveComponentData
 import de.dh.raaps.common.model.data.Minutes
-import de.dh.raaps.common.ui.composables.PrimaryButton
-import de.dh.raaps.common.ui.composables.screenTitle
-import de.dh.raaps.common.ui.theme.AppTheme
 import de.dh.raaps.ui.R
+import de.dh.raaps.ui.common.composables.PrimaryButton
+import de.dh.raaps.ui.common.composables.screenTitle
+import de.dh.raaps.ui.common.theme.AppTheme
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable

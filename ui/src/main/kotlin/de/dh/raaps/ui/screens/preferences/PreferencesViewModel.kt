@@ -5,10 +5,10 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.CreationExtras
-import de.dh.raaps.common.ui.ThemeMode
-import de.dh.raaps.common.ui.setThemeMode
-import de.dh.raaps.common.ui.themeMode
 import de.dh.raaps.core.SystemRegistry
+import de.dh.raaps.ui.common.ThemeMode
+import de.dh.raaps.ui.common.setThemeMode
+import de.dh.raaps.ui.common.themeMode
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
