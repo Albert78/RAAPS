@@ -33,6 +33,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import de.dh.raaps.common.ui.composables.screenTitle
 import de.dh.raaps.core.aps.AlgorithmInsight
+import de.dh.raaps.common.model.InsulinAmount
 import de.dh.raaps.core.aps.AlgorithmReasoning
 import de.dh.raaps.ui.R
 import java.text.SimpleDateFormat
@@ -125,7 +126,7 @@ fun InsightCard(insight: AlgorithmInsight) {
             Row(modifier = Modifier.fillMaxWidth()) {
                 MetricItem(stringResource(id = R.string.algorithm_insight_label_bg), "${insight.bgFiltered.mgdl} (raw: ${insight.bgOriginal.mgdl})")
                 Spacer(modifier = Modifier.width(16.dp))
-                MetricItem(stringResource(id = R.string.algorithm_insight_label_iob), "%.2f U".format(insight.iobAtPeak))
+                MetricItem(stringResource(id = R.string.algorithm_insight_label_iob), "%.2f U".format(insight.iobAtPeak.iu))
                 Spacer(modifier = Modifier.width(16.dp))
                 MetricItem(stringResource(id = R.string.algorithm_insight_label_cob), "%.1f g".format(insight.cobAtPeak))
             }
@@ -145,8 +146,8 @@ fun InsightCard(insight: AlgorithmInsight) {
             }
 
             val actionText = when {
-                insight.actionBolus != null && insight.actionBolus!! > 0.0 -> {
-                    stringResource(id = R.string.algorithm_insight_action_bolus, insight.actionBolus!!)
+                insight.actionBolus != null && insight.actionBolus!! > InsulinAmount.ZERO -> {
+                    stringResource(id = R.string.algorithm_insight_action_bolus, insight.actionBolus!!.iu)
                 }
                 insight.actionTempBasalPercent != null -> {
                     stringResource(

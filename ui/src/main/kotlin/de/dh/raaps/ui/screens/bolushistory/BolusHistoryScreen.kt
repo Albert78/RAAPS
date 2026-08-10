@@ -54,6 +54,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import de.dh.raaps.common.model.BOLUS_MAX
 import de.dh.raaps.common.model.BOLUS_MIN
+import de.dh.raaps.common.model.InsulinAmount
 import de.dh.raaps.common.model.InsulinApplication
 import de.dh.raaps.common.model.InsulinCategory
 import de.dh.raaps.common.model.InsulinOrigin
@@ -96,8 +97,8 @@ fun BolusHistoryScreen(
 @Composable
 fun BolusHistoryContent(
     uiState: BolusHistoryUiState,
-    onAddManualBolus: (Double, InsulinType) -> Unit,
-    onUpdateManualBolus: (InsulinApplication, Double, InsulinType) -> Unit,
+    onAddManualBolus: (InsulinAmount, InsulinType) -> Unit,
+    onUpdateManualBolus: (InsulinApplication, InsulinAmount, InsulinType) -> Unit,
     onDeleteBolus: (InsulinApplication) -> Unit,
     onNavigateUp: () -> Unit,
 ) {
@@ -251,7 +252,7 @@ fun BolusItem(
     ListItem(
         modifier = if (isEditable) Modifier.clickable(onClick = onEditClick) else Modifier,
         headlineContent = {
-            Text(text = stringResource(id = R.string.insulin_unit_label_format, entry.amount))
+            Text(text = stringResource(id = R.string.insulin_unit_label_format, entry.amount.iu))
         },
         supportingContent = {
             Row {
@@ -300,12 +301,12 @@ fun BolusItem(
 fun AddManualBolusDialog(
     availableInsulinTypes: List<InsulinType>,
     defaultInsulinType: InsulinType?,
-    initialAmount: Double = 0.0,
+    initialAmount: InsulinAmount = InsulinAmount.ZERO,
     isEditMode: Boolean = false,
     onDismiss: () -> Unit,
-    onConfirm: (Double, InsulinType) -> Unit
+    onConfirm: (InsulinAmount, InsulinType) -> Unit
 ) {
-    var amount by remember { mutableDoubleStateOf(initialAmount) }
+    var amount by remember { mutableDoubleStateOf(initialAmount.iu) }
     var selectedInsulinType by remember { mutableStateOf(defaultInsulinType ?: availableInsulinTypes.firstOrNull()) }
     var expanded by remember { mutableStateOf(false) }
 
@@ -382,7 +383,7 @@ fun AddManualBolusDialog(
                 onClick = {
                     val type = selectedInsulinType
                     if (amount > 0 && type != null) {
-                        onConfirm(amount, type)
+                        onConfirm(InsulinAmount(amount), type)
                     }
                 },
                 enabled = amount > 0 && selectedInsulinType != null
@@ -418,9 +419,9 @@ fun BolusHistoryPreview() {
 fun BolusHistoryWithDataPreview() {
     val sampleInsulinType = InsulinType(name = "Fiasp", peak = Minutes(50.toShort()), dia = Minutes(300.toShort()))
     val sampleEntries = listOf(
-        InsulinApplication(id = 1, timestamp = Timestamp.now().minusHours(8), amount = 5.0, insulinType = sampleInsulinType, category = InsulinCategory.Bolus, origin = InsulinOrigin.Pump),
-        InsulinApplication(id = 2, timestamp = Timestamp.now().minusHours(5), amount = 2.5, insulinType = sampleInsulinType, category = InsulinCategory.Bolus, origin = InsulinOrigin.Manual),
-        InsulinApplication(id = 3, timestamp = Timestamp.now().minusHours(1), amount = 3.0, insulinType = sampleInsulinType, category = InsulinCategory.Bolus, origin = InsulinOrigin.Manual)
+        InsulinApplication(id = 1, timestamp = Timestamp.now().minusHours(8), amount = InsulinAmount(5.0), insulinType = sampleInsulinType, category = InsulinCategory.Bolus, origin = InsulinOrigin.Pump),
+        InsulinApplication(id = 2, timestamp = Timestamp.now().minusHours(5), amount = InsulinAmount(2.5), insulinType = sampleInsulinType, category = InsulinCategory.Bolus, origin = InsulinOrigin.Manual),
+        InsulinApplication(id = 3, timestamp = Timestamp.now().minusHours(1), amount = InsulinAmount(3.0), insulinType = sampleInsulinType, category = InsulinCategory.Bolus, origin = InsulinOrigin.Manual)
     )
 
     AppTheme {

@@ -128,16 +128,16 @@ class BodyModel(
     val liverGlucoseOutputGph: Double
         get() = activeProfile.liverGlucoseOutputBlocks.getAmountForMinute(Timestamp.now().minutesSinceMidnight())
 
-    val iob: Double
+    val iob: InsulinAmount
         get() {
             val now = Timestamp.now()
-            return insulinApplications.sumOf { bolus ->
+            return insulinApplications.fold(InsulinAmount.ZERO) { acc, bolus ->
                 val curve = InsulinCurve(
                     diaMinutes = bolus.insulinType.dia.value.toDouble(),
                     peakMinutes = bolus.insulinType.peak.value.toDouble()
                 )
                 val timeSinceBolus = (now.ms - bolus.timestamp.ms) / 60000.0
-                bolus.amount.iu * (1.0 - curve.spentFraction(timeSinceBolus)).coerceAtLeast(0.0)
+                acc + bolus.amount * (1.0 - curve.spentFraction(timeSinceBolus)).coerceAtLeast(0.0)
             }
         }
 
@@ -250,7 +250,7 @@ class BodyModel(
                 val loadedMeals = events.filter { it.type == "MEAL" }.map { event ->
                     MealEntry(
                         timestamp = Timestamp(event.timestampMs),
-                        carbGrams = event.amount,
+                        carbGrams = event.amount.iu,
                         mealType = if (event.detailId == defaultMealType.id) defaultMealType else defaultMealType
                     )
                 }
@@ -430,7 +430,7 @@ class BodyModel(
                     SimEventEntity(
                         type = "MEAL",
                         timestampMs = entry.timestamp.ms,
-                        amount = entry.carbGrams,
+                        amount = InsulinAmount(entry.carbGrams),
                         detailId = entry.mealType.id
                     )
                 )
@@ -446,7 +446,7 @@ class BodyModel(
         type: InsulinType? = null,
         timestamp: Timestamp = Timestamp.now()
     ) {
-        if (amount.iu < SimBodyInsulinPump.SIM_PUMP_MIN_BOLUS_INCREMENT.iu) return
+        if (amount < SimBodyInsulinPump.SIM_PUMP_MIN_BOLUS_INCREMENT) return
 
         val entry = InsulinApplication(
             timestamp = timestamp,
@@ -463,7 +463,7 @@ class BodyModel(
                     SimEventEntity(
                         type = "BOLUS",
                         timestampMs = entry.timestamp.ms,
-                        amount = entry.amount.iu,
+                        amount = entry.amount,
                         detailId = entry.insulinType.id,
                         insulinOrigin = entry.origin
                     )
@@ -473,7 +473,7 @@ class BodyModel(
     }
 
     private fun calculateInsulinImpact(start: Timestamp, end: Timestamp): Double {
-        var totalUnitsAbsorbed = 0.0
+        var totalUnitsAbsorbed = InsulinAmount.ZERO
 
         for (bolus in insulinApplications) {
             val curve = InsulinCurve(
@@ -487,7 +487,7 @@ class BodyModel(
             val fractionStart = curve.spentFraction(timeStart)
             val fractionEnd = curve.spentFraction(timeEnd)
 
-            totalUnitsAbsorbed += bolus.amount.iu * (fractionEnd - fractionStart)
+            totalUnitsAbsorbed += bolus.amount * (fractionEnd - fractionStart)
         }
 
         // Apply resistance factors
@@ -495,7 +495,7 @@ class BodyModel(
         // Exercise increases insulin sensitivity
         val currentSensitivity = 1.0 + (exerciseIntensity * 0.5)
 
-        return (totalUnitsAbsorbed * isf) * (currentSensitivity / currentResistance)
+        return (totalUnitsAbsorbed.iu * isf) * (currentSensitivity / currentResistance)
     }
 
     private fun calculateCarbImpact(start: Timestamp, end: Timestamp): Double {

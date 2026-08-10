@@ -191,7 +191,7 @@ class Core(
                                     bgOriginal = BgValue.INVALID,
                                     bgFiltered = BgValue.INVALID,
                                     deviationPerTick = BgDelta.fromMgDl(0),
-                                    iobAtPeak = 0.0,
+                                    iobAtPeak = InsulinAmount.ZERO,
                                     cobAtPeak = 0.0,
                                     predictedBgAtPeak = BgValue.INVALID,
                                     targetBg = BgValue.INVALID,

@@ -40,6 +40,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import de.dh.raaps.common.model.InsulinAmount
 import de.dh.raaps.common.model.data.BgDelta
 import de.dh.raaps.common.model.data.BgValue
 import de.dh.raaps.common.model.data.Timestamp
@@ -58,7 +59,7 @@ import kotlinx.coroutines.delay
 @Composable
 fun CurrentStateView(
     currentBgUiState: CurrentBgUiState,
-    iob: Double,
+    iob: InsulinAmount,
     cob: Double,
     modifier: Modifier = Modifier,
     carbsVisible: Boolean = true,
@@ -115,7 +116,7 @@ fun CurrentStateView(
     val cobFormat = stringResource(R.string.cob_format)
     val iobFormat = stringResource(R.string.iob_format)
     val cobText = remember(cob, cobFormat) { cobFormat.format(cob) }
-    val iobText = remember(iob, iobFormat) { iobFormat.format(iob) }
+    val iobText = remember(iob, iobFormat) { iobFormat.format(iob.iu) }
 
     Surface(
         modifier = modifier,
@@ -323,7 +324,7 @@ fun CurrentStateViewPreview() {
             Box(Modifier.padding(16.dp)) {
                 CurrentStateView(
                     currentBgUiState = state,
-                    iob = 1.57,
+                    iob = InsulinAmount(1.57),
                     cob = 12.0
                 )
             }

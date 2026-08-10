@@ -54,6 +54,7 @@ import com.patrykandpatrick.vico.compose.common.data.ExtraStore
 import de.dh.raaps.common.model.CarbCurveComponentData
 import de.dh.raaps.common.model.DEFAULT_DIA_MINUTES
 import de.dh.raaps.common.model.DEFAULT_PEAK_MINUTES
+import de.dh.raaps.common.model.InsulinAmount
 import de.dh.raaps.common.model.InsulinApplication
 import de.dh.raaps.common.model.InsulinCategory
 import de.dh.raaps.common.model.InsulinOrigin
@@ -144,7 +145,7 @@ data class HistoryAndImpactDiagramData(
                     val xStart = (app.timestamp.ms - baseTimestamp).toDouble() / MS_PER_MINUTE
                     val timeSinceApp = x - xStart
                     // normalizedActivity * interval gives activity in the specified time interval
-                    totalInsulinActivity += app.amount * insulinCurve.normalizedActivity(timeSinceApp) * interval
+                    totalInsulinActivity += app.amount.iu * insulinCurve.normalizedActivity(timeSinceApp) * interval
                 }
                 insulinY.add(totalInsulinActivity)
 
@@ -579,9 +580,9 @@ fun createSampleImpactDiagramData(): HistoryAndImpactDiagramData {
     )
 
     val insulinApplications = listOf(
-        InsulinApplication(0, Timestamp(baseTs + 30 * MS_PER_MINUTE), 5.0, InsulinType("1", "Rapid", Minutes(60.toShort()), Minutes(300.toShort())), InsulinCategory.Bolus, InsulinOrigin.Manual),
-        InsulinApplication(0, Timestamp(baseTs + 280 * MS_PER_MINUTE), 8.0, InsulinType("1", "Rapid", Minutes(60.toShort()), Minutes(300.toShort())), InsulinCategory.Bolus, InsulinOrigin.Manual),
-        InsulinApplication(0, Timestamp(baseTs + 450 * MS_PER_MINUTE), 4.0, InsulinType("1", "Rapid", Minutes(60.toShort()), Minutes(300.toShort())), InsulinCategory.Bolus, InsulinOrigin.Manual)
+        InsulinApplication(0, Timestamp(baseTs + 30 * MS_PER_MINUTE), InsulinAmount(5.0), InsulinType("1", "Rapid", Minutes(60.toShort()), Minutes(300.toShort())), InsulinCategory.Bolus, InsulinOrigin.Manual),
+        InsulinApplication(0, Timestamp(baseTs + 280 * MS_PER_MINUTE), InsulinAmount(8.0), InsulinType("1", "Rapid", Minutes(60.toShort()), Minutes(300.toShort())), InsulinCategory.Bolus, InsulinOrigin.Manual),
+        InsulinApplication(0, Timestamp(baseTs + 450 * MS_PER_MINUTE), InsulinAmount(4.0), InsulinType("1", "Rapid", Minutes(60.toShort()), Minutes(300.toShort())), InsulinCategory.Bolus, InsulinOrigin.Manual)
     )
 
     val meals = listOf(

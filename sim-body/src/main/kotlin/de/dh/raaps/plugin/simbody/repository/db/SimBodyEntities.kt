@@ -2,6 +2,7 @@ package de.dh.raaps.plugin.simbody.repository.db
 
 import androidx.room.Entity
 import androidx.room.PrimaryKey
+import de.dh.raaps.common.model.InsulinAmount
 import de.dh.raaps.common.model.InsulinOrigin
 
 @Entity(tableName = "sim_history")
@@ -34,7 +35,7 @@ data class SimEventEntity(
     val id: Long = 0,
     val type: String, // "MEAL" or "BOLUS"
     val timestampMs: Long,
-    val amount: Double,
+    val amount: InsulinAmount,
     val detailId: String? = null, // MealType ID or InsulinType ID
     val insulinOrigin: InsulinOrigin? = null
 )
@@ -73,6 +74,6 @@ data class PumpHistoryEntity(
     @PrimaryKey(autoGenerate = true)
     val id: Long = 0,
     val timestampMs: Long,
-    val amount: Double,
+    val amount: InsulinAmount,
     val deliveryType: PumpDeliveryType
 )

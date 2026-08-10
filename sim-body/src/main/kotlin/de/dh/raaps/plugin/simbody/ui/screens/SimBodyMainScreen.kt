@@ -121,7 +121,7 @@ fun SimBodyMainScreen(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.SpaceEvenly
                     ) {
-                        StatusItem(stringResource(R.string.label_iob), stringResource(R.string.unit_u, bodyModel.iob))
+                        StatusItem(stringResource(R.string.label_iob), stringResource(R.string.unit_u, bodyModel.iob.iu))
                         StatusItem(stringResource(R.string.label_cob), stringResource(R.string.unit_g, bodyModel.cob))
                     }
                 }

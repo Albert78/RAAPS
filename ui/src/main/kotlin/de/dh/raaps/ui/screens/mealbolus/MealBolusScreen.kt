@@ -65,6 +65,7 @@ import de.dh.raaps.common.model.BOLUS_MIN
 import de.dh.raaps.common.model.CARBS_KE_MAX
 import de.dh.raaps.common.model.CARBS_KE_MIN
 import de.dh.raaps.common.model.CarbCurveComponentData
+import de.dh.raaps.common.model.InsulinAmount
 import de.dh.raaps.common.model.MealType
 import de.dh.raaps.common.model.data.BgDelta
 import de.dh.raaps.common.model.data.BgValue
@@ -115,7 +116,7 @@ fun MealBolusScreen(
 fun MealBolusContent(
     uiState: MealBolusUiState,
     currentBgValue: CurrentBgData?,
-    iob: Double,
+    iob: InsulinAmount,
     cob: Double,
     onNavigateUp: () -> Unit,
     onCarbsChange: (Double) -> Unit,
@@ -236,7 +237,7 @@ fun MealBolusContent(
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                     Text(
-                        text = "Aktives Insulin: " + stringResource(R.string.iob_format).format(iob),
+                        text = "Aktives Insulin: " + stringResource(R.string.iob_format).format(iob.iu),
                         style = MaterialTheme.typography.bodyLarge,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -346,7 +347,7 @@ fun MealBolusContent(
 
                                 CalculationDetailsSelector(uiState = uiState)
                                 EditableValueStepper(
-                                    currentValue = uiState.manualBolus,
+                                    currentValue = uiState.manualBolus.iu,
                                     onValueChange = onManualBolusChange,
                                     minValue = BOLUS_MIN,
                                     maxValue = BOLUS_MAX,
@@ -365,7 +366,7 @@ fun MealBolusContent(
                 }
 
                 // Bottom Button
-                val isInputValid = uiState.carbsKe > 0.0 || uiState.manualBolus > 0.0
+                val isInputValid = uiState.carbsKe > 0.0 || uiState.manualBolus > InsulinAmount.ZERO
                 PrimaryButton(
                     onClick = onSubmit,
                     modifier = Modifier
@@ -374,7 +375,7 @@ fun MealBolusContent(
                     enabled = !uiState.isSubmitting && isInputValid
                 ) {
                     Text(
-                        if (uiState.manualBolus > 0.0) {
+                        if (uiState.manualBolus > InsulinAmount.ZERO) {
                             stringResource(R.string.meal_bolus_administer_button)
                         } else {
                             stringResource(R.string.meal_edit_save_button)
@@ -414,7 +415,7 @@ fun CalculationDetailsSelector(
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     Text(
-                        text = stringResource(R.string.meal_bolus_calc_result_label, uiState.proposedBolus),
+                        text = stringResource(R.string.meal_bolus_calc_result_label, uiState.proposedBolus.iu),
                         style = MaterialTheme.typography.bodyMedium,
                         fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.primary
@@ -458,24 +459,24 @@ fun CalculationDetailsSelector(
 
                 Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
                     Text(
-                        text = stringResource(R.string.meal_bolus_calc_meal_part, uiState.mealPart),
+                        text = stringResource(R.string.meal_bolus_calc_meal_part, uiState.mealPart.iu),
                         style = MaterialTheme.typography.bodySmall
                     )
                     Text(
-                        text = stringResource(R.string.meal_bolus_calc_correction_part, uiState.correctionPart),
+                        text = stringResource(R.string.meal_bolus_calc_correction_part, uiState.correctionPart.iu),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
-                    if (uiState.iobPart > 0) {
+                    if (uiState.iobPart > InsulinAmount.ZERO) {
                         Text(
-                            text = stringResource(R.string.meal_bolus_calc_iob_part, uiState.iobPart),
+                            text = stringResource(R.string.meal_bolus_calc_iob_part, uiState.iobPart.iu),
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.error
                         )
                     }
-                    if (uiState.cobPart > 0) {
+                    if (uiState.cobPart > InsulinAmount.ZERO) {
                         Text(
-                            text = stringResource(R.string.meal_bolus_calc_cob_part, uiState.cobPart),
+                            text = stringResource(R.string.meal_bolus_calc_cob_part, uiState.cobPart.iu),
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.primary
                         )
@@ -486,7 +487,7 @@ fun CalculationDetailsSelector(
                 HorizontalDivider(color = MaterialTheme.colorScheme.secondary.copy(alpha = 0.2f))
                 Spacer(Modifier.height(4.dp))
                 Text(
-                    text = stringResource(R.string.meal_bolus_calc_result_label, uiState.proposedBolus),
+                    text = stringResource(R.string.meal_bolus_calc_result_label, uiState.proposedBolus.iu),
                     style = MaterialTheme.typography.bodyMedium,
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.primary,
@@ -516,10 +517,12 @@ private fun MealBolusPreview() {
                 targetBg = 100,
                 isf = 50,
                 cr = 10.0,
-                mealPart = 4.5,
-                correctionPart = 0.8,
-                proposedBolus = 5.3,
-                manualBolus = 5.3,
+                iob = InsulinAmount.ZERO,
+                cob = 0.0,
+                mealPart = InsulinAmount(4.5),
+                correctionPart = InsulinAmount(0.8),
+                proposedBolus = InsulinAmount(5.3),
+                manualBolus = InsulinAmount(5.3),
                 isAutomaticMode = false
             ),
             currentBgValue = CurrentBgData.valid(
@@ -528,7 +531,7 @@ private fun MealBolusPreview() {
                 trend = BgTrend.FortyFiveUp,
                 timestamp = Timestamp.now()
             ),
-            iob = 1.2,
+            iob = InsulinAmount(1.2),
             cob = 25.0,
             onNavigateUp = {},
             onCarbsChange = {},

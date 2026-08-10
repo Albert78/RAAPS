@@ -54,6 +54,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import de.dh.raaps.common.model.InsulinType
+import de.dh.raaps.common.model.InsulinAmount
 import de.dh.raaps.common.model.data.BgBlock
 import de.dh.raaps.common.model.data.BgDelta
 import de.dh.raaps.common.model.data.BgValue
@@ -841,7 +842,7 @@ fun CurrentTherapySettingsPreview() {
             activeProfileId = 1L,
             currentIsf = BgDelta(40),
             currentCr = 10.0,
-            currentBasal = 0.5,
+            currentBasal = InsulinAmount(0.5),
             isfRange = "40 - 50",
             crRange = "10.0 - 12.0",
             basalRange = "0.50 - 0.55",

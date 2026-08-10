@@ -1,13 +1,12 @@
 package de.dh.raaps.core.aps
 
 import android.util.Log
-import de.dh.raaps.common.model.INSULIN_EPSILON
 import de.dh.raaps.common.model.InsulinAmount
 import de.dh.raaps.common.model.calculation.CarbsInsulinCalculationModel
 import de.dh.raaps.common.model.convertToBgDeltaFromUnits
 import de.dh.raaps.common.model.convertToCarbsFromBgDelta
-import de.dh.raaps.common.model.convertToUnitsFromBgDelta
-import de.dh.raaps.common.model.convertToUnitsFromCarbs
+import de.dh.raaps.common.model.convertToInsulinAmountFromBgDelta
+import de.dh.raaps.common.model.convertToInsulinAmountFromCarbs
 import de.dh.raaps.common.model.data.BgDelta
 import de.dh.raaps.common.model.data.BgValue
 import de.dh.raaps.common.model.data.Minutes
@@ -15,9 +14,6 @@ import de.dh.raaps.common.model.data.Tick
 import de.dh.raaps.common.model.data.Timeline
 import de.dh.raaps.common.model.data.Timestamp
 import de.dh.raaps.core.repository.TreatmentRepository
-import java.text.SimpleDateFormat
-import java.util.Date
-import java.util.Locale
 
 class ApsAlgorithmImpl(
     val timeline: Timeline,
@@ -37,7 +33,6 @@ class ApsAlgorithmImpl(
     private fun Tick.plusMinutes(minutes: Int): Tick = this + (minutes / timeline.tickDuration.value.toInt())
     private fun Tick.minusMinutes(minutes: Int): Tick = this - (minutes / timeline.tickDuration.value.toInt())
     private fun Tick.minus(minutes: Minutes): Tick = minusMinutes(minutes.value.toInt())
-    private val Tick.timestamp get() = timeline.timestamp(this)
 
     /**
      * Called when therapy settings changed.
@@ -204,14 +199,14 @@ class ApsAlgorithmImpl(
         if (result.clearTempBasal) {
             onClearTempBasal(treatmentLock)
         }
-        if (result.bolus != null && result.bolus.iu >= INSULIN_EPSILON) {
+        if (result.bolus != null && result.bolus >= InsulinAmount.EPSILON) {
             onDeliverBolus(treatmentLock, result.bolus, result.handledDeferredBoluses)
         }
 
         result.metrics?.let { metrics ->
             onAlgorithmInsight(metrics.copy(
                 reasoning = result.reasoning,
-                actionBolus = result.bolus?.iu,
+                actionBolus = result.bolus,
                 actionTempBasalPercent = result.tempBasal?.percent,
                 actionTempBasalDurationInHours = result.tempBasal?.durationInHours
             ))
@@ -335,7 +330,7 @@ class ApsAlgorithmImpl(
             return@doRecalculate CalculationResult.carbsSuggestion(carbsInGHint = carbsInGHint) // Stop further processing when we're currently low
         }
 
-        val cobAtPeak = carbsInsulinCalculationModel.cob(meals, now.plus(insulinPeak))
+        val cobAtPeak = carbsInsulinCalculationModel.cob(meals, now + insulinPeak)
         val iobNow = carbsInsulinCalculationModel.iob(
             insulinApplications = insulinApplications,
             timestamp = now,
@@ -344,7 +339,7 @@ class ApsAlgorithmImpl(
         )
         val iobAtPeak = carbsInsulinCalculationModel.iob(
             insulinApplications = insulinApplications,
-            timestamp = now.plus(insulinPeak),
+            timestamp = now + insulinPeak,
             dia = dia,
             peak = insulinPeak
         )
@@ -401,9 +396,9 @@ class ApsAlgorithmImpl(
                 return CalculationResult.zeroTemp(durationInHours = 1).copy(metrics = insight)
             }
             // Else go on with decreased basal
-            val safetCorrectionUnits = convertToUnitsFromBgDelta(-bgErrorAtPeak, isfValue)
-            val unitsPerHour = (defaultBasal - safetCorrectionUnits).coerceAtLeast(0.0)
-            val percent = if (defaultBasal > 0.0) {
+            val safetCorrectionUnits = convertToInsulinAmountFromBgDelta(-bgErrorAtPeak, isfValue)
+            val unitsPerHour = (defaultBasal - safetCorrectionUnits).coerceAtLeast(InsulinAmount.ZERO)
+            val percent = if (defaultBasal > InsulinAmount.ZERO) {
                 (unitsPerHour / defaultBasal * 100.0).toInt()
             } else {
                 0
@@ -436,26 +431,24 @@ class ApsAlgorithmImpl(
         // -------------------------------- Meal & high handling -----------------------------------
 
         // Calculate scheduled meal boluses
-        var dueMealBolusAmount = InsulinAmount(0.0)
+        var dueMealBolusAmount = InsulinAmount.ZERO
         val dueDeferredBoluses: MutableList<DeferredBolus> = mutableListOf()
 
         val deferredBoluses = therapyManager.getDeferredBoluses()
-        var sumFutureDeferredBolus = InsulinAmount(0.0)
+        val sumFutureDeferredBolus = deferredBoluses.filter { it.timestamp >= now }.fold(InsulinAmount.ZERO) { acc, next -> acc + next.amount }
         for (deferredBolus in deferredBoluses) {
             if (deferredBolus.timestamp < now) {
                 dueMealBolusAmount += deferredBolus.amount
                 dueDeferredBoluses += deferredBolus
-            } else {
-                sumFutureDeferredBolus += deferredBolus.amount
             }
         }
 
-        val insulinEquivalentOfCob = convertToUnitsFromCarbs(carbs = cobAtPeak, cr = crValue)
+        val insulinEquivalentOfCob = convertToInsulinAmountFromCarbs(carbs = cobAtPeak, cr = crValue)
 
-        val bgErrorCorrectionUnits = convertToUnitsFromBgDelta(bgErrorAtPeak, isfValue).
-            coerceAtLeast(0.0) * AGGRESSIVENESS_ERROR_CORRECTION
-        val futureInsulinU = iobAtPeak + dueMealBolusAmount.iu + sumFutureDeferredBolus.iu
-        if (futureInsulinU + INSULIN_EPSILON >= insulinEquivalentOfCob + bgErrorCorrectionUnits) {
+        val bgErrorCorrectionUnits = (convertToInsulinAmountFromBgDelta(bgErrorAtPeak, isfValue) * AGGRESSIVENESS_ERROR_CORRECTION)
+            .coerceAtLeast(InsulinAmount.ZERO)
+        val futureInsulin = iobAtPeak + dueMealBolusAmount + sumFutureDeferredBolus
+        if (futureInsulin + InsulinAmount.EPSILON >= insulinEquivalentOfCob + bgErrorCorrectionUnits) {
             // Meals and BG error are covered by IOB/planned boluses.
             // Return to normal basal rate and wait for insulin/carbs to act.
             if (dueDeferredBoluses.isEmpty())
@@ -468,15 +461,11 @@ class ApsAlgorithmImpl(
                 ).copy(metrics = insight)
         } else {
             // Insufficient insulin: Calculate the delta needed to cover the gap.
-            val neededInsulin = insulinEquivalentOfCob * AGGRESSIVENESS_CARBS_CORRECTION +
+            val neededInsulin = (insulinEquivalentOfCob * AGGRESSIVENESS_CARBS_CORRECTION) +
                     bgErrorCorrectionUnits
-            val futureAvailableInsulin = iobAtPeak + dueMealBolusAmount.iu + sumFutureDeferredBolus.iu
-            val bolusAmount = InsulinAmount(
-                // Scheduled insulin
-                dueMealBolusAmount.iu +
-                        // "Uncorrected rest"
-                        (neededInsulin - futureAvailableInsulin).coerceAtLeast(0.0)
-            )
+            val futureAvailableInsulin = iobAtPeak + dueMealBolusAmount + sumFutureDeferredBolus
+            val bolusAmount = dueMealBolusAmount + (neededInsulin - futureAvailableInsulin).coerceAtLeast(InsulinAmount.ZERO)
+
             CalculationResult.mealOrCorrectionBolus(
                 bolusAmount = bolusAmount,
                 handledDeferredBoluses = dueDeferredBoluses

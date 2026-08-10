@@ -3,6 +3,7 @@ package de.dh.raaps.ui.screens.bolushistory
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
+import de.dh.raaps.common.model.InsulinAmount
 import de.dh.raaps.common.model.InsulinApplication
 import de.dh.raaps.common.model.InsulinCategory
 import de.dh.raaps.common.model.InsulinOrigin
@@ -68,7 +69,7 @@ class BolusHistoryViewModel(
         }
     }
 
-    fun addManualBolus(amount: Double, insulinType: InsulinType) {
+    fun addManualBolus(amount: InsulinAmount, insulinType: InsulinType) {
         viewModelScope.launch {
             val application = InsulinApplication(
                 timestamp = Timestamp.now(),
@@ -81,7 +82,7 @@ class BolusHistoryViewModel(
         }
     }
 
-    fun updateManualBolus(application: InsulinApplication, newAmount: Double, newType: InsulinType) {
+    fun updateManualBolus(application: InsulinApplication, newAmount: InsulinAmount, newType: InsulinType) {
         viewModelScope.launch {
             val updated = application.copy(
                 amount = newAmount,

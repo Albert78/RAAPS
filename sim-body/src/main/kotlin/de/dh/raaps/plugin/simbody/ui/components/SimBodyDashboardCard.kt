@@ -79,7 +79,7 @@ fun SimBodyDashboardCard(
 
             ParameterRow(
                 stringResource(R.string.label_iob_cob),
-                if (isLoaded) stringResource(R.string.unit_iob_cob, bodyModel.iob, bodyModel.cob) else "---"
+                if (isLoaded) stringResource(R.string.unit_iob_cob, bodyModel.iob.iu, bodyModel.cob) else "---"
             ) { }
 
             ParameterRow(

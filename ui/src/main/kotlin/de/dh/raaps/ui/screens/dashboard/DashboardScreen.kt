@@ -36,6 +36,7 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import de.dh.raaps.common.model.InsulinAmount
 import de.dh.raaps.common.model.ApsMode
 import de.dh.raaps.common.model.data.BgDelta
 import de.dh.raaps.common.model.data.BgValue
@@ -116,7 +117,7 @@ fun DashboardContent(
     dashboardUiState: DashboardUiState,
     currentBgUiState: CurrentBgUiState,
     historyUiState: HistoryUiState,
-    iob: Double,
+    iob: InsulinAmount,
     cob: Double,
     currentTherapyUiState: CurrentTherapyUiState,
     permissionsUiState: PermissionsUiModel,
@@ -287,7 +288,7 @@ fun DashboardPreview() {
             dashboardUiState = DashboardUiState(isLoading = false, isError = false),
             currentBgUiState = createSampleGoodBgUiState(),
             historyUiState = createSampleHistoryUiState(),
-            iob = 1.57,
+            iob = InsulinAmount(1.57),
             cob = 12.0,
             currentTherapyUiState = CurrentTherapyUiState(
                 activeInsulinProfile = InsulinProfileUiState(
@@ -295,7 +296,7 @@ fun DashboardPreview() {
                     activeProfileId = null,
                     currentIsf = BgDelta.fromMgDl(50),
                     currentCr = 10.0,
-                    currentBasal = 0.5,
+                    currentBasal = InsulinAmount(0.5),
                     isfRange = "50",
                     crRange = "10.0",
                     basalRange = "0.50",
@@ -341,7 +342,7 @@ fun DashboardPermissionsWarningPreview() {
             dashboardUiState = DashboardUiState(isLoading = false, isError = false),
             currentBgUiState = createSampleGoodBgUiState(),
             historyUiState = createSampleHistoryUiState(),
-            iob = 1.57,
+            iob = InsulinAmount(1.57),
             cob = 12.0,
             currentTherapyUiState = CurrentTherapyUiState(
                 activeInsulinProfile = InsulinProfileUiState(
@@ -349,7 +350,7 @@ fun DashboardPermissionsWarningPreview() {
                     activeProfileId = null,
                     currentIsf = BgDelta.fromMgDl(50),
                     currentCr = 10.0,
-                    currentBasal = 0.5,
+                    currentBasal = InsulinAmount(0.5),
                     isfRange = "50",
                     crRange = "10.0",
                     basalRange = "0.50",

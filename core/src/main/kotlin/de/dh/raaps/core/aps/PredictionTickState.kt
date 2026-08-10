@@ -1,5 +1,6 @@
 package de.dh.raaps.core.aps
 
+import de.dh.raaps.common.model.InsulinAmount
 import de.dh.raaps.common.model.data.BgDelta
 import de.dh.raaps.common.model.data.BgValue
 import de.dh.raaps.common.model.data.Tick
@@ -14,12 +15,12 @@ class PredictionTickState {
     var tick: Tick = Tick.invalid()
     // Cache block 1: Impacts of carbs and insulin. Depend on metabolic events. Cached until carbs or insulin change.
     var effectiveCarbs: Double? = null // Sum from all meals in the past, per tick
-    var effectiveInsulin: Double? = null // Sum from all insulin applications in the past, per tick
+    var effectiveInsulin: InsulinAmount? = null // Sum from all insulin applications in the past, per tick
 
     // Cache block 2: Therapy settings. To avoid more or less expensive calculation, cached until settings change.
     var isf: BgDelta? = null // ISF at the time of this tick, from profile
     var cr: Double? = 0.0 // CR at the time of this tick, from profile
-    var basalRateUph: Double? = 0.0 // Normal basal rate in units per hour for this tick, from profile
+    var basalRateUph: InsulinAmount? = null // Normal basal rate in units per hour for this tick, from profile
 
     // Prediction block:
     // BGI values depend on blocks 1 and 2.
@@ -28,7 +29,7 @@ class PredictionTickState {
     var bgi: BgDelta = BgDelta(0)
 
     // The cumulated activity of basal insulin from now to the time of this tick.
-    var cumulatedBasalInsulin: Double = 0.0
+    var cumulatedBasalInsulin: InsulinAmount = InsulinAmount.ZERO
 
     // Predicted BG depends on block 3 and current BG.
     var predictedBg: BgValue = BgValue.INVALID // Calculated from a starting BG, applying BGIs of previous ticks
@@ -40,7 +41,7 @@ class PredictionTickState {
         isf = null
         cr = null
         bgi = BgDelta(0)
-        cumulatedBasalInsulin = 0.0
+        cumulatedBasalInsulin = InsulinAmount.ZERO
         predictedBg = BgValue.INVALID
     }
 }

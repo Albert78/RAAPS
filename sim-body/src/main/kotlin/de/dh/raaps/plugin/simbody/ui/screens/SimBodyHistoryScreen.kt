@@ -32,6 +32,7 @@ import androidx.compose.ui.unit.dp
 import de.dh.raaps.common.R as CommonR
 import de.dh.raaps.common.ui.composables.NormalButton
 import de.dh.raaps.common.ui.theme.AppTheme
+import de.dh.raaps.common.model.InsulinAmount
 import de.dh.raaps.plugin.simbody.BodyModel
 import de.dh.raaps.plugin.simbody.DEFAULT_SIM_BODY_PROFILE
 import de.dh.raaps.plugin.simbody.R
@@ -144,7 +145,7 @@ fun SimBodyHistoryScreen(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Row(verticalAlignment = Alignment.CenterVertically) {
-                            Text(stringResource(R.string.unit_u, insulin.amount))
+                            Text(stringResource(R.string.unit_u, insulin.amount.iu))
                             Spacer(modifier = Modifier.width(8.dp))
                             Text(
                                 text = "(${insulin.origin})",
@@ -190,8 +191,8 @@ fun SimBodyHistoryScreenPreview() {
         BodyModel(DEFAULT_SIM_BODY_PROFILE).apply {
             eat(50.0, BodyModel.SIM_MEAL_TYPES[0])
             eat(25.0, BodyModel.SIM_MEAL_TYPES[1])
-            bolus(5.0)
-            bolus(2.5)
+            bolus(InsulinAmount(5.0))
+            bolus(InsulinAmount(2.5))
         }
     }
     AppTheme {

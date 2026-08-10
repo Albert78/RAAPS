@@ -3,7 +3,6 @@ package de.dh.raaps.plugin.simbody
 import android.util.Log
 import de.dh.raaps.common.model.InsulinAmount
 import de.dh.raaps.common.model.InsulinCategory
-import de.dh.raaps.common.model.InsulinHistoryPoint
 import de.dh.raaps.common.model.MS_PER_DAY
 import de.dh.raaps.common.model.data.InsulinProfile
 import de.dh.raaps.common.model.data.Timestamp
@@ -37,8 +36,8 @@ class SimBodyPumpDevice(
     private val _batteryLevel = MutableStateFlow(0.85) // 0.0 to 1.0
     val batteryLevel: StateFlow<Double> = _batteryLevel.asStateFlow()
 
-    private val _reservoirLevel = MutableStateFlow(180.0) // Units
-    val reservoirLevel: StateFlow<Double> = _reservoirLevel.asStateFlow()
+    private val _reservoirLevel = MutableStateFlow(InsulinAmount(180.0)) // Units
+    val reservoirLevel: StateFlow<InsulinAmount> = _reservoirLevel.asStateFlow()
 
     private val _isOccluded = MutableStateFlow(false)
     val isOccluded: StateFlow<Boolean> = _isOccluded.asStateFlow()
@@ -69,7 +68,7 @@ class SimBodyPumpDevice(
             try {
                 dao.getPumpState()?.let { state ->
                     _batteryLevel.value = state.batteryLevel
-                    _reservoirLevel.value = state.reservoirLevel
+                    _reservoirLevel.value = InsulinAmount(state.reservoirLevel)
                     _isOccluded.value = state.isOccluded
                     _isPrimed.value = state.isPrimed
                     _hasHardwareError.value = state.hasHardwareError
@@ -102,7 +101,7 @@ class SimBodyPumpDevice(
             dao.updatePumpState(
                 PumpStateEntity(
                     batteryLevel = _batteryLevel.value,
-                    reservoirLevel = _reservoirLevel.value,
+                    reservoirLevel = _reservoirLevel.value.iu,
                     isOccluded = _isOccluded.value,
                     isPrimed = _isPrimed.value,
                     hasHardwareError = _hasHardwareError.value,
@@ -119,8 +118,8 @@ class SimBodyPumpDevice(
         persistState()
     }
 
-    fun setReservoirLevel(units: Double) {
-        _reservoirLevel.value = units.coerceAtLeast(0.0)
+    fun setReservoirLevel(amount: InsulinAmount) {
+        _reservoirLevel.value = amount.coerceAtLeast(InsulinAmount.ZERO)
         persistState()
     }
 
@@ -172,49 +171,46 @@ class SimBodyPumpDevice(
 
         while (currentTimestamp.ms - lastBasalDeliveryTimestamp >= twentyMinutesMs) {
             val deliveryTimestamp = Timestamp(lastBasalDeliveryTimestamp + twentyMinutesMs)
-            val profileRate = getProfileBasalRate(deliveryTimestamp)
-            val concentration = _activeProfile.value.insulinConcentration
+            val profileRate = InsulinAmount(getProfileBasalRate(deliveryTimestamp))
             val currentPercent = _tempBasalPercent.value
             val rate = if (currentPercent != null) {
                 profileRate * (currentPercent / 100.0)
             } else {
                 profileRate
             }
-            
-            // Convert therapeutic rate (IU/h) to physical units for the pump mechanism
-            val pumpRate = rate / concentration.factor
-            val basalToDeliverPU = pumpRate / 3.0
 
-            deliverInternalBasal(basalToDeliverPU, deliveryTimestamp, if (_tempBasalPercent.value != null) PumpDeliveryType.Tbr else PumpDeliveryType.Basal)
+            // Deliver 1/3 of the hourly rate (since we deliver every 20 minutes)
+            val basalToDeliver = rate / 3.0
+
+            deliverInternalBasal(basalToDeliver, deliveryTimestamp, if (_tempBasalPercent.value != null) PumpDeliveryType.Tbr else PumpDeliveryType.Basal)
             lastBasalDeliveryTimestamp = deliveryTimestamp.ms
             persistState()
         }
     }
 
-    private fun deliverInternalBasal(units: Double, timestamp: Timestamp, type: PumpDeliveryType = PumpDeliveryType.Basal) {
+    private fun deliverInternalBasal(units: InsulinAmount, timestamp: Timestamp, type: PumpDeliveryType = PumpDeliveryType.Basal) {
         // Active delivery only works if hardware is OK
         if (isBroken.value || hasHardwareError.value || isOccluded.value || !isPrimed.value) {
             return
         }
-        if (units < SimBodyInsulinPump.SIM_PUMP_MIN_BOLUS_INCREMENT.iu) { // Check against PU
+        if (units < SimBodyInsulinPump.SIM_PUMP_MIN_BOLUS_INCREMENT) { // Check against PU
             return
         }
         if (reservoirLevel.value < units) {
             return
         }
 
-        _reservoirLevel.value = (reservoirLevel.value - units).coerceAtLeast(0.0)
+        _reservoirLevel.value = (reservoirLevel.value - units).coerceAtLeast(InsulinAmount.ZERO)
         persistState()
 
-        // Report to body - convert physical units back to therapeutic units (IU)
-        val concentration = _activeProfile.value.insulinConcentration
-        bodyModel.bolus(InsulinAmount.fromPumpUnits(units, concentration), timestamp = timestamp)
+        // Report to body
+        bodyModel.bolus(units, timestamp = timestamp)
 
         // Record in history as an insulin delivery
         val entry = HistoryEntry(
             timestamp = timestamp.ms,
             amount = units,
-            category = InsulinCategory.Basal
+            category = if (type == PumpDeliveryType.Bolus) InsulinCategory.Bolus else InsulinCategory.Basal
         )
         _history.add(entry)
 
@@ -235,44 +231,18 @@ class SimBodyPumpDevice(
      * Simulates insulin delivery. Reduces reservoir level and reports to BodyModel.
      * Returns true if delivery was successful on the hardware level.
      */
-    fun deliverBolus(units: Double): Boolean {
+    fun deliverBolus(amount: InsulinAmount): Boolean {
         if (isBroken.value || hasHardwareError.value || isOccluded.value || !isPrimed.value) {
             return false
         }
-        if (units < SimBodyInsulinPump.SIM_PUMP_MIN_BOLUS_INCREMENT.iu) {
+        if (amount < SimBodyInsulinPump.SIM_PUMP_MIN_BOLUS_INCREMENT) {
             return false
         }
-        if (reservoirLevel.value < units) {
+        if (reservoirLevel.value < amount) {
             return false
         }
 
-        _reservoirLevel.value = (reservoirLevel.value - units).coerceAtLeast(0.0)
-        persistState()
-
-        // Report to body - convert physical units back to therapeutic units (IU)
-        val concentration = _activeProfile.value.insulinConcentration
-        bodyModel.bolus(InsulinAmount.fromPumpUnits(units, concentration))
-
-        // Record in history
-        val entry = HistoryEntry(
-            timestamp = System.currentTimeMillis(),
-            amount = units,
-            category = InsulinCategory.Bolus
-        )
-        _history.add(entry)
-
-        pumpDao?.let { dao ->
-            scope.launch {
-                dao.insertHistoryEntry(PumpHistoryEntity(
-                    timestampMs = entry.timestamp,
-                    amount = entry.amount,
-                    deliveryType = PumpDeliveryType.Bolus
-                ))
-            }
-        }
-
-        cleanupHistory()
-
+        deliverInternalBasal(amount, Timestamp.now(), PumpDeliveryType.Bolus)
         return true
     }
 
@@ -297,8 +267,8 @@ class SimBodyPumpDevice(
     /**
      * Replaces the reservoir and resets levels.
      */
-    fun replaceReservoir(units: Double = 300.0) {
-        _reservoirLevel.value = units
+    fun replaceReservoir(amount: InsulinAmount = InsulinAmount(300.0)) {
+        _reservoirLevel.value = amount
         _isPrimed.value = false // Need to prime after reservoir change
         persistState()
     }
@@ -307,8 +277,9 @@ class SimBodyPumpDevice(
      * Performs priming of the catheter.
      */
     fun primeCatheter(): Boolean {
-        if (reservoirLevel.value >= 10.0) {
-            _reservoirLevel.value -= 10.0 // Priming uses some insulin
+        val primeAmount = InsulinAmount(10.0)
+        if (reservoirLevel.value >= primeAmount) {
+            _reservoirLevel.value -= primeAmount // Priming uses some insulin
             _isPrimed.value = true
             persistState()
             return true
@@ -318,7 +289,7 @@ class SimBodyPumpDevice(
 
     data class HistoryEntry(
         val timestamp: Long,
-        val amount: Double,
+        val amount: InsulinAmount,
         val category: InsulinCategory
     )
 }

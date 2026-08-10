@@ -5,6 +5,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.CreationExtras
+import de.dh.raaps.common.model.InsulinAmount
 import de.dh.raaps.common.model.InsulinApplication
 import de.dh.raaps.common.model.MealEntry
 import de.dh.raaps.common.model.ToDo
@@ -108,7 +109,7 @@ class HistoryViewModel(
     private val _historyUiState = MutableStateFlow(HistoryUiState(isLoading = true, isError = false))
     val historyUiState = _historyUiState.asStateFlow()
 
-    private val _iob = MutableStateFlow(0.0)
+    private val _iob = MutableStateFlow(InsulinAmount.ZERO)
     val iob = _iob.asStateFlow()
 
     private val _cob = MutableStateFlow(0.0)

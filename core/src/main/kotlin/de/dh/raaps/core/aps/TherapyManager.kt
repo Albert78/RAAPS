@@ -118,14 +118,13 @@ class TherapyManager(
 
     /**
      * Gets the planned basal rate at the given timestamp.
-     * Unit: Insulin units.
      */
-    suspend fun getBasalPerHour(timestamp: Timestamp): Double {
+    suspend fun getBasalPerHour(timestamp: Timestamp): InsulinAmount {
         val settings = getActiveTherapySettings()
         val profile = settings.insulinProfile
         val baseBasal = profile.basalBlocks.getAmountForMinute(timestamp.minutesSinceMidnight())
         val factor = (100.0 + settings.insulinAdjustmentPercentage) / 100.0
-        return baseBasal * factor
+        return InsulinAmount(baseBasal * factor)
     }
 
     /**

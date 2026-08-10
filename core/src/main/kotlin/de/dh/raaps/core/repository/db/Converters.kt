@@ -1,5 +1,6 @@
 package de.dh.raaps.core.repository.db
 
+import de.dh.raaps.common.model.InsulinAmount
 import de.dh.raaps.common.model.CarbCurveComponentData
 import de.dh.raaps.common.model.DataProvider
 import de.dh.raaps.common.model.InsulinApplication
@@ -164,7 +165,7 @@ fun DeferredBolus.toEntity() = DeferredBolusEntity(
 
 fun DeferredBolusEntity.toModel() = DeferredBolus(
     id = this.id,
-    amount = de.dh.raaps.common.model.InsulinAmount(this.amount),
+    amount = InsulinAmount(this.amount),
     timestamp = this.timestamp
 )
 

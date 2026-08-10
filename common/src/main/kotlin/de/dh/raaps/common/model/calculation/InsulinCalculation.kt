@@ -1,5 +1,6 @@
 package de.dh.raaps.common.model.calculation
 
+import de.dh.raaps.common.model.InsulinAmount
 import de.dh.raaps.common.model.data.Minutes
 import java.util.concurrent.ConcurrentHashMap
 import kotlin.math.exp
@@ -155,17 +156,17 @@ class SampledInsulinCalculationCache(
 
     /**
      * Current insulin activity for the given insulin application.
-     * Unit: Unit / interval
+     * Unit: [InsulinAmount] / interval
      */
     fun effectiveInsulin(
-        amount: Double,
+        amount: InsulinAmount,
         dia: Minutes,
         peak: Minutes,
         intervalsSinceApplication: Int
-    ): Double {
-        if (intervalsSinceApplication <= 0.0) return 0.0
+    ): InsulinAmount {
+        if (intervalsSinceApplication < 0) return InsulinAmount.ZERO
         val samples = getOrCreateSampledInsulinRemainingFraction(dia, peak)
-        if (intervalsSinceApplication >= samples.size - 1) return 0.0
+        if (intervalsSinceApplication >= samples.size - 1) return InsulinAmount.ZERO
         val remainingFractionAtIntervalStart = samples[intervalsSinceApplication]
         val remainingFractionAtIntervalEnd = samples[intervalsSinceApplication + 1]
         return amount * (remainingFractionAtIntervalStart - remainingFractionAtIntervalEnd)
@@ -173,26 +174,26 @@ class SampledInsulinCalculationCache(
 
     /**
      * Currently remaining fraction of insulin on board for the given insulin application.
-     * Unit: Units
+     * Unit: [InsulinAmount]
      */
     fun remainingInsulin(
-        amount: Double,
+        amount: InsulinAmount,
         dia: Minutes,
         peak: Minutes,
         intervalsSinceApplication: Int
-    ): Double {
-        if (intervalsSinceApplication < 0) return 0.0
+    ): InsulinAmount {
+        if (intervalsSinceApplication < 0) return amount // Application in the future? Treat as full amount.
         val samples = getOrCreateSampledInsulinRemainingFraction(dia, peak)
-        if (intervalsSinceApplication >= samples.size) return 0.0
+        if (intervalsSinceApplication >= samples.size) return InsulinAmount.ZERO
         return amount * samples[intervalsSinceApplication]
     }
 
     fun spentInsulin(
-        amount: Double,
+        amount: InsulinAmount,
         dia: Minutes,
         peak: Minutes,
         intervalsSinceApplication: Int
-    ): Double {
+    ): InsulinAmount {
         return amount - remainingInsulin(
             amount = amount,
             dia = dia,

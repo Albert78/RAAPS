@@ -1,9 +1,11 @@
 package de.dh.raaps.core.aps
 
+import de.dh.raaps.common.model.InsulinAmount
 import de.dh.raaps.common.model.InsulinApplication
 import de.dh.raaps.common.model.MealEntry
 import de.dh.raaps.common.model.calculation.CarbsInsulinCalculationModel
-import de.dh.raaps.common.model.convertToUnitsFromCarbs
+import de.dh.raaps.common.model.convertToBgDeltaFromUnits
+import de.dh.raaps.common.model.convertToInsulinAmountFromCarbs
 import de.dh.raaps.common.model.data.BgDelta
 import de.dh.raaps.common.model.data.BgValue
 import de.dh.raaps.common.model.data.Minutes
@@ -85,7 +87,7 @@ class PredictionModel(
         tryGetTickState(nowTick)?.predictedBg = bg
 
         var deviationPerTick = avgCurrentDeviationPerTick
-        var runningCumulatedBasal = 0.0
+        var runningCumulatedBasal = InsulinAmount.ZERO
         forEachS(from = getFirstTick(), to = getLastTick()) { tick, state ->
             if (state.effectiveCarbs == null) {
                 state.effectiveCarbs = carbsInsulinCalculationModel.carbAbsorption(
@@ -109,7 +111,7 @@ class PredictionModel(
                 state.basalRateUph = therapyManager.getBasalPerHour(timestamp)
             }
 
-            val insulinEquivalentOfCarbs = convertToUnitsFromCarbs(state.effectiveCarbs!!, state.cr!!)
+            val insulinEquivalentOfCarbs = convertToInsulinAmountFromCarbs(state.effectiveCarbs!!, state.cr!!)
 
             // BGI calculation
 
@@ -126,7 +128,7 @@ class PredictionModel(
 
             // 2. BGI is (Carbs - NetInsulin) * ISF.
             //    This results in BGI 0 for standard basal (no carbs) and BGI > 0 for low temp basal (no carbs).
-            val bgi = (insulinEquivalentOfCarbs - netInsulin) * state.isf!!
+            val bgi = convertToBgDeltaFromUnits(insulinEquivalentOfCarbs - netInsulin, state.isf!!)
 
             if (bgi != state.bgi) {
                 state.bgi = bgi
@@ -144,7 +146,7 @@ class PredictionModel(
                 state.predictedBg = bg
             } else {
                 // Clear values that are only meaningful for future predictions
-                state.cumulatedBasalInsulin = 0.0
+                state.cumulatedBasalInsulin = InsulinAmount.ZERO
                 if (tick < nowTick) {
                     state.predictedBg = BgValue.INVALID
                 }

@@ -12,6 +12,9 @@ import de.dh.raaps.common.model.ID_UNDEFINED
 import de.dh.raaps.common.model.InsulinAmount
 import de.dh.raaps.common.model.MealEntry
 import de.dh.raaps.common.model.MealType
+import de.dh.raaps.common.model.convertToInsulinAmountFromBgDelta
+import de.dh.raaps.common.model.convertToInsulinAmountFromCarbs
+import de.dh.raaps.common.model.data.BgDelta
 import de.dh.raaps.common.model.data.Minutes
 import de.dh.raaps.common.model.data.Timestamp
 import de.dh.raaps.core.SystemRegistry
@@ -40,14 +43,14 @@ data class MealBolusUiState(
     val targetBg: Int = 100,
     val isf: Int = 50,
     val cr: Double = 10.0,
-    val iob: Double = 0.0,
+    val iob: InsulinAmount = InsulinAmount.ZERO,
     val cob: Double = 0.0,
-    val mealPart: Double = 0.0,
-    val correctionPart: Double = 0.0,
-    val iobPart: Double = 0.0,
-    val cobPart: Double = 0.0,
-    val proposedBolus: Double = 0.0,
-    val manualBolus: Double = 0.0,
+    val mealPart: InsulinAmount = InsulinAmount.ZERO,
+    val correctionPart: InsulinAmount = InsulinAmount.ZERO,
+    val iobPart: InsulinAmount = InsulinAmount.ZERO,
+    val cobPart: InsulinAmount = InsulinAmount.ZERO,
+    val proposedBolus: InsulinAmount = InsulinAmount.ZERO,
+    val manualBolus: InsulinAmount = InsulinAmount.ZERO,
     val isAutomaticMode: Boolean = false,
     val isSubmitting: Boolean = false,
     val isLockAcquired: Boolean = false,
@@ -161,25 +164,26 @@ class MealBolusViewModel(
 
     fun onManualBolusChange(amount: Double) {
         if (_uiState.value.isEditMode) return // Prevent bolus change in edit mode
-        _uiState.update { it.copy(manualBolus = max(0.0, amount)) }
+        _uiState.update { it.copy(manualBolus = InsulinAmount(amount).coerceAtLeast(InsulinAmount.ZERO)) }
     }
 
     private fun calculateBolus() {
         val state = _uiState.value
         val carbsGrams = state.carbsKe * 10.0
-        val mealPart = carbsGrams / state.cr
+        val mealPart = convertToInsulinAmountFromCarbs(carbsGrams, state.cr)
 
         val currentBg = state.currentBg ?: state.targetBg
         val bgDiff = currentBg - state.targetBg
-        val correctionPart = if (bgDiff > 0) bgDiff.toDouble() / state.isf else 0.0
+        val correctionPart = if (bgDiff > 0) convertToInsulinAmountFromBgDelta(BgDelta(bgDiff.toShort()), BgDelta(state.isf.toShort())) else InsulinAmount.ZERO
 
         val iobPart = state.iob
-        val cobPart = state.cob / state.cr
+        val cobPart = convertToInsulinAmountFromCarbs(state.cob, state.cr)
 
-        val total = max(0.0, (mealPart + correctionPart - iobPart) + cobPart)
+        val total = (mealPart + correctionPart - iobPart + cobPart).coerceAtLeast(InsulinAmount.ZERO)
 
         // Round to 2 decimal places
-        val roundedTotal = round(total * 100.0) / 100.0
+        val roundedTotal = round(total.iu * 100.0) / 100.0
+        val bolusAmount = InsulinAmount(roundedTotal)
 
         _uiState.update {
             it.copy(
@@ -187,8 +191,8 @@ class MealBolusViewModel(
                 correctionPart = correctionPart,
                 iobPart = iobPart,
                 cobPart = cobPart,
-                proposedBolus = roundedTotal,
-                manualBolus = if (state.isEditMode) 0.0 else roundedTotal
+                proposedBolus = bolusAmount,
+                manualBolus = if (state.isEditMode) InsulinAmount.ZERO else bolusAmount
             )
         }
     }
@@ -214,8 +218,8 @@ class MealBolusViewModel(
                 }
 
                 // 2. Deliver Bolus (only if NOT editing)
-                if (!state.isEditMode && state.manualBolus > 0.0) {
-                    val amount = InsulinAmount(state.manualBolus)
+                if (!state.isEditMode && state.manualBolus > InsulinAmount.ZERO) {
+                    val amount = state.manualBolus
                     val lock = treatmentLock ?: throw IllegalStateException("Bolus delivery attempted without holding the lock")
                     therapyManager.issueBolus(lock, amount)
                 }

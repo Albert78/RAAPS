@@ -1,8 +1,7 @@
 package de.dh.raaps.core.repository
 
-import de.dh.raaps.common.model.INSULIN_EPSILON
+import de.dh.raaps.common.model.InsulinAmount
 import de.dh.raaps.common.model.InsulinApplication
-import de.dh.raaps.common.model.InsulinCategory
 import de.dh.raaps.common.model.InsulinHistory
 import de.dh.raaps.common.model.InsulinOrigin
 import de.dh.raaps.common.model.InsulinType
@@ -128,7 +127,7 @@ class TreatmentRepository(
                 category = point.category,
                 origin = InsulinOrigin.Pump
             )
-        }.filter { it.amount > INSULIN_EPSILON }
+        }.filter { it.amount >= InsulinAmount.EPSILON }
 
         // 1. Database sync
         metabolicEventsDao.replaceInsulinApplicationsInRange(

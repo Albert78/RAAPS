@@ -42,6 +42,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import de.dh.raaps.common.model.InsulinAmount
 import de.dh.raaps.common.model.ApsMode
 import de.dh.raaps.common.model.data.Minutes
 import de.dh.raaps.common.model.data.BgDelta
@@ -127,7 +128,7 @@ fun ApsControlCard(
                             color = if (isSuspended) MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f) else MaterialTheme.colorScheme.secondaryContainer,
                             shape = MaterialTheme.shapes.extraSmall,
                         ) {
-                            val basalValue = String.format(LocalLocale.current.platformLocale, "%.1f", if (isSuspended) 0.0 else insulinProfileUiState.currentBasal)
+                            val basalValue = String.format(LocalLocale.current.platformLocale, "%.1f", if (isSuspended) 0.0 else insulinProfileUiState.currentBasal.iu)
                             Text(
                                 text = " ${stringResource(R.string.aps_control_basal_label, basalValue)} ",
                                 style = MaterialTheme.typography.labelSmall,
@@ -306,7 +307,7 @@ private fun PreviewApsControlCard() {
                     activeProfileId = null,
                     currentIsf = BgDelta.fromMgDl(50),
                     currentCr = 12.0,
-                    currentBasal = 0.8,
+                    currentBasal = InsulinAmount(0.8),
                     isfRange = "50",
                     crRange = "12.0",
                     basalRange = "0.80",

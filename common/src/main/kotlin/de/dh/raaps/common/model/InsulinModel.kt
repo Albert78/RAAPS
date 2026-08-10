@@ -25,7 +25,25 @@ data class InsulinType(
 @JvmInline
 value class InsulinAmount(val iu: Double): Comparable<InsulinAmount> {
     operator fun plus(amount: InsulinAmount) = InsulinAmount(iu + amount.iu)
-    override fun compareTo(other: InsulinAmount): Int = iu.compareTo(other.iu)
+    operator fun minus(amount: InsulinAmount) = InsulinAmount(iu - amount.iu)
+    operator fun times(factor: Double) = InsulinAmount(iu * factor)
+    operator fun div(factor: Double) = InsulinAmount(iu / factor)
+    operator fun div(other: InsulinAmount): Double = iu / other.iu
+    operator fun unaryMinus() = InsulinAmount(-iu)
+
+    override operator fun compareTo(other: InsulinAmount): Int = iu.compareTo(other.iu)
+
+    fun coerceAtLeast(minimumValue: InsulinAmount): InsulinAmount {
+        return if (this < minimumValue) minimumValue else this
+    }
+
+    fun coerceAtMost(maximumValue: InsulinAmount): InsulinAmount {
+        return if (this > maximumValue) maximumValue else this
+    }
+
+    fun coerceIn(minimumValue: InsulinAmount, maximumValue: InsulinAmount): InsulinAmount {
+        return this.coerceAtLeast(minimumValue).coerceAtMost(maximumValue)
+    }
 
     /**
      * Calculates the physical amount that the pump must actually deliver.
@@ -39,6 +57,7 @@ value class InsulinAmount(val iu: Double): Comparable<InsulinAmount> {
 
     companion object {
         val ZERO = InsulinAmount(0.0)
+        val EPSILON = InsulinAmount(0.01)
 
         fun fromPumpUnits(value: Double, concentration: InsulinConcentration): InsulinAmount {
             return InsulinAmount(value * concentration.factor)
@@ -116,20 +135,20 @@ data class InsulinHistory(
     val points: List<InsulinHistoryPoint>
 )
 
+inline fun convertToInsulinAmountFromBgDelta(bgDelta: BgDelta, isf: BgDelta): InsulinAmount =
+    InsulinAmount(bgDelta.mgdl.toDouble() / isf.mgdl.toDouble())
+
 inline fun convertToCarbsFromBgDelta(bgDelta: BgDelta, isf: BgDelta, cr: Double): Double =
-    bgDelta.mgdl.toDouble() / isf.mgdl.toDouble() * cr
+    convertToCarbsFromUnits(convertToInsulinAmountFromBgDelta(bgDelta, isf), cr)
 
-inline fun convertToUnitsFromBgDelta(bgDelta: BgDelta, isf: BgDelta): Double =
-    bgDelta.mgdl.toDouble() / isf.mgdl.toDouble()
-
-inline fun convertToBgDeltaFromUnits(units: Double, isf: BgDelta): BgDelta =
-    BgDelta.fromMgDl((units * isf.mgdl.toDouble()).toInt())
+inline fun convertToBgDeltaFromUnits(amount: InsulinAmount, isf: BgDelta): BgDelta =
+    BgDelta.fromMgDl((amount.iu * isf.mgdl.toDouble()).toInt())
 
 inline fun convertToBgDeltaFromCarbs(carbs: Double, isf: BgDelta, cr: Double): BgDelta =
     BgDelta.fromMgDl((carbs / cr * isf.mgdl.toDouble()).toInt())
 
-inline fun convertToUnitsFromCarbs(carbs: Double, cr: Double): Double =
-    carbs / cr
+inline fun convertToInsulinAmountFromCarbs(carbs: Double, cr: Double): InsulinAmount =
+    InsulinAmount(carbs / cr)
 
-inline fun convertToCarbsFromUnits(units: Double, cr: Double): Double =
-    units * cr
+inline fun convertToCarbsFromUnits(amount: InsulinAmount, cr: Double): Double =
+    amount.iu * cr

@@ -77,13 +77,12 @@ class SimBodyInsulinPump(
         device.batteryLevel,
         device.reservoirLevel,
         device.isBroken,
-        _isConnected,
-        device.activeProfile
-    ) { battery, reservoir, broken, connected, profile ->
+        _isConnected
+    ) { battery, reservoir, broken, connected ->
         object : InsulinPumpStatus {
             override val pumpSuspended: Boolean = broken
             override val batteryRemainingPercent: Int = (battery * 100).toInt()
-            override val reservoirRemainingUnits: InsulinAmount = InsulinAmount.fromPumpUnits(reservoir, profile.insulinConcentration)
+            override val reservoirRemainingUnits: InsulinAmount = reservoir
             override val lastSyncTimestamp: Long = if (connected) System.currentTimeMillis() else 0L
         }
     }.stateIn(scope, SharingStarted.Eagerly, object : InsulinPumpStatus {
@@ -102,7 +101,7 @@ class SimBodyInsulinPump(
     ) { battery, reservoir, occluded, hwError, (broken, primed) ->
         PumpAlerts(
             batteryLow = battery < 0.1,
-            reservoirLow = reservoir < 20.0,
+            reservoirLow = reservoir < InsulinAmount(20.0),
             other = occluded || hwError || broken || !primed
         )
     }.stateIn(scope, SharingStarted.Eagerly, PumpAlerts())
@@ -130,10 +129,7 @@ class SimBodyInsulinPump(
     override suspend fun bolus(amount: InsulinAmount) {
         if (!_isConnected.value) throw Exception("Pump not connected to App")
 
-        val concentration = device.activeProfile.value.insulinConcentration
-        val pumpUnits = amount.toPumpUnits(concentration)
-
-        if (device.deliverBolus(pumpUnits)) {
+        if (device.deliverBolus(amount)) {
             // Success - device level handled reporting to body and history
             refreshStatus()
         } else {
@@ -142,7 +138,7 @@ class SimBodyInsulinPump(
                 device.hasHardwareError.value -> "Hardware error"
                 device.isOccluded.value -> "Occlusion detected"
                 !device.isPrimed.value -> "Pump not primed"
-                device.reservoirLevel.value < pumpUnits -> "Insulin reservoir empty"
+                device.reservoirLevel.value < amount -> "Insulin reservoir empty"
                 else -> "Unknown hardware failure"
             }
             throw Exception("Bolus failed: $errorReason")
@@ -177,11 +173,10 @@ class SimBodyInsulinPump(
 
     override suspend fun syncHistory() {
         if (!_isConnected.value) return
-        val profile = device.activeProfile.value
         val points = device.getHistory().map { point ->
             object : de.dh.raaps.common.model.InsulinHistoryPoint {
                 override val timestamp: Long = point.timestamp
-                override val amount: InsulinAmount = InsulinAmount.fromPumpUnits(point.amount, profile.insulinConcentration)
+                override val amount: InsulinAmount = point.amount
                 override val category: de.dh.raaps.common.model.InsulinCategory = point.category
             }
         }

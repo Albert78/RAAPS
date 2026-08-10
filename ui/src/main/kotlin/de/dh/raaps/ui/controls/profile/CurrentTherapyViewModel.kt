@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.CreationExtras
+import de.dh.raaps.common.model.InsulinAmount
 import de.dh.raaps.common.model.data.BgBlock
 import de.dh.raaps.common.model.data.BgDelta
 import de.dh.raaps.common.model.data.BgValue
@@ -28,7 +29,7 @@ data class InsulinProfileUiState(
     val activeProfileId: Long?,
     val currentIsf: BgDelta,
     val currentCr: Double,
-    val currentBasal: Double,
+    val currentBasal: InsulinAmount,
     val isfRange: String,
     val crRange: String,
     val basalRange: String,
@@ -49,7 +50,7 @@ data class InsulinProfileUiState(
             activeProfileId = null,
             currentIsf = BgDelta(0),
             currentCr = 0.0,
-            currentBasal = 0.0,
+            currentBasal = InsulinAmount.ZERO,
             isfRange = "",
             crRange = "",
             basalRange = "",
@@ -124,9 +125,9 @@ class CurrentTherapyViewModel(
         val basal = therapyManager.getBasalPerHour(now)
         val bgSettings = therapyManager.getBgSettings()
 
-        val basalValues = currentSettings.insulinProfile.basalBlocks.map { it.amount }
         val crValues = currentSettings.insulinProfile.crBlocks.map { it.amount }
         val isfValues = currentSettings.insulinProfile.isfBlocks.map { it.amount }
+        val basalValues = currentSettings.insulinProfile.basalBlocks.map { it.amount }
 
         val minuteSinceMidnight = now.minutesSinceMidnight()
         val baseBg = currentSettings.defaultBgBlocks.getBgForMinute(minuteSinceMidnight)
