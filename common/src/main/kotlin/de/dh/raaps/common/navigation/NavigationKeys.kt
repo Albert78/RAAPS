@@ -20,4 +20,3 @@ import kotlinx.serialization.Serializable
 @Serializable object SystemControlRoute : NavKey
 @Serializable object AlgorithmDecisionsRoute : NavKey
 @Serializable object AlarmsRoute : NavKey
-@Serializable object PersistentLogsRoute : NavKey

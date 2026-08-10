@@ -14,7 +14,6 @@ import de.dh.raaps.common.model.data.Minutes
 import de.dh.raaps.common.model.data.Tick
 import de.dh.raaps.common.model.data.Timeline
 import de.dh.raaps.common.model.data.Timestamp
-import de.dh.raaps.common.util.PersistentLogger
 import de.dh.raaps.core.repository.TreatmentRepository
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -206,8 +205,6 @@ class ApsAlgorithmImpl(
             onClearTempBasal(treatmentLock)
         }
         if (result.bolus != null && result.bolus.iu >= INSULIN_EPSILON) {
-val time = SimpleDateFormat("HH:mm:ss", Locale.getDefault()).format(Date(System.currentTimeMillis()))
-PersistentLogger.log("ApsAlgorithmImpl", "------------ recalculate: Calling onDeliverBolus to create BOLUS at $time, amount=${result.bolus.iu}")
             onDeliverBolus(treatmentLock, result.bolus, result.handledDeferredBoluses)
         }
 

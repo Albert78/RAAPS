@@ -5,7 +5,6 @@ import de.dh.raaps.common.model.InsulinPump
 import de.dh.raaps.common.model.data.InsulinProfile
 import de.dh.raaps.common.model.data.Minutes
 import de.dh.raaps.common.model.data.Timestamp
-import de.dh.raaps.common.util.PersistentLogger
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -17,9 +16,6 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import java.text.SimpleDateFormat
-import java.util.Date
-import java.util.Locale
 import java.util.UUID
 import kotlin.time.Duration.Companion.milliseconds
 
@@ -166,11 +162,6 @@ class PumpCoordinator(
             expiresAt = expiresAt
         )
 
-if (command is PumpCommand.DeliverBolus) {
-val time = SimpleDateFormat("HH:mm:ss", Locale.getDefault()).format(Date(System.currentTimeMillis()))
-PersistentLogger.log("PumpCoordinator", "------------ issueCommand: Queueing DeliverBolus to eventually create BOLUS at $time, amount=${command.amount.iu}")
-}
-
         _pendingJobs.update { it + job }
         wakeup()
     }
@@ -230,37 +221,16 @@ PersistentLogger.log("PumpCoordinator", "------------ issueCommand: Queueing Del
                 .filter { it.isReady() }
                 .minByOrNull { it.nextAttemptAt } ?: break
 
-if (job.command is PumpCommand.DeliverBolus) {
-val time = SimpleDateFormat("HH:mm:ss", Locale.getDefault()).format(Date(System.currentTimeMillis()))
-PersistentLogger.log("PumpCoordinator", "------------ processJobs: Trying to execute BOLUS job at $time, amount=${job.command.amount.iu}")
-}
-
             val success = tryExecuteJobWithRetries(job)
-
-if (job.command is PumpCommand.DeliverBolus) {
-val time = SimpleDateFormat("HH:mm:ss", Locale.getDefault()).format(Date(System.currentTimeMillis()))
-PersistentLogger.log("PumpCoordinator", "------------ processJobs: Finished BOLUS job at $time, amount=${job.command.amount.iu}")
-}
 
             if (success) {
                 _pendingJobs.update { it - job }
-
-if (job.command is PumpCommand.DeliverBolus) {
-val time = SimpleDateFormat("HH:mm:ss", Locale.getDefault()).format(Date(System.currentTimeMillis()))
-PersistentLogger.log("PumpCoordinator", "------------ processJobs: Success: Job dequeued")
-}
-
             } else {
                 // Schedule for 1 minute later
                 val updatedJob = job.copy(
                     retryCount = job.retryCount + 3,
                     nextAttemptAt = Timestamp.now().plusMinutes(1)
                 )
-
-if (job.command is PumpCommand.DeliverBolus) {
-val time = SimpleDateFormat("HH:mm:ss", Locale.getDefault()).format(Date(System.currentTimeMillis()))
-PersistentLogger.log("PumpCoordinator", "------------ processJobs: Failed: Queuing Job again in 1 minute")
-}
 
                 _pendingJobs.update { (it - job) + updatedJob }
                 // Break loop and try again next time
@@ -287,8 +257,6 @@ PersistentLogger.log("PumpCoordinator", "------------ processJobs: Failed: Queui
     private suspend fun executeOnPump(command: PumpCommand) {
         when (command) {
             is PumpCommand.DeliverBolus -> {
-                val time = SimpleDateFormat("HH:mm:ss", Locale.getDefault()).format(Date(System.currentTimeMillis()))
-PersistentLogger.log("PumpCoordinator", "------------ executeOnPump: Calling InsulinPump#bolus to create BOLUS at $time, amount=${command.amount.iu}")
                 pump.bolus(command.amount.iu)
             }
             is PumpCommand.SetTempBasal -> {

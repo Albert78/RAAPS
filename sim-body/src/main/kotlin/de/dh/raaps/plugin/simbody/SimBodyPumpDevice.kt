@@ -1,11 +1,11 @@
 package de.dh.raaps.plugin.simbody
 
+import android.util.Log
 import de.dh.raaps.common.model.InsulinCategory
 import de.dh.raaps.common.model.InsulinHistoryPoint
 import de.dh.raaps.common.model.MS_PER_DAY
 import de.dh.raaps.common.model.data.InsulinProfile
 import de.dh.raaps.common.model.data.Timestamp
-import de.dh.raaps.common.util.PersistentLogger
 import de.dh.raaps.common.model.data.getAmountForMinute
 import de.dh.raaps.plugin.simbody.repository.db.PumpDao
 import de.dh.raaps.plugin.simbody.repository.db.PumpDeliveryType
@@ -18,9 +18,6 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import java.util.concurrent.CopyOnWriteArrayList
-import java.text.SimpleDateFormat
-import java.util.Date
-import java.util.Locale
 
 /**
  * Represents the physical (simulated) insulin pump device.
@@ -93,7 +90,7 @@ class SimBodyPumpDevice(
                 _history.clear()
                 _history.addAll(loadedHistory)
             } catch (e: Exception) {
-                PersistentLogger.log("SimBodyPumpDevice", "Error loading state: ${e.message}")
+                Log.e("SimBodyPumpDevice", "Error loading state: ${e.message}")
             }
         }
     }
@@ -183,8 +180,6 @@ class SimBodyPumpDevice(
             }
             val basalToDeliver = rate / 3.0
 
-val time = SimpleDateFormat("HH:mm:ss", Locale.getDefault()).format(Date(deliveryTimestamp.ms))
-PersistentLogger.log("SimBodyPumpDevice", "------------ advanceToTick: Calling deliverInternalBasal to create BOLUS at $time, amount=$basalToDeliver")
             deliverInternalBasal(basalToDeliver, deliveryTimestamp, if (_tempBasalPercent.value != null) PumpDeliveryType.Tbr else PumpDeliveryType.Basal)
             lastBasalDeliveryTimestamp = deliveryTimestamp.ms
             persistState()
@@ -207,8 +202,6 @@ PersistentLogger.log("SimBodyPumpDevice", "------------ advanceToTick: Calling d
         persistState()
 
         // Report to body as a small bolus
-val time = SimpleDateFormat("HH:mm:ss", Locale.getDefault()).format(Date(timestamp.ms))
-PersistentLogger.log("SimBodyPumpDevice", "------------ deliverInternalBasal: Calling BodyModel#bolus to create BOLUS at $time, amount=$units")
         bodyModel.bolus(units, timestamp = timestamp)
 
         // Record in history as an insulin delivery
@@ -251,8 +244,6 @@ PersistentLogger.log("SimBodyPumpDevice", "------------ deliverInternalBasal: Ca
         persistState()
 
         // Report to body
-val time = SimpleDateFormat("HH:mm:ss", Locale.getDefault()).format(Date(System.currentTimeMillis()))
-PersistentLogger.log("SimBodyPumpDevice", "------------ deliverBolus: Calling BodyModel#bolus to create BOLUS at $time, amount=$units")
         bodyModel.bolus(units)
 
         // Record in history

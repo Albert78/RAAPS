@@ -4,7 +4,6 @@ import android.app.Application
 import android.app.ForegroundServiceStartNotAllowedException
 import android.content.Intent
 import androidx.core.content.ContextCompat
-import de.dh.raaps.common.util.PersistentLogger
 import de.dh.raaps.core.SystemRegistry
 import de.dh.raaps.core.SystemRegistryImpl
 import de.dh.raaps.core.system.RegistryProvider
@@ -39,9 +38,6 @@ class MainApplication : Application(), RegistryProvider {
     override fun onCreate() {
         super.onCreate()
         instance = this
-
-PersistentLogger.init(this)
-PersistentLogger.log("MainApplication", "------------ Starting application")
 
         androidNotifications = AndroidNotificationsImpl(this)
 

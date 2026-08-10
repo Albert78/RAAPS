@@ -5,7 +5,6 @@ import android.util.Log
 import de.dh.raaps.common.model.InsulinHistory
 import de.dh.raaps.common.model.InsulinPump
 import de.dh.raaps.common.model.data.Timestamp
-import de.dh.raaps.common.util.PersistentLogger
 import de.dh.raaps.core.system.SystemWakeService
 import de.dh.raaps.core.system.WakeupHandler
 import kotlinx.coroutines.CoroutineScope
@@ -14,9 +13,6 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
-import java.text.SimpleDateFormat
-import java.util.Date
-import java.util.Locale
 
 /**
  * Implementation of [PumpManager].
@@ -81,10 +77,6 @@ class PumpManagerImpl(
         }
 
     override suspend fun issueCommand(command: PumpCommand, isCancelableAPSCommand: Boolean) {
-if (command is PumpCommand.DeliverBolus) {
-val time = SimpleDateFormat("HH:mm:ss", Locale.getDefault()).format(Date(System.currentTimeMillis()))
-PersistentLogger.log(TAG, "------------ issueCommand: Calling PumpCoordinator#issueCommand to create BOLUS at $time, amount=${command.amount.iu}")
-}
         pumpCoordinator?.issueCommand(command, isCancelableAPSCommand)
     }
 

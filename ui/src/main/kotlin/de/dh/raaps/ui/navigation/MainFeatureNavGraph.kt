@@ -29,7 +29,6 @@ import de.dh.raaps.common.navigation.MealTypesRoute
 import de.dh.raaps.common.navigation.MealsRoute
 import de.dh.raaps.common.navigation.NavigationViewModel
 import de.dh.raaps.common.navigation.PermissionsRoute
-import de.dh.raaps.common.navigation.PersistentLogsRoute
 import de.dh.raaps.common.navigation.PreferencesMainRoute
 import de.dh.raaps.common.navigation.SystemControlRoute
 import de.dh.raaps.common.navigation.TherapyAdjustmentRoute
@@ -46,7 +45,6 @@ import de.dh.raaps.ui.screens.dashboard.DashboardViewModel
 import de.dh.raaps.ui.screens.fooddatabase.FoodDatabaseScreen
 import de.dh.raaps.ui.screens.history.HistoryScreen
 import de.dh.raaps.ui.screens.insulinprofile.InsulinProfileEditorScreen
-import de.dh.raaps.ui.screens.logs.PersistentLogScreen
 import de.dh.raaps.ui.screens.mealbolus.MealBolusScreen
 import de.dh.raaps.ui.screens.mealbolus.MealBolusViewModel
 import de.dh.raaps.ui.screens.meals.MealTypeEditorScreen
@@ -106,7 +104,6 @@ class MainFeatureNavGraph(
                     onNavigateToAlarms = { navViewModel.push(AlarmsRoute) },
                     onNavigateToTherapySettings = { navViewModel.push(CurrentTherapySettingsRoute) },
                     onNavigateToMealBolus = { navViewModel.push(MealBolusRoute()) },
-                    onNavigateToPersistentLogs = { navViewModel.push(PersistentLogsRoute) },
                     onAdjustmentClick = { navViewModel.push(TherapyAdjustmentRoute) },
                     onHistoryChartClick = { navViewModel.push(HistoryRoute) },
                     extraContent = extraDashboardContent
@@ -308,10 +305,6 @@ class MainFeatureNavGraph(
 
             is AlarmsRoute -> NavEntry(key) {
                 AlarmsScreen(onNavigateUp = { navViewModel.pop() })
-            }
-
-            is PersistentLogsRoute -> NavEntry(key) {
-                PersistentLogScreen(onNavigateUp = { navViewModel.pop() })
             }
 
             else -> null

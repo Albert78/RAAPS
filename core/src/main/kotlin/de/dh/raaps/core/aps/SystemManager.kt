@@ -3,7 +3,6 @@ package de.dh.raaps.core.aps
 import android.app.Notification
 import android.content.Context
 import android.content.Intent
-import android.util.Log
 import de.dh.raaps.AppPreferencesRepository
 import de.dh.raaps.common.model.ApsMode
 import de.dh.raaps.common.model.calculation.CarbsInsulinCalculationModel
@@ -15,7 +14,6 @@ import de.dh.raaps.common.model.data.Timestamp
 import de.dh.raaps.core.repository.AlgorithmInsightRepository
 import de.dh.raaps.core.repository.SettingsRepository
 import de.dh.raaps.core.repository.TreatmentRepository
-import de.dh.raaps.common.util.PersistentLogger
 import de.dh.raaps.core.system.AndroidNotifications
 import de.dh.raaps.core.system.SystemWakeService
 import de.dh.raaps.core.system.WakeupHandler
@@ -30,9 +28,6 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.drop
 import kotlinx.coroutines.launch
-import java.text.SimpleDateFormat
-import java.util.Date
-import java.util.Locale
 import java.util.concurrent.Executors
 
 enum class ApsIssue {
@@ -182,9 +177,7 @@ class SystemManagerImpl(
         }
 
         androidNotifications.createNotificationChannels()
-val handler = NotificationTickHandler()
-PersistentLogger.log("SystemManager", "------------ calling registerTickHandler: priority=${TickPriority.UI}, handler=NotificationTickHandler")
-timeService.registerTickHandler(TickPriority.UI, handler)
+        timeService.registerTickHandler(TickPriority.UI, NotificationTickHandler())
 
         scope.launch {
             therapyManager.recommendations.collect { recommendations ->
@@ -219,8 +212,6 @@ timeService.registerTickHandler(TickPriority.UI, handler)
 
             onCancelInsulinJobs = { treatmentLock -> therapyManager.coreCancelInsulinJobs(treatmentLock) },
             onDeliverBolus = { treatmentLock, amount, handledDeferredBoluses ->
-val time = SimpleDateFormat("HH:mm:ss", Locale.getDefault()).format(Date(System.currentTimeMillis()))
-PersistentLogger.log("SystemManager", "------------ onDeliverBolus: Calling therapyManager.issueBolus to create BOLUS at $time, amount=${amount.iu}")
                 therapyManager.issueBolus(treatmentLock, amount, handledDeferredBoluses)
             },
             onSetTempBasal = { treatmentLock, durationInHours, percent -> therapyManager.setTempBasal(treatmentLock, durationInHours, percent) },

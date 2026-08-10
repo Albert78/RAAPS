@@ -77,7 +77,6 @@ fun DashboardScreen(
     onNavigateToAlarms: () -> Unit,
     onNavigateToTherapySettings: () -> Unit,
     onNavigateToMealBolus: () -> Unit,
-    onNavigateToPersistentLogs: () -> Unit,
     onAdjustmentClick: () -> Unit,
     onHistoryChartClick: () -> Unit,
     extraContent: @Composable () -> Unit = {}
@@ -102,7 +101,6 @@ fun DashboardScreen(
         onNavigateToPermissions = onNavigateToPermissions,
         onNavigateToPreferences = onNavigateToPreferences,
         onNavigateToAlarms = onNavigateToAlarms,
-        onNavigateToPersistentLogs = onNavigateToPersistentLogs,
         onNavigateToTherapySettings = onNavigateToTherapySettings,
         onNavigateToMealBolus = onNavigateToMealBolus,
         onHistoryChartClick = onHistoryChartClick,
@@ -126,7 +124,6 @@ fun DashboardContent(
     onNavigateToPermissions: () -> Unit,
     onNavigateToPreferences: () -> Unit,
     onNavigateToAlarms: () -> Unit,
-    onNavigateToPersistentLogs: () -> Unit,
     onNavigateToTherapySettings: () -> Unit,
     onNavigateToMealBolus: () -> Unit,
     onHistoryChartClick: (() -> Unit)?,
@@ -180,14 +177,6 @@ fun DashboardContent(
                                 onClick = {
                                     menuExpanded = false
                                     onNavigateToPreferences()
-                                }
-                            )
-                            DropdownMenuItem(
-                                text = { Text("Persistent Logs") },
-                                leadingIcon = { Icon(imageVector = Icons.Default.Refresh, contentDescription = null) },
-                                onClick = {
-                                    menuExpanded = false
-                                    onNavigateToPersistentLogs()
                                 }
                             )
                         }
@@ -338,8 +327,7 @@ fun DashboardPreview() {
             onHistoryChartClick = {},
             onApsModeSelect = {},
             onAdjustmentClick = {},
-            onNavigateToMealBolus = {},
-            onNavigateToPersistentLogs = {}
+            onNavigateToMealBolus = {}
         )
     }
 }
@@ -393,8 +381,7 @@ fun DashboardPermissionsWarningPreview() {
             onHistoryChartClick = {},
             onApsModeSelect = {},
             onAdjustmentClick = {},
-            onNavigateToMealBolus = {},
-            onNavigateToPersistentLogs = {}
+            onNavigateToMealBolus = {}
         )
     }
 }

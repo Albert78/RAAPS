@@ -11,16 +11,12 @@ import de.dh.raaps.common.model.data.TickHandler
 import de.dh.raaps.common.model.data.TickPriority
 import de.dh.raaps.common.model.data.TimeService
 import de.dh.raaps.common.model.data.Timestamp
-import de.dh.raaps.common.util.PersistentLogger
 import de.dh.raaps.core.repository.AlgorithmInsightRepository
 import de.dh.raaps.core.repository.TreatmentRepository
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
-import java.text.SimpleDateFormat
-import java.util.Date
-import java.util.Locale
 
 sealed interface CoreState {
     /**
@@ -152,8 +148,6 @@ class Core(
                     therapyManager,
                     onCancelInsulinJobs = onCancelInsulinJobs,
                     onDeliverBolus = { lock, amount, deferred ->
-val time = SimpleDateFormat("HH:mm:ss", Locale.getDefault()).format(Date(System.currentTimeMillis()))
-PersistentLogger.log("Core", "------------ onDeliverBolus Callback: Forwarding to create BOLUS at $time, amount=${amount.iu}")
                         onDeliverBolus(lock, amount, deferred)
                     },
                     onSetTempBasal = onSetTempBasal,
@@ -168,7 +162,6 @@ PersistentLogger.log("Core", "------------ onDeliverBolus Callback: Forwarding t
                     carbsInsulinCalculationModel = carbsInsulinCalculationModel
                 )
 
-PersistentLogger.log("Core", "------------ calling registerTickHandler: priority=${TickPriority.APS}, handler=Core")
                 timeService.registerTickHandler(TickPriority.APS, this@Core)
 
                 Log.d(TAG, "Finished initialization...")
@@ -210,8 +203,6 @@ PersistentLogger.log("Core", "------------ calling registerTickHandler: priority
                         }
                         return@atomic
                     }
-val time = SimpleDateFormat("HH:mm:ss", Locale.getDefault()).format(Date(System.currentTimeMillis()))
-PersistentLogger.log("Core", "------------ onTick: Calling ApsAlgorithmImpl#recalculate to create BOLUS at $time")
                     val issues = alg.recalculate(treatmentLock)
                     if (issues.isNotEmpty()) {
                         setCoreState(CoreState.Blocked(issues.first()))

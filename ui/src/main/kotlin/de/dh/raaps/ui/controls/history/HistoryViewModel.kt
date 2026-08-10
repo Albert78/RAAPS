@@ -18,7 +18,6 @@ import de.dh.raaps.common.model.data.Tick
 import de.dh.raaps.common.model.data.TickHandler
 import de.dh.raaps.common.model.data.TickPriority
 import de.dh.raaps.common.model.data.Timestamp
-import de.dh.raaps.common.util.PersistentLogger
 import de.dh.raaps.core.SystemRegistry
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -128,7 +127,6 @@ class HistoryViewModel(
     }
 
     init {
-PersistentLogger.log("HistoryViewModel", "------------ calling registerTickHandler: priority=${TickPriority.UI}, handler=HistoryViewModel")
         systemRegistry.timeService.registerTickHandler(TickPriority.UI, this)
 
         viewModelScope.launch {

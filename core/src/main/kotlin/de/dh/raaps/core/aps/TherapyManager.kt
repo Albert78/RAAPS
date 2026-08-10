@@ -13,7 +13,6 @@ import de.dh.raaps.common.model.data.InsulinProfile
 import de.dh.raaps.common.model.data.Timestamp
 import de.dh.raaps.common.model.data.getAmountForMinute
 import de.dh.raaps.common.model.data.getBgForMinute
-import de.dh.raaps.common.util.PersistentLogger
 import de.dh.raaps.core.pump.PumpCommand
 import de.dh.raaps.core.pump.PumpManager
 import de.dh.raaps.core.repository.TherapyRepository
@@ -27,9 +26,6 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
-import java.text.SimpleDateFormat
-import java.util.Date
-import java.util.Locale
 import kotlin.time.Duration.Companion.seconds
 
 /**
@@ -286,8 +282,6 @@ class TherapyManager(
             ApsMode.BasalOnly -> recommendBolus(treatmentLock, amount)
             ApsMode.AutoCorrection -> {
                 scope.launch {
-val time = SimpleDateFormat("HH:mm:ss", Locale.getDefault()).format(Date(System.currentTimeMillis()))
-PersistentLogger.log("TherapyManager", "------------ issueBolus: Calling PumpManager#issueCommand to create BOLUS at $time, amount=${amount.iu}")
                     pumpManager.issueCommand(
                         PumpCommand.DeliverBolus(amount),
                         isCancelableAPSCommand = true

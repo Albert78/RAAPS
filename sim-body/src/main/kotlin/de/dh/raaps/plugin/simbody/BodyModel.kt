@@ -18,7 +18,6 @@ import de.dh.raaps.common.model.data.Block
 import de.dh.raaps.common.model.data.Minutes
 import de.dh.raaps.common.model.data.Timestamp
 import de.dh.raaps.common.model.data.getAmountForMinute
-import de.dh.raaps.common.util.PersistentLogger
 import de.dh.raaps.plugin.simbody.model.BodyProfile
 import de.dh.raaps.plugin.simbody.repository.db.SimBodyDao
 import de.dh.raaps.plugin.simbody.repository.db.SimEventEntity
@@ -31,9 +30,6 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import org.json.JSONArray
-import java.text.SimpleDateFormat
-import java.util.Date
-import java.util.Locale
 
 data class Impacts(
     val carbImpact: Double,
@@ -462,8 +458,6 @@ class BodyModel(
 
         simBodyDao?.let { dao ->
             scope.launch {
-val time = SimpleDateFormat("HH:mm:ss", Locale.getDefault()).format(Date(entry.timestamp.ms))
-PersistentLogger.log("BodyModel", "------------ bolus: Creating SimEventEntity for BOLUS at $time, amount=${entry.amount}")
                 dao.insertEvent(
                     SimEventEntity(
                         type = "BOLUS",
