@@ -174,6 +174,9 @@ class SystemManagerImpl(
 
                     // Synchronize our internal ticking grid to fire 20s after the BG reading.
                     timeService.synchronize(Timestamp.now().plusSeconds(20))
+
+                    // Update notification immediately
+                    androidNotifications.updateMainAppNotification(glucoseSourceManager)
                 }
             }
         }
