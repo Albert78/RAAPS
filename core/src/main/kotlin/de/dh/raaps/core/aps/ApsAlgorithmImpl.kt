@@ -8,6 +8,7 @@ import de.dh.raaps.common.model.convertToCarbsFromBgDelta
 import de.dh.raaps.common.model.convertToUnitsFromBgDelta
 import de.dh.raaps.common.model.convertToUnitsFromCarbs
 import de.dh.raaps.common.model.data.BgDelta
+import de.dh.raaps.common.model.data.BgValue
 import de.dh.raaps.common.model.data.Minutes
 import de.dh.raaps.common.model.data.Tick
 import de.dh.raaps.common.model.data.Timeline
@@ -361,15 +362,15 @@ PersistentLogger.log("ApsAlgorithmImpl", "------------ recalculate: Calling onDe
 
         val insightTemplate = AlgorithmInsight(
             timestamp = now,
-            bgOriginal = sampledBgReadings.getAt(nowTick).mgdl,
-            bgFiltered = currentBgMgDl,
-            deviationPerTick = avgCurrentDeviationPerTick.mgdl.toDouble(),
+            bgOriginal = sampledBgReadings.getAt(nowTick),
+            bgFiltered = BgValue.fromMgDl(currentBgMgDl),
+            deviationPerTick = avgCurrentDeviationPerTick,
             iobAtPeak = iobAtPeak,
             cobAtPeak = cobAtPeak,
             cobEquivalentOfBasalAtPeak = cobEquivalentOfBasalAtPeak,
-            predictedBgAtPeak = 0, // Will be filled below if available
-            targetBg = targetBg.mgdl,
-            isf = isfValue.mgdl.toDouble(),
+            predictedBgAtPeak = BgValue.INVALID, // Will be filled below if available
+            targetBg = targetBg,
+            isf = isfValue,
             cr = crValue,
             reasoning = AlgorithmReasoning.INTERNAL_ERROR // Dummy, will be overwritten
         )
@@ -382,7 +383,7 @@ PersistentLogger.log("ApsAlgorithmImpl", "------------ recalculate: Calling onDe
             takeIf { it.isValid() } ?:
             return CalculationResult.safetyBasal().copy(metrics = insightTemplate) // This should never happen if we have BG values. If not, fall back to safety basal.
 
-        val insight = insightTemplate.copy(predictedBgAtPeak = predictedBgAtPeak.mgdl)
+        val insight = insightTemplate.copy(predictedBgAtPeak = predictedBgAtPeak)
         val bgErrorAtPeak = predictedBgAtPeak - targetBg // < 0 if too low
 
         // Low protection for "lower than target" situations

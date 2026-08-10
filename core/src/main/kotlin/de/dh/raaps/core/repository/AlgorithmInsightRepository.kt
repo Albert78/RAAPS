@@ -36,10 +36,10 @@ class AlgorithmInsightRepository(private val appDatabase: AppDatabase) {
         targetBg = targetBg,
         isf = isf,
         cr = cr,
-        reasoning = reasoning,
         actionBolus = actionBolus,
         actionTempBasalPercent = actionTempBasalPercent,
-        actionTempBasalDurationInHours = actionTempBasalDurationInHours
+        actionTempBasalDurationInHours = actionTempBasalDurationInHours,
+        reasoning = reasoning
     )
 
     private fun AlgorithmInsightEntity.toDomain() = AlgorithmInsight(

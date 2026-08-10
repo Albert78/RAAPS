@@ -2,7 +2,7 @@
   "formatVersion": 1,
   "database": {
     "version": 1,
-    "identityHash": "b63faf46bbd5f1268e14d417fba4b5d2",
+    "identityHash": "4441d8592d2f0dacbf7a7fba7b9ae0cb",
     "entities": [
       {
         "tableName": "sensor_type",
@@ -525,7 +525,7 @@
       },
       {
         "tableName": "algorithm_insights",
-        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `timestamp` INTEGER NOT NULL, `bgOriginal` INTEGER NOT NULL, `bgFiltered` INTEGER NOT NULL, `deviationPerTick` REAL NOT NULL, `iobAtPeak` REAL NOT NULL, `cobAtPeak` REAL NOT NULL, `cobEquivalentOfBasalAtPeak` REAL NOT NULL, `predictedBgAtPeak` INTEGER NOT NULL, `targetBg` INTEGER NOT NULL, `isf` REAL NOT NULL, `cr` REAL NOT NULL, `reasoning` TEXT NOT NULL, `actionBolus` REAL, `actionTempBasalPercent` INTEGER, `actionTempBasalDurationInHours` INTEGER)",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `timestamp` INTEGER NOT NULL, `bgOriginal` INTEGER NOT NULL, `bgFiltered` INTEGER NOT NULL, `deviationPerTick` INTEGER NOT NULL, `iobAtPeak` REAL NOT NULL, `cobAtPeak` REAL NOT NULL, `cobEquivalentOfBasalAtPeak` REAL NOT NULL, `predictedBgAtPeak` INTEGER NOT NULL, `targetBg` INTEGER NOT NULL, `isf` INTEGER NOT NULL, `cr` REAL NOT NULL, `actionBolus` REAL, `actionTempBasalPercent` INTEGER, `actionTempBasalDurationInHours` INTEGER, `reasoning` TEXT NOT NULL)",
         "fields": [
           {
             "fieldPath": "id",
@@ -554,7 +554,7 @@
           {
             "fieldPath": "deviationPerTick",
             "columnName": "deviationPerTick",
-            "affinity": "REAL",
+            "affinity": "INTEGER",
             "notNull": true
           },
           {
@@ -590,19 +590,13 @@
           {
             "fieldPath": "isf",
             "columnName": "isf",
-            "affinity": "REAL",
+            "affinity": "INTEGER",
             "notNull": true
           },
           {
             "fieldPath": "cr",
             "columnName": "cr",
             "affinity": "REAL",
-            "notNull": true
-          },
-          {
-            "fieldPath": "reasoning",
-            "columnName": "reasoning",
-            "affinity": "TEXT",
             "notNull": true
           },
           {
@@ -619,6 +613,12 @@
             "fieldPath": "actionTempBasalDurationInHours",
             "columnName": "actionTempBasalDurationInHours",
             "affinity": "INTEGER"
+          },
+          {
+            "fieldPath": "reasoning",
+            "columnName": "reasoning",
+            "affinity": "TEXT",
+            "notNull": true
           }
         ],
         "primaryKey": {
@@ -631,7 +631,7 @@
     ],
     "setupQueries": [
       "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
-      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, 'b63faf46bbd5f1268e14d417fba4b5d2')"
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '4441d8592d2f0dacbf7a7fba7b9ae0cb')"
     ]
   }
 }

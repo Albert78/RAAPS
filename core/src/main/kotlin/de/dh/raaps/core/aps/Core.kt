@@ -3,6 +3,8 @@ package de.dh.raaps.core.aps
 import android.util.Log
 import de.dh.raaps.common.model.InsulinAmount
 import de.dh.raaps.common.model.calculation.CarbsInsulinCalculationModel
+import de.dh.raaps.common.model.data.BgDelta
+import de.dh.raaps.common.model.data.BgValue
 import de.dh.raaps.common.model.data.CurrentTherapySettings
 import de.dh.raaps.common.model.data.Tick
 import de.dh.raaps.common.model.data.TickHandler
@@ -193,15 +195,15 @@ PersistentLogger.log("Core", "------------ calling registerTickHandler: priority
                             algorithmInsightRepository.saveInsight(
                                 AlgorithmInsight(
                                     timestamp = now,
-                                    bgOriginal = 0,
-                                    bgFiltered = 0,
-                                    deviationPerTick = 0.0,
+                                    bgOriginal = BgValue.INVALID,
+                                    bgFiltered = BgValue.INVALID,
+                                    deviationPerTick = BgDelta.fromMgDl(0),
                                     iobAtPeak = 0.0,
                                     cobAtPeak = 0.0,
                                     cobEquivalentOfBasalAtPeak = 0.0,
-                                    predictedBgAtPeak = 0,
-                                    targetBg = 0,
-                                    isf = 0.0,
+                                    predictedBgAtPeak = BgValue.INVALID,
+                                    targetBg = BgValue.INVALID,
+                                    isf = BgDelta.fromMgDl(0),
                                     cr = 0.0,
                                     reasoning = AlgorithmReasoning.PENDING_PUMP_JOBS
                                 )

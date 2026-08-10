@@ -123,7 +123,7 @@ fun InsightCard(insight: AlgorithmInsight) {
             }
             Spacer(modifier = Modifier.height(8.dp))
             Row(modifier = Modifier.fillMaxWidth()) {
-                MetricItem(stringResource(id = R.string.algorithm_insight_label_bg), "${insight.bgFiltered} (raw: ${insight.bgOriginal})")
+                MetricItem(stringResource(id = R.string.algorithm_insight_label_bg), "${insight.bgFiltered.mgdl} (raw: ${insight.bgOriginal.mgdl})")
                 Spacer(modifier = Modifier.width(16.dp))
                 MetricItem(stringResource(id = R.string.algorithm_insight_label_iob), "%.2f U".format(insight.iobAtPeak))
                 Spacer(modifier = Modifier.width(16.dp))
@@ -131,15 +131,15 @@ fun InsightCard(insight: AlgorithmInsight) {
             }
             Spacer(modifier = Modifier.height(8.dp))
             Row(modifier = Modifier.fillMaxWidth()) {
-                MetricItem(stringResource(id = R.string.algorithm_insight_label_pred_peak), "${insight.predictedBgAtPeak} mg/dL")
+                MetricItem(stringResource(id = R.string.algorithm_insight_label_pred_peak), "${insight.predictedBgAtPeak.mgdl} mg/dL")
                 Spacer(modifier = Modifier.width(16.dp))
-                MetricItem(stringResource(id = R.string.algorithm_insight_label_dev), "%+.1f".format(insight.deviationPerTick))
+                MetricItem(stringResource(id = R.string.algorithm_insight_label_dev), "%+d".format(insight.deviationPerTick.mgdl))
                 Spacer(modifier = Modifier.width(16.dp))
-                MetricItem(stringResource(id = R.string.algorithm_insight_label_target), "${insight.targetBg} mg/dL")
+                MetricItem(stringResource(id = R.string.algorithm_insight_label_target), "${insight.targetBg.mgdl} mg/dL")
             }
             Spacer(modifier = Modifier.height(8.dp))
             Row(modifier = Modifier.fillMaxWidth()) {
-                MetricItem(stringResource(id = R.string.algorithm_insight_label_isf), "%.1f".format(insight.isf))
+                MetricItem(stringResource(id = R.string.algorithm_insight_label_isf), "%d".format(insight.isf.mgdl))
                 Spacer(modifier = Modifier.width(16.dp))
                 MetricItem(stringResource(id = R.string.algorithm_insight_label_cr), "%.1f".format(insight.cr))
                 Spacer(modifier = Modifier.width(16.dp))
