@@ -85,6 +85,7 @@ class PredictionModel(
         tryGetTickState(nowTick)?.predictedBg = bg
 
         var deviationPerTick = avgCurrentDeviationPerTick
+        var runningCumulatedBasal = 0.0
         forEachS(from = nowTick + 1, to = getLastTick()) { tick, state ->
             if (state.effectiveCarbs == null) {
                 state.effectiveCarbs = carbsInsulinCalculationModel.carbAbsorption(
@@ -112,7 +113,8 @@ class PredictionModel(
 
             // BGI calculation:
             val basalUnitsPerTick = state.basalRateUph!! * (timeline.tickDuration.value.toDouble() / 60.0)
-            state.cumulatedBasalInsulin += basalUnitsPerTick
+            runningCumulatedBasal += basalUnitsPerTick
+            state.cumulatedBasalInsulin = runningCumulatedBasal
 
             // At steady state, the activity of a continuous basal rate is equal to its delivery rate.
             // This simplification allows us to subtract the scheduled basal units directly from

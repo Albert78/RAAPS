@@ -40,6 +40,7 @@ class PredictionTickState {
         isf = null
         cr = null
         bgi = BgDelta(0)
+        cumulatedBasalInsulin = 0.0
         predictedBg = BgValue.INVALID
     }
 }
