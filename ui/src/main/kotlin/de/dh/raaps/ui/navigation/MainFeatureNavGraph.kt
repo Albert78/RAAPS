@@ -287,7 +287,11 @@ class MainFeatureNavGraph(
             }
 
             is SystemControlRoute -> NavEntry(key) {
+                val vm: SystemControlViewModel = viewModel(
+                    factory = SystemControlViewModel.Companion.Factory(registry)
+                )
                 SystemControlScreen(
+                    viewModel = vm,
                     onNavigateUp = { navViewModel.pop() },
                     onNavigateToAlgorithmDecisions = { navViewModel.push(AlgorithmDecisionsRoute) }
                 )

@@ -34,11 +34,15 @@ class GlucoseSourceManager(
     var lastBg: BgReading? = null
         private set
 
-    var glucoseSource: GlucoseSource? = null
+    private val _glucoseSource = MutableStateFlow<GlucoseSource?>(null)
+    val activeGlucoseSource: StateFlow<GlucoseSource?> = _glucoseSource.asStateFlow()
+
+    var glucoseSource: GlucoseSource?
+        get() = _glucoseSource.value
         set(value) {
-            field?.stop()
-            field = value
-            field?.start()
+            _glucoseSource.value?.stop()
+            _glucoseSource.value = value
+            _glucoseSource.value?.start()
             restartGlucosePipeline()
         }
 

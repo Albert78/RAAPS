@@ -3,11 +3,13 @@ package de.dh.raaps.ui.screens.systemcontrol
 import android.content.res.Configuration
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
@@ -22,23 +24,35 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import de.dh.raaps.common.model.data.BgReadingsInterval
+import de.dh.raaps.common.model.data.GlucoseUnit
 import de.dh.raaps.ui.R
 import de.dh.raaps.ui.common.composables.PrimaryButton
 import de.dh.raaps.ui.common.composables.screenTitle
 import de.dh.raaps.ui.common.theme.AppTheme
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 
 @Composable
 fun SystemControlScreen(
     onNavigateUp: () -> Unit,
-    onNavigateToAlgorithmDecisions: () -> Unit
+    onNavigateToAlgorithmDecisions: () -> Unit,
+    viewModel: SystemControlViewModel
 ) {
+    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+
     SystemControlContent(
+        uiState = uiState,
         onNavigateUp = onNavigateUp,
         onNavigateToAlgorithmDecisions = onNavigateToAlgorithmDecisions
     )
@@ -47,9 +61,12 @@ fun SystemControlScreen(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SystemControlContent(
+    uiState: SystemControlUiState,
     onNavigateUp: () -> Unit,
     onNavigateToAlgorithmDecisions: () -> Unit
 ) {
+    val timeFormat = remember { SimpleDateFormat("HH:mm:ss", Locale.getDefault()) }
+
     Scaffold(
         topBar = {
             TopAppBar(
@@ -80,13 +97,123 @@ fun SystemControlContent(
                         .padding(vertical = 8.dp),
                     colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
                 ) {
-                    Box(
+                    Column(
                         modifier = Modifier
                             .padding(16.dp)
-                            .fillMaxWidth(),
-                        contentAlignment = Alignment.Center
+                            .fillMaxWidth()
                     ) {
-                        Text("TODO: CGM Status & Control", style = MaterialTheme.typography.bodyMedium)
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(
+                                text = stringResource(id = R.string.system_control_cgm_source_label),
+                                style = MaterialTheme.typography.labelLarge,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text(
+                                text = uiState.glucoseSourceName ?: stringResource(id = R.string.system_control_cgm_not_connected),
+                                style = MaterialTheme.typography.bodyLarge,
+                                fontWeight = FontWeight.Medium
+                            )
+                        }
+
+                        if (uiState.glucoseSourceName != null) {
+                            Spacer(modifier = Modifier.height(8.dp))
+
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Text(
+                                    text = stringResource(id = R.string.system_control_cgm_sensor_type_label),
+                                    style = MaterialTheme.typography.labelLarge,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Text(
+                                    text = uiState.sensorTypeName ?: "--",
+                                    style = MaterialTheme.typography.bodyLarge,
+                                    fontWeight = FontWeight.Medium
+                                )
+                            }
+
+                            Spacer(modifier = Modifier.height(8.dp))
+
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Text(
+                                    text = stringResource(id = R.string.system_control_cgm_interval_label),
+                                    style = MaterialTheme.typography.labelLarge,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                                Spacer(modifier = Modifier.width(8.dp))
+                                val intervalText = when (uiState.readingsInterval) {
+                                    BgReadingsInterval.OneMinute -> stringResource(id = R.string.system_control_cgm_interval_1min)
+                                    BgReadingsInterval.FiveMinutes -> stringResource(id = R.string.system_control_cgm_interval_5min)
+                                    BgReadingsInterval.AdHoc -> stringResource(id = R.string.system_control_cgm_interval_adhoc)
+                                    null -> "--"
+                                }
+                                Text(
+                                    text = intervalText,
+                                    style = MaterialTheme.typography.bodyLarge,
+                                    fontWeight = FontWeight.Medium
+                                )
+                            }
+                        }
+
+                        Spacer(modifier = Modifier.height(8.dp))
+
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(
+                                text = stringResource(id = R.string.system_control_cgm_last_value_label),
+                                style = MaterialTheme.typography.labelLarge,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            val unitText = stringResource(
+                                id = if (uiState.glucoseUnit == GlucoseUnit.MG_DL)
+                                    R.string.glucose_unit_mgdl else R.string.glucose_unit_mmol
+                            )
+                            val bgValueText = uiState.lastBgReading?.let {
+                                "${it.value.toString(uiState.glucoseUnit)} $unitText"
+                            } ?: "--"
+                            val timeText = uiState.lastBgReading?.timestamp?.let { timeFormat.format(Date(it.ms)) } ?: "--"
+
+                            Text(
+                                text = stringResource(id = R.string.system_control_cgm_value_at_time, bgValueText, timeText),
+                                style = MaterialTheme.typography.bodyLarge,
+                                fontWeight = FontWeight.Medium
+                            )
+                        }
+
+                        if (uiState.nextPredictedTimestamp != null) {
+                            Spacer(modifier = Modifier.height(8.dp))
+
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Text(
+                                    text = stringResource(id = R.string.system_control_cgm_next_value_label),
+                                    style = MaterialTheme.typography.labelLarge,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                                Spacer(modifier = Modifier.width(8.dp))
+                                val nextTimeText = timeFormat.format(Date(uiState.nextPredictedTimestamp.ms))
+                                Text(
+                                    text = stringResource(id = R.string.system_control_cgm_at_time, nextTimeText),
+                                    style = MaterialTheme.typography.bodyLarge,
+                                    fontWeight = FontWeight.Medium
+                                )
+                            }
+                        }
                     }
                 }
             }
@@ -158,6 +285,14 @@ fun SectionHeader(title: String) {
 fun SystemControlPreview() {
     AppTheme {
         SystemControlContent(
+            uiState = SystemControlUiState(
+                glucoseSourceName = "Dexcom G6",
+                sensorTypeName = "G6-Sensor",
+                readingsInterval = BgReadingsInterval.FiveMinutes,
+                lastBgReading = null,
+                nextPredictedTimestamp = de.dh.raaps.common.model.data.Timestamp(System.currentTimeMillis() + 300000),
+                glucoseUnit = de.dh.raaps.common.model.data.GlucoseUnit.MG_DL
+            ),
             onNavigateUp = {},
             onNavigateToAlgorithmDecisions = {}
         )

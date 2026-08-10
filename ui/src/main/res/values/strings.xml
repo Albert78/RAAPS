@@ -170,7 +170,7 @@
     <string name="aps_control_therapy_adjustment_dialog_bg_adjustment_description">Überschreibt Zielwert und Niedrig-&#173;Schwelle für einen begrenzten Zeitraum.</string>
     <string name="aps_control_therapy_adjustment_dialog_presets_title">Schnellauswahl</string>
 
-    <string name="glucose_unit_mgdl">mg/dL</string>
+    <string name="glucose_unit_mgdl">mg/dl</string>
     <string name="glucose_unit_mmol">mmol/l</string>
     <string name="approx_prefix">ca.</string>
     <string name="active_carbs_label">Aktive KH</string>
@@ -240,6 +240,17 @@
     <string name="cd_edit">Bearbeiten</string>
     <string name="system_control_screen_title">Systemsteuerung</string>
     <string name="system_control_cgm_subsystem">CGM-Teilsystem</string>
+    <string name="system_control_cgm_source_label">Quelle:</string>
+    <string name="system_control_cgm_sensor_type_label">Sensortyp:</string>
+    <string name="system_control_cgm_interval_label">Intervall:</string>
+    <string name="system_control_cgm_last_value_label">Letzter Wert:</string>
+    <string name="system_control_cgm_next_value_label">Nächster Wert:</string>
+    <string name="system_control_cgm_value_at_time">%1$s um %2$s</string>
+    <string name="system_control_cgm_at_time">%1$s</string>
+    <string name="system_control_cgm_interval_1min">1 Min.</string>
+    <string name="system_control_cgm_interval_5min">5 Min.</string>
+    <string name="system_control_cgm_interval_adhoc">Ad-hoc</string>
+    <string name="system_control_cgm_not_connected">Nicht verbunden</string>
     <string name="system_control_pump_subsystem">Pumpen-Teilsystem</string>
     <string name="system_control_algorithm_subsystem">Algorithmus</string>
     <string name="system_control_algorithm_history_button">Verlauf</string>
