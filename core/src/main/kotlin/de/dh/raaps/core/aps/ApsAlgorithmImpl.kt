@@ -4,6 +4,7 @@ import android.util.Log
 import de.dh.raaps.common.model.INSULIN_EPSILON
 import de.dh.raaps.common.model.InsulinAmount
 import de.dh.raaps.common.model.calculation.CarbsInsulinCalculationModel
+import de.dh.raaps.common.model.convertToBgDeltaFromUnits
 import de.dh.raaps.common.model.convertToCarbsFromBgDelta
 import de.dh.raaps.common.model.convertToUnitsFromBgDelta
 import de.dh.raaps.common.model.convertToUnitsFromCarbs
@@ -13,7 +14,6 @@ import de.dh.raaps.common.model.data.Minutes
 import de.dh.raaps.common.model.data.Tick
 import de.dh.raaps.common.model.data.Timeline
 import de.dh.raaps.common.model.data.Timestamp
-import de.dh.raaps.common.model.data.getAmountForMinute
 import de.dh.raaps.common.util.PersistentLogger
 import de.dh.raaps.core.repository.TreatmentRepository
 import java.text.SimpleDateFormat
@@ -339,26 +339,18 @@ PersistentLogger.log("ApsAlgorithmImpl", "------------ recalculate: Calling onDe
         }
 
         val cobAtPeak = carbsInsulinCalculationModel.cob(meals, now.plus(insulinPeak))
+        val iobNow = carbsInsulinCalculationModel.iob(
+            insulinApplications = insulinApplications,
+            timestamp = now,
+            dia = dia,
+            peak = insulinPeak
+        )
         val iobAtPeak = carbsInsulinCalculationModel.iob(
             insulinApplications = insulinApplications,
             timestamp = now.plus(insulinPeak),
             dia = dia,
             peak = insulinPeak
         )
-        val cobEquivalentOfBasalAtPeak = run {
-            var totalBasalCarbs = 0.0
-            // We calculate the equivalent for a period relative to DIA.
-            // In a steady state, the IOB reservoir is approx. DIA / 1.6.
-            // For a 5h (300m) DIA, this is 180m (factor 0.6).
-            val windowMinutes = (dia.value.toInt() * 0.6).toInt()
-            for (m in insulinPeak.value.toInt() until (insulinPeak.value.toInt() + windowMinutes)) {
-                val t = now.plusMinutes(m)
-                val baseBasal = settings.insulinProfile.basalBlocks.getAmountForMinute(t.minutesSinceMidnight())
-                val baseCr = settings.insulinProfile.crBlocks.getAmountForMinute(t.minutesSinceMidnight())
-                totalBasalCarbs += (baseBasal / 60.0) * baseCr
-            }
-            totalBasalCarbs
-        }
 
         val insightTemplate = AlgorithmInsight(
             timestamp = now,
@@ -378,7 +370,10 @@ PersistentLogger.log("ApsAlgorithmImpl", "------------ recalculate: Calling onDe
         val recentCarbsInG = meals.
             filter { meal -> meal.timestamp > now.minusMinutes(20) }.
             sumOf { meal -> meal.carbGrams }
-        val predictedBgAtPeak = predictionModel.tryGetTickState(nowTick + insulinPeakTicks)?.
+        val tickStateAtPeak = predictionModel.tryGetTickState(
+            nowTick + insulinPeakTicks
+        ) ?: return CalculationResult.safetyBasal().copy(metrics = insightTemplate) // This should never happen if we have BG values. If not, fall back to safety basal.
+        val predictedBgAtPeak = tickStateAtPeak?.
             predictedBg?.
             takeIf { it.isValid() } ?:
             return CalculationResult.safetyBasal().copy(metrics = insightTemplate) // This should never happen if we have BG values. If not, fall back to safety basal.
@@ -388,9 +383,15 @@ PersistentLogger.log("ApsAlgorithmImpl", "------------ recalculate: Calling onDe
 
         // Low protection for "lower than target" situations
         if (bgErrorAtPeak < BgDelta(-10)) {
-            // Prediction is too low; Either BG is falling, or, raising too slow -> Lower basal rate and defer meals
+            // Prediction is too low under normal basal;
+            // Either BG is falling, or, raising too slow -> Lower basal rate and defer meals
 
-            if (bgErrorAtPeak < BgDelta(-20)) {
+            val cumulatedInsulinActivityUntilPeak = iobNow - iobAtPeak
+            val currentInsulinEffectUntilPeak = -convertToBgDeltaFromUnits(cumulatedInsulinActivityUntilPeak, isfValue)
+            val normalBasalEffectUntilPeak = -convertToBgDeltaFromUnits(tickStateAtPeak.cumulatedBasalInsulin, isfValue)
+            val lowTempBasalEffectUntilPeak = currentInsulinEffectUntilPeak - normalBasalEffectUntilPeak
+
+            if (bgErrorAtPeak + lowTempBasalEffectUntilPeak < BgDelta(-20)) {
                 // Prediction is too low -> Defer ongoing meal boluses
                 val safetyCorrectionCarbsInG = convertToCarbsFromBgDelta(-bgErrorAtPeak, isfValue, crValue)
                 if (recentCarbsInG < safetyCorrectionCarbsInG) {
@@ -453,7 +454,7 @@ PersistentLogger.log("ApsAlgorithmImpl", "------------ recalculate: Calling onDe
             }
         }
 
-        val insulinEquivalentOfCob = convertToUnitsFromCarbs(carbs = cobAtPeak + cobEquivalentOfBasalAtPeak, cr = crValue)
+        val insulinEquivalentOfCob = convertToUnitsFromCarbs(carbs = cobAtPeak, cr = crValue)
 
         val bgErrorCorrectionUnits = convertToUnitsFromBgDelta(bgErrorAtPeak, isfValue).
             coerceAtLeast(0.0) * AGGRESSIVENESS_ERROR_CORRECTION
