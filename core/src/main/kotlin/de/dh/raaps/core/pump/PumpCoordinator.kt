@@ -217,9 +217,17 @@ PersistentLogger.log("PumpCoordinator", "------------ issueCommand: Queueing Del
     }
 
     private suspend fun processJobs() {
+        // Cleanup expired jobs
+        val expired = _pendingJobs.value.filter { it.isExpired() }
+        if (expired.isNotEmpty()) {
+            _pendingJobs.update { it - expired.toSet() }
+            expired.forEach { onJobError(it, JobErrorCode.Expired) }
+        }
+
+        // Execute jobs
         while (true) {
             val job = _pendingJobs.value
-                .filter { it.isReady() && !it.isExpired() }
+                .filter { it.isReady() }
                 .minByOrNull { it.nextAttemptAt } ?: break
 
 if (job.command is PumpCommand.DeliverBolus) {
@@ -258,13 +266,6 @@ PersistentLogger.log("PumpCoordinator", "------------ processJobs: Failed: Queui
                 // Break loop and try again next time
                 break
             }
-        }
-
-        // Cleanup expired jobs
-        val expired = _pendingJobs.value.filter { it.isExpired() }
-        if (expired.isNotEmpty()) {
-            _pendingJobs.update { it - expired.toSet() }
-            expired.forEach { onJobError(it, JobErrorCode.Expired) }
         }
     }
 
