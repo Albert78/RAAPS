@@ -458,12 +458,13 @@ PersistentLogger.log("ApsAlgorithmImpl", "------------ recalculate: Calling onDe
         val bgErrorCorrectionUnits = convertToUnitsFromBgDelta(bgErrorAtPeak, isfValue).
             coerceAtLeast(0.0) * AGGRESSIVENESS_ERROR_CORRECTION
         val futureInsulinU = iobAtPeak + dueMealBolusAmount.iu + sumFutureDeferredBolus.iu
-        if (futureInsulinU > insulinEquivalentOfCob + bgErrorCorrectionUnits) {
+        if (futureInsulinU + INSULIN_EPSILON >= insulinEquivalentOfCob + bgErrorCorrectionUnits) {
             // Meals and BG error are covered by IOB/planned boluses.
             // Return to normal basal rate and wait for insulin/carbs to act.
             if (dueDeferredBoluses.isEmpty())
                 CalculationResult.normalSafetyBasal().copy(metrics = insight)
             else
+                // TODO: If BG is too high, consider administering a deferred bolus at once
                 CalculationResult.mealOrCorrectionBolus(
                     bolusAmount = dueMealBolusAmount,
                     handledDeferredBoluses = dueDeferredBoluses
