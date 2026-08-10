@@ -275,6 +275,8 @@ PersistentLogger.log("PumpCoordinator", "------------ processJobs: Failed: Queui
                 return true
             } catch (_: Exception) {
                 // TODO: Handle different types of exceptions: Connection/Operation/Runtime
+                // Connection -> retry
+                // Operation, Runtime -> User message, algorithm issue
                 if (it < 2) delay(RETRY_INTERVAL_MS.milliseconds)
             }
         }

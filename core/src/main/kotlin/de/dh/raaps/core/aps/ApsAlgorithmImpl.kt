@@ -463,7 +463,10 @@ PersistentLogger.log("ApsAlgorithmImpl", "------------ recalculate: Calling onDe
             if (dueDeferredBoluses.isEmpty())
                 CalculationResult.normalSafetyBasal().copy(metrics = insight)
             else
-                CalculationResult.mealOrCorrectionBolus(bolusAmount = dueMealBolusAmount, handledDeferredBoluses = dueDeferredBoluses).copy(metrics = insight)
+                CalculationResult.mealOrCorrectionBolus(
+                    bolusAmount = dueMealBolusAmount,
+                    handledDeferredBoluses = dueDeferredBoluses
+                ).copy(metrics = insight)
         } else {
             // Insufficient insulin: Calculate the delta needed to cover the gap.
             val neededInsulin = insulinEquivalentOfCob * AGGRESSIVENESS_CARBS_CORRECTION +

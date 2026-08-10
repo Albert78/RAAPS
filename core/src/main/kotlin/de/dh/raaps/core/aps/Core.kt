@@ -8,6 +8,7 @@ import de.dh.raaps.common.model.data.Tick
 import de.dh.raaps.common.model.data.TickHandler
 import de.dh.raaps.common.model.data.TickPriority
 import de.dh.raaps.common.model.data.TimeService
+import de.dh.raaps.common.model.data.Timestamp
 import de.dh.raaps.common.util.PersistentLogger
 import de.dh.raaps.core.repository.AlgorithmInsightRepository
 import de.dh.raaps.core.repository.TreatmentRepository
@@ -186,6 +187,26 @@ PersistentLogger.log("Core", "------------ calling registerTickHandler: priority
                     val alg = calculationAlgorithm
                     if (!onWaitForInsulinJobs(treatmentLock)) {
                         Log.i(TAG, "onTick: Recalculation skipped: Insulin jobs are still pending.")
+                        scope.launch {
+                            val now = Timestamp.now()
+
+                            algorithmInsightRepository.saveInsight(
+                                AlgorithmInsight(
+                                    timestamp = now,
+                                    bgOriginal = 0,
+                                    bgFiltered = 0,
+                                    deviationPerTick = 0.0,
+                                    iobAtPeak = 0.0,
+                                    cobAtPeak = 0.0,
+                                    cobEquivalentOfBasalAtPeak = 0.0,
+                                    predictedBgAtPeak = 0,
+                                    targetBg = 0,
+                                    isf = 0.0,
+                                    cr = 0.0,
+                                    reasoning = AlgorithmReasoning.PENDING_PUMP_JOBS
+                                )
+                            )
+                        }
                         return@atomic
                     }
 val time = SimpleDateFormat("HH:mm:ss", Locale.getDefault()).format(Date(System.currentTimeMillis()))
