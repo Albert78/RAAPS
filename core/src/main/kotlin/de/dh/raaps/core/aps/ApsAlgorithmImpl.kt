@@ -359,7 +359,6 @@ PersistentLogger.log("ApsAlgorithmImpl", "------------ recalculate: Calling onDe
             deviationPerTick = avgCurrentDeviationPerTick,
             iobAtPeak = iobAtPeak,
             cobAtPeak = cobAtPeak,
-            cobEquivalentOfBasalAtPeak = cobEquivalentOfBasalAtPeak,
             predictedBgAtPeak = BgValue.INVALID, // Will be filled below if available
             targetBg = targetBg,
             isf = isfValue,

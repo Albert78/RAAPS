@@ -18,7 +18,6 @@ data class AlgorithmInsightEntity(
     val deviationPerTick: BgDelta,
     val iobAtPeak: Double,
     val cobAtPeak: Double,
-    val cobEquivalentOfBasalAtPeak: Double,
     val predictedBgAtPeak: BgValue,
     val targetBg: BgValue,
     val isf: BgDelta,

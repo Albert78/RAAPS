@@ -200,7 +200,6 @@ PersistentLogger.log("Core", "------------ calling registerTickHandler: priority
                                     deviationPerTick = BgDelta.fromMgDl(0),
                                     iobAtPeak = 0.0,
                                     cobAtPeak = 0.0,
-                                    cobEquivalentOfBasalAtPeak = 0.0,
                                     predictedBgAtPeak = BgValue.INVALID,
                                     targetBg = BgValue.INVALID,
                                     isf = BgDelta.fromMgDl(0),
