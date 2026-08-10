@@ -36,6 +36,7 @@ import com.patrykandpatrick.vico.compose.cartesian.Zoom
 import com.patrykandpatrick.vico.compose.cartesian.axis.Axis
 import com.patrykandpatrick.vico.compose.cartesian.axis.HorizontalAxis
 import com.patrykandpatrick.vico.compose.cartesian.axis.VerticalAxis
+import com.patrykandpatrick.vico.compose.cartesian.axis.rememberAxisLabelComponent
 import com.patrykandpatrick.vico.compose.cartesian.data.CartesianChartModelProducer
 import com.patrykandpatrick.vico.compose.cartesian.data.CartesianLayerRangeProvider
 import com.patrykandpatrick.vico.compose.cartesian.data.CartesianValueFormatter
@@ -118,7 +119,7 @@ data class HistoryAndImpactDiagramData(
             val minX = 0.0
 
             val endTs = (((lastTs + MS_PER_HOUR / 2) / MS_PER_HOUR) + 1) * MS_PER_HOUR
-            val maxX = (endTs - baseTimestamp).toDouble() / MS_PER_MINUTE
+            val maxX = ((endTs - baseTimestamp).toDouble() / MS_PER_MINUTE).coerceAtLeast(INITIAL_SHOW_HOURS * 60.0)
 
             val insulinX = mutableListOf<Double>()
             val insulinY = mutableListOf<Double>()
@@ -335,8 +336,13 @@ fun HistoryAndImpactChart(
     val xAxisValueFormatter = remember(diagramData.baseTimestamp) {
         CartesianValueFormatter { _, x, _ ->
             synchronized(sharedCalendar) {
-                sharedCalendar.timeInMillis = diagramData.baseTimestamp + x.toLong() * 60 * 1000L
-                String.format(Locale.getDefault(), "%02d:00", sharedCalendar.get(Calendar.HOUR_OF_DAY))
+                sharedCalendar.timeInMillis = diagramData.baseTimestamp + x.toLong() * MS_PER_MINUTE
+                String.format(
+                    Locale.getDefault(),
+                    "%02d:%02d",
+                    sharedCalendar.get(Calendar.HOUR_OF_DAY),
+                    sharedCalendar.get(Calendar.MINUTE)
+                )
             }
         }
     }
@@ -531,7 +537,7 @@ fun HistoryAndImpactChart(
                     rangeProvider = remember(diagramData.minX, diagramData.maxX) {
                         object : CartesianLayerRangeProvider {
                             override fun getMinY(minY: Double, maxY: Double, extraStore: ExtraStore) = 0.0
-                            override fun getMaxY(minY: Double, maxY: Double, extraStore: ExtraStore) = maxY.coerceAtLeast(0.1) * 1.1
+                            override fun getMaxY(minY: Double, maxY: Double, extraStore: ExtraStore) = maxY.coerceAtLeast(0.2) * 1.1
                             override fun getMinX(minX: Double, maxX: Double, extraStore: ExtraStore) = diagramData.minX
                             override fun getMaxX(minX: Double, maxX: Double, extraStore: ExtraStore) = diagramData.maxX
                         }
@@ -539,12 +545,14 @@ fun HistoryAndImpactChart(
                     verticalAxisPosition = Axis.Position.Vertical.End
                 ),
                 startAxis = VerticalAxis.rememberStart(
+                    label = rememberAxisLabelComponent(),
                     itemPlacer = bgAxisItemPlacer,
                     horizontalLabelPosition = VerticalAxis.HorizontalLabelPosition.Inside,
                     line = null
                 ),
                 endAxis = if (showInsulin || showCarbs) {
                     VerticalAxis.rememberEnd(
+                        label = rememberAxisLabelComponent(),
                         itemPlacer = impactAxisItemPlacer,
                         valueFormatter = impactAxisValueFormatter,
                         horizontalLabelPosition = VerticalAxis.HorizontalLabelPosition.Inside,
@@ -552,7 +560,11 @@ fun HistoryAndImpactChart(
                         guideline = null
                     )
                 } else null,
-                bottomAxis = HorizontalAxis.rememberBottom(valueFormatter = xAxisValueFormatter, itemPlacer = xItemPlacer),
+                bottomAxis = HorizontalAxis.rememberBottom(
+                    label = rememberAxisLabelComponent(),
+                    valueFormatter = xAxisValueFormatter,
+                    itemPlacer = xItemPlacer
+                ),
             ),
             modelProducer = modelProducer,
             scrollState = state.scrollState,

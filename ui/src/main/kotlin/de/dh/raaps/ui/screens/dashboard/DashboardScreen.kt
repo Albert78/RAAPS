@@ -223,13 +223,12 @@ fun DashboardContent(
             Box(
                 modifier = Modifier.fillMaxWidth()
             ) {
+                val chartState = rememberBgHistoryChartState()
                 if (historyUiState.isLoading || currentTherapyUiState.isLoading) {
                     CircularProgressIndicator(
                         modifier = Modifier.align(Alignment.Center)
                     )
                 } else {
-                    val chartState = rememberBgHistoryChartState()
-
                     HistoryAndImpactChartOrDefault(
                         diagramData = HistoryAndImpactDiagramData.create(
                             readings = historyUiState.readings,
