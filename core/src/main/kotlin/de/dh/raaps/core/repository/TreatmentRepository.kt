@@ -131,9 +131,12 @@ class TreatmentRepository(
         }.filter { it.amount > INSULIN_EPSILON }
 
         // 1. Database sync
-        metabolicEventsDao.deleteInsulinApplicationsInRange(from.ms, to.ms, InsulinOrigin.Pump)
-
-        newApplications.forEach { metabolicEventsDao.insertInsulinApplication(it.toEntity()) }
+        metabolicEventsDao.replaceInsulinApplicationsInRange(
+            from = from.ms,
+            to = to.ms,
+            origin = InsulinOrigin.Pump,
+            newApplications = newApplications.map { it.toEntity() }
+        )
 
         // 2. In-memory sync
         if (to >= historyStart) {

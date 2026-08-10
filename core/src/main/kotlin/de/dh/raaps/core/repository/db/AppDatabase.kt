@@ -8,6 +8,7 @@ import androidx.room.OnConflictStrategy
 import androidx.room.Query
 import androidx.room.Room
 import androidx.room.RoomDatabase
+import androidx.room.Transaction
 import androidx.room.TypeConverters
 import androidx.room.Update
 import de.dh.raaps.common.model.InsulinOrigin
@@ -178,6 +179,9 @@ interface MetabolicEventsDao {
     @Insert
     suspend fun insertInsulinApplication(insulin: InsulinEntity): Long
 
+    @Insert
+    suspend fun insertInsulinApplications(insulin: List<InsulinEntity>)
+
     @Update
     suspend fun updateInsulinApplication(insulin: InsulinEntity)
 
@@ -186,6 +190,12 @@ interface MetabolicEventsDao {
 
     @Query("DELETE FROM insulin WHERE origin = :origin AND timestamp >= :from AND timestamp <= :to")
     suspend fun deleteInsulinApplicationsInRange(from: Long, to: Long, origin: InsulinOrigin)
+
+    @Transaction
+    suspend fun replaceInsulinApplicationsInRange(from: Long, to: Long, origin: InsulinOrigin, newApplications: List<InsulinEntity>) {
+        deleteInsulinApplicationsInRange(from, to, origin)
+        insertInsulinApplications(newApplications)
+    }
 
     @Query("DELETE FROM meal WHERE timestamp >= :from AND timestamp <= :to")
     suspend fun deleteMealsInRange(from: Long, to: Long)
