@@ -1,6 +1,7 @@
 package de.dh.raaps.common.model.data
 
 import de.dh.raaps.common.model.ID_UNDEFINED
+import de.dh.raaps.common.model.InsulinConcentration
 import de.dh.raaps.common.model.InsulinType
 
 /**
@@ -14,6 +15,7 @@ data class InsulinProfile(
     val isfBlocks: List<Block>,
     val crBlocks: List<Block>,
     val insulinType: InsulinType,
+    val insulinConcentration: InsulinConcentration = InsulinConcentration.U100,
     val dia: Minutes,
     val peak: Minutes
 )

@@ -14,6 +14,7 @@ import de.dh.raaps.common.model.ID_MEAL_FAST
 import de.dh.raaps.common.model.ID_MEAL_HIGH_FAT
 import de.dh.raaps.common.model.ID_MEAL_SLOW
 import de.dh.raaps.common.model.ID_MEAL_STANDARD
+import de.dh.raaps.common.model.InsulinConcentration
 import de.dh.raaps.common.model.InsulinType
 import de.dh.raaps.common.model.MealType
 import de.dh.raaps.common.model.data.BgBlock
@@ -47,7 +48,8 @@ object DatabaseInitializer {
                 id = ID_INSULIN_ASPART,
                 name = context.getString(R.string.insulin_type_aspart_name),
                 dia = Minutes.ofHours(5),
-                peak = Minutes(75)
+                peak = Minutes(75),
+                defaultConcentration = InsulinConcentration.U100
             )
         )
         repository.insertInsulinType(
@@ -55,7 +57,8 @@ object DatabaseInitializer {
                 id = ID_INSULIN_FIASP,
                 name = context.getString(R.string.insulin_type_fiasp_name),
                 dia = Minutes.ofHours(4),
-                peak = Minutes(55)
+                peak = Minutes(55),
+                defaultConcentration = InsulinConcentration.U100
             )
         )
     }
@@ -127,6 +130,7 @@ object DatabaseInitializer {
                 isfBlocks = listOf(Block(Minutes.ofHours(24), DEFAULT_ISF_MGDL_PER_UNIT)),
                 crBlocks = listOf(Block(Minutes.ofHours(24), DEFAULT_CR_GRAM_PER_UNIT)),
                 insulinType = defaultInsulinType,
+                insulinConcentration = defaultInsulinType.defaultConcentration,
                 dia = defaultInsulinType.dia,
                 peak = defaultInsulinType.peak
             )

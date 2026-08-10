@@ -3,6 +3,7 @@ package de.dh.raaps.core.repository.db
 import de.dh.raaps.common.model.CarbCurveComponentData
 import de.dh.raaps.common.model.DataProvider
 import de.dh.raaps.common.model.InsulinApplication
+import de.dh.raaps.common.model.InsulinConcentration
 import de.dh.raaps.common.model.InsulinType
 import de.dh.raaps.common.model.MealEntry
 import de.dh.raaps.common.model.MealType
@@ -124,14 +125,16 @@ fun InsulinType.toEntity() = InsulinTypeEntity(
     id = this.id,
     name = this.name,
     peak = this.peak,
-    dia = this.dia
+    dia = this.dia,
+    default_concentration = this.defaultConcentration.factor
 )
 
 fun InsulinTypeEntity.toModel() = InsulinType(
     id = this.id,
     name = this.name,
     peak = this.peak,
-    dia = this.dia
+    dia = this.dia,
+    defaultConcentration = InsulinConcentration(this.default_concentration)
 )
 
 fun InsulinApplication.toEntity() = InsulinEntity(
@@ -196,6 +199,7 @@ fun InsulinProfile.toEntity() = InsulinProfileEntity(
     isf_blocks = this.isfBlocks.map { it.toDb() },
     cr_blocks = this.crBlocks.map { it.toDb() },
     insulin_type_id = this.insulinType.id,
+    insulin_concentration = this.insulinConcentration.factor,
     dia = this.dia,
     peak = this.peak
 )
@@ -207,6 +211,7 @@ fun InsulinProfileEntity.toModel(insulinType: InsulinType) = InsulinProfile(
     isfBlocks = this.isf_blocks.map { it.toModel() },
     crBlocks = this.cr_blocks.map { it.toModel() },
     insulinType = insulinType,
+    insulinConcentration = InsulinConcentration(this.insulin_concentration),
     dia = this.dia,
     peak = this.peak
 )

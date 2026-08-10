@@ -21,6 +21,7 @@ data class InsulinProfileEntity(
     val isf_blocks: List<DBBlock>,
     val cr_blocks: List<DBBlock>,
     val insulin_type_id: String,
+    val insulin_concentration: Double = 1.0,
     val dia: Minutes,
     val peak: Minutes
 )

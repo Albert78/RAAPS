@@ -17,6 +17,7 @@
     <string name="insulin_profile_editor_tab_insulin">Insulin</string>
     <string name="insulin_profile_editor_insulin_settings_title">Insulin-Einstellungen</string>
     <string name="insulin_profile_editor_insulin_type_label">Insulin-Typ</string>
+    <string name="insulin_profile_editor_concentration_label">Insulin-Konzentration</string>
     <string name="insulin_profile_editor_dia_label">DIA (Min.)</string>
     <string name="insulin_profile_editor_peak_label">Peak (Min.)</string>
     <string name="insulin_profile_editor_basal_title">Basalrate</string>

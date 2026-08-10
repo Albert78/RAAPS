@@ -211,7 +211,7 @@ class SimBodyPumpDevice(
             category = InsulinCategory.Basal
         )
         _history.add(entry)
-        
+
         pumpDao?.let { dao ->
             scope.launch {
                 dao.insertHistoryEntry(PumpHistoryEntity(
@@ -221,7 +221,7 @@ class SimBodyPumpDevice(
                 ))
             }
         }
-        
+
         cleanupHistory()
     }
 
@@ -279,7 +279,7 @@ class SimBodyPumpDevice(
     private fun cleanupHistory() {
         val threeDaysAgo = System.currentTimeMillis() - (3 * MS_PER_DAY)
         _history.removeIf { it.timestamp < threeDaysAgo }
-        
+
         pumpDao?.let { dao ->
             scope.launch {
                 dao.deleteOldHistory(threeDaysAgo)

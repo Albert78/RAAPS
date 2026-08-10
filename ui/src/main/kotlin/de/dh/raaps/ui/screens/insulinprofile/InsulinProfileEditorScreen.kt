@@ -75,6 +75,7 @@ import de.dh.raaps.common.model.DEFAULT_ISF_MGDL_PER_UNIT
 import de.dh.raaps.common.model.ID_UNDEFINED
 import de.dh.raaps.common.model.ISF_MAX
 import de.dh.raaps.common.model.ISF_MIN
+import de.dh.raaps.common.model.InsulinConcentration
 import de.dh.raaps.common.model.InsulinType
 import de.dh.raaps.common.model.data.Block
 import de.dh.raaps.common.model.data.InsulinProfile
@@ -250,6 +251,7 @@ fun InsulinProfileDetailEditor(
     var isfBlocks by remember { mutableStateOf(profile.isfBlocks) }
     var crBlocks by remember { mutableStateOf(profile.crBlocks) }
     var insulinType by remember { mutableStateOf(profile.insulinType) }
+    var insulinConcentration by remember { mutableStateOf(profile.insulinConcentration) }
     var dia by remember { mutableStateOf(profile.dia.value.toString()) }
     var peak by remember { mutableStateOf(profile.peak.value.toString()) }
 
@@ -272,6 +274,7 @@ fun InsulinProfileDetailEditor(
             isfBlocks != profile.isfBlocks ||
             crBlocks != profile.crBlocks ||
             insulinType != profile.insulinType ||
+            insulinConcentration != profile.insulinConcentration ||
             diaValue != profile.dia.value.toInt() ||
             peakValue != profile.peak.value.toInt()
 
@@ -290,6 +293,7 @@ fun InsulinProfileDetailEditor(
             isfBlocks = isfBlocks,
             crBlocks = crBlocks,
             insulinType = insulinType,
+            insulinConcentration = insulinConcentration,
             dia = Minutes(diaValue.toShort()),
             peak = Minutes(peakValue.toShort())
         ))
@@ -362,7 +366,10 @@ fun InsulinProfileDetailEditor(
                             insulinType = it
                             dia = it.dia.value.toString()
                             peak = it.peak.value.toString()
+                            insulinConcentration = it.defaultConcentration
                         },
+                        selectedConcentration = insulinConcentration,
+                        onConcentrationSelected = { insulinConcentration = it },
                         dia = dia,
                         onDiaChanged = { dia = it },
                         peak = peak,
@@ -437,13 +444,23 @@ fun InsulinSettingsEditor(
     insulinTypes: List<InsulinType>,
     selectedInsulinType: InsulinType,
     onInsulinTypeSelected: (InsulinType) -> Unit,
+    selectedConcentration: InsulinConcentration,
+    onConcentrationSelected: (InsulinConcentration) -> Unit,
     dia: String,
     onDiaChanged: (String) -> Unit,
     peak: String,
     onPeakChanged: (String) -> Unit
 ) {
-    var expanded by remember { mutableStateOf(false) }
+    var expandedType by remember { mutableStateOf(false) }
+    var expandedConc by remember { mutableStateOf(false) }
     val scrollState = rememberScrollState()
+
+    val concentrations = listOf(
+        InsulinConcentration.U20,
+        InsulinConcentration.U40,
+        InsulinConcentration.U100,
+        InsulinConcentration.U200
+    )
 
     Column(
         modifier = Modifier
@@ -456,29 +473,59 @@ fun InsulinSettingsEditor(
         Text(text = stringResource(id = R.string.insulin_profile_editor_insulin_settings_title), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
 
         ExposedDropdownMenuBox(
-            expanded = expanded,
-            onExpandedChange = { expanded = !expanded }
+            expanded = expandedType,
+            onExpandedChange = { expandedType = !expandedType }
         ) {
             OutlinedTextField(
                 value = selectedInsulinType.name,
                 onValueChange = {},
                 readOnly = true,
                 label = { Text(stringResource(id = R.string.insulin_profile_editor_insulin_type_label)) },
-                trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
+                trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expandedType) },
                 modifier = Modifier
                     .menuAnchor(type = ExposedDropdownMenuAnchorType.PrimaryNotEditable, enabled = true)
                     .fillMaxWidth()
             )
             ExposedDropdownMenu(
-                expanded = expanded,
-                onDismissRequest = { expanded = false }
+                expanded = expandedType,
+                onDismissRequest = { expandedType = false }
             ) {
                 insulinTypes.forEach { type ->
                     DropdownMenuItem(
                         text = { Text(type.name) },
                         onClick = {
                             onInsulinTypeSelected(type)
-                            expanded = false
+                            expandedType = false
+                        }
+                    )
+                }
+            }
+        }
+
+        ExposedDropdownMenuBox(
+            expanded = expandedConc,
+            onExpandedChange = { expandedConc = !expandedConc }
+        ) {
+            OutlinedTextField(
+                value = "U${(selectedConcentration.factor * 100).toInt()}",
+                onValueChange = {},
+                readOnly = true,
+                label = { Text(stringResource(id = R.string.insulin_profile_editor_concentration_label)) },
+                trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expandedConc) },
+                modifier = Modifier
+                    .menuAnchor(type = ExposedDropdownMenuAnchorType.PrimaryNotEditable, enabled = true)
+                    .fillMaxWidth()
+            )
+            ExposedDropdownMenu(
+                expanded = expandedConc,
+                onDismissRequest = { expandedConc = false }
+            ) {
+                concentrations.forEach { conc ->
+                    DropdownMenuItem(
+                        text = { Text("U${(conc.factor * 100).toInt()}") },
+                        onClick = {
+                            onConcentrationSelected(conc)
+                            expandedConc = false
                         }
                     )
                 }

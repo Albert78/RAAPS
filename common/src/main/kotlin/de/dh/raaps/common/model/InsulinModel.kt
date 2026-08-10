@@ -14,7 +14,8 @@ data class InsulinType(
     val id: String = UUID.randomUUID().toString(),
     val name: String,
     val peak: Minutes,
-    val dia: Minutes
+    val dia: Minutes,
+    val defaultConcentration: InsulinConcentration = InsulinConcentration.U100
 )
 
 /**
@@ -22,8 +23,9 @@ data class InsulinType(
  * This is the standard unit for therapeutic calculations (U100 equivalent).
  */
 @JvmInline
-value class InsulinAmount(val iu: Double) {
+value class InsulinAmount(val iu: Double): Comparable<InsulinAmount> {
     operator fun plus(amount: InsulinAmount) = InsulinAmount(iu + amount.iu)
+    override fun compareTo(other: InsulinAmount): Int = iu.compareTo(other.iu)
 
     /**
      * Calculates the physical amount that the pump must actually deliver.

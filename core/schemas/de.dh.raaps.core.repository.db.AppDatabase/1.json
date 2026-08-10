@@ -2,7 +2,7 @@
   "formatVersion": 1,
   "database": {
     "version": 1,
-    "identityHash": "116cf906e896529512db4c39ad5242c9",
+    "identityHash": "5d7beaac0005de3478475d61041b2175",
     "entities": [
       {
         "tableName": "sensor_type",
@@ -143,7 +143,7 @@
       },
       {
         "tableName": "insulin_profiles",
-        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `name` TEXT NOT NULL, `basal_blocks` TEXT NOT NULL, `isf_blocks` TEXT NOT NULL, `cr_blocks` TEXT NOT NULL, `insulin_type_id` TEXT NOT NULL, `dia` INTEGER NOT NULL, `peak` INTEGER NOT NULL)",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `name` TEXT NOT NULL, `basal_blocks` TEXT NOT NULL, `isf_blocks` TEXT NOT NULL, `cr_blocks` TEXT NOT NULL, `insulin_type_id` TEXT NOT NULL, `insulin_concentration` REAL NOT NULL, `dia` INTEGER NOT NULL, `peak` INTEGER NOT NULL)",
         "fields": [
           {
             "fieldPath": "id",
@@ -179,6 +179,12 @@
             "fieldPath": "insulin_type_id",
             "columnName": "insulin_type_id",
             "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "insulin_concentration",
+            "columnName": "insulin_concentration",
+            "affinity": "REAL",
             "notNull": true
           },
           {
@@ -387,7 +393,7 @@
       },
       {
         "tableName": "insulin_type",
-        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` TEXT NOT NULL, `name` TEXT NOT NULL, `peak` INTEGER NOT NULL, `dia` INTEGER NOT NULL, PRIMARY KEY(`id`))",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` TEXT NOT NULL, `name` TEXT NOT NULL, `peak` INTEGER NOT NULL, `dia` INTEGER NOT NULL, `default_concentration` REAL NOT NULL, PRIMARY KEY(`id`))",
         "fields": [
           {
             "fieldPath": "id",
@@ -411,6 +417,12 @@
             "fieldPath": "dia",
             "columnName": "dia",
             "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "default_concentration",
+            "columnName": "default_concentration",
+            "affinity": "REAL",
             "notNull": true
           }
         ],
@@ -625,7 +637,7 @@
     ],
     "setupQueries": [
       "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
-      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '116cf906e896529512db4c39ad5242c9')"
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '5d7beaac0005de3478475d61041b2175')"
     ]
   }
 }

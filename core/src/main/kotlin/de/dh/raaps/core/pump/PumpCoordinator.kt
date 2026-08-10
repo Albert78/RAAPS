@@ -74,7 +74,7 @@ sealed interface JobErrorCode {
  * effectively decoupling the core logic from the pump availability.
  */
 // TODO: Multithreading/thread allocation
-// TODO: Notifications from pump; persist insulin applications in repository
+// TODO: Notifications from pump
 // TODO: Show pending pump jobs in UI
 @OptIn(ExperimentalCoroutinesApi::class)
 class PumpCoordinator(
