@@ -1,6 +1,7 @@
 package de.dh.raaps.plugin.pump
 
 import de.dh.raaps.common.model.BasalStatus
+import de.dh.raaps.common.model.InsulinAmount
 import de.dh.raaps.common.model.HardwareInformation
 import de.dh.raaps.common.model.InsulinHistory
 import de.dh.raaps.common.model.InsulinPump
@@ -36,11 +37,11 @@ class SampleInsulinPumpPlugin : InsulinPump, Plugin {
     )
     override val pumpCapabilities: StateFlow<PumpCapabilities> = MutableStateFlow(
         PumpCapabilities(
-            minBasalRate = 0.05,
+            minBasalRate = InsulinAmount(0.05),
             supportsZeroBasal = true,
-            minBasalIncrement = 0.01,
-            minBolusIncrement = 0.1,
-            maxBolusSize = 25.0
+            minBasalIncrement = InsulinAmount(0.01),
+            minBolusIncrement = InsulinAmount(0.1),
+            maxBolusSize = InsulinAmount(25.0)
         )
     )
     override val isConnected: StateFlow<Boolean> = MutableStateFlow(true)
@@ -48,15 +49,15 @@ class SampleInsulinPumpPlugin : InsulinPump, Plugin {
         object : InsulinPumpStatus {
             override val pumpSuspended: Boolean = false
             override val batteryRemainingPercent: Int = 85
-            override val reservoirRemainingUnits: Double = 120.5
+            override val reservoirRemainingUnits: InsulinAmount = InsulinAmount(120.5)
             override val lastSyncTimestamp: Long = System.currentTimeMillis()
         }
     )
     override val alerts: StateFlow<PumpAlerts> = MutableStateFlow(PumpAlerts())
-    override val basalStatus: StateFlow<BasalStatus> = MutableStateFlow(BasalStatus(activeRate = 0.5))
+    override val basalStatus: StateFlow<BasalStatus> = MutableStateFlow(BasalStatus(activeRate = InsulinAmount(0.5)))
     override val history: StateFlow<InsulinHistory?> = MutableStateFlow(null)
 
-    override suspend fun bolus(amount: Double) {
+    override suspend fun bolus(amount: InsulinAmount) {
         // TODO: Implement bolus delivery
     }
 

@@ -2,6 +2,7 @@ package de.dh.raaps.plugin.simbody
 
 import de.dh.raaps.common.model.BasalStatus
 import de.dh.raaps.common.model.HardwareInformation
+import de.dh.raaps.common.model.InsulinAmount
 import de.dh.raaps.common.model.InsulinHistory
 import de.dh.raaps.common.model.InsulinPump
 import de.dh.raaps.common.model.InsulinPumpStatus
@@ -28,9 +29,9 @@ class SimBodyInsulinPump(
 ): InsulinPump {
     companion object {
         const val SIM_PUMP_MIN_BASAL_RATE = 0.0
-        const val SIM_PUMP_MIN_BASAL_INCREMENT = 0.05
-        const val SIM_PUMP_MIN_BOLUS_INCREMENT = 0.05
-        const val SIM_PUMP_MAX_BOLUS_SIZE = 25.0
+        val SIM_PUMP_MIN_BASAL_INCREMENT = InsulinAmount(0.05)
+        val SIM_PUMP_MIN_BOLUS_INCREMENT = InsulinAmount(0.05)
+        val SIM_PUMP_MAX_BOLUS_SIZE = InsulinAmount(25.0)
     }
 
     override val hardwareInformation: StateFlow<HardwareInformation?> = MutableStateFlow(
@@ -44,7 +45,7 @@ class SimBodyInsulinPump(
 
     override val pumpCapabilities: StateFlow<PumpCapabilities> = MutableStateFlow(
         PumpCapabilities(
-            minBasalRate = SIM_PUMP_MIN_BASAL_RATE,
+            minBasalRate = InsulinAmount(SIM_PUMP_MIN_BASAL_RATE),
             supportsZeroBasal = true,
             minBasalIncrement = SIM_PUMP_MIN_BASAL_INCREMENT,
             minBolusIncrement = SIM_PUMP_MIN_BOLUS_INCREMENT,
@@ -76,18 +77,19 @@ class SimBodyInsulinPump(
         device.batteryLevel,
         device.reservoirLevel,
         device.isBroken,
-        _isConnected
-    ) { battery, reservoir, broken, connected ->
+        _isConnected,
+        device.activeProfile
+    ) { battery, reservoir, broken, connected, profile ->
         object : InsulinPumpStatus {
             override val pumpSuspended: Boolean = broken
             override val batteryRemainingPercent: Int = (battery * 100).toInt()
-            override val reservoirRemainingUnits: Double = reservoir
+            override val reservoirRemainingUnits: InsulinAmount = InsulinAmount.fromPumpUnits(reservoir, profile.insulinConcentration)
             override val lastSyncTimestamp: Long = if (connected) System.currentTimeMillis() else 0L
         }
     }.stateIn(scope, SharingStarted.Eagerly, object : InsulinPumpStatus {
         override val pumpSuspended: Boolean = false
         override val batteryRemainingPercent: Int = 100
-        override val reservoirRemainingUnits: Double = 300.0
+        override val reservoirRemainingUnits: InsulinAmount = InsulinAmount(300.0)
         override val lastSyncTimestamp: Long = System.currentTimeMillis()
     })
 
@@ -111,10 +113,11 @@ class SimBodyInsulinPump(
         combine(device.isBroken, device.hasHardwareError, device.isOccluded) { b, h, o -> b || h || o }
     ) { tempPercent, profile, isSuspended ->
         val normalRate = profile.basalBlocks.getAmountForMinute(Timestamp.now().minutesSinceMidnight())
+        val activeRate = if (isSuspended) 0.0 else {
+            if (tempPercent != null) normalRate * (tempPercent / 100.0) else normalRate
+        }
         BasalStatus(
-            activeRate = if (isSuspended) 0.0 else {
-                if (tempPercent != null) normalRate * (tempPercent / 100.0) else normalRate
-            },
+            activeRate = InsulinAmount(activeRate),
             isTempBasal = tempPercent != null,
             tempBasalPercent = tempPercent,
             isSuspended = isSuspended
@@ -124,10 +127,13 @@ class SimBodyInsulinPump(
     private val _history = MutableStateFlow<InsulinHistory?>(null)
     override val history: StateFlow<InsulinHistory?> = _history
 
-    override suspend fun bolus(amount: Double) {
+    override suspend fun bolus(amount: InsulinAmount) {
         if (!_isConnected.value) throw Exception("Pump not connected to App")
 
-        if (device.deliverBolus(amount)) {
+        val concentration = device.activeProfile.value.insulinConcentration
+        val pumpUnits = amount.toPumpUnits(concentration)
+
+        if (device.deliverBolus(pumpUnits)) {
             // Success - device level handled reporting to body and history
             refreshStatus()
         } else {
@@ -136,7 +142,7 @@ class SimBodyInsulinPump(
                 device.hasHardwareError.value -> "Hardware error"
                 device.isOccluded.value -> "Occlusion detected"
                 !device.isPrimed.value -> "Pump not primed"
-                device.reservoirLevel.value < amount -> "Insulin reservoir empty"
+                device.reservoirLevel.value < pumpUnits -> "Insulin reservoir empty"
                 else -> "Unknown hardware failure"
             }
             throw Exception("Bolus failed: $errorReason")
@@ -171,7 +177,14 @@ class SimBodyInsulinPump(
 
     override suspend fun syncHistory() {
         if (!_isConnected.value) return
-        val points = device.getHistory()
+        val profile = device.activeProfile.value
+        val points = device.getHistory().map { point ->
+            object : de.dh.raaps.common.model.InsulinHistoryPoint {
+                override val timestamp: Long = point.timestamp
+                override val amount: InsulinAmount = InsulinAmount.fromPumpUnits(point.amount, profile.insulinConcentration)
+                override val category: de.dh.raaps.common.model.InsulinCategory = point.category
+            }
+        }
         if (points.isNotEmpty()) {
             _history.value = InsulinHistory(
                 from = points.minOf { it.timestamp },

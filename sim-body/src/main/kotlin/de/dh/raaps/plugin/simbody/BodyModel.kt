@@ -6,6 +6,7 @@ import de.dh.raaps.common.model.ID_MEAL_FAST
 import de.dh.raaps.common.model.ID_MEAL_HIGH_FAT
 import de.dh.raaps.common.model.ID_MEAL_SLOW
 import de.dh.raaps.common.model.ID_MEAL_STANDARD
+import de.dh.raaps.common.model.InsulinAmount
 import de.dh.raaps.common.model.InsulinApplication
 import de.dh.raaps.common.model.InsulinCategory
 import de.dh.raaps.common.model.InsulinOrigin
@@ -136,7 +137,7 @@ class BodyModel(
                     peakMinutes = bolus.insulinType.peak.value.toDouble()
                 )
                 val timeSinceBolus = (now.ms - bolus.timestamp.ms) / 60000.0
-                bolus.amount * (1.0 - curve.spentFraction(timeSinceBolus)).coerceAtLeast(0.0)
+                bolus.amount.iu * (1.0 - curve.spentFraction(timeSinceBolus)).coerceAtLeast(0.0)
             }
         }
 
@@ -441,11 +442,11 @@ class BodyModel(
      * Simulates an insulin bolus.
      */
     fun bolus(
-        amount: Double,
+        amount: InsulinAmount,
         type: InsulinType? = null,
         timestamp: Timestamp = Timestamp.now()
     ) {
-        if (amount < SimBodyInsulinPump.SIM_PUMP_MIN_BOLUS_INCREMENT) return
+        if (amount.iu < SimBodyInsulinPump.SIM_PUMP_MIN_BOLUS_INCREMENT.iu) return
 
         val entry = InsulinApplication(
             timestamp = timestamp,
@@ -462,7 +463,7 @@ class BodyModel(
                     SimEventEntity(
                         type = "BOLUS",
                         timestampMs = entry.timestamp.ms,
-                        amount = entry.amount,
+                        amount = entry.amount.iu,
                         detailId = entry.insulinType.id,
                         insulinOrigin = entry.origin
                     )
@@ -486,7 +487,7 @@ class BodyModel(
             val fractionStart = curve.spentFraction(timeStart)
             val fractionEnd = curve.spentFraction(timeEnd)
 
-            totalUnitsAbsorbed += bolus.amount * (fractionEnd - fractionStart)
+            totalUnitsAbsorbed += bolus.amount.iu * (fractionEnd - fractionStart)
         }
 
         // Apply resistance factors

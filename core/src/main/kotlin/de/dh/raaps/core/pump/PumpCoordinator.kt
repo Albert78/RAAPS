@@ -257,7 +257,7 @@ class PumpCoordinator(
     private suspend fun executeOnPump(command: PumpCommand) {
         when (command) {
             is PumpCommand.DeliverBolus -> {
-                pump.bolus(command.amount.iu)
+                pump.bolus(command.amount)
             }
             is PumpCommand.SetTempBasal -> {
                 pump.tempBasal(command.percent, command.durationHours)

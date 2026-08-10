@@ -1,6 +1,7 @@
 package de.dh.raaps.plugin.simbody
 
 import android.util.Log
+import de.dh.raaps.common.model.InsulinAmount
 import de.dh.raaps.common.model.InsulinCategory
 import de.dh.raaps.common.model.InsulinHistoryPoint
 import de.dh.raaps.common.model.MS_PER_DAY
@@ -172,15 +173,19 @@ class SimBodyPumpDevice(
         while (currentTimestamp.ms - lastBasalDeliveryTimestamp >= twentyMinutesMs) {
             val deliveryTimestamp = Timestamp(lastBasalDeliveryTimestamp + twentyMinutesMs)
             val profileRate = getProfileBasalRate(deliveryTimestamp)
+            val concentration = _activeProfile.value.insulinConcentration
             val currentPercent = _tempBasalPercent.value
             val rate = if (currentPercent != null) {
                 profileRate * (currentPercent / 100.0)
             } else {
                 profileRate
             }
-            val basalToDeliver = rate / 3.0
+            
+            // Convert therapeutic rate (IU/h) to physical units for the pump mechanism
+            val pumpRate = rate / concentration.factor
+            val basalToDeliverPU = pumpRate / 3.0
 
-            deliverInternalBasal(basalToDeliver, deliveryTimestamp, if (_tempBasalPercent.value != null) PumpDeliveryType.Tbr else PumpDeliveryType.Basal)
+            deliverInternalBasal(basalToDeliverPU, deliveryTimestamp, if (_tempBasalPercent.value != null) PumpDeliveryType.Tbr else PumpDeliveryType.Basal)
             lastBasalDeliveryTimestamp = deliveryTimestamp.ms
             persistState()
         }
@@ -191,7 +196,7 @@ class SimBodyPumpDevice(
         if (isBroken.value || hasHardwareError.value || isOccluded.value || !isPrimed.value) {
             return
         }
-        if (units < SimBodyInsulinPump.SIM_PUMP_MIN_BOLUS_INCREMENT) {
+        if (units < SimBodyInsulinPump.SIM_PUMP_MIN_BOLUS_INCREMENT.iu) { // Check against PU
             return
         }
         if (reservoirLevel.value < units) {
@@ -201,8 +206,9 @@ class SimBodyPumpDevice(
         _reservoirLevel.value = (reservoirLevel.value - units).coerceAtLeast(0.0)
         persistState()
 
-        // Report to body as a small bolus
-        bodyModel.bolus(units, timestamp = timestamp)
+        // Report to body - convert physical units back to therapeutic units (IU)
+        val concentration = _activeProfile.value.insulinConcentration
+        bodyModel.bolus(InsulinAmount.fromPumpUnits(units, concentration), timestamp = timestamp)
 
         // Record in history as an insulin delivery
         val entry = HistoryEntry(
@@ -233,7 +239,7 @@ class SimBodyPumpDevice(
         if (isBroken.value || hasHardwareError.value || isOccluded.value || !isPrimed.value) {
             return false
         }
-        if (units < SimBodyInsulinPump.SIM_PUMP_MIN_BOLUS_INCREMENT) {
+        if (units < SimBodyInsulinPump.SIM_PUMP_MIN_BOLUS_INCREMENT.iu) {
             return false
         }
         if (reservoirLevel.value < units) {
@@ -243,8 +249,9 @@ class SimBodyPumpDevice(
         _reservoirLevel.value = (reservoirLevel.value - units).coerceAtLeast(0.0)
         persistState()
 
-        // Report to body
-        bodyModel.bolus(units)
+        // Report to body - convert physical units back to therapeutic units (IU)
+        val concentration = _activeProfile.value.insulinConcentration
+        bodyModel.bolus(InsulinAmount.fromPumpUnits(units, concentration))
 
         // Record in history
         val entry = HistoryEntry(
@@ -274,7 +281,7 @@ class SimBodyPumpDevice(
         persistState()
     }
 
-    fun getHistory(): List<InsulinHistoryPoint> = _history.toList()
+    fun getHistory(): List<HistoryEntry> = _history.toList()
 
     private fun cleanupHistory() {
         val threeDaysAgo = System.currentTimeMillis() - (3 * MS_PER_DAY)
@@ -309,9 +316,9 @@ class SimBodyPumpDevice(
         return false
     }
 
-    private data class HistoryEntry(
-        override val timestamp: Long,
-        override val amount: Double,
-        override val category: InsulinCategory
-    ) : InsulinHistoryPoint
+    data class HistoryEntry(
+        val timestamp: Long,
+        val amount: Double,
+        val category: InsulinCategory
+    )
 }

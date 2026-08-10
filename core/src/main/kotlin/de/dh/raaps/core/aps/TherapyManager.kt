@@ -179,11 +179,6 @@ class TherapyManager(
         return currentSettings.insulinProfile.insulinType
     }
 
-    suspend fun getPumpInsulinConcentration(): de.dh.raaps.common.model.InsulinConcentration {
-        val currentSettings = getActiveTherapySettings()
-        return currentSettings.insulinProfile.insulinConcentration
-    }
-
     suspend fun getAllInsulinProfiles() = therapyRepository.getAllInsulinProfiles()
 
     fun observeAllInsulinProfiles() = therapyRepository.observeAllInsulinProfiles()
@@ -283,10 +278,8 @@ class TherapyManager(
         handledDeferredBoluses?.forEach {
             markDeferredBolusHandled(treatmentLock, it)
         }
-        val concentration = getPumpInsulinConcentration()
-        val pumpAmount = amount.toPumpUnits(concentration)
         val minBolusIncrement = pumpManager.insulinPump?.pumpCapabilities?.value?.minBolusIncrement
-        if (minBolusIncrement != null && pumpAmount < minBolusIncrement) {
+        if (minBolusIncrement != null && amount < minBolusIncrement) {
             Log.i(TAG, "Skipping bolus which is too low for pump (amount=$amount, minBolusIncrement=$minBolusIncrement)")
         }
         when (systemManager.apsMode.value) {

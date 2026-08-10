@@ -92,7 +92,7 @@ enum class InsulinCategory {
 data class InsulinApplication(
     var id: Long = ID_UNDEFINED,
     val timestamp: Timestamp,
-    val amount: Double,
+    val amount: InsulinAmount,
     val insulinType: InsulinType,
     val category: InsulinCategory,
     val origin: InsulinOrigin
@@ -103,7 +103,7 @@ data class InsulinApplication(
  */
 interface InsulinHistoryPoint {
     val timestamp: Long
-    val amount: Double
+    val amount: InsulinAmount
     val category: InsulinCategory
 }
 

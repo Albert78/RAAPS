@@ -17,11 +17,11 @@ data class HardwareInformation(
  * Technical specification and hardware characteristics.
  */
 data class PumpCapabilities(
-    val minBasalRate: Double,
+    val minBasalRate: InsulinAmount,
     val supportsZeroBasal: Boolean,
-    val minBasalIncrement: Double,
-    val minBolusIncrement: Double,
-    val maxBolusSize: Double,
+    val minBasalIncrement: InsulinAmount,
+    val minBolusIncrement: InsulinAmount,
+    val maxBolusSize: InsulinAmount,
     // TODO: Continue list for sensible capability values
 //    val supportsTempBasal: Boolean,
 //    val supportsExtendedBolus: Boolean,
@@ -36,7 +36,7 @@ data class PumpCapabilities(
 interface InsulinPumpStatus {
     val pumpSuspended: Boolean
     val batteryRemainingPercent: Int
-    val reservoirRemainingUnits: Double
+    val reservoirRemainingUnits: InsulinAmount
     val lastSyncTimestamp: Long
 }
 
@@ -58,7 +58,7 @@ data class BasalStatus(
      * This value is inclusive of any temporary basal rate or suspension.
      * If the pump is suspended, this value is always 0.0.
      */
-    val activeRate: Double = 0.0,
+    val activeRate: InsulinAmount = InsulinAmount.ZERO,
 
     val isTempBasal: Boolean = false,
 
@@ -119,7 +119,7 @@ interface InsulinPump {
      *
      * @throws Exception if the command cannot be sent or the pump connection fails.
      */
-    suspend fun bolus(amount: Double)
+    suspend fun bolus(amount: InsulinAmount)
 
     /**
      * Immediately stops any currently running bolus delivery.
