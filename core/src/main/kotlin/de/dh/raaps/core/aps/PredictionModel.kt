@@ -86,7 +86,7 @@ class PredictionModel(
 
         var deviationPerTick = avgCurrentDeviationPerTick
         var runningCumulatedBasal = 0.0
-        forEachS(from = nowTick + 1, to = getLastTick()) { tick, state ->
+        forEachS(from = getFirstTick(), to = getLastTick()) { tick, state ->
             if (state.effectiveCarbs == null) {
                 state.effectiveCarbs = carbsInsulinCalculationModel.carbAbsorption(
                     meals,
@@ -111,10 +111,9 @@ class PredictionModel(
 
             val insulinEquivalentOfCarbs = convertToUnitsFromCarbs(state.effectiveCarbs!!, state.cr!!)
 
-            // BGI calculation:
+            // BGI calculation
+
             val basalUnitsPerTick = state.basalRateUph!! * (timeline.tickDuration.value.toDouble() / 60.0)
-            runningCumulatedBasal += basalUnitsPerTick
-            state.cumulatedBasalInsulin = runningCumulatedBasal
 
             // At steady state, the activity of a continuous basal rate is equal to its delivery rate.
             // This simplification allows us to subtract the scheduled basal units directly from
@@ -133,11 +132,23 @@ class PredictionModel(
                 state.bgi = bgi
             }
 
-            // Ease out the deviation
-            deviationPerTick *= DEVIATION_DECAY_FACTOR_PER_TICK
+            if (tick > nowTick) {
+                // Calculations that only apply to the future prediction window
+                runningCumulatedBasal += basalUnitsPerTick
+                state.cumulatedBasalInsulin = runningCumulatedBasal
 
-            bg = bg + state.bgi + deviationPerTick
-            state.predictedBg = bg
+                // Ease out the deviation
+                deviationPerTick *= DEVIATION_DECAY_FACTOR_PER_TICK
+
+                bg = bg + state.bgi + deviationPerTick
+                state.predictedBg = bg
+            } else {
+                // Clear values that are only meaningful for future predictions
+                state.cumulatedBasalInsulin = 0.0
+                if (tick < nowTick) {
+                    state.predictedBg = BgValue.INVALID
+                }
+            }
         }
     }
 
