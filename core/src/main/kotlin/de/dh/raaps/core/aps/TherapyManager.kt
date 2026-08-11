@@ -280,6 +280,7 @@ class TherapyManager(
         val minBolusIncrement = pumpManager.insulinPump?.pumpCapabilities?.value?.minBolusIncrement
         if (minBolusIncrement != null && amount < minBolusIncrement) {
             Log.i(TAG, "Skipping bolus which is too low for pump (amount=$amount, minBolusIncrement=$minBolusIncrement)")
+            return
         }
         when (systemManager.apsMode.value) {
             ApsMode.Suspend -> return

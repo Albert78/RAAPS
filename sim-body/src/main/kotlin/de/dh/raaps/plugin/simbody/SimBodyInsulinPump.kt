@@ -146,6 +146,7 @@ class SimBodyInsulinPump(
                 device.isOccluded.value -> "Occlusion detected"
                 !device.isPrimed.value -> "Pump not primed"
                 device.reservoirLevel.value < amount -> "Insulin reservoir empty"
+                amount < SIM_PUMP_MIN_BOLUS_INCREMENT -> "Amount below minimum increment (${SIM_PUMP_MIN_BOLUS_INCREMENT.iu} IU)"
                 else -> "Unknown hardware failure"
             }
             throw Exception("Bolus failed: $errorReason")
