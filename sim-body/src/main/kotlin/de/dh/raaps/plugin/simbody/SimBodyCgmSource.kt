@@ -17,7 +17,7 @@ class SimBodyCgmSource(
     override val readingsInterval: BgReadingsInterval
         get() = BgReadingsInterval.FiveMinutes
 
-    override val readingsTimeDelay = Minutes(5)
+    override val readingsTimeDelay = DEFAULT_READINGS_DELAY
 
     override fun getSensorTypeName() = "Sim Body Dexcom G6 Plugin"
 
@@ -29,5 +29,9 @@ class SimBodyCgmSource(
 
     override fun getValues(): Flow<BgReading> {
         return glucoseReadings
+    }
+
+    companion object {
+        val DEFAULT_READINGS_DELAY = Minutes(5)
     }
 }

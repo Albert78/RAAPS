@@ -97,7 +97,9 @@ class SimBodyHeartbeat(
             // Ensure the system stays awake during emission
             wakeService.acquireBusyState(WAKE_TAG)
             try {
-                val baseBg = bodyModel.getDelayedBloodGlucose(5)
+                val baseBg = bodyModel.getDelayedBloodGlucose(
+                    SimBodyCgmSource.DEFAULT_READINGS_DELAY.value.toInt()
+                )
                 val noiseFactor = bodyModel.sensorNoiseFactor
 
                 val finalBg = if (noiseFactor > 0) {
