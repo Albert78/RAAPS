@@ -23,6 +23,13 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import kotlin.time.Duration.Companion.milliseconds
 
+/**
+ * SimBody insulin pump handler that implements the [InsulinPump] interface.
+ *
+ * The actual simulated pump hardware is modeled as a separate class to reflect
+ * the real-world scenario where the pump is a standalone device connected via
+ * a wireless communication protocol.
+ */
 class SimBodyInsulinPump(
     private val device: SimBodyPumpDevice,
     private val scope: CoroutineScope = CoroutineScope(SupervisorJob() + Dispatchers.Default),
