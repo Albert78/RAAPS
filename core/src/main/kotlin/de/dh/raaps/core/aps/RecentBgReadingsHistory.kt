@@ -173,7 +173,7 @@ class RecentBgReadingsHistory(
     }
 
     fun last(): BgReading? {
-        return buffer[0]
+        return if (size > 0) buffer[size - 1] else null
     }
 
     /**

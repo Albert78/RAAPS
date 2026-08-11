@@ -3,6 +3,7 @@ package de.dh.raaps.core.aps
 import android.util.Log
 import de.dh.raaps.common.model.GlucoseSource
 import de.dh.raaps.common.model.data.BgReading
+import de.dh.raaps.common.model.data.BgReadingsInterval
 import de.dh.raaps.common.model.data.Minutes
 import de.dh.raaps.common.model.data.TimeService
 import de.dh.raaps.common.model.data.Timeline
@@ -57,6 +58,9 @@ class GlucoseSourceManager(
     var readingsTimeDelay: Minutes = Minutes(5)
         private set
 
+    var readingsInterval: BgReadingsInterval = BgReadingsInterval.FiveMinutes
+        private set
+
     suspend fun initialize() {
         val readings = glucoseRepository.loadBgReadings(from = Timestamp.now().minus(ApsAlgorithmImpl.DEVIATION_TIME_BASE))
         history.setAll(readings)
@@ -78,6 +82,7 @@ class GlucoseSourceManager(
             val dataProvider = glucoseRepository.getOrCreateDataProviderByName(plugin.name, plugin.dataProviderType)
 
             readingsTimeDelay = plugin.readingsTimeDelay
+            readingsInterval = plugin.readingsInterval
 
             // Persist values and update in-memory history
             plugin.getValues()
@@ -104,7 +109,13 @@ class GlucoseSourceManager(
     }
 
     fun predictNextValueTimestamp(): Timestamp {
-        return (getLastDataTime() ?: Timestamp.now()) + readingsTimeDelay
+        val lastTime = getLastDataTime() ?: Timestamp.now()
+        val intervalMinutes = when (readingsInterval) {
+            BgReadingsInterval.OneMinute -> 1
+            BgReadingsInterval.FiveMinutes -> 5
+            else -> readingsTimeDelay.value.toInt()
+        }
+        return lastTime.plusMinutes(intervalMinutes)
     }
 
     fun stop() {
