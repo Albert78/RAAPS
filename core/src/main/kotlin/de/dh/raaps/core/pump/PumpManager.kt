@@ -22,6 +22,11 @@ interface PumpManager {
     var insulinPump: InsulinPump?
 
     /**
+     * Observable flow of the current insulin pump device.
+     */
+    val activeInsulinPump: StateFlow<InsulinPump?>
+
+    /**
      * Provides access to the underlying coordinator. The pump coordinator is null if no pump
      * is present.
      * Note: Prefer using high-level methods of this manager.

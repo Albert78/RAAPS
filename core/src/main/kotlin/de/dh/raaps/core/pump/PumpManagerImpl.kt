@@ -24,6 +24,9 @@ class PumpManagerImpl(
     private val _pumpIssues = MutableStateFlow<Set<PumpIssue>>(emptySet())
     override val pumpIssues: StateFlow<Set<PumpIssue>> = _pumpIssues.asStateFlow()
 
+    private val _activeInsulinPump = MutableStateFlow<InsulinPump?>(null)
+    override val activeInsulinPump: StateFlow<InsulinPump?> = _activeInsulinPump.asStateFlow()
+
     override var pumpCoordinator: PumpCoordinator? = null
         private set
 
@@ -34,9 +37,10 @@ class PumpManagerImpl(
         wakeService.registerHandler(WAKE_TAG, this)
     }
 
-    override var insulinPump: InsulinPump? = null
+    override var insulinPump: InsulinPump?
+        get() = _activeInsulinPump.value
         set(value) {
-            field = value
+            _activeInsulinPump.value = value
             pumpMonitorJob?.cancel()
             pumpCoordinator = if (value == null) {
                 null

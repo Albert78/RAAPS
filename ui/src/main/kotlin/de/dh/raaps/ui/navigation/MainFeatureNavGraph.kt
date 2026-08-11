@@ -30,6 +30,7 @@ import de.dh.raaps.common.navigation.MealsRoute
 import de.dh.raaps.common.navigation.NavigationViewModel
 import de.dh.raaps.common.navigation.PermissionsRoute
 import de.dh.raaps.common.navigation.PreferencesMainRoute
+import de.dh.raaps.common.navigation.PumpManagementRoute
 import de.dh.raaps.common.navigation.SystemControlRoute
 import de.dh.raaps.common.navigation.TherapyAdjustmentRoute
 import de.dh.raaps.core.SystemRegistry
@@ -62,6 +63,7 @@ import de.dh.raaps.ui.screens.permissions.requestIgnoreBatteryOptimizations
 import de.dh.raaps.ui.screens.preferences.PreferencesScreen
 import de.dh.raaps.ui.screens.preferences.PreferencesViewModel
 import de.dh.raaps.ui.screens.systemcontrol.AlgorithmDecisionsScreen
+import de.dh.raaps.ui.screens.systemcontrol.PumpManagementScreen
 import de.dh.raaps.ui.screens.systemcontrol.SystemControlScreen
 import de.dh.raaps.ui.screens.systemcontrol.SystemControlViewModel
 import de.dh.raaps.ui.screens.therapy.BgEditorScreen
@@ -293,7 +295,14 @@ class MainFeatureNavGraph(
                 SystemControlScreen(
                     viewModel = vm,
                     onNavigateUp = { navViewModel.pop() },
-                    onNavigateToAlgorithmDecisions = { navViewModel.push(AlgorithmDecisionsRoute) }
+                    onNavigateToAlgorithmDecisions = { navViewModel.push(AlgorithmDecisionsRoute) },
+                    onNavigateToPumpManagement = { navViewModel.push(PumpManagementRoute) }
+                )
+            }
+
+            is PumpManagementRoute -> NavEntry(key) {
+                PumpManagementScreen(
+                    onNavigateUp = { navViewModel.pop() }
                 )
             }
 

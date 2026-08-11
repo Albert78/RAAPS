@@ -4,16 +4,21 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.CreationExtras
+import de.dh.raaps.common.model.InsulinPumpStatus
 import de.dh.raaps.common.model.data.BgReading
 import de.dh.raaps.common.model.data.BgReadingsInterval
 import de.dh.raaps.common.model.data.GlucoseUnit
 import de.dh.raaps.common.model.data.Timestamp
 import de.dh.raaps.core.SystemRegistry
 import de.dh.raaps.core.aps.AlgorithmInsight
+import de.dh.raaps.core.pump.PumpJob
 import de.dh.raaps.glucoseUnit
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.stateIn
 
 data class SystemControlUiState(
@@ -23,35 +28,105 @@ data class SystemControlUiState(
     val readingsInterval: BgReadingsInterval? = null,
     val lastBgReading: BgReading? = null,
     val nextPredictedTimestamp: Timestamp? = null,
-    val glucoseUnit: GlucoseUnit = GlucoseUnit.MG_DL
+    val glucoseUnit: GlucoseUnit = GlucoseUnit.MG_DL,
+
+    // Pump Subsystem
+    val pumpConnected: Boolean = false,
+    val pumpModel: String? = null,
+    val pumpStatus: InsulinPumpStatus? = null,
+    val lastPumpConnection: Timestamp = Timestamp.INVALID,
+    val pendingPumpJobs: List<PumpJob> = emptyList()
 )
 
+@OptIn(ExperimentalCoroutinesApi::class)
 class SystemControlViewModel(
     private val systemRegistry: SystemRegistry
 ) : ViewModel() {
     private val algorithmInsightRepository = systemRegistry.algorithmInsightRepository
     private val glucoseSourceManager = systemRegistry.glucoseSourceManager
     private val appPreferencesRepository = systemRegistry.appPreferencesRepository
+    private val pumpManager = systemRegistry.pumpManager
 
-    val uiState: StateFlow<SystemControlUiState> = combine(
-        algorithmInsightRepository.observeInsights(),
+    private val glucoseInfo = combine(
         glucoseSourceManager.activeGlucoseSource,
         glucoseSourceManager.currentBg,
         appPreferencesRepository.cachedPreferences
-    ) { insights, source, currentBg, preferences ->
-        SystemControlUiState(
-            algorithmInsights = insights,
-            glucoseSourceName = source?.name,
+    ) { source, currentBg, preferences ->
+        GlucoseUiData(
+            sourceName = source?.name,
             sensorTypeName = source?.getSensorTypeName(),
             readingsInterval = source?.readingsInterval,
             lastBgReading = currentBg,
             nextPredictedTimestamp = if (source != null) glucoseSourceManager.predictNextValueTimestamp() else null,
             glucoseUnit = preferences.glucoseUnit
         )
+    }
+
+    private val pumpInfo = pumpManager.activeInsulinPump.flatMapLatest { pump ->
+        if (pump == null) {
+            flowOf(PumpUiData())
+        } else {
+            val coordinator = pumpManager.pumpCoordinator
+            combine(
+                pump.isConnected,
+                pump.hardwareInformation,
+                pump.pumpStatus,
+                coordinator?.pendingJobs ?: flowOf(emptyList()),
+                coordinator?.lastConnectionTime ?: flowOf(Timestamp.INVALID)
+            ) { connected, hardware, status, jobs, lastConn ->
+                PumpUiData(connected, hardware?.model, status, lastConn, jobs)
+            }
+        }
+    }
+
+    val uiState: StateFlow<SystemControlUiState> = combine(
+        algorithmInsightRepository.observeInsights(),
+        glucoseInfo,
+        pumpInfo
+    ) { insights, gInfo, pInfo ->
+        SystemControlUiState(
+            algorithmInsights = insights,
+            glucoseSourceName = gInfo.sourceName,
+            sensorTypeName = gInfo.sensorTypeName,
+            readingsInterval = gInfo.readingsInterval,
+            lastBgReading = gInfo.lastBgReading,
+            nextPredictedTimestamp = gInfo.nextPredictedTimestamp,
+            glucoseUnit = gInfo.glucoseUnit,
+            pumpConnected = pInfo.connected,
+            pumpModel = pInfo.model,
+            pumpStatus = pInfo.status,
+            lastPumpConnection = pInfo.lastConnection,
+            pendingPumpJobs = pInfo.jobs
+        )
     }.stateIn(
         scope = viewModelScope,
         started = SharingStarted.WhileSubscribed(5000),
         initialValue = SystemControlUiState()
+    )
+
+    fun cancelPumpJob(jobId: String) {
+        pumpManager.cancelJobs { it.id == jobId }
+    }
+
+    fun refreshPumpStatus() {
+        pumpManager.wakeup()
+    }
+
+    private data class GlucoseUiData(
+        val sourceName: String?,
+        val sensorTypeName: String?,
+        val readingsInterval: BgReadingsInterval?,
+        val lastBgReading: BgReading?,
+        val nextPredictedTimestamp: Timestamp?,
+        val glucoseUnit: GlucoseUnit
+    )
+
+    private data class PumpUiData(
+        val connected: Boolean = false,
+        val model: String? = null,
+        val status: InsulinPumpStatus? = null,
+        val lastConnection: Timestamp = Timestamp.INVALID,
+        val jobs: List<PumpJob> = emptyList()
     )
 
     companion object {

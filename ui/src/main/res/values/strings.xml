@@ -252,6 +252,35 @@
     <string name="system_control_cgm_interval_adhoc">Ad-hoc</string>
     <string name="system_control_cgm_not_connected">Nicht verbunden</string>
     <string name="system_control_pump_subsystem">Pumpen-Teilsystem</string>
+    <string name="system_control_pump_model_label">Modell:</string>
+    <string name="system_control_pump_status_label">Status:</string>
+    <string name="system_control_pump_battery_label">Batterie:</string>
+    <string name="system_control_pump_reservoir_label">Reservoir:</string>
+    <string name="system_control_pump_last_conn_label">Letzte Verbindung:</string>
+    <string name="system_control_pump_state_active">Aktiv</string>
+    <string name="system_control_pump_state_suspended">Gestoppt</string>
+    <string name="system_control_pump_state_disconnected">Getrennt</string>
+    <string name="system_control_pump_action_suspend">Stoppen</string>
+    <string name="system_control_pump_action_resume">Fortsetzen</string>
+    <string name="system_control_pump_action_sync">Synchronisieren</string>
+    <string name="system_control_pump_action_manage">Management &amp; Wartung</string>
+    <string name="system_control_pump_jobs_title">Ausstehende Pumpenjobs</string>
+    <string name="system_control_pump_jobs_empty">Keine ausstehenden Jobs</string>
+    <string name="system_control_pump_job_cancel">Abbrechen</string>
+    <string name="system_control_pump_job_type_bolus">Bolus: %1$s I.E.</string>
+    <string name="system_control_pump_job_type_temp_basal">Temp-Basal: %1$d%%</string>
+    <string name="system_control_pump_job_type_profile">Profil setzen</string>
+    <string name="system_control_pump_job_type_cancel_temp_basal">Temp-Basal abbrechen</string>
+    <string name="system_control_pump_job_type_cancel_bolus">Bolus abbrechen</string>
+
+    <string name="pump_management_screen_title">Pumpen-Management</string>
+    <string name="pump_management_battery_change">Batteriewechsel</string>
+    <string name="pump_management_cannula_change">Katheterwechsel</string>
+    <string name="pump_management_reservoir_change">Reservoirwechsel</string>
+    <string name="pump_management_special_commands">Spezielle Kommandos</string>
+    <string name="pump_management_prime_cannula">Katheter füllen (Prime)</string>
+    <string name="pump_management_prime_tubing">Schlauch füllen</string>
+
     <string name="system_control_algorithm_subsystem">Algorithmus</string>
     <string name="system_control_algorithm_history_button">Verlauf</string>
 
