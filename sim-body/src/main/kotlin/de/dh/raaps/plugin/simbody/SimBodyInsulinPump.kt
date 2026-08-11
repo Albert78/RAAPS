@@ -156,7 +156,7 @@ class SimBodyInsulinPump(
             throw Exception("Pump hardware error - cannot set temp basal")
         }
 
-        device.updateTempBasalPercent(percent)
+        device.updateTempBasalPercent(percent, durationHours)
         refreshStatus()
     }
 

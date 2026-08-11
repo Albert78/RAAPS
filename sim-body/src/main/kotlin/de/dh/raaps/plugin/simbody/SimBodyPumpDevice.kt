@@ -60,6 +60,9 @@ class SimBodyPumpDevice(
     private val _tempBasalPercent = MutableStateFlow<Int?>(null)
     val tempBasalPercent: StateFlow<Int?> = _tempBasalPercent.asStateFlow()
 
+    private val _tempBasalExpiryMs = MutableStateFlow<Long?>(null)
+    val tempBasalExpiryMs: StateFlow<Long?> = _tempBasalExpiryMs.asStateFlow()
+
     private var lastBasalDeliveryTimestamp: Long = 0L // Initialize on first tick
 
     fun loadState() {
@@ -75,7 +78,7 @@ class SimBodyPumpDevice(
                     _isBroken.value = state.isBroken
                     lastBasalDeliveryTimestamp = state.lastBasalDeliveryTimestampMs
                     _tempBasalPercent.value = state.tempBasalPercent
-                    // TODO: Handle tempBasalExpiryMs if needed
+                    _tempBasalExpiryMs.value = state.tempBasalExpiryMs
                 }
 
                 val horizonMs = 3 * MS_PER_DAY
@@ -107,7 +110,8 @@ class SimBodyPumpDevice(
                     hasHardwareError = _hasHardwareError.value,
                     isBroken = _isBroken.value,
                     lastBasalDeliveryTimestampMs = lastBasalDeliveryTimestamp,
-                    tempBasalPercent = _tempBasalPercent.value
+                    tempBasalPercent = _tempBasalPercent.value,
+                    tempBasalExpiryMs = _tempBasalExpiryMs.value
                 )
             )
         }
@@ -156,10 +160,17 @@ class SimBodyPumpDevice(
 
     /**
      * Advances the internal device state.
+     */
+    fun advanceToTick(currentTimestamp: Timestamp) {
+        handleBasal(currentTimestamp)
+        return
+    }
+
+    /**
      * Implements active basal control: delivers 1/3 of the basal rate every 20 minutes.
      * These deliveries are recorded as insulin history points.
      */
-    fun advanceToTick(currentTimestamp: Timestamp) {
+    private fun handleBasal(currentTimestamp: Timestamp) {
         val twentyMinutesMs = 20 * 60 * 1000L
 
         // Initialize if first tick to prevent retroactive deliveries
@@ -171,6 +182,16 @@ class SimBodyPumpDevice(
 
         while (currentTimestamp.ms - lastBasalDeliveryTimestamp >= twentyMinutesMs) {
             val deliveryTimestamp = Timestamp(lastBasalDeliveryTimestamp + twentyMinutesMs)
+
+            // Auto-reset TBR if expired
+            _tempBasalExpiryMs.value?.let { expiry ->
+                if (deliveryTimestamp.ms >= expiry) {
+                    _tempBasalPercent.value = null
+                    _tempBasalExpiryMs.value = null
+                    persistState()
+                }
+            }
+
             val profileRate = InsulinAmount(getProfileBasalRate(deliveryTimestamp))
             val currentPercent = _tempBasalPercent.value
             val rate = if (currentPercent != null) {
@@ -182,13 +203,17 @@ class SimBodyPumpDevice(
             // Deliver 1/3 of the hourly rate (since we deliver every 20 minutes)
             val basalToDeliver = rate / 3.0
 
-            deliverInternalBasal(basalToDeliver, deliveryTimestamp, if (_tempBasalPercent.value != null) PumpDeliveryType.Tbr else PumpDeliveryType.Basal)
+            deliverInternalBolus(
+                basalToDeliver,
+                deliveryTimestamp,
+                if (_tempBasalPercent.value != null) PumpDeliveryType.Tbr else PumpDeliveryType.Basal
+            )
             lastBasalDeliveryTimestamp = deliveryTimestamp.ms
             persistState()
         }
     }
 
-    private fun deliverInternalBasal(units: InsulinAmount, timestamp: Timestamp, type: PumpDeliveryType = PumpDeliveryType.Basal) {
+    private fun deliverInternalBolus(units: InsulinAmount, timestamp: Timestamp, type: PumpDeliveryType = PumpDeliveryType.Basal) {
         // Active delivery only works if hardware is OK
         if (isBroken.value || hasHardwareError.value || isOccluded.value || !isPrimed.value) {
             return
@@ -242,12 +267,17 @@ class SimBodyPumpDevice(
             return false
         }
 
-        deliverInternalBasal(amount, Timestamp.now(), PumpDeliveryType.Bolus)
+        deliverInternalBolus(amount, Timestamp.now(), PumpDeliveryType.Bolus)
         return true
     }
 
-    fun updateTempBasalPercent(percent: Int?) {
+    fun updateTempBasalPercent(percent: Int?, durationHours: Int? = null) {
         _tempBasalPercent.value = percent
+        if (percent != null && durationHours != null) {
+            _tempBasalExpiryMs.value = Timestamp.now().plusHours(durationHours).ms
+        } else {
+            _tempBasalExpiryMs.value = null
+        }
         persistState()
     }
 
