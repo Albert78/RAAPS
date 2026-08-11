@@ -382,15 +382,6 @@ class ApsAlgorithmImpl(
 
             if (bgErrorAtPeak + lowTempBasalEffectUntilPeak < BgDelta(-20)) {
                 // Prediction is too low -> Defer ongoing meal boluses
-                val safetyCorrectionCarbsInG = convertToCarbsFromBgDelta(-bgErrorAtPeak, isfValue, crValue)
-                if (recentCarbsInG < safetyCorrectionCarbsInG) {
-                    // Bg is too low, further falling and not enough safety carbs -> Suggest carbs
-                    val lowCorrectionCarbsForPeakInG = safetyCorrectionCarbsInG - recentCarbsInG
-                    if (lowCorrectionCarbsForPeakInG > 5) {
-                        return CalculationResult.carbsSuggestion(carbsInGHint = lowCorrectionCarbsForPeakInG.toInt()).copy(metrics = insight)
-                    }
-                }
-                // Enough or almost enough safety carbs, wait for carbs to have effect
                 return CalculationResult.zeroTemp(durationInHours = 1).copy(metrics = insight)
             }
             // Else go on with decreased basal
