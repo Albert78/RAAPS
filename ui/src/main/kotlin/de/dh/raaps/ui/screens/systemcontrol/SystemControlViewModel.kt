@@ -35,12 +35,12 @@ data class SystemControlUiState(
     val pumpModel: String? = null,
     val pumpStatus: InsulinPumpStatus? = null,
     val lastPumpConnection: Timestamp = Timestamp.INVALID,
-    val pendingPumpJobs: List<PumpJob> = emptyList()
+    val pendingPumpJobs: List<PumpJob> = emptyList(),
 )
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class SystemControlViewModel(
-    private val systemRegistry: SystemRegistry
+    systemRegistry: SystemRegistry
 ) : ViewModel() {
     private val coreInsightRepository = systemRegistry.coreInsightRepository
     private val glucoseSourceManager = systemRegistry.glucoseSourceManager

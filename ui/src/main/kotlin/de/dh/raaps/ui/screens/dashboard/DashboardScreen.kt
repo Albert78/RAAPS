@@ -40,7 +40,9 @@ import de.dh.raaps.common.model.InsulinAmount
 import de.dh.raaps.common.model.data.BgDelta
 import de.dh.raaps.common.model.data.BgValue
 import de.dh.raaps.common.model.data.Minutes
+import de.dh.raaps.core.aps.ApsRecommendation
 import de.dh.raaps.ui.R
+import de.dh.raaps.ui.common.composables.ExpandableInfoCard
 import de.dh.raaps.ui.common.composables.PrimaryButton
 import de.dh.raaps.ui.common.composables.WarningBanner
 import de.dh.raaps.ui.common.composables.screenTitle
@@ -211,6 +213,27 @@ fun DashboardContent(
                 insulinVisible = insulinVisible,
                 onInsulinToggle = { insulinVisible = it }
             )
+
+            dashboardUiState.recommendations.forEach { recommendation ->
+                Spacer(modifier = Modifier.height(8.dp))
+                val (infoText, detailText) = when (recommendation) {
+                    is ApsRecommendation.Carbs -> {
+                        stringResource(R.string.recommendation_title_carbs) to
+                                stringResource(R.string.recommendation_text_carbs, recommendation.amountInGram)
+                    }
+
+                    is ApsRecommendation.Bolus -> {
+                        stringResource(R.string.recommendation_title_bolus) to
+                                stringResource(R.string.recommendation_text_bolus, recommendation.amount.iu)
+                    }
+                }
+                ExpandableInfoCard(
+                    infoText = infoText,
+                    detailText = detailText,
+                    initiallyExpanded = true,
+                    expandable = true
+                )
+            }
 
             Spacer(modifier = Modifier.height(24.dp))
 

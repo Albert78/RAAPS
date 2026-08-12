@@ -6,6 +6,7 @@ import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.CreationExtras
 import de.dh.raaps.common.model.ApsMode
 import de.dh.raaps.core.SystemRegistry
+import de.dh.raaps.core.aps.ApsRecommendation
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -19,7 +20,8 @@ data class DashboardUiState(
     val isError: Boolean = false,
     val apsMode: ApsMode = ApsMode.Suspend,
     // TODO: Get selectable modes from core
-    val availableApsModes: List<ApsMode> = ApsMode.entries
+    val availableApsModes: List<ApsMode> = ApsMode.entries,
+    val recommendations: List<ApsRecommendation> = emptyList()
 )
 
 /**
@@ -33,9 +35,10 @@ class DashboardViewModel(
 
     val uiState: StateFlow<DashboardUiState> = combine(
         _uiState,
-        systemManager.apsMode
-    ) { state, mode ->
-        state.copy(apsMode = mode)
+        systemManager.apsMode,
+        systemRegistry.therapyManager.recommendations
+    ) { state, mode, recommendations ->
+        state.copy(apsMode = mode, recommendations = recommendations)
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), DashboardUiState())
 
     private val glucoseRepository = systemRegistry.glucoseRepository

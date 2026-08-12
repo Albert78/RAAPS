@@ -138,6 +138,27 @@ fun shortRelativeTimeAgo(timestamp: Timestamp): String {
     return shortRelativeTimeAgo(diffMs)
 }
 
+@Composable
+fun shortRelativeTimeUntil(diffMs: Long): String {
+    val diffSec = diffMs / 1000
+    val diffMin = diffMs / 60000
+    return when {
+        diffSec < 5 -> stringResource(R.string.time_ago_just_now)
+        diffSec < 61 -> stringResource(R.string.time_until_seconds, diffSec)
+        diffMin < 1 -> stringResource(R.string.time_ago_just_now)
+        diffMin < 91 -> stringResource(R.string.time_until_minutes, diffMin)
+        else -> {
+            stringResource(R.string.time_until_hours, diffMin / 60)
+        }
+    }
+}
+
+@Composable
+fun shortRelativeTimeUntil(timestamp: Timestamp): String {
+    val diffMs = timestamp.ms - System.currentTimeMillis()
+    return shortRelativeTimeUntil(diffMs)
+}
+
 /////////////////////////////////////////////// Glucose & Therapy //////////////////////////////////////
 
 @Composable

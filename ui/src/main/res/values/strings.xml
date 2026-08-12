@@ -251,6 +251,9 @@
     <string name="system_control_cgm_interval_1min">1 Min.</string>
     <string name="system_control_cgm_interval_5min">5 Min.</string>
     <string name="system_control_cgm_interval_adhoc">Ad-hoc</string>
+    <string name="system_control_cgm_time_remaining">(%1$d Min, %2$d Sek)</string>
+    <string name="system_control_cgm_time_ago">(vor %1$d Min, %2$d Sek)</string>
+    <string name="system_control_cgm_time_just_now">(gerade eben)</string>
     <string name="system_control_cgm_not_connected">Nicht verbunden</string>
     <string name="system_control_tab_pump">Pumpe</string>
     <string name="system_control_pump_model_label">Modell:</string>

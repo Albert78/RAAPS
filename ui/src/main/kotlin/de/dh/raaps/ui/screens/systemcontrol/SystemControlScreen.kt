@@ -2,7 +2,9 @@ package de.dh.raaps.ui.screens.systemcontrol
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -15,6 +17,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.BatteryFull
 import androidx.compose.material.icons.filled.Cancel
+import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Pause
 import androidx.compose.material.icons.filled.PlayArrow
@@ -34,13 +37,14 @@ import androidx.compose.material3.Tab
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -54,10 +58,14 @@ import de.dh.raaps.core.pump.PumpCommand
 import de.dh.raaps.ui.R
 import de.dh.raaps.ui.common.composables.PrimaryButton
 import de.dh.raaps.ui.common.composables.screenTitle
+import de.dh.raaps.ui.common.shortRelativeTimeAgo
+import de.dh.raaps.ui.common.shortRelativeTimeUntil
 import de.dh.raaps.ui.common.theme.AppTheme
+import kotlinx.coroutines.delay
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
+import kotlin.time.Duration.Companion.milliseconds
 
 const val SYSTEM_CONTROL_TAB_CGM = 0
 const val SYSTEM_CONTROL_TAB_PUMP = 1
@@ -97,6 +105,17 @@ fun SystemControlContent(
 ) {
     val timeFormat = remember { SimpleDateFormat("HH:mm:ss", Locale.getDefault()) }
     var selectedTabIndex by remember { mutableIntStateOf(initialTab) }
+
+    var tick by remember { mutableLongStateOf(System.currentTimeMillis()) }
+    LaunchedEffect(Unit) {
+        while (true) {
+            val now = System.currentTimeMillis()
+            tick = now
+            val next10s = ((now / 10000) + 1) * 10000
+            delay((next10s - now).milliseconds)
+        }
+    }
+
     val tabs = listOf(
         stringResource(id = R.string.system_control_tab_cgm),
         stringResource(id = R.string.system_control_tab_pump),
@@ -117,7 +136,12 @@ fun SystemControlContent(
                         }
                     }
                 )
-                PrimaryTabRow(selectedTabIndex = selectedTabIndex) {
+                PrimaryTabRow(
+                    selectedTabIndex = selectedTabIndex,
+                    containerColor = MaterialTheme.colorScheme.surface,
+                    contentColor = MaterialTheme.colorScheme.primary,
+                    divider = {}
+                ) {
                     tabs.forEachIndexed { index, title ->
                         Tab(
                             selected = selectedTabIndex == index,
@@ -126,12 +150,14 @@ fun SystemControlContent(
                                 Text(
                                     text = title,
                                     maxLines = 1,
-                                    style = MaterialTheme.typography.titleSmall
+                                    style = MaterialTheme.typography.titleSmall,
+                                    fontWeight = if (selectedTabIndex == index) FontWeight.Bold else FontWeight.Normal
                                 )
                             }
                         )
                     }
                 }
+                HorizontalDivider(thickness = 0.5.dp, color = MaterialTheme.colorScheme.outlineVariant)
             }
         }
     ) { innerPadding ->
@@ -145,7 +171,7 @@ fun SystemControlContent(
                 SYSTEM_CONTROL_TAB_CGM -> {
                     item {
                         Spacer(modifier = Modifier.height(16.dp))
-                        CgmOverviewCard(uiState, timeFormat)
+                        CgmOverviewCard(uiState, timeFormat, tick)
                     }
                 }
 
@@ -175,20 +201,31 @@ fun SystemControlContent(
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .padding(vertical = 8.dp),
-                            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
+                            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
                         ) {
                             Column(
                                 modifier = Modifier
                                     .padding(16.dp)
-                                    .fillMaxWidth(),
-                                horizontalAlignment = Alignment.CenterHorizontally
+                                    .fillMaxWidth()
                             ) {
-                                Text(
-                                    "System Status: Operational",
-                                    style = MaterialTheme.typography.bodyLarge
-                                )
-                                Spacer(modifier = Modifier.height(8.dp))
-                                PrimaryButton(onClick = onNavigateToCoreDecisions) {
+                                ControlDetailRow(
+                                    label = "APS Status",
+                                    icon = Icons.Default.CheckCircle
+                                ) {
+                                    Text(
+                                        "Operational",
+                                        style = MaterialTheme.typography.headlineSmall,
+                                        fontWeight = FontWeight.ExtraBold,
+                                        color = MaterialTheme.colorScheme.primary
+                                    )
+                                }
+
+                                Spacer(modifier = Modifier.height(16.dp))
+
+                                PrimaryButton(
+                                    onClick = onNavigateToCoreDecisions,
+                                    modifier = Modifier.fillMaxWidth()
+                                ) {
                                     Text(stringResource(id = R.string.system_control_core_history_button))
                                 }
                             }
@@ -204,64 +241,198 @@ fun SystemControlContent(
 }
 
 @Composable
-fun CgmOverviewCard(uiState: SystemControlUiState, timeFormat: SimpleDateFormat) {
+fun CgmOverviewCard(uiState: SystemControlUiState, timeFormat: SimpleDateFormat, tick: Long) {
     Card(
         modifier = Modifier
             .fillMaxWidth()
             .padding(vertical = 8.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
     ) {
         Column(
             modifier = Modifier
                 .padding(16.dp)
                 .fillMaxWidth()
         ) {
-            InfoRow(
+            ControlDetailRow(
                 label = stringResource(id = R.string.system_control_cgm_source_label),
-                value = uiState.glucoseSourceName ?: stringResource(id = R.string.system_control_cgm_not_connected)
-            )
-
-            if (uiState.glucoseSourceName != null) {
-                Spacer(modifier = Modifier.height(8.dp))
-                InfoRow(
-                    label = stringResource(id = R.string.system_control_cgm_sensor_type_label),
-                    value = uiState.sensorTypeName ?: "--"
-                )
-
-                Spacer(modifier = Modifier.height(8.dp))
-                val intervalText = when (uiState.readingsInterval) {
-                    BgReadingsInterval.OneMinute -> stringResource(id = R.string.system_control_cgm_interval_1min)
-                    BgReadingsInterval.FiveMinutes -> stringResource(id = R.string.system_control_cgm_interval_5min)
-                    BgReadingsInterval.AdHoc -> stringResource(id = R.string.system_control_cgm_interval_adhoc)
-                    null -> "--"
-                }
-                InfoRow(
-                    label = stringResource(id = R.string.system_control_cgm_interval_label),
-                    value = intervalText
+                icon = Icons.Default.Info
+            ) {
+                Text(
+                    text = uiState.glucoseSourceName ?: stringResource(id = R.string.system_control_cgm_not_connected),
+                    style = MaterialTheme.typography.bodyLarge,
+                    fontWeight = FontWeight.Medium
                 )
             }
 
-            Spacer(modifier = Modifier.height(8.dp))
-            val unitText = stringResource(
-                id = if (uiState.glucoseUnit == GlucoseUnit.MG_DL)
-                    R.string.glucose_unit_mgdl else R.string.glucose_unit_mmol
-            )
-            val bgValueText = uiState.lastBgReading?.let {
-                "${it.value.toString(uiState.glucoseUnit)} $unitText"
-            } ?: "--"
-            val timeText = uiState.lastBgReading?.timestamp?.let { timeFormat.format(Date(it.ms)) } ?: "--"
+            if (uiState.glucoseSourceName != null) {
+                Spacer(modifier = Modifier.height(20.dp))
+                Row(modifier = Modifier.fillMaxWidth()) {
+                    Column(modifier = Modifier.weight(1f)) {
+                        ControlDetailRow(
+                            label = stringResource(id = R.string.system_control_cgm_sensor_type_label)
+                        ) {
+                            Text(
+                                text = uiState.sensorTypeName ?: "--",
+                                style = MaterialTheme.typography.bodyMedium
+                            )
+                        }
+                    }
+                    Column(modifier = Modifier.weight(1f)) {
+                        ControlDetailRow(
+                            label = stringResource(id = R.string.system_control_cgm_interval_label)
+                        ) {
+                            val intervalText = when (uiState.readingsInterval) {
+                                BgReadingsInterval.OneMinute -> stringResource(id = R.string.system_control_cgm_interval_1min)
+                                BgReadingsInterval.FiveMinutes -> stringResource(id = R.string.system_control_cgm_interval_5min)
+                                BgReadingsInterval.AdHoc -> stringResource(id = R.string.system_control_cgm_interval_adhoc)
+                                null -> "--"
+                            }
+                            Text(
+                                text = intervalText,
+                                style = MaterialTheme.typography.bodyMedium
+                            )
+                        }
+                    }
+                }
 
-            InfoRow(
-                label = stringResource(id = R.string.system_control_cgm_last_value_label),
-                value = stringResource(id = R.string.system_control_cgm_value_at_time, bgValueText, timeText)
-            )
+                HorizontalDivider(
+                    modifier = Modifier.padding(vertical = 20.dp),
+                    thickness = 0.5.dp,
+                    color = MaterialTheme.colorScheme.outlineVariant
+                )
 
-            if (uiState.nextPredictedTimestamp != null) {
-                Spacer(modifier = Modifier.height(8.dp))
-                val nextTimeText = timeFormat.format(Date(uiState.nextPredictedTimestamp.ms))
-                InfoRow(
-                    label = stringResource(id = R.string.system_control_cgm_next_value_label),
-                    value = stringResource(id = R.string.system_control_cgm_at_time, nextTimeText)
+                val unitText = stringResource(
+                    id = if (uiState.glucoseUnit == GlucoseUnit.MG_DL)
+                        R.string.glucose_unit_mgdl else R.string.glucose_unit_mmol
+                )
+
+                ControlDetailRow(
+                    label = stringResource(id = R.string.system_control_cgm_last_value_label),
+                    icon = Icons.Default.Sync
+                ) {
+                    val bgValueText = uiState.lastBgReading?.let {
+                        "${it.value.toString(uiState.glucoseUnit)} $unitText"
+                    } ?: "--"
+                    val timeText = uiState.lastBgReading?.timestamp?.let { timeFormat.format(Date(it.ms)) } ?: "--"
+                    val relativeTime = uiState.lastBgReading?.timestamp?.let {
+                        shortRelativeTimeAgo(tick - it.ms)
+                    }
+
+                    GlucoseFragments(
+                        value = bgValueText,
+                        time = timeText,
+                        extra = relativeTime,
+                        stackVertical = true
+                    )
+                }
+
+                if (uiState.nextPredictedTimestamp != null) {
+                    Spacer(modifier = Modifier.height(12.dp))
+                    ControlDetailRow(
+                        label = stringResource(id = R.string.system_control_cgm_next_value_label),
+                        icon = Icons.Default.PlayArrow
+                    ) {
+                        val nextTimeText = timeFormat.format(Date(uiState.nextPredictedTimestamp.ms))
+                        val remainingTime = run {
+                            val diffMs = uiState.nextPredictedTimestamp.ms - tick
+                            if (diffMs > 0) {
+                                shortRelativeTimeUntil(diffMs)
+                            } else null
+                        }
+
+                        GlucoseFragments(
+                            value = "--",
+                            time = nextTimeText,
+                            extra = remainingTime,
+                            stackVertical = true
+                        )
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun ControlDetailRow(
+    label: String,
+    icon: ImageVector? = null,
+    content: @Composable () -> Unit
+) {
+    Row(verticalAlignment = Alignment.Top) {
+        if (icon != null) {
+            Icon(
+                imageVector = icon,
+                contentDescription = null,
+                modifier = Modifier.size(18.dp).padding(top = 2.dp),
+                tint = MaterialTheme.colorScheme.primary
+            )
+            Spacer(modifier = Modifier.width(8.dp))
+        }
+        Column {
+            Text(
+                text = label,
+                style = MaterialTheme.typography.labelSmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                fontWeight = FontWeight.Bold
+            )
+            Spacer(modifier = Modifier.height(2.dp))
+            content()
+        }
+    }
+}
+
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+fun GlucoseFragments(value: String, time: String, extra: String?, stackVertical: Boolean = false) {
+    if (stackVertical) {
+        Column {
+            Text(
+                text = value,
+                style = MaterialTheme.typography.headlineSmall,
+                fontWeight = FontWeight.ExtraBold,
+                color = MaterialTheme.colorScheme.primary
+            )
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(4.dp)
+            ) {
+                Text(
+                    text = time,
+                    style = MaterialTheme.typography.bodyMedium,
+                    fontWeight = FontWeight.Medium
+                )
+                if (extra != null) {
+                    Text(
+                        text = "($extra)",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.secondary
+                    )
+                }
+            }
+        }
+    } else {
+        FlowRow(
+            verticalArrangement = Arrangement.Center,
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            Text(
+                text = value,
+                style = MaterialTheme.typography.bodyLarge,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.primary
+            )
+            Text(
+                text = time,
+                style = MaterialTheme.typography.bodyMedium,
+                modifier = Modifier.align(Alignment.CenterVertically)
+            )
+            if (extra != null) {
+                Text(
+                    text = "($extra)",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.secondary,
+                    modifier = Modifier.align(Alignment.CenterVertically)
                 )
             }
         }
@@ -274,19 +445,25 @@ fun PumpOverviewCard(uiState: SystemControlUiState, timeFormat: SimpleDateFormat
         modifier = Modifier
             .fillMaxWidth()
             .padding(vertical = 8.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
     ) {
         Column(
             modifier = Modifier
                 .padding(16.dp)
                 .fillMaxWidth()
         ) {
-            InfoRow(
+            ControlDetailRow(
                 label = stringResource(id = R.string.system_control_pump_model_label),
-                value = uiState.pumpModel ?: stringResource(id = R.string.system_control_cgm_not_connected)
-            )
+                icon = Icons.Default.Info
+            ) {
+                Text(
+                    text = uiState.pumpModel ?: stringResource(id = R.string.system_control_cgm_not_connected),
+                    style = MaterialTheme.typography.bodyLarge,
+                    fontWeight = FontWeight.Medium
+                )
+            }
 
-            Spacer(modifier = Modifier.height(8.dp))
+            Spacer(modifier = Modifier.height(12.dp))
             val statusText = when {
                 !uiState.pumpConnected -> stringResource(id = R.string.system_control_pump_state_disconnected)
                 uiState.pumpStatus?.pumpSuspended == true -> stringResource(id = R.string.system_control_pump_state_suspended)
@@ -297,14 +474,20 @@ fun PumpOverviewCard(uiState: SystemControlUiState, timeFormat: SimpleDateFormat
                 uiState.pumpStatus?.pumpSuspended == true -> MaterialTheme.colorScheme.tertiary
                 else -> MaterialTheme.colorScheme.primary
             }
-            InfoRow(
+            ControlDetailRow(
                 label = stringResource(id = R.string.system_control_pump_status_label),
-                value = statusText,
-                valueColor = statusColor
-            )
+                icon = if (uiState.pumpConnected) Icons.Default.Settings else Icons.Default.Cancel
+            ) {
+                Text(
+                    text = statusText,
+                    style = MaterialTheme.typography.bodyLarge,
+                    fontWeight = FontWeight.Bold,
+                    color = statusColor
+                )
+            }
 
             if (uiState.pumpConnected && uiState.pumpStatus != null) {
-                Spacer(modifier = Modifier.height(8.dp))
+                HorizontalDivider(modifier = Modifier.padding(vertical = 12.dp), thickness = 0.5.dp, color = MaterialTheme.colorScheme.outlineVariant)
                 Row(modifier = Modifier.fillMaxWidth()) {
                     Column(modifier = Modifier.weight(1f)) {
                         StatusItem(
@@ -323,14 +506,19 @@ fun PumpOverviewCard(uiState: SystemControlUiState, timeFormat: SimpleDateFormat
                 }
             }
 
-            Spacer(modifier = Modifier.height(8.dp))
+            Spacer(modifier = Modifier.height(12.dp))
             val lastConnText = if (uiState.lastPumpConnection != Timestamp.INVALID) {
                 timeFormat.format(Date(uiState.lastPumpConnection.ms))
             } else "--"
-            InfoRow(
+            ControlDetailRow(
                 label = stringResource(id = R.string.system_control_pump_last_conn_label),
-                value = lastConnText
-            )
+                icon = Icons.Default.Sync
+            ) {
+                Text(
+                    text = lastConnText,
+                    style = MaterialTheme.typography.bodyMedium
+                )
+            }
         }
     }
 }
@@ -438,27 +626,6 @@ fun PumpJobsCard(uiState: SystemControlUiState, onCancelJob: (String) -> Unit) {
                 }
             }
         }
-    }
-}
-
-@Composable
-private fun InfoRow(label: String, value: String, valueColor: Color = MaterialTheme.colorScheme.onSurface) {
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        Text(
-            text = label,
-            style = MaterialTheme.typography.labelLarge,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
-        )
-        Spacer(modifier = Modifier.width(8.dp))
-        Text(
-            text = value,
-            style = MaterialTheme.typography.bodyLarge,
-            fontWeight = FontWeight.Medium,
-            color = valueColor
-        )
     }
 }
 

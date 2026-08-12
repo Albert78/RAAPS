@@ -9,6 +9,10 @@
     <string name="time_ago_minutes_ago">vor %1$d Min</string>
     <string name="time_ago_hours_ago">vor %1$d Std</string>
 
+    <string name="time_until_seconds">in %1$d Sek</string>
+    <string name="time_until_minutes">in %1$d Min</string>
+    <string name="time_until_hours">in %1$d Std</string>
+
     <!-- Content descriptions -->
     <string name="cd_cancel">Abbrechen</string>
     <string name="cd_navigate_up">Zurück</string>
