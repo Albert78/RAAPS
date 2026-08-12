@@ -156,6 +156,10 @@ class Core(
     override suspend fun onTick(tick: Tick) {
         Log.d(TAG, "onTick: $tick")
 
+        processCalculation()
+    }
+
+    private suspend fun processCalculation() {
         if (coreState !is CoreState.Active) return
 
         busyWork {
@@ -165,7 +169,10 @@ class Core(
                     try {
                         onClearRecommendations(treatmentLock)
                         if (!onWaitForInsulinJobs(treatmentLock)) {
-                            Log.i(TAG, "onTick: Recalculation skipped: Insulin jobs are still pending.")
+                            Log.i(
+                                TAG,
+                                "onTick: Recalculation skipped: Insulin jobs are still pending."
+                            )
                             scope.launch {
                                 coreInsightRepository.saveInsight(
                                     CoreInsight(
@@ -198,13 +205,21 @@ class Core(
                             onCarbsHint(treatmentLock, result.carbsInGHint)
                         }
                         if (result.tempBasal != null) {
-                            onSetTempBasal(treatmentLock, result.tempBasal.durationInHours, result.tempBasal.percent)
+                            onSetTempBasal(
+                                treatmentLock,
+                                result.tempBasal.durationInHours,
+                                result.tempBasal.percent
+                            )
                         }
                         if (result.clearTempBasal) {
                             onClearTempBasal(treatmentLock)
                         }
                         if (result.bolus != null && result.bolus >= InsulinAmount.EPSILON) {
-                            onDeliverBolus(treatmentLock, result.bolus, result.handledDeferredBoluses)
+                            onDeliverBolus(
+                                treatmentLock,
+                                result.bolus,
+                                result.handledDeferredBoluses
+                            )
                         }
 
                         // Core can be active and yet have issues. In this case, the user is notified
@@ -214,6 +229,9 @@ class Core(
                         setCoreState(CoreState.Active(result.coreIssues ?: emptySet()))
                     } catch (e: Exception) {
                         Log.e(TAG, "Error during core execution", e)
+                        setCoreState(CoreState.Active(CoreIssue.InternalError(
+                            formatErrorMessage("Error during core execution", e)
+                        )))
                         scope.launch {
                             coreInsightRepository.saveInsight(
                                 CoreInsight(
@@ -235,7 +253,10 @@ class Core(
                 }
             }
             if (res is LockResult.Busy) {
-                Log.i(TAG, "Core skipping tick since therapy manager is busy (lock owner: ${res.owner})")
+                Log.i(
+                    TAG,
+                    "Core skipping tick since therapy manager is busy (lock owner: ${res.owner})"
+                )
                 setCoreState(CoreState.Active(CoreIssue.TherapyLockBusy))
 
                 scope.launch {

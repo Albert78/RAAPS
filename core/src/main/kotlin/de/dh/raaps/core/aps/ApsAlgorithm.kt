@@ -13,7 +13,7 @@ sealed class CoreIssue {
 }
 
 enum class CoreReasoning {
-    NO_RECENT_VALUES,
+    BAD_VALUES,
     SAFETY_BASAL_FALLBACK,
     LOW_PREDICTED_CARBS_SUGGESTION,
     LOW_PREDICTED_ZERO_TEMP,
@@ -46,6 +46,9 @@ data class TempBasalResult(
     val percent: Int,
     val durationInHours: Int
 )
+
+fun formatErrorMessage(message: String, e: Exception): String =
+    message + ": " + (e.message ?: e.javaClass.simpleName)
 
 data class CalculationResult(
     val carbsInGHint: Int?,
@@ -124,17 +127,26 @@ data class CalculationResult(
             reasoning = CoreReasoning.MEAL_OR_CORRECTION_BOLUS
         )
 
-        fun coreIssues(vararg issues: CoreIssue) = CalculationResult(
+        fun coreIssue(issue: CoreIssue, reasoning: CoreReasoning) = CalculationResult(
             carbsInGHint = null,
             tempBasal = null,
             clearTempBasal = true,
             bolus = null,
             handledDeferredBoluses = null,
-            coreIssues = issues.toSet(),
-            reasoning = if (issues.any { it is CoreIssue.NoRecentValues })
-                CoreReasoning.NO_RECENT_VALUES
-            else
-                CoreReasoning.INTERNAL_ERROR
+            coreIssues = setOf(issue),
+            reasoning = reasoning
+        )
+
+        fun internalError(message: String, e: Exception) = CalculationResult(
+            carbsInGHint = null,
+            tempBasal = null,
+            clearTempBasal = true,
+            bolus = null,
+            handledDeferredBoluses = null,
+            coreIssues = setOf(CoreIssue.InternalError(
+                formatErrorMessage(message, e)
+            )),
+            reasoning = CoreReasoning.INTERNAL_ERROR
         )
     }
 }

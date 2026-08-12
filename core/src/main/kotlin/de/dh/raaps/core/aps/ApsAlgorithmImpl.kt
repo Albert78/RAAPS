@@ -116,8 +116,9 @@ class ApsAlgorithmImpl(
                     }
                 }
                 if (!receivedValidValue) {
-                    return@recalculate CalculationResult.coreIssues(
-                        CoreIssue.NoRecentValues(SWITCH_OFF_ALGORITHM_INVALID_VALUES_THRESHOLD_IN_MINUTES)
+                    return@recalculate CalculationResult.coreIssue(
+                        CoreIssue.NoRecentValues(SWITCH_OFF_ALGORITHM_INVALID_VALUES_THRESHOLD_IN_MINUTES),
+                        CoreReasoning.BAD_VALUES
                     )
                 }
                 // We cannot make any new predictions if we don't have fresh values.
@@ -357,7 +358,7 @@ class ApsAlgorithmImpl(
         }
     } catch (e: Exception) {
         Log.e(TAG, "Error while recalculating", e)
-        CalculationResult.coreIssues(CoreIssue.InternalError(e.message ?: e.javaClass.simpleName))
+        CalculationResult.internalError("Error while recalculating", e)
     }
 
     companion object {
