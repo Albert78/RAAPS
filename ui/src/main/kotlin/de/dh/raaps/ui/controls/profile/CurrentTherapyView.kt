@@ -25,9 +25,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import de.dh.raaps.common.model.data.GlucoseUnit
 import de.dh.raaps.common.model.data.InsulinProfile
 import de.dh.raaps.ui.R
+import de.dh.raaps.ui.common.LocalGlucoseUnit
+import de.dh.raaps.ui.common.glucoseValue
+import de.dh.raaps.ui.common.crValue
 import de.dh.raaps.ui.common.composables.InsulinProfileSelectionDialog
 
 @Composable
@@ -37,11 +39,6 @@ fun CurrentTherapyView(
     modifier: Modifier = Modifier
 ) {
     var showProfileDialog by remember { mutableStateOf(false) }
-
-    val unitStr = when(uiState.glucoseUnit) {
-        GlucoseUnit.MG_DL -> stringResource(id = R.string.glucose_unit_mgdl)
-        GlucoseUnit.MMOL -> stringResource(id = R.string.glucose_unit_mmol)
-    }
 
     val activeProfile = uiState.activeInsulinProfile
 
@@ -63,15 +60,15 @@ fun CurrentTherapyView(
 
             InfoRow(
                 label = stringResource(id = de.dh.raaps.common.R.string.therapy_target_label),
-                value = activeProfile.target.toString(uiState.glucoseUnit),
-                unit = unitStr,
+                value = glucoseValue(activeProfile.target, withUnit = true),
+                unit = "",
                 icon = Icons.Default.Adjust,
                 modifier = Modifier.padding(bottom = 2.dp)
             )
             InfoRow(
                 label = stringResource(id = de.dh.raaps.common.R.string.therapy_low_threshold_label),
-                value = activeProfile.lowThreshold.toString(uiState.glucoseUnit),
-                unit = unitStr,
+                value = glucoseValue(activeProfile.lowThreshold, withUnit = true),
+                unit = "",
                 icon = Icons.Default.VerticalAlignBottom,
                 modifier = Modifier.padding(bottom = 2.dp)
             )
@@ -83,13 +80,13 @@ fun CurrentTherapyView(
             )
             InfoRow(
                 label = stringResource(id = de.dh.raaps.common.R.string.therapy_isf_label),
-                value = activeProfile.isfRange,
-                unit = "$unitStr/U",
+                value = activeProfile.isfRange, // This range is still formatted in ViewModel. I should probably fix that too.
+                unit = "",
                 modifier = Modifier.padding(bottom = 2.dp)
             )
             InfoRow(
                 label = stringResource(id = de.dh.raaps.common.R.string.therapy_cr_label),
-                value = activeProfile.crRange,
+                value = activeProfile.crRange, // Same here.
                 unit = stringResource(id = R.string.unit_g_per_u)
             )
         }

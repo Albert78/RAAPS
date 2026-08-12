@@ -21,6 +21,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import de.dh.raaps.ui.R
+import de.dh.raaps.ui.common.LocalGlucoseUnit
 import de.dh.raaps.ui.common.composables.screenTitle
 import de.dh.raaps.ui.common.theme.AppTheme
 import de.dh.raaps.ui.controls.history.BgHistoryChartOrDefault
@@ -69,7 +70,8 @@ fun HistoryContent(
                     modifier = Modifier.align(Alignment.Center)
                 )
             } else {
-                val diagramData = HistoryDiagramData.fromReadings(historyUiState.readings)
+                val glucoseUnit = LocalGlucoseUnit.current
+                val diagramData = HistoryDiagramData.fromReadings(historyUiState.readings, glucoseUnit)
                 Column(modifier = Modifier.fillMaxSize()) {
                     BgHistoryChartOrDefault(
                         diagramData = diagramData,

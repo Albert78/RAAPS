@@ -40,6 +40,8 @@ import de.dh.raaps.ui.common.composables.Red
 import de.dh.raaps.ui.common.composables.Yellow
 import de.dh.raaps.ui.common.shortRelativeTimeAgo
 import de.dh.raaps.ui.common.theme.AppTheme
+import de.dh.raaps.ui.common.glucoseValue
+import de.dh.raaps.ui.common.deltaValue
 import de.dh.raaps.ui.controls.history.BgTrend
 import de.dh.raaps.ui.controls.history.CurrentBgData
 import de.dh.raaps.ui.controls.history.CurrentBgUiState
@@ -166,10 +168,7 @@ fun CurrentBgView(
 ) {
     val currentBgValue = currentBgUiState.currentBgValue
 
-    val centerText = when (currentBgValue?.bgValue) {
-        null -> "?"
-        else -> currentBgValue.bgValue.toString(currentBgValue.glucoseUnit)
-    }
+    val centerText = glucoseValue(currentBgValue?.bgValue, default = "?")
 
     val textColor =
         if (currentBgValue == null) {
@@ -186,7 +185,7 @@ fun CurrentBgView(
 
     val textLight = currentBgValue?.isValueOld ?: false
 
-    val deltaText = currentBgValue?.delta?.toDiff(currentBgValue.glucoseUnit)
+    val deltaText = deltaValue(currentBgValue?.delta, default = "")
 
     val trendAngle =
         when (currentBgValue?.trend) {

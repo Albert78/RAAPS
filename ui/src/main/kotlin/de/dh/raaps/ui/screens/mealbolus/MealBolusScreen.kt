@@ -59,6 +59,10 @@ import de.dh.raaps.common.model.data.BgValue
 import de.dh.raaps.common.model.data.Minutes
 import de.dh.raaps.common.model.data.Timestamp
 import de.dh.raaps.ui.R
+import de.dh.raaps.ui.common.glucoseValue
+import de.dh.raaps.ui.common.isfValue
+import de.dh.raaps.ui.common.crValue
+import de.dh.raaps.ui.common.glucoseUnitLabel
 import de.dh.raaps.ui.common.DefaultSteppingStrategy
 import de.dh.raaps.ui.common.ValueDisplayStrategy
 import de.dh.raaps.ui.common.composables.EditableValueStepper
@@ -177,7 +181,7 @@ fun MealBolusContent(
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.spacedBy(4.dp)
                     ) {
-                        val bgText = currentBgValue?.bgValue?.toString(currentBgValue.glucoseUnit) ?: "?"
+                        val bgText = glucoseValue(currentBgValue?.bgValue, default = "?")
                         val textColor = if (currentBgValue == null || (currentBgValue.isValueOld)) {
                             Color.Gray
                         } else when {
@@ -191,7 +195,7 @@ fun MealBolusContent(
                             color = textColor
                         )
                         Text(
-                            text = stringResource(R.string.glucose_unit_mgdl),
+                            text = glucoseUnitLabel(),
                             style = MaterialTheme.typography.titleMedium,
                             color = Color.Gray,
                             modifier = Modifier
@@ -438,7 +442,11 @@ fun CalculationDetailsSelector(
                 Spacer(Modifier.height(8.dp))
 
                 Text(
-                    stringResource(R.string.meal_bolus_calc_factors_label, uiState.isf, uiState.cr),
+                    stringResource(
+                        R.string.meal_bolus_calc_factors_label,
+                        isfValue(BgDelta(uiState.isf.toShort())),
+                        crValue(uiState.cr, withUnit = false)
+                    ),
                     style = MaterialTheme.typography.bodySmall
                 )
 

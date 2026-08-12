@@ -63,7 +63,9 @@ fun PumpTabContent(
         }
 
         if (uiState.pumpPluginUiProvider != null) {
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(24.dp))
+            SectionHeader(title = "Plugin")
+            Spacer(modifier = Modifier.height(8.dp))
             uiState.pumpPluginUiProvider.PumpControlSection()
         }
     }

@@ -26,6 +26,7 @@ import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.drawscope.translate
 import androidx.compose.ui.graphics.withSave
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.patrykandpatrick.vico.compose.cartesian.CartesianChartHost
@@ -62,7 +63,11 @@ import de.dh.raaps.common.model.MS_PER_HOUR
 import de.dh.raaps.common.model.MS_PER_MINUTE
 import de.dh.raaps.common.model.data.BgReading
 import de.dh.raaps.common.model.data.BgSampleKind
+import de.dh.raaps.common.model.data.GlucoseUnit
 import de.dh.raaps.common.model.data.Timestamp
+import de.dh.raaps.ui.R
+import de.dh.raaps.ui.common.LocalGlucoseUnit
+import de.dh.raaps.ui.common.glucoseValue
 import de.dh.raaps.ui.common.composables.BlueA200
 import de.dh.raaps.ui.common.composables.DeepOrangeA700
 import de.dh.raaps.ui.common.composables.RedA700
@@ -81,10 +86,11 @@ data class HistoryDiagramData(
     // Pre-calculated for performance
     val xValues: List<Double>,
     val yValues: List<Double>,
+    val glucoseUnit: GlucoseUnit,
     val dataSignature: Any
 ) {
     companion object {
-        fun fromReadings(readings: List<BgReading>): HistoryDiagramData? {
+        fun fromReadings(readings: List<BgReading>, glucoseUnit: GlucoseUnit): HistoryDiagramData? {
             val validReadings = readings.filter { it.sampleKind == BgSampleKind.Value }
             if (validReadings.isEmpty()) return null
 
@@ -103,12 +109,16 @@ data class HistoryDiagramData(
                 minX = minX,
                 maxX = maxX,
                 xValues = validReadings.map { ((it.timestamp.ms - baseTimestamp).toDouble() / MS_PER_MINUTE * 10000).toLong() / 10000.0 },
-                yValues = validReadings.map { it.value.mgdl.toDouble() },
-                dataSignature = "${validReadings.size}_${validReadings.first().timestamp.ms}_${validReadings.last().timestamp.ms}"
+                yValues = validReadings.map {
+                    if (glucoseUnit == GlucoseUnit.MG_DL) it.value.mgdl.toDouble()
+                    else it.value.mmol
+                },
+                glucoseUnit = glucoseUnit,
+                dataSignature = "${validReadings.size}_${validReadings.first().timestamp.ms}_${validReadings.last().timestamp.ms}_$glucoseUnit"
             )
         }
 
-        fun empty(): HistoryDiagramData {
+        fun empty(glucoseUnit: GlucoseUnit = GlucoseUnit.MG_DL): HistoryDiagramData {
             val now = Timestamp.now().ms
             val baseTimestamp = (now / MS_PER_HOUR) * MS_PER_HOUR
             val maxX = INITIAL_SHOW_HOURS * 60.0
@@ -119,7 +129,8 @@ data class HistoryDiagramData(
                 maxX = maxX,
                 xValues = listOf(0.0, maxX),
                 yValues = listOf(0.0, 0.0),
-                dataSignature = "empty_$baseTimestamp"
+                glucoseUnit = glucoseUnit,
+                dataSignature = "empty_${baseTimestamp}_$glucoseUnit"
             )
         }
     }
@@ -157,11 +168,16 @@ fun BgHistoryChart(
         }
     }
 
-    val rangeProvider = remember(diagramData.minX, diagramData.maxX) {
+    val rangeProvider = remember(diagramData.minX, diagramData.maxX, diagramData.glucoseUnit) {
         object : CartesianLayerRangeProvider {
-            override fun getMinY(minY: Double, maxY: Double, extraStore: ExtraStore) = 40.0
+            override fun getMinY(minY: Double, maxY: Double, extraStore: ExtraStore) =
+                if (diagramData.glucoseUnit == GlucoseUnit.MG_DL) 40.0 else 2.2
             override fun getMaxY(minY: Double, maxY: Double, extraStore: ExtraStore) =
-                (maxY.coerceAtLeast(200.0) + 10.0).coerceAtMost(410.0)
+                if (diagramData.glucoseUnit == GlucoseUnit.MG_DL) {
+                    (maxY.coerceAtLeast(200.0) + 10.0).coerceAtMost(410.0)
+                } else {
+                    (maxY.coerceAtLeast(11.1) + 0.5).coerceAtMost(22.7)
+                }
             override fun getMinX(minX: Double, maxX: Double, extraStore: ExtraStore) = diagramData.minX
             override fun getMaxX(minX: Double, maxX: Double, extraStore: ExtraStore) = diagramData.maxX
         }
@@ -230,7 +246,7 @@ fun BgHistoryChart(
         }
     }
 
-    val yItemPlacer = remember {
+    val yItemPlacer = remember(diagramData.glucoseUnit) {
         object : VerticalAxis.ItemPlacer {
             override fun getLabelValues(
                 context: CartesianDrawingContext,
@@ -253,8 +269,13 @@ fun BgHistoryChart(
 
             private fun getValues(maxY: Double): List<Double> {
                 val v = mutableListOf<Double>()
-                var c = 50.0
-                while (c <= maxY) { v.add(c); c += 50.0 }
+                if (diagramData.glucoseUnit == GlucoseUnit.MG_DL) {
+                    var c = 50.0
+                    while (c <= maxY) { v.add(c); c += 50.0 }
+                } else {
+                    var c = 3.0
+                    while (c <= maxY) { v.add(c); c += 3.0 }
+                }
                 return v
             }
 
@@ -274,6 +295,9 @@ fun BgHistoryChart(
         }
     }
 
+    val mgdlStr = stringResource(R.string.glucose_unit_mgdl)
+    val mmolStr = stringResource(R.string.glucose_unit_mmol)
+
     val marker = if (showMarkers) rememberDefaultCartesianMarker(
         label = rememberAxisLabelComponent(),
         valueFormatter = DefaultCartesianMarker.ValueFormatter { _, targets ->
@@ -282,8 +306,16 @@ fun BgHistoryChart(
                 sharedCalendar.timeInMillis = diagramData.baseTimestamp + target.x.toLong() * MS_PER_MINUTE
                 String.format(Locale.getDefault(), "%02d:%02d", sharedCalendar.get(Calendar.HOUR_OF_DAY), sharedCalendar.get(Calendar.MINUTE))
             }
-            val bgValue = (target as? LineCartesianLayerMarkerTarget)?.points?.firstOrNull()?.entry?.y?.toInt() ?: 0
-            if (bgValue == 0) time else "$time | $bgValue mg/dL"
+            val bgValue = (target as? LineCartesianLayerMarkerTarget)?.points?.firstOrNull()?.entry?.y ?: 0.0
+            val unitStr = if (diagramData.glucoseUnit == GlucoseUnit.MG_DL) mgdlStr else mmolStr
+            if (bgValue == 0.0) time else {
+                val formattedValue = if (diagramData.glucoseUnit == GlucoseUnit.MG_DL) {
+                    bgValue.toInt().toString()
+                } else {
+                    String.format(Locale.getDefault(), "%.1f", bgValue)
+                }
+                "$time | $formattedValue $unitStr"
+            }
         }
     ) else null
 
@@ -558,7 +590,7 @@ fun BgOverviewChart(
 
 fun createSampleDiagramData(size: Int, minsInterval: Short): HistoryDiagramData {
     val readings = createSampleReadings(size, minsInterval)
-    return HistoryDiagramData.fromReadings(readings)!!
+    return HistoryDiagramData.fromReadings(readings, GlucoseUnit.MG_DL)!!
 }
 
 @Preview(showBackground = true, uiMode = Configuration.UI_MODE_NIGHT_YES)

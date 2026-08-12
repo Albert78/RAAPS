@@ -20,9 +20,11 @@ import de.dh.raaps.common.model.data.TickHandler
 import de.dh.raaps.common.model.data.TickPriority
 import de.dh.raaps.common.model.data.Timestamp
 import de.dh.raaps.core.SystemRegistry
+import de.dh.raaps.glucoseUnit
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
@@ -160,8 +162,7 @@ class HistoryViewModel(
         insulin: List<InsulinApplication>,
         meals: List<MealEntry>
     ) {
-        ToDo.toBeImplemented("Read glucose unit from preferences")
-        val glucoseUnit = GlucoseUnit.MG_DL
+        val glucoseUnit = systemRegistry.appPreferencesRepository.cachedPreferences.value?.glucoseUnit ?: GlucoseUnit.MG_DL
 
         val timestampNowMs = Timestamp.now().ms
         val limitMs = timestampNowMs - 20 * 60 * 1000L

@@ -12,7 +12,6 @@ import de.dh.raaps.common.model.PumpAlerts
 import de.dh.raaps.common.model.PumpCapabilities
 import de.dh.raaps.common.model.data.InsulinProfile
 import de.dh.raaps.ui.screens.systemcontrol.PumpPluginUiProvider
-import de.dh.raaps.ui.screens.systemcontrol.SectionHeader
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -110,11 +109,9 @@ class SampleInsulinPumpPlugin : InsulinPump, Plugin, PumpPluginUiProvider {
             )
         ) {
             Column(modifier = Modifier.padding(16.dp)) {
-                SectionHeader(title = "Sample Pump Extra Info")
                 Text(
                     text = "This content is provided by the Sample Pump Plugin.",
-                    style = MaterialTheme.typography.bodyMedium,
-                    modifier = Modifier.padding(top = 8.dp)
+                    style = MaterialTheme.typography.bodyMedium
                 )
                 Text(
                     text = "Maintenance status: Optimal",

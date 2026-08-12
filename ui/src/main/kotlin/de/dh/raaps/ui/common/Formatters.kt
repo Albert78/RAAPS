@@ -1,6 +1,5 @@
 package de.dh.raaps.ui.common
 
-import android.util.Range
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.staticCompositionLocalOf
@@ -27,6 +26,10 @@ data class AppFormatters(
 // Provider for the formatters
 val LocalAppFormatters = staticCompositionLocalOf<AppFormatters> {
     error("No AppFormatters provided")
+}
+
+val LocalGlucoseUnit = staticCompositionLocalOf<GlucoseUnit> {
+    error("No GlucoseUnit provided")
 }
 
 @Composable
@@ -162,21 +165,65 @@ fun shortRelativeTimeUntil(timestamp: Timestamp): String {
 /////////////////////////////////////////////// Glucose & Therapy //////////////////////////////////////
 
 @Composable
-fun glucoseValue(value: BgValue?, unit: GlucoseUnit, default: String = "-"): String {
-    return value?.toString(unit) ?: default
+fun glucoseUnitLabel(unit: GlucoseUnit = LocalGlucoseUnit.current): String {
+    return when (unit) {
+        GlucoseUnit.MG_DL -> stringResource(de.dh.raaps.ui.R.string.glucose_unit_mgdl)
+        GlucoseUnit.MMOL -> stringResource(de.dh.raaps.ui.R.string.glucose_unit_mmol)
+    }
 }
 
 @Composable
-fun isfValue(value: BgDelta?, unit: GlucoseUnit, default: String = "-"): String {
-    return value?.toString(unit) ?: default
+fun glucoseValue(
+    value: BgValue?,
+    unit: GlucoseUnit = LocalGlucoseUnit.current,
+    default: String = "-",
+    withUnit: Boolean = false
+): String {
+    val valStr = value?.toString(unit) ?: return default
+    return if (withUnit) {
+        "$valStr ${glucoseUnitLabel(unit)}"
+    } else valStr
 }
 
 @Composable
-fun crValue(value: Double?, default: String = "-"): String {
-    return value?.let { String.format(Locale.getDefault(), "%.1f g/U", it) } ?: default
+fun isfValue(
+    value: BgDelta?,
+    unit: GlucoseUnit = LocalGlucoseUnit.current,
+    default: String = "-",
+    withUnit: Boolean = false
+): String {
+    val valStr = value?.toString(unit) ?: return default
+    return if (withUnit) {
+        val unitStr = when (unit) {
+            GlucoseUnit.MG_DL -> stringResource(de.dh.raaps.ui.R.string.unit_mgdl_per_u)
+            GlucoseUnit.MMOL -> stringResource(de.dh.raaps.ui.R.string.unit_mmol_per_u)
+        }
+        "$valStr $unitStr"
+    } else valStr
 }
 
 @Composable
-fun targetRange(range: Range<BgValue>?, unit: GlucoseUnit, default: String = "-"): String {
-    return range?.let { "${it.lower.toString(unit)} - ${it.upper.toString(unit)}" } ?: default
+fun deltaValue(
+    value: BgDelta?,
+    unit: GlucoseUnit = LocalGlucoseUnit.current,
+    default: String = "-",
+    withUnit: Boolean = false
+): String {
+    val valStr = value?.toDiff(unit) ?: return default
+    return if (withUnit) {
+        val unitStr = when (unit) {
+            GlucoseUnit.MG_DL -> stringResource(de.dh.raaps.ui.R.string.glucose_unit_mgdl)
+            GlucoseUnit.MMOL -> stringResource(de.dh.raaps.ui.R.string.glucose_unit_mmol)
+        }
+        "$valStr $unitStr"
+    } else valStr
+}
+
+@Composable
+fun crValue(value: Double?, default: String = "-", withUnit: Boolean = true): String {
+    return value?.let {
+        val valStr = String.format(Locale.getDefault(), "%.1f", it)
+        if (withUnit) "$valStr " + stringResource(de.dh.raaps.ui.R.string.unit_g_per_u)
+        else valStr
+    } ?: default
 }

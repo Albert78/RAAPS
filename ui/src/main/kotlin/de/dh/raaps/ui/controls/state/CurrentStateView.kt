@@ -51,6 +51,9 @@ import de.dh.raaps.ui.common.composables.Red
 import de.dh.raaps.ui.common.composables.Yellow
 import de.dh.raaps.ui.common.shortRelativeTimeAgo
 import de.dh.raaps.ui.common.theme.AppTheme
+import de.dh.raaps.ui.common.glucoseValue
+import de.dh.raaps.ui.common.deltaValue
+import de.dh.raaps.ui.common.glucoseUnitLabel
 import de.dh.raaps.ui.controls.history.BgTrend
 import de.dh.raaps.ui.controls.history.CurrentBgData
 import de.dh.raaps.ui.controls.history.CurrentBgUiState
@@ -87,12 +90,9 @@ fun CurrentStateView(
 
     val timeAgoText = if (diffMs != null) shortRelativeTimeAgo(diffMs!!) else ""
 
-    val bgText = when (val bg = currentBgValue?.bgValue) {
-        null -> "?"
-        else -> bg.toString(currentBgValue.glucoseUnit)
-    }
+    val bgText = glucoseValue(currentBgValue?.bgValue, default = "?")
 
-    val deltaText = currentBgValue?.delta?.toDiff(currentBgValue.glucoseUnit) ?: ""
+    val deltaText = deltaValue(currentBgValue?.delta, default = "")
 
     val textColor = if (currentBgValue == null || (currentBgValue.isValueOld)) {
         Color.Gray
@@ -140,7 +140,7 @@ fun CurrentStateView(
                         color = textColor
                     )
                     Text(
-                        text = stringResource(R.string.glucose_unit_mgdl),
+                        text = glucoseUnitLabel(),
                         style = MaterialTheme.typography.labelSmall,
                         color = Color.Gray
                     )

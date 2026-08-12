@@ -63,6 +63,8 @@ import de.dh.raaps.common.model.TARGET_MAX
 import de.dh.raaps.common.model.TARGET_MIN
 import de.dh.raaps.common.model.data.BgValue
 import de.dh.raaps.ui.R
+import de.dh.raaps.ui.common.glucoseValue
+import de.dh.raaps.ui.common.glucoseUnitLabel
 import de.dh.raaps.ui.common.ConfigurableDisplayStrategy
 import de.dh.raaps.ui.common.ModuloSteppingStrategy
 import de.dh.raaps.ui.common.composables.EditableValueStepper
@@ -229,7 +231,7 @@ fun TherapyAdjustmentContent(
                                     minValue = TARGET_MIN.toDouble(),
                                     maxValue = TARGET_MAX.toDouble(),
                                     steppingStrategy = steppingStrategyBg,
-                                    suffix = "mg/dL",
+                                    suffix = glucoseUnitLabel(),
                                     style = StepperDefaults.compactStyle()
                                 )
                             } else {
@@ -262,7 +264,7 @@ fun TherapyAdjustmentContent(
                                     minValue = LOW_THRESHOLD_MIN.toDouble(),
                                     maxValue = LOW_THRESHOLD_MAX.toDouble(),
                                     steppingStrategy = steppingStrategyBg,
-                                    suffix = "mg/dL",
+                                    suffix = glucoseUnitLabel(),
                                     style = StepperDefaults.compactStyle()
                                 )
                             } else {
@@ -310,8 +312,9 @@ fun TherapyAdjustmentContent(
                                                     color = displayStrategyInsulin.color(preset.percentage.toDouble())
                                                 )
                                                 if (preset.targetBgMgDl != null) {
+                                                    val targetValue = BgValue.fromMgDl(preset.targetBgMgDl.toInt())
                                                     Text(
-                                                        text = "• ${preset.targetBgMgDl} mg/dL",
+                                                        text = "• ${glucoseValue(targetValue, withUnit = true)}",
                                                         style = MaterialTheme.typography.labelSmall,
                                                         color = MaterialTheme.colorScheme.onSurfaceVariant
                                                     )
@@ -462,7 +465,7 @@ private fun StandardValueDisplay(
         verticalArrangement = Arrangement.spacedBy(2.dp)
     ) {
         Text(
-            text = stringResource(R.string.bg_value_single_format, value.mgdl.toInt()),
+            text = glucoseValue(value, withUnit = true),
             style = MaterialTheme.typography.bodyLarge,
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )

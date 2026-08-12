@@ -94,6 +94,10 @@
     <string name="pref_theme_title">Design</string>
     <string name="pref_theme_dialog_title">Design wählen</string>
 
+    <string name="pref_category_therapy_title">Therapie</string>
+    <string name="pref_glucose_unit_title">Glukose-Einheit</string>
+    <string name="pref_glucose_unit_dialog_title">Einheit wählen</string>
+
     <string name="aps_service_notification_channel_name">RAAPS Service</string>
     <string name="aps_service_notification_content_no_value_yet">Kein Glukosewert</string>
 
@@ -119,6 +123,7 @@
     <string name="unit_u_per_h">U/h</string>
     <string name="unit_g_per_u">g/U</string>
     <string name="unit_mgdl_per_u">mg/dL/U</string>
+    <string name="unit_mmol_per_u">mmol/l/U</string>
     <string name="bg_value_single_format">%1$d mg/dL</string>
     <string name="bg_value_range_format">%1$d–%2$d mg/dL</string>
 
@@ -149,7 +154,7 @@
     <string name="aps_mode_auto_correction_desc">Das System steuert die Insulinabgabe vollständig und nimmt automatische Korrekturen vor.</string>
     <string name="aps_control_basal_label">Basal: %1$s U/h</string>
     <string name="aps_control_cr_label">CR %1$s</string>
-    <string name="aps_control_isf_label">ISF %1$d</string>
+    <string name="aps_control_isf_label">ISF %1$s</string>
     <string name="aps_control_adjustment_neutral">neutral</string>
     <string name="aps_control_adjustment_standard">Standard</string>
     <string name="aps_control_no_insulin_profile">Kein Profil</string>
@@ -196,7 +201,7 @@
     <string name="meal_bolus_carbs_label">Mahlzeit</string>
     <string name="meal_bolus_food_type_label">Nahrungstyp</string>
     <string name="meal_bolus_calculation_title">Berechnung</string>
-    <string name="meal_bolus_calc_factors_label">ISF: %1$d, CR: %2$.1f</string>
+    <string name="meal_bolus_calc_factors_label">ISF: %1$s, CR: %2$s</string>
     <string name="meal_bolus_calc_result_label">Vorgeschlagener Bolus: %1$.2f U</string>
     <string name="meal_bolus_calc_meal_part">Mahlzeit: +%1$.2f U</string>
     <string name="meal_bolus_calc_correction_part">Korrektur: +%1$.2f U</string>

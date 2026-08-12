@@ -35,6 +35,11 @@ import de.dh.raaps.common.model.InsulinAmount
 import de.dh.raaps.core.aps.CoreInsight
 import de.dh.raaps.core.aps.CoreReasoning
 import de.dh.raaps.ui.R
+import de.dh.raaps.ui.common.LocalGlucoseUnit
+import de.dh.raaps.ui.common.glucoseValue
+import de.dh.raaps.ui.common.isfValue
+import de.dh.raaps.ui.common.crValue
+import de.dh.raaps.ui.common.deltaValue
 import de.dh.raaps.ui.common.composables.screenTitle
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -103,6 +108,12 @@ fun CoreDecisionsContent(
 @Composable
 fun InsightCard(insight: CoreInsight) {
     val dateTimeFormat = remember { SimpleDateFormat("HH:mm:ss", Locale.getDefault()) }
+    val glucoseUnit = LocalGlucoseUnit.current
+    val unitStr = when (glucoseUnit) {
+        de.dh.raaps.common.model.data.GlucoseUnit.MG_DL -> stringResource(R.string.glucose_unit_mgdl)
+        de.dh.raaps.common.model.data.GlucoseUnit.MMOL -> stringResource(R.string.glucose_unit_mmol)
+    }
+
     Card(
         modifier = Modifier.fillMaxWidth(),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
@@ -124,7 +135,7 @@ fun InsightCard(insight: CoreInsight) {
             }
             Spacer(modifier = Modifier.height(8.dp))
             Row(modifier = Modifier.fillMaxWidth()) {
-                MetricItem(stringResource(id = R.string.core_insight_label_bg), "${insight.bgFiltered.mgdl} (raw: ${insight.bgOriginal.mgdl})")
+                MetricItem(stringResource(id = R.string.core_insight_label_bg), "${glucoseValue(insight.bgFiltered, glucoseUnit)} (raw: ${glucoseValue(insight.bgOriginal, glucoseUnit)})")
                 Spacer(modifier = Modifier.width(16.dp))
                 MetricItem(stringResource(id = R.string.core_insight_label_iob), "%.2f U".format(insight.iobAtPeak.iu))
                 Spacer(modifier = Modifier.width(16.dp))
@@ -132,17 +143,17 @@ fun InsightCard(insight: CoreInsight) {
             }
             Spacer(modifier = Modifier.height(8.dp))
             Row(modifier = Modifier.fillMaxWidth()) {
-                MetricItem(stringResource(id = R.string.core_insight_label_pred_peak), "${insight.predictedBgAtPeak.mgdl} mg/dL")
+                MetricItem(stringResource(id = R.string.core_insight_label_pred_peak), "${glucoseValue(insight.predictedBgAtPeak, glucoseUnit)} $unitStr")
                 Spacer(modifier = Modifier.width(16.dp))
-                MetricItem(stringResource(id = R.string.core_insight_label_dev), "%+d".format(insight.deviationPerTick.mgdl))
+                MetricItem(stringResource(id = R.string.core_insight_label_dev), deltaValue(insight.deviationPerTick, glucoseUnit))
                 Spacer(modifier = Modifier.width(16.dp))
-                MetricItem(stringResource(id = R.string.core_insight_label_target), "${insight.targetBg.mgdl} mg/dL")
+                MetricItem(stringResource(id = R.string.core_insight_label_target), "${glucoseValue(insight.targetBg, glucoseUnit)} $unitStr")
             }
             Spacer(modifier = Modifier.height(8.dp))
             Row(modifier = Modifier.fillMaxWidth()) {
-                MetricItem(stringResource(id = R.string.core_insight_label_isf), "%d".format(insight.isf.mgdl))
+                MetricItem(stringResource(id = R.string.core_insight_label_isf), isfValue(insight.isf, glucoseUnit))
                 Spacer(modifier = Modifier.width(16.dp))
-                MetricItem(stringResource(id = R.string.core_insight_label_cr), "%.1f".format(insight.cr))
+                MetricItem(stringResource(id = R.string.core_insight_label_cr), crValue(insight.cr))
             }
 
             val actionText = when {

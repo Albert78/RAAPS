@@ -5,7 +5,10 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.CreationExtras
+import de.dh.raaps.common.model.data.GlucoseUnit
 import de.dh.raaps.core.SystemRegistry
+import de.dh.raaps.glucoseUnit
+import de.dh.raaps.setGlucoseUnit
 import de.dh.raaps.ui.common.ThemeMode
 import de.dh.raaps.ui.common.setThemeMode
 import de.dh.raaps.ui.common.themeMode
@@ -22,6 +25,7 @@ data class PreferencesUiState(
     val isLoading: Boolean,
     val isError: Boolean,
     val themeMode: ThemeMode = ThemeMode.SYSTEM,
+    val glucoseUnit: GlucoseUnit = GlucoseUnit.MG_DL,
 )
 
 /**
@@ -56,11 +60,13 @@ class PreferencesViewModel(
             return
         }
         val themeMode = preferences.themeMode
+        val glucoseUnit = preferences.glucoseUnit
 
         _uiState.update { PreferencesUiState(
             isLoading = false,
             isError = false,
             themeMode = themeMode,
+            glucoseUnit = glucoseUnit,
         ) }
     }
 
@@ -71,6 +77,15 @@ class PreferencesViewModel(
     fun setThemeMode(newMode: ThemeMode) {
         viewModelScope.launch {
             appPreferencesRepository.setThemeMode(newMode)
+        }
+    }
+
+    /**
+     * Updates the glucose unit in the repository.
+     */
+    fun setGlucoseUnit(newUnit: GlucoseUnit) {
+        viewModelScope.launch {
+            appPreferencesRepository.setGlucoseUnit(newUnit)
         }
     }
 

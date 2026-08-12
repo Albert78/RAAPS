@@ -68,6 +68,7 @@ import de.dh.raaps.common.model.calculation.CarbCurveComponent
 import de.dh.raaps.common.model.calculation.InsulinCurve
 import de.dh.raaps.common.model.data.BgReading
 import de.dh.raaps.common.model.data.BgSampleKind
+import de.dh.raaps.common.model.data.GlucoseUnit
 import de.dh.raaps.common.model.data.Minutes
 import de.dh.raaps.common.model.data.Timeline
 import de.dh.raaps.common.model.data.Timestamp
@@ -88,6 +89,7 @@ data class HistoryAndImpactDiagramData(
     // Pre-calculated for performance
     val bgXValues: List<Double>,
     val bgYValues: List<Double>,
+    val glucoseUnit: GlucoseUnit,
     val insulinXValues: List<Double> = emptyList(),
     val insulinYValues: List<Double> = emptyList(),
     val carbXValues: List<Double> = emptyList(),
@@ -97,6 +99,7 @@ data class HistoryAndImpactDiagramData(
     companion object {
         fun create(
             readings: List<BgReading>,
+            glucoseUnit: GlucoseUnit,
             insulinApplications: List<InsulinApplication> = emptyList(),
             meals: List<MealEntry> = emptyList(),
             dia: Minutes = Minutes(DEFAULT_DIA_MINUTES.toShort()),
@@ -105,7 +108,7 @@ data class HistoryAndImpactDiagramData(
             /**
              * Axis scales:
              * X-Axis: 1 unit = 1 minute
-             * Y-Axis (BG): mg/dL
+             * Y-Axis (BG): mg/dL or mmol/l
              * Y-Axis (Impact): Insulin Activity (I.E.) or Carb Absorption (KE)
              * The calculation interval is based on the default system tick interval to match BG data density.
              */
@@ -171,16 +174,20 @@ data class HistoryAndImpactDiagramData(
                 minX = minX,
                 maxX = maxX,
                 bgXValues = validReadings.map { ((it.timestamp.ms - baseTimestamp).toDouble() / MS_PER_MINUTE * 10000).toLong() / 10000.0 },
-                bgYValues = validReadings.map { it.value.mgdl.toDouble() },
+                bgYValues = validReadings.map {
+                    if (glucoseUnit == GlucoseUnit.MG_DL) it.value.mgdl.toDouble()
+                    else it.value.mmol
+                },
+                glucoseUnit = glucoseUnit,
                 insulinXValues = insulinX,
                 insulinYValues = insulinY,
                 carbXValues = carbX,
                 carbYValues = carbY,
-                dataSignature = "${validReadings.size}_${validReadings.first().timestamp.ms}_${validReadings.last().timestamp.ms}_${insulinApplications.size}_${meals.size}"
+                dataSignature = "${validReadings.size}_${validReadings.first().timestamp.ms}_${validReadings.last().timestamp.ms}_${insulinApplications.size}_${meals.size}_$glucoseUnit"
             )
         }
 
-        fun empty(): HistoryAndImpactDiagramData {
+        fun empty(glucoseUnit: GlucoseUnit = GlucoseUnit.MG_DL): HistoryAndImpactDiagramData {
             val now = Timestamp.now().ms
             val baseTimestamp = (now / MS_PER_HOUR) * MS_PER_HOUR
             val maxX = INITIAL_SHOW_HOURS * 60.0
@@ -190,11 +197,12 @@ data class HistoryAndImpactDiagramData(
                 maxX = maxX,
                 bgXValues = listOf(0.0, maxX),
                 bgYValues = listOf(0.0, 0.0),
+                glucoseUnit = glucoseUnit,
                 insulinXValues = emptyList(),
                 insulinYValues = emptyList(),
                 carbXValues = emptyList(),
                 carbYValues = emptyList(),
-                dataSignature = "empty_$baseTimestamp"
+                dataSignature = "empty_${baseTimestamp}_$glucoseUnit"
             )
         }
     }
@@ -321,11 +329,15 @@ fun HistoryAndImpactChart(
         }
     }
 
-    val rangeProvider = remember(diagramData.minX, diagramData.maxX) {
+    val rangeProvider = remember(diagramData.minX, diagramData.maxX, diagramData.glucoseUnit) {
         object : CartesianLayerRangeProvider {
             override fun getMinY(minY: Double, maxY: Double, extraStore: ExtraStore) = 0.0
             override fun getMaxY(minY: Double, maxY: Double, extraStore: ExtraStore) =
-                maxY.coerceAtLeast(200.0) + 20.0
+                if (diagramData.glucoseUnit == GlucoseUnit.MG_DL) {
+                    maxY.coerceAtLeast(200.0) + 20.0
+                } else {
+                    maxY.coerceAtLeast(11.1) + 1.1
+                }
             override fun getMinX(minX: Double, maxX: Double, extraStore: ExtraStore) = diagramData.minX
             override fun getMaxX(minX: Double, maxX: Double, extraStore: ExtraStore) = diagramData.maxX
         }
@@ -415,18 +427,23 @@ fun HistoryAndImpactChart(
         pointProvider = null
     )
 
-    val bgAxisItemPlacer = remember {
+    val bgAxisItemPlacer = remember(diagramData.glucoseUnit) {
         object : VerticalAxis.ItemPlacer {
             override fun getLabelValues(context: CartesianDrawingContext, axisHeight: Float, maxLabelHeight: Float, position: Axis.Position.Vertical) =
                 getValues(context.ranges.getYRange(position).maxY)
             override fun getWidthMeasurementLabelValues(context: CartesianMeasuringContext, axisHeight: Float, maxLabelHeight: Float, position: Axis.Position.Vertical) =
-                getValues(300.0)
+                getValues(if (diagramData.glucoseUnit == GlucoseUnit.MG_DL) 300.0 else 16.7)
             override fun getHeightMeasurementLabelValues(context: CartesianMeasuringContext, position: Axis.Position.Vertical) =
-                getValues(300.0)
+                getValues(if (diagramData.glucoseUnit == GlucoseUnit.MG_DL) 300.0 else 16.7)
             private fun getValues(maxY: Double): List<Double> {
                 val v = mutableListOf<Double>()
-                var c = 0.0
-                while (c <= maxY) { v.add(c); c += 50.0 }
+                if (diagramData.glucoseUnit == GlucoseUnit.MG_DL) {
+                    var c = 0.0
+                    while (c <= maxY) { v.add(c); c += 50.0 }
+                } else {
+                    var c = 0.0
+                    while (c <= maxY) { v.add(c); c += 3.0 }
+                }
                 return v
             }
             override fun getTopLayerMargin(context: CartesianMeasuringContext, verticalLabelPosition: Position.Vertical, maxLabelHeight: Float, maxLineThickness: Float) = 0f
@@ -605,6 +622,7 @@ fun createSampleImpactDiagramData(): HistoryAndImpactDiagramData {
 
     return HistoryAndImpactDiagramData.create(
         readings = readings,
+        glucoseUnit = GlucoseUnit.MG_DL,
         insulinApplications = insulinApplications,
         meals = meals,
         dia = Minutes(300),

@@ -67,6 +67,7 @@ import de.dh.raaps.common.navigation.SystemControlRoute
 import de.dh.raaps.common.navigation.combineEntryProviders
 import de.dh.raaps.core.SystemRegistry
 import de.dh.raaps.core.system.RegistryProvider
+import de.dh.raaps.ui.GlobalViewModel
 import de.dh.raaps.ui.R
 import de.dh.raaps.ui.common.composables.EdgeToEdgeHandler
 import de.dh.raaps.ui.common.icons.Icon_Menu_Bolus_History
@@ -76,11 +77,16 @@ import de.dh.raaps.ui.common.icons.Icon_Menu_System_Control
 import de.dh.raaps.ui.common.theme.AppTheme
 import de.dh.raaps.ui.common.theme.rememberUseDarkTheme
 import de.dh.raaps.ui.navigation.MainFeatureNavGraph
+import de.dh.raaps.ui.common.LocalGlucoseUnit
+import de.dh.raaps.ui.common.rememberAppFormatters
+import de.dh.raaps.ui.common.LocalAppFormatters
+import androidx.compose.runtime.CompositionLocalProvider
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 class MainActivity : ComponentActivity() {
     private lateinit var navViewModel: NavigationViewModel
+    private lateinit var globalViewModel: GlobalViewModel
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -95,17 +101,29 @@ class MainActivity : ComponentActivity() {
             NavigationViewModel.Companion.NavigationViewModelFactory(listOf(DashboardRoute))
         )[NavigationViewModel::class.java]
 
+        globalViewModel = ViewModelProvider(
+            this,
+            GlobalViewModel.Companion.Factory(registry)
+        )[GlobalViewModel::class.java]
+
         handleIntent(intent)
 
         setContent {
             val useDarkTheme = rememberUseDarkTheme(registry.appPreferencesRepository)
+            val glucoseUnit by globalViewModel.glucoseUnit.collectAsState()
+
             EdgeToEdgeHandler(useDarkTheme)
             AppTheme(darkTheme = useDarkTheme) {
-                Surface(
-                    modifier = Modifier.fillMaxSize(),
-                    color = MaterialTheme.colorScheme.background
+                CompositionLocalProvider(
+                    LocalAppFormatters provides rememberAppFormatters(),
+                    LocalGlucoseUnit provides glucoseUnit
                 ) {
-                    MainApp(registry)
+                    Surface(
+                        modifier = Modifier.fillMaxSize(),
+                        color = MaterialTheme.colorScheme.background
+                    ) {
+                        MainApp(registry)
+                    }
                 }
             }
         }

@@ -42,6 +42,7 @@ import de.dh.raaps.common.model.data.BgValue
 import de.dh.raaps.common.model.data.Minutes
 import de.dh.raaps.core.aps.ApsRecommendation
 import de.dh.raaps.ui.R
+import de.dh.raaps.ui.common.LocalGlucoseUnit
 import de.dh.raaps.ui.common.composables.ExpandableInfoCard
 import de.dh.raaps.ui.common.composables.PrimaryButton
 import de.dh.raaps.ui.common.composables.WarningBanner
@@ -246,6 +247,7 @@ fun DashboardContent(
                 modifier = Modifier.fillMaxWidth()
             ) {
                 val chartState = rememberBgHistoryChartState()
+                val glucoseUnit = LocalGlucoseUnit.current
                 if (historyUiState.isLoading || currentTherapyUiState.isLoading) {
                     CircularProgressIndicator(
                         modifier = Modifier.align(Alignment.Center)
@@ -254,6 +256,7 @@ fun DashboardContent(
                     HistoryAndImpactChartOrDefault(
                         diagramData = HistoryAndImpactDiagramData.create(
                             readings = historyUiState.readings,
+                            glucoseUnit = glucoseUnit,
                             insulinApplications = historyUiState.insulinApplications,
                             meals = historyUiState.meals,
                             dia = currentTherapyUiState.activeInsulinProfile.dia,

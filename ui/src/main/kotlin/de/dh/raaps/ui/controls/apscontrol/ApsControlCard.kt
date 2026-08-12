@@ -47,6 +47,9 @@ import de.dh.raaps.common.model.data.BgDelta
 import de.dh.raaps.common.model.data.BgValue
 import de.dh.raaps.common.model.data.Minutes
 import de.dh.raaps.ui.R
+import de.dh.raaps.ui.common.glucoseValue
+import de.dh.raaps.ui.common.isfValue
+import de.dh.raaps.ui.common.crValue
 import de.dh.raaps.ui.common.ConfigurableDisplayStrategy
 import de.dh.raaps.ui.common.composables.AppColorBlue
 import de.dh.raaps.ui.common.composables.NormalButton
@@ -142,7 +145,7 @@ fun ApsControlCard(
                                 shape = MaterialTheme.shapes.extraSmall,
                             ) {
                                 Text(
-                                    text = " ${stringResource(R.string.aps_control_cr_label, String.format(LocalLocale.current.platformLocale, "%.1f", insulinProfileUiState.currentCr))} ",
+                                    text = " ${stringResource(R.string.aps_control_cr_label, crValue(insulinProfileUiState.currentCr, withUnit = false))} ",
                                     style = MaterialTheme.typography.labelSmall,
                                     modifier = Modifier.padding(horizontal = 4.dp, vertical = 2.dp)
                                 )
@@ -152,7 +155,7 @@ fun ApsControlCard(
                                 shape = MaterialTheme.shapes.extraSmall,
                             ) {
                                 Text(
-                                    text = " ${stringResource(R.string.aps_control_isf_label, insulinProfileUiState.currentIsf.mgdl)} ",
+                                    text = " ${stringResource(R.string.aps_control_isf_label, isfValue(insulinProfileUiState.currentIsf))} ",
                                     style = MaterialTheme.typography.labelSmall,
                                     modifier = Modifier.padding(horizontal = 4.dp, vertical = 2.dp)
                                 )
@@ -176,7 +179,7 @@ fun ApsControlCard(
                         )
                         Spacer(Modifier.width(4.dp))
                         Text(
-                            text = insulinProfileUiState.target.mgdl.toString(),
+                            text = glucoseValue(insulinProfileUiState.target),
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
@@ -192,7 +195,7 @@ fun ApsControlCard(
                         )
                         Spacer(Modifier.width(4.dp))
                         Text(
-                            text = insulinProfileUiState.lowThreshold.mgdl.toString(),
+                            text = glucoseValue(insulinProfileUiState.lowThreshold),
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )

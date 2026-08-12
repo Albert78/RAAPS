@@ -24,8 +24,9 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import de.dh.raaps.common.model.data.BgReadingsInterval
-import de.dh.raaps.common.model.data.GlucoseUnit
 import de.dh.raaps.ui.R
+import de.dh.raaps.ui.common.LocalGlucoseUnit
+import de.dh.raaps.ui.common.glucoseValue
 import de.dh.raaps.ui.common.icons.next
 import de.dh.raaps.ui.common.icons.previous
 import de.dh.raaps.ui.common.shortRelativeTimeAgo
@@ -44,7 +45,9 @@ fun CgmTabContent(
     CgmOverviewCard(uiState, timeFormat, tick)
 
     if (uiState.cgmPluginUiProvider != null) {
-        Spacer(modifier = Modifier.height(16.dp))
+        Spacer(modifier = Modifier.height(24.dp))
+        SectionHeader(title = "Plugin")
+        Spacer(modifier = Modifier.height(8.dp))
         uiState.cgmPluginUiProvider.CgmControlSection()
     }
 }
@@ -113,18 +116,11 @@ fun CgmOverviewCard(uiState: SystemControlUiState, timeFormat: SimpleDateFormat,
                     color = MaterialTheme.colorScheme.outlineVariant
                 )
 
-                val unitText = stringResource(
-                    id = if (uiState.glucoseUnit == GlucoseUnit.MG_DL)
-                        R.string.glucose_unit_mgdl else R.string.glucose_unit_mmol
-                )
-
                 ControlDetailRow(
                     label = stringResource(id = R.string.system_control_cgm_last_value_label),
                     icon = previous
                 ) {
-                    val bgValueText = uiState.lastBgReading?.let {
-                        "${it.value.toString(uiState.glucoseUnit)} $unitText"
-                    } ?: "--"
+                    val bgValueText = glucoseValue(uiState.lastBgReading?.value, withUnit = true, default = "--")
                     val timeText = uiState.lastBgReading?.timestamp?.let { timeFormat.format(Date(it.ms)) } ?: "--"
                     val relativeTime = uiState.lastBgReading?.timestamp?.let {
                         shortRelativeTimeAgo(tick - it.ms)

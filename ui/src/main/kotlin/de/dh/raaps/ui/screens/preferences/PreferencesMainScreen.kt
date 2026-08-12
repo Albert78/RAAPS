@@ -39,14 +39,17 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
+import de.dh.raaps.common.model.data.GlucoseUnit
 import de.dh.raaps.ui.R
 import de.dh.raaps.ui.common.ThemeMode
 import de.dh.raaps.ui.common.composables.DialogDismissButton
 import de.dh.raaps.ui.common.composables.DialogSurface
 import de.dh.raaps.ui.common.composables.DialogTitle
 import de.dh.raaps.ui.common.composables.screenTitle
+import de.dh.raaps.ui.common.glucoseUnitLabel
 import de.dh.raaps.ui.common.icons.Icon_Screen_Back
 import de.dh.raaps.ui.common.theme.AppTheme
+import androidx.compose.material.icons.filled.Science
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -62,6 +65,9 @@ fun PreferencesScreen(
         onThemeSelected = { newValue ->
             viewModel.setThemeMode(newValue)
         },
+        onGlucoseUnitSelected = { newValue ->
+            viewModel.setGlucoseUnit(newValue)
+        }
     )
 }
 
@@ -71,9 +77,11 @@ fun PreferencesContent(
     uiState: PreferencesUiState,
     onNavigateUp: () -> Unit,
     onThemeSelected: (ThemeMode) -> Unit,
+    onGlucoseUnitSelected: (GlucoseUnit) -> Unit,
 ) {
     val scrollBehavior = TopAppBarDefaults.exitUntilCollapsedScrollBehavior()
     var showThemeDialog by remember { mutableStateOf(false) }
+    var showGlucoseUnitDialog by remember { mutableStateOf(false) }
 
     Scaffold(
         modifier = Modifier.fillMaxSize(),
@@ -110,6 +118,17 @@ fun PreferencesContent(
             )
 
             HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
+
+            PreferenceCategory(title = stringResource(R.string.pref_category_therapy_title))
+
+            PreferenceItem(
+                title = stringResource(R.string.pref_glucose_unit_title),
+                summary = glucoseUnitLabel(uiState.glucoseUnit),
+                icon = Icons.Default.Science,
+                onClick = { showGlucoseUnitDialog = true }
+            )
+
+            HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
         }
     }
 
@@ -120,6 +139,17 @@ fun PreferencesContent(
             onSelected = { newValue ->
                 onThemeSelected(newValue)
                 showThemeDialog = false
+            }
+        )
+    }
+
+    if (showGlucoseUnitDialog) {
+        GlucoseUnitSelectionDialog(
+            currentValue = uiState.glucoseUnit,
+            onDismiss = { showGlucoseUnitDialog = false },
+            onSelected = { newValue ->
+                onGlucoseUnitSelected(newValue)
+                showGlucoseUnitDialog = false
             }
         )
     }
@@ -168,6 +198,68 @@ fun ThemeSelectionDialog(
                             )
                             Text(
                                 text = stringResource(mode.labelResId),
+                                style = MaterialTheme.typography.bodyLarge,
+                                modifier = Modifier.padding(start = 16.dp)
+                            )
+                        }
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(24.dp))
+
+                DialogDismissButton(
+                    modifier = Modifier
+                        .padding(24.dp),
+                    onDismiss = onDismiss
+                )
+            }
+        }
+    }
+}
+
+@Composable
+fun GlucoseUnitSelectionDialog(
+    currentValue: GlucoseUnit,
+    onDismiss: () -> Unit,
+    onSelected: (GlucoseUnit) -> Unit
+) {
+    val units = GlucoseUnit.entries
+
+    Dialog(onDismissRequest = onDismiss) {
+        DialogSurface {
+            Column(modifier = Modifier
+                .fillMaxWidth(),
+                horizontalAlignment = Alignment.CenterHorizontally) {
+
+                DialogTitle(
+                    stringResource(id = R.string.pref_glucose_unit_dialog_title),
+                    modifier = Modifier
+                        .padding(24.dp)
+                )
+
+                Column(
+                    Modifier.selectableGroup(),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    units.forEach { unit ->
+                        Row(
+                            Modifier
+                                .fillMaxWidth()
+                                .height(56.dp)
+                                .selectable(
+                                    selected = (unit == currentValue),
+                                    onClick = { onSelected(unit) },
+                                    role = Role.RadioButton
+                                )
+                                .padding(horizontal = 16.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            RadioButton(
+                                selected = (unit == currentValue),
+                                onClick = null
+                            )
+                            Text(
+                                text = glucoseUnitLabel(unit),
                                 style = MaterialTheme.typography.bodyLarge,
                                 modifier = Modifier.padding(start = 16.dp)
                             )
@@ -247,6 +339,7 @@ fun PreferencesContentPreview() {
             uiState = PreferencesUiState(isLoading = false, isError = false),
             onNavigateUp = {},
             onThemeSelected = {},
+            onGlucoseUnitSelected = {},
         )
     }
 }

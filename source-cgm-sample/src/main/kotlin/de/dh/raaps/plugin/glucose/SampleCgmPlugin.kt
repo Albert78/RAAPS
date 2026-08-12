@@ -11,7 +11,6 @@ import de.dh.raaps.common.model.data.Minutes
 import de.dh.raaps.common.model.data.RawBg
 import de.dh.raaps.common.model.data.Timestamp
 import de.dh.raaps.ui.screens.systemcontrol.CgmPluginUiProvider
-import de.dh.raaps.ui.screens.systemcontrol.SectionHeader
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -63,11 +62,9 @@ class SampleCgmPlugin : GlucoseSource, Plugin, CgmPluginUiProvider {
             )
         ) {
             Column(modifier = Modifier.padding(16.dp)) {
-                SectionHeader(title = "Sample CGM Extra Info")
                 Text(
                     text = "This content is provided by the Sample CGM Plugin.",
-                    style = MaterialTheme.typography.bodyMedium,
-                    modifier = Modifier.padding(top = 8.dp)
+                    style = MaterialTheme.typography.bodyMedium
                 )
                 Text(
                     text = "Plugin Version: 1.0.0-sample",
