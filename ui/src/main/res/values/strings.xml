@@ -121,16 +121,16 @@
     <string name="duration_minutes_format">%1$d Min.</string>
     <string name="duration_hours_format">%1$d Std.</string>
     <string name="duration_hours_and_minutes_format">%1$d Std. %2$d Min.</string>
-    <string name="unit_u_per_h">U/h</string>
-    <string name="unit_g_per_u">g/U</string>
-    <string name="unit_mgdl_per_u">mg/dL/U</string>
-    <string name="unit_mmol_per_u">mmol/l/U</string>
+    <string name="unit_u_per_h">E/h</string>
+    <string name="unit_g_per_u">g/E</string>
+    <string name="unit_mgdl_per_u">mg/dL/E</string>
+    <string name="unit_mmol_per_u">mmol/l/E</string>
 
     <string name="recommendation_notification_channel_name">Behandlungsempfehlungen</string>
     <string name="recommendation_title_carbs">Essensempfehlung</string>
     <string name="recommendation_title_bolus">Insulinempfehlung</string>
     <string name="recommendation_text_carbs">Nimm %1$dg Kohlenhydrate zu dir, um eine Hypoglykämie zu vermeiden.</string>
-    <string name="recommendation_text_bolus">Verabreiche dir %1$.2fU Insulin, um einen hohen Blutzucker zu korrigieren.</string>
+    <string name="recommendation_text_bolus">Verabreiche dir %1$.2f E Insulin, um einen hohen Blutzucker zu korrigieren.</string>
 
     <string name="algorithm_issue_notification_channel_name">Algorithmus-Warnungen</string>
     <string name="core_issue_title">Berechnungen blockiert</string>
@@ -151,7 +151,7 @@
     <string name="aps_mode_auto_correction">Automatische Korrektur</string>
     <string name="aps_mode_auto_correction_short">Auto-Korr.</string>
     <string name="aps_mode_auto_correction_desc">Das System steuert die Insulinabgabe vollständig und nimmt automatische Korrekturen vor.</string>
-    <string name="aps_control_basal_label">Basal: %1$s U/h</string>
+    <string name="aps_control_basal_label">Basal: %1$s E/h</string>
     <string name="aps_control_cr_label">CR %1$s</string>
     <string name="aps_control_isf_label">ISF %1$s</string>
     <string name="aps_control_adjustment_neutral">neutral</string>
@@ -181,7 +181,7 @@
     <string name="active_carbs_label">Aktive KH</string>
     <string name="active_insulin_label">Akt. Insulin</string>
     <string name="cob_format">%1$.1f g</string>
-    <string name="iob_format">%1$.2f U</string>
+    <string name="iob_format">%1$.2f E</string>
 
     <string name="history_impact_ie_label">I.E.</string>
     <string name="history_impact_ke_label">KE</string>
@@ -301,7 +301,7 @@
     <string name="core_insight_label_target">Ziel</string>
     <string name="core_insight_label_isf">ISF</string>
     <string name="core_insight_label_cr">CR</string>
-    <string name="core_insight_action_bolus">Aktion: Bolus %1$.2f U</string>
+    <string name="core_insight_action_bolus">Aktion: Bolus %1$.2f E</string>
     <string name="core_insight_action_temp_basal">Aktion: Temp-Basal %1$d%% für %2$d h</string>
 
     <string name="alarms_screen_title">Warnungen und Alarme</string>
