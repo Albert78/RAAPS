@@ -11,7 +11,7 @@ import de.dh.raaps.common.model.data.TickHandler
 import de.dh.raaps.common.model.data.TickPriority
 import de.dh.raaps.common.model.data.TimeService
 import de.dh.raaps.common.model.data.Timestamp
-import de.dh.raaps.core.repository.AlgorithmInsightRepository
+import de.dh.raaps.core.repository.CoreInsightRepository
 import de.dh.raaps.core.repository.TreatmentRepository
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
@@ -75,7 +75,7 @@ class Core(
     private val onCarbsHint: (treatmentLock: TreatmentLock, Int) -> Unit,
     private val onClearRecommendations: (treatmentLock: TreatmentLock) -> Unit,
     private val onWaitForInsulinJobs: suspend (treatmentLock: TreatmentLock) -> Boolean,
-    private val algorithmInsightRepository: AlgorithmInsightRepository,
+    private val coreInsightRepository: CoreInsightRepository,
     private val scope: CoroutineScope
 ) : TickHandler {
     private var calculationAlgorithm: ApsAlgorithm = NoopAlgorithm()
@@ -148,9 +148,9 @@ class Core(
                     onSetTempBasal = onSetTempBasal,
                     onClearTempBasal = onClearTempBasal,
                     onCarbsHint = onCarbsHint,
-                    onAlgorithmInsight = { insight ->
+                    onCoreInsight = { insight ->
                         scope.launch {
-                            algorithmInsightRepository.saveInsight(insight)
+                            coreInsightRepository.saveInsight(insight)
                         }
                     },
                     tickInterval = timeService.tickInterval,
@@ -171,6 +171,7 @@ class Core(
         if (coreState !is CoreState.Active) return
 
         busyWork {
+            val now = Timestamp.now()
             val res = therapyManager.tryAcquire(TAG ?: "Core") { treatmentLock ->
                 onClearRecommendations(treatmentLock)
                 atomic {
@@ -178,10 +179,8 @@ class Core(
                     if (!onWaitForInsulinJobs(treatmentLock)) {
                         Log.i(TAG, "onTick: Recalculation skipped: Insulin jobs are still pending.")
                         scope.launch {
-                            val now = Timestamp.now()
-
-                            algorithmInsightRepository.saveInsight(
-                                AlgorithmInsight(
+                            coreInsightRepository.saveInsight(
+                                CoreInsight(
                                     timestamp = now,
                                     bgOriginal = BgValue.INVALID,
                                     bgFiltered = BgValue.INVALID,
@@ -192,7 +191,7 @@ class Core(
                                     targetBg = BgValue.INVALID,
                                     isf = BgDelta.fromMgDl(0),
                                     cr = 0.0,
-                                    reasoning = AlgorithmReasoning.PENDING_PUMP_JOBS
+                                    reasoning = CoreReasoning.PENDING_PUMP_JOBS
                                 )
                             )
                         }
@@ -205,6 +204,23 @@ class Core(
             if (res is LockResult.Busy) {
                 // TODO: Show popup to the user about skipping algorithm calculation
                 Log.i(TAG, "Core skipping tick since therapy manager is busy (lock owner: ${res.owner})")
+                scope.launch {
+                    coreInsightRepository.saveInsight(
+                        CoreInsight(
+                            timestamp = now,
+                            bgOriginal = BgValue.INVALID,
+                            bgFiltered = BgValue.INVALID,
+                            deviationPerTick = BgDelta.fromMgDl(0),
+                            iobAtPeak = InsulinAmount.ZERO,
+                            cobAtPeak = 0.0,
+                            predictedBgAtPeak = BgValue.INVALID,
+                            targetBg = BgValue.INVALID,
+                            isf = BgDelta.fromMgDl(0),
+                            cr = 0.0,
+                            reasoning = CoreReasoning.THERAPY_LOCK_HELD
+                        )
+                    )
+                }
             }
         }
     }
@@ -259,7 +275,7 @@ class Core(
             onCarbsHint: (treatmentLock: TreatmentLock, amountInGram: Int) -> Unit,
             onClearRecommendations: (treatmentLock: TreatmentLock) -> Unit,
             onWaitForInsulinJobs: suspend (treatmentLock: TreatmentLock) -> Boolean,
-            algorithmInsightRepository: AlgorithmInsightRepository,
+            coreInsightRepository: CoreInsightRepository,
             scope: CoroutineScope
         ): Core {
             return Core(
@@ -280,7 +296,7 @@ class Core(
                 onCarbsHint = onCarbsHint,
                 onClearRecommendations = onClearRecommendations,
                 onWaitForInsulinJobs = onWaitForInsulinJobs,
-                algorithmInsightRepository = algorithmInsightRepository,
+                coreInsightRepository = coreInsightRepository,
                 scope = scope
             )
         }

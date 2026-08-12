@@ -32,8 +32,8 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import de.dh.raaps.common.model.InsulinAmount
-import de.dh.raaps.core.aps.AlgorithmInsight
-import de.dh.raaps.core.aps.AlgorithmReasoning
+import de.dh.raaps.core.aps.CoreInsight
+import de.dh.raaps.core.aps.CoreReasoning
 import de.dh.raaps.ui.R
 import de.dh.raaps.ui.common.composables.screenTitle
 import java.text.SimpleDateFormat
@@ -41,12 +41,12 @@ import java.util.Date
 import java.util.Locale
 
 @Composable
-fun AlgorithmDecisionsScreen(
+fun CoreDecisionsScreen(
     viewModel: SystemControlViewModel,
     onNavigateUp: () -> Unit
 ) {
     val uiState by viewModel.uiState.collectAsState()
-    AlgorithmDecisionsContent(
+    CoreDecisionsContent(
         uiState = uiState,
         onNavigateUp = onNavigateUp
     )
@@ -54,14 +54,14 @@ fun AlgorithmDecisionsScreen(
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun AlgorithmDecisionsContent(
+fun CoreDecisionsContent(
     uiState: SystemControlUiState,
     onNavigateUp: () -> Unit
 ) {
     Scaffold(
         topBar = {
             TopAppBar(
-                title = screenTitle(stringResource(id = R.string.algorithm_decisions_screen_title)),
+                title = screenTitle(stringResource(id = R.string.core_decisions_screen_title)),
                 navigationIcon = {
                     IconButton(onClick = onNavigateUp) {
                         Icon(
@@ -79,16 +79,16 @@ fun AlgorithmDecisionsContent(
                 .padding(innerPadding)
                 .padding(horizontal = 16.dp)
         ) {
-            if (uiState.algorithmInsights.isEmpty()) {
+            if (uiState.coreInsights.isEmpty()) {
                 item {
                     Text(
-                        text = stringResource(id = R.string.algorithm_decisions_no_insights),
+                        text = stringResource(id = R.string.core_decisions_no_insights),
                         style = MaterialTheme.typography.bodyMedium,
                         modifier = Modifier.padding(vertical = 16.dp)
                     )
                 }
             } else {
-                items(uiState.algorithmInsights) { insight ->
+                items(uiState.coreInsights) { insight ->
                     InsightCard(insight)
                     Spacer(modifier = Modifier.height(8.dp))
                 }
@@ -101,7 +101,7 @@ fun AlgorithmDecisionsContent(
 }
 
 @Composable
-fun InsightCard(insight: AlgorithmInsight) {
+fun InsightCard(insight: CoreInsight) {
     val dateTimeFormat = remember { SimpleDateFormat("HH:mm:ss", Locale.getDefault()) }
     Card(
         modifier = Modifier.fillMaxWidth(),
@@ -119,39 +119,39 @@ fun InsightCard(insight: AlgorithmInsight) {
                     text = insight.reasoning.name,
                     style = MaterialTheme.typography.labelSmall,
                     fontWeight = FontWeight.Bold,
-                    color = if (insight.reasoning == AlgorithmReasoning.INTERNAL_ERROR) Color.Red else MaterialTheme.colorScheme.secondary
+                    color = if (insight.reasoning == CoreReasoning.INTERNAL_ERROR) Color.Red else MaterialTheme.colorScheme.secondary
                 )
             }
             Spacer(modifier = Modifier.height(8.dp))
             Row(modifier = Modifier.fillMaxWidth()) {
-                MetricItem(stringResource(id = R.string.algorithm_insight_label_bg), "${insight.bgFiltered.mgdl} (raw: ${insight.bgOriginal.mgdl})")
+                MetricItem(stringResource(id = R.string.core_insight_label_bg), "${insight.bgFiltered.mgdl} (raw: ${insight.bgOriginal.mgdl})")
                 Spacer(modifier = Modifier.width(16.dp))
-                MetricItem(stringResource(id = R.string.algorithm_insight_label_iob), "%.2f U".format(insight.iobAtPeak.iu))
+                MetricItem(stringResource(id = R.string.core_insight_label_iob), "%.2f U".format(insight.iobAtPeak.iu))
                 Spacer(modifier = Modifier.width(16.dp))
-                MetricItem(stringResource(id = R.string.algorithm_insight_label_cob), "%.1f g".format(insight.cobAtPeak))
+                MetricItem(stringResource(id = R.string.core_insight_label_cob), "%.1f g".format(insight.cobAtPeak))
             }
             Spacer(modifier = Modifier.height(8.dp))
             Row(modifier = Modifier.fillMaxWidth()) {
-                MetricItem(stringResource(id = R.string.algorithm_insight_label_pred_peak), "${insight.predictedBgAtPeak.mgdl} mg/dL")
+                MetricItem(stringResource(id = R.string.core_insight_label_pred_peak), "${insight.predictedBgAtPeak.mgdl} mg/dL")
                 Spacer(modifier = Modifier.width(16.dp))
-                MetricItem(stringResource(id = R.string.algorithm_insight_label_dev), "%+d".format(insight.deviationPerTick.mgdl))
+                MetricItem(stringResource(id = R.string.core_insight_label_dev), "%+d".format(insight.deviationPerTick.mgdl))
                 Spacer(modifier = Modifier.width(16.dp))
-                MetricItem(stringResource(id = R.string.algorithm_insight_label_target), "${insight.targetBg.mgdl} mg/dL")
+                MetricItem(stringResource(id = R.string.core_insight_label_target), "${insight.targetBg.mgdl} mg/dL")
             }
             Spacer(modifier = Modifier.height(8.dp))
             Row(modifier = Modifier.fillMaxWidth()) {
-                MetricItem(stringResource(id = R.string.algorithm_insight_label_isf), "%d".format(insight.isf.mgdl))
+                MetricItem(stringResource(id = R.string.core_insight_label_isf), "%d".format(insight.isf.mgdl))
                 Spacer(modifier = Modifier.width(16.dp))
-                MetricItem(stringResource(id = R.string.algorithm_insight_label_cr), "%.1f".format(insight.cr))
+                MetricItem(stringResource(id = R.string.core_insight_label_cr), "%.1f".format(insight.cr))
             }
 
             val actionText = when {
                 insight.actionBolus != null && insight.actionBolus!! > InsulinAmount.ZERO -> {
-                    stringResource(id = R.string.algorithm_insight_action_bolus, insight.actionBolus!!.iu)
+                    stringResource(id = R.string.core_insight_action_bolus, insight.actionBolus!!.iu)
                 }
                 insight.actionTempBasalPercent != null -> {
                     stringResource(
-                        id = R.string.algorithm_insight_action_temp_basal,
+                        id = R.string.core_insight_action_temp_basal,
                         insight.actionTempBasalPercent!!,
                         insight.actionTempBasalDurationInHours ?: 0
                     )

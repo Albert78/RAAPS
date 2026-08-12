@@ -11,7 +11,7 @@ import de.dh.raaps.common.model.data.TickHandler
 import de.dh.raaps.common.model.data.TickPriority
 import de.dh.raaps.common.model.data.TimeService
 import de.dh.raaps.common.model.data.Timestamp
-import de.dh.raaps.core.repository.AlgorithmInsightRepository
+import de.dh.raaps.core.repository.CoreInsightRepository
 import de.dh.raaps.core.repository.SettingsRepository
 import de.dh.raaps.core.repository.TreatmentRepository
 import de.dh.raaps.core.system.AndroidNotifications
@@ -75,7 +75,7 @@ interface SystemManager {
         therapyManager: TherapyManager,
         appPreferencesRepository: AppPreferencesRepository,
         carbsInsulinCalculationModel: CarbsInsulinCalculationModel,
-        algorithmInsightRepository: AlgorithmInsightRepository,
+        coreInsightRepository: CoreInsightRepository,
         context: Context
     )
 
@@ -147,7 +147,7 @@ class SystemManagerImpl(
         therapyManager: TherapyManager,
         appPreferencesRepository: AppPreferencesRepository,
         carbsInsulinCalculationModel: CarbsInsulinCalculationModel,
-        algorithmInsightRepository: AlgorithmInsightRepository,
+        coreInsightRepository: CoreInsightRepository,
         context: Context
     ) {
         wakeService.registerHandler(WAKE_TAG, this)
@@ -219,7 +219,7 @@ class SystemManagerImpl(
             onCarbsHint = { treatmentLock, amountInGram -> therapyManager.recommendCarbs(treatmentLock, amountInGram) },
             onClearRecommendations = { treatmentLock -> therapyManager.clearRecommendations(treatmentLock) },
             onWaitForInsulinJobs = { treatmentLock -> therapyManager.waitForInsulinJobs(treatmentLock) },
-            algorithmInsightRepository = algorithmInsightRepository,
+            coreInsightRepository = coreInsightRepository,
             scope = scope
         )
 

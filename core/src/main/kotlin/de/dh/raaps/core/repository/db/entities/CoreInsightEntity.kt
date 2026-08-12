@@ -7,10 +7,10 @@ import de.dh.raaps.common.model.InsulinAmount
 import de.dh.raaps.common.model.data.BgDelta
 import de.dh.raaps.common.model.data.BgValue
 import de.dh.raaps.common.model.data.Timestamp
-import de.dh.raaps.core.aps.AlgorithmReasoning
+import de.dh.raaps.core.aps.CoreReasoning
 
-@Entity(tableName = "algorithm_insights")
-data class AlgorithmInsightEntity(
+@Entity(tableName = "core_insights")
+data class CoreInsightEntity(
     @PrimaryKey(autoGenerate = true)
     var id: Long = ID_UNDEFINED,
     val timestamp: Timestamp,
@@ -26,5 +26,5 @@ data class AlgorithmInsightEntity(
     val actionBolus: InsulinAmount? = null,
     val actionTempBasalPercent: Int? = null,
     val actionTempBasalDurationInHours: Int? = null,
-    val reasoning: AlgorithmReasoning
+    val reasoning: CoreReasoning
 )

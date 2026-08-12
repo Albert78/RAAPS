@@ -62,7 +62,7 @@ import de.dh.raaps.ui.screens.permissions.openNotificationSettings
 import de.dh.raaps.ui.screens.permissions.requestIgnoreBatteryOptimizations
 import de.dh.raaps.ui.screens.preferences.PreferencesScreen
 import de.dh.raaps.ui.screens.preferences.PreferencesViewModel
-import de.dh.raaps.ui.screens.systemcontrol.AlgorithmDecisionsScreen
+import de.dh.raaps.ui.screens.systemcontrol.CoreDecisionsScreen
 import de.dh.raaps.ui.screens.systemcontrol.PumpManagementScreen
 import de.dh.raaps.ui.screens.systemcontrol.SystemControlScreen
 import de.dh.raaps.ui.screens.systemcontrol.SystemControlViewModel
@@ -311,7 +311,7 @@ class MainFeatureNavGraph(
                 val vm: SystemControlViewModel = viewModel(
                     factory = SystemControlViewModel.Companion.Factory(registry)
                 )
-                AlgorithmDecisionsScreen(
+                CoreDecisionsScreen(
                     viewModel = vm,
                     onNavigateUp = { navViewModel.pop() }
                 )

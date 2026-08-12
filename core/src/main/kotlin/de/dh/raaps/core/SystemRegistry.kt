@@ -12,7 +12,7 @@ import de.dh.raaps.core.aps.TherapyManager
 import de.dh.raaps.core.pump.PumpManager
 import de.dh.raaps.core.repository.DeviceManagementRepository
 import de.dh.raaps.core.repository.FoodRepository
-import de.dh.raaps.core.repository.AlgorithmInsightRepository
+import de.dh.raaps.core.repository.CoreInsightRepository
 import de.dh.raaps.core.repository.GlucoseRepository
 import de.dh.raaps.core.repository.SettingsRepository
 import de.dh.raaps.core.repository.TherapyRepository
@@ -76,7 +76,7 @@ interface SystemRegistry {
     /**
      * Repository for algorithm internal metrics and decision reasoning history.
      */
-    val algorithmInsightRepository: AlgorithmInsightRepository
+    val coreInsightRepository: CoreInsightRepository
 
     /**
      * Repository for lightweight application preferences and key-value pairs.

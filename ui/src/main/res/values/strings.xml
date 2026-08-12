@@ -281,21 +281,21 @@
     <string name="pump_management_prime_cannula">Katheter füllen (Prime)</string>
     <string name="pump_management_prime_tubing">Schlauch füllen</string>
 
-    <string name="system_control_tab_algorithm">Algorithmus</string>
-    <string name="system_control_algorithm_history_button">Verlauf</string>
+    <string name="system_control_tab_core">System</string>
+    <string name="system_control_core_history_button">Verlauf</string>
 
-    <string name="algorithm_decisions_screen_title">Algorithmus-Entscheidungen</string>
-    <string name="algorithm_decisions_no_insights">Keine Daten verfügbar</string>
-    <string name="algorithm_insight_label_bg">BZ</string>
-    <string name="algorithm_insight_label_iob">IOB</string>
-    <string name="algorithm_insight_label_cob">COB</string>
-    <string name="algorithm_insight_label_pred_peak">Vorherges. Peak</string>
-    <string name="algorithm_insight_label_dev">Abweich.</string>
-    <string name="algorithm_insight_label_target">Ziel</string>
-    <string name="algorithm_insight_label_isf">ISF</string>
-    <string name="algorithm_insight_label_cr">CR</string>
-    <string name="algorithm_insight_action_bolus">Aktion: Bolus %1$.2f U</string>
-    <string name="algorithm_insight_action_temp_basal">Aktion: Temp-Basal %1$d%% für %2$d h</string>
+    <string name="core_decisions_screen_title">System-Ereignisse</string>
+    <string name="core_decisions_no_insights">Keine Daten verfügbar</string>
+    <string name="core_insight_label_bg">BZ</string>
+    <string name="core_insight_label_iob">IOB</string>
+    <string name="core_insight_label_cob">COB</string>
+    <string name="core_insight_label_pred_peak">Vorherges. Peak</string>
+    <string name="core_insight_label_dev">Abweich.</string>
+    <string name="core_insight_label_target">Ziel</string>
+    <string name="core_insight_label_isf">ISF</string>
+    <string name="core_insight_label_cr">CR</string>
+    <string name="core_insight_action_bolus">Aktion: Bolus %1$.2f U</string>
+    <string name="core_insight_action_temp_basal">Aktion: Temp-Basal %1$d%% für %2$d h</string>
 
     <string name="alarms_screen_title">Warnungen und Alarme</string>
 </resources>

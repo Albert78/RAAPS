@@ -11,7 +11,7 @@ sealed class AlgorithmIssue {
     data class InternalError(val message: String?) : AlgorithmIssue()
 }
 
-enum class AlgorithmReasoning {
+enum class CoreReasoning {
     NO_RECENT_VALUES,
     SAFETY_BASAL_FALLBACK,
     LOW_PREDICTED_CARBS_SUGGESTION,
@@ -20,10 +20,11 @@ enum class AlgorithmReasoning {
     MEAL_OR_CORRECTION_BOLUS,
     NORMAL_CONDITION_SAFETY_BASAL,
     PENDING_PUMP_JOBS,
+    THERAPY_LOCK_HELD,
     INTERNAL_ERROR
 }
 
-data class AlgorithmInsight(
+data class CoreInsight(
     val timestamp: Timestamp,
     val bgOriginal: BgValue,
     val bgFiltered: BgValue,
@@ -37,7 +38,7 @@ data class AlgorithmInsight(
     val actionBolus: InsulinAmount? = null,
     val actionTempBasalPercent: Int? = null,
     val actionTempBasalDurationInHours: Int? = null,
-    val reasoning: AlgorithmReasoning
+    val reasoning: CoreReasoning
 )
 
 interface ApsAlgorithm {

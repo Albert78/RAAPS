@@ -12,7 +12,7 @@ import androidx.room.Transaction
 import androidx.room.TypeConverters
 import androidx.room.Update
 import de.dh.raaps.common.model.InsulinOrigin
-import de.dh.raaps.core.repository.db.entities.AlgorithmInsightEntity
+import de.dh.raaps.core.repository.db.entities.CoreInsightEntity
 import de.dh.raaps.core.repository.db.entities.CurrentSettingsEntity
 import de.dh.raaps.core.repository.db.entities.CurrentTherapySettingsEntity
 import de.dh.raaps.core.repository.db.entities.DataProviderEntity
@@ -212,17 +212,17 @@ interface MetabolicEventsDao {
 }
 
 @Dao
-interface AlgorithmInsightDao {
+interface CoreInsightDao {
     @Insert
-    suspend fun insert(insight: AlgorithmInsightEntity): Long
+    suspend fun insert(insight: CoreInsightEntity): Long
 
-    @Query("SELECT * FROM algorithm_insights ORDER BY timestamp DESC")
-    fun observeAll(): Flow<List<AlgorithmInsightEntity>>
+    @Query("SELECT * FROM core_insights ORDER BY timestamp DESC")
+    fun observeAll(): Flow<List<CoreInsightEntity>>
 
-    @Query("SELECT * FROM algorithm_insights ORDER BY timestamp DESC LIMIT :limit")
-    suspend fun getLatest(limit: Int): List<AlgorithmInsightEntity>
+    @Query("SELECT * FROM core_insights ORDER BY timestamp DESC LIMIT :limit")
+    suspend fun getLatest(limit: Int): List<CoreInsightEntity>
 
-    @Query("DELETE FROM algorithm_insights WHERE timestamp < :timestamp")
+    @Query("DELETE FROM core_insights WHERE timestamp < :timestamp")
     suspend fun pruneOlderThan(timestamp: Long)
 }
 
@@ -243,7 +243,7 @@ interface AlgorithmInsightDao {
     InsulinTypeEntity::class,
     InsulinEntity::class,
     DeferredBolusEntity::class,
-    AlgorithmInsightEntity::class
+    CoreInsightEntity::class
 ], version = 1)
 @TypeConverters(
     DbTypeConverters::class
@@ -253,7 +253,7 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun therapyDao(): TherapyDao
     abstract fun metabolicEventsDao(): MetabolicEventsDao
     abstract fun settingsDao(): SettingsDao
-    abstract fun algorithmInsightDao(): AlgorithmInsightDao
+    abstract fun coreInsightDao(): CoreInsightDao
 
     companion object {
         const val CURRENT_DATABASE_VERSION = "1.0"

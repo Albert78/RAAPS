@@ -1,20 +1,20 @@
 package de.dh.raaps.core.repository
 
 import de.dh.raaps.common.model.data.Timestamp
-import de.dh.raaps.core.aps.AlgorithmInsight
+import de.dh.raaps.core.aps.CoreInsight
 import de.dh.raaps.core.repository.db.AppDatabase
-import de.dh.raaps.core.repository.db.entities.AlgorithmInsightEntity
+import de.dh.raaps.core.repository.db.entities.CoreInsightEntity
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 
-class AlgorithmInsightRepository(private val appDatabase: AppDatabase) {
-    private val dao = appDatabase.algorithmInsightDao()
+class CoreInsightRepository(private val appDatabase: AppDatabase) {
+    private val dao = appDatabase.coreInsightDao()
 
-    suspend fun saveInsight(insight: AlgorithmInsight) {
+    suspend fun saveInsight(insight: CoreInsight) {
         dao.insert(insight.toEntity())
     }
 
-    fun observeInsights(): Flow<List<AlgorithmInsight>> {
+    fun observeInsights(): Flow<List<CoreInsight>> {
         return dao.observeAll().map { list ->
             list.map { it.toDomain() }
         }
@@ -24,7 +24,7 @@ class AlgorithmInsightRepository(private val appDatabase: AppDatabase) {
         dao.pruneOlderThan(olderThan.ms)
     }
 
-    private fun AlgorithmInsight.toEntity() = AlgorithmInsightEntity(
+    private fun CoreInsight.toEntity() = CoreInsightEntity(
         timestamp = timestamp,
         bgOriginal = bgOriginal,
         bgFiltered = bgFiltered,
@@ -41,7 +41,7 @@ class AlgorithmInsightRepository(private val appDatabase: AppDatabase) {
         reasoning = reasoning
     )
 
-    private fun AlgorithmInsightEntity.toDomain() = AlgorithmInsight(
+    private fun CoreInsightEntity.toDomain() = CoreInsight(
         timestamp = timestamp,
         bgOriginal = bgOriginal,
         bgFiltered = bgFiltered,

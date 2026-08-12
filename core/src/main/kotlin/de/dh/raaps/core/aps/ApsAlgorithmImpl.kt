@@ -27,7 +27,7 @@ class ApsAlgorithmImpl(
     val onSetTempBasal: (treatmentLock: TreatmentLock, durationInHours: Int, percent: Int) -> Unit,
     val onClearTempBasal: (treatmentLock: TreatmentLock) -> Unit,
     val onCarbsHint: (treatmentLock: TreatmentLock, Int) -> Unit,
-    private val onAlgorithmInsight: (AlgorithmInsight) -> Unit
+    private val onCoreInsight: (CoreInsight) -> Unit
 ): ApsAlgorithm {
     // --- Time-based extensions for Tick to provide a Timestamp-like API ---
     private fun Tick.plusMinutes(minutes: Int): Tick = this + (minutes / timeline.tickDuration.value.toInt())
@@ -100,8 +100,8 @@ class ApsAlgorithmImpl(
         val bolus: InsulinAmount?,
         val handledDeferredBoluses: List<DeferredBolus>?,
         val algorithmIssues: List<AlgorithmIssue>?,
-        val reasoning: AlgorithmReasoning,
-        val metrics: AlgorithmInsight? = null
+        val reasoning: CoreReasoning,
+        val metrics: CoreInsight? = null
     ) {
         companion object {
             fun safetyBasal(): CalculationResult = CalculationResult(
@@ -111,7 +111,7 @@ class ApsAlgorithmImpl(
                 bolus = null,
                 handledDeferredBoluses = null,
                 algorithmIssues = null,
-                reasoning = AlgorithmReasoning.SAFETY_BASAL_FALLBACK
+                reasoning = CoreReasoning.SAFETY_BASAL_FALLBACK
             )
 
             fun normalSafetyBasal(): CalculationResult = CalculationResult(
@@ -121,7 +121,7 @@ class ApsAlgorithmImpl(
                 bolus = null,
                 handledDeferredBoluses = null,
                 algorithmIssues = null,
-                reasoning = AlgorithmReasoning.NORMAL_CONDITION_SAFETY_BASAL
+                reasoning = CoreReasoning.NORMAL_CONDITION_SAFETY_BASAL
             )
 
             fun tempBasal(percent: Int, durationInHours: Int) = CalculationResult(
@@ -134,7 +134,7 @@ class ApsAlgorithmImpl(
                 bolus = null,
                 handledDeferredBoluses = null,
                 algorithmIssues = null,
-                reasoning = AlgorithmReasoning.LOW_PREDICTED_LOW_BASAL
+                reasoning = CoreReasoning.LOW_PREDICTED_LOW_BASAL
             )
 
             fun zeroTemp(durationInHours: Int): CalculationResult = CalculationResult(
@@ -144,7 +144,7 @@ class ApsAlgorithmImpl(
                 bolus = null,
                 handledDeferredBoluses = null,
                 algorithmIssues = null,
-                reasoning = AlgorithmReasoning.LOW_PREDICTED_ZERO_TEMP
+                reasoning = CoreReasoning.LOW_PREDICTED_ZERO_TEMP
             )
 
             fun carbsSuggestion(carbsInGHint: Int?) = CalculationResult(
@@ -154,7 +154,7 @@ class ApsAlgorithmImpl(
                 bolus = null,
                 handledDeferredBoluses = null,
                 algorithmIssues = null,
-                reasoning = AlgorithmReasoning.LOW_PREDICTED_CARBS_SUGGESTION
+                reasoning = CoreReasoning.LOW_PREDICTED_CARBS_SUGGESTION
             )
 
             fun mealOrCorrectionBolus(
@@ -167,7 +167,7 @@ class ApsAlgorithmImpl(
                 bolus = bolusAmount,
                 handledDeferredBoluses = handledDeferredBoluses,
                 algorithmIssues = null,
-                reasoning = AlgorithmReasoning.MEAL_OR_CORRECTION_BOLUS
+                reasoning = CoreReasoning.MEAL_OR_CORRECTION_BOLUS
             )
 
             fun algorithmIssues(vararg issues: AlgorithmIssue) = CalculationResult(
@@ -178,9 +178,9 @@ class ApsAlgorithmImpl(
                 handledDeferredBoluses = null,
                 algorithmIssues = issues.toList(),
                 reasoning = if (issues.any { it is AlgorithmIssue.NoRecentValues })
-                    AlgorithmReasoning.NO_RECENT_VALUES
+                    CoreReasoning.NO_RECENT_VALUES
                 else
-                    AlgorithmReasoning.INTERNAL_ERROR
+                    CoreReasoning.INTERNAL_ERROR
             )
         }
     }
@@ -204,7 +204,7 @@ class ApsAlgorithmImpl(
         }
 
         result.metrics?.let { metrics ->
-            onAlgorithmInsight(metrics.copy(
+            onCoreInsight(metrics.copy(
                 reasoning = result.reasoning,
                 actionBolus = result.bolus,
                 actionTempBasalPercent = result.tempBasal?.percent,
@@ -342,7 +342,7 @@ class ApsAlgorithmImpl(
             peak = insulinPeak
         )
 
-        val insightTemplate = AlgorithmInsight(
+        val insightTemplate = CoreInsight(
             timestamp = now,
             bgOriginal = sampledBgReadings.getAt(nowTick),
             bgFiltered = BgValue.fromMgDl(currentBgMgDl),
@@ -353,7 +353,7 @@ class ApsAlgorithmImpl(
             targetBg = targetBg,
             isf = isfValue,
             cr = crValue,
-            reasoning = AlgorithmReasoning.INTERNAL_ERROR // Dummy, will be overwritten
+            reasoning = CoreReasoning.INTERNAL_ERROR // Dummy, will be overwritten
         )
 
         val recentCarbsInG = meals.
@@ -485,7 +485,7 @@ class ApsAlgorithmImpl(
             onSetTempBasal: (treatmentLock: TreatmentLock, durationInHours: Int, percent: Int) -> Unit,
             onClearTempBasal: (treatmentLock: TreatmentLock) -> Unit,
             onCarbsHint: (treatmentLock: TreatmentLock, Int) -> Unit,
-            onAlgorithmInsight: (AlgorithmInsight) -> Unit,
+            onCoreInsight: (CoreInsight) -> Unit,
             tickInterval: Minutes,
             carbsInsulinCalculationModel: CarbsInsulinCalculationModel,
         ): ApsAlgorithm {
@@ -508,7 +508,7 @@ class ApsAlgorithmImpl(
                 onClearTempBasal = onClearTempBasal,
                 onCarbsHint = onCarbsHint,
                 onDeliverBolus = onDeliverBolus,
-                onAlgorithmInsight = onAlgorithmInsight
+                onCoreInsight = onCoreInsight
             )
         }
     }

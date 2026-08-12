@@ -4,7 +4,7 @@ import androidx.room.TypeConverter
 import de.dh.raaps.common.model.ApsMode
 import de.dh.raaps.common.model.data.Minutes
 import de.dh.raaps.common.model.data.Timestamp
-import de.dh.raaps.core.aps.AlgorithmReasoning
+import de.dh.raaps.core.aps.CoreReasoning
 import de.dh.raaps.core.repository.db.entities.DBBlock
 import de.dh.raaps.core.repository.db.entities.DBBgBlock
 import org.json.JSONArray
@@ -36,14 +36,14 @@ class DbTypeConverters {
     fun toTimestamp(value: Long?): Timestamp? = value?.let { Timestamp(it) }
 
     @TypeConverter
-    fun fromAlgorithmReasoning(reasoning: AlgorithmReasoning): String = reasoning.name
+    fun fromCoreReasoning(reasoning: CoreReasoning): String = reasoning.name
 
     @TypeConverter
-    fun toAlgorithmReasoning(value: String): AlgorithmReasoning {
+    fun toCoreReasoning(value: String): CoreReasoning {
         return try {
-            AlgorithmReasoning.valueOf(value)
+            CoreReasoning.valueOf(value)
         } catch (_: Exception) {
-            AlgorithmReasoning.INTERNAL_ERROR
+            CoreReasoning.INTERNAL_ERROR
         }
     }
 

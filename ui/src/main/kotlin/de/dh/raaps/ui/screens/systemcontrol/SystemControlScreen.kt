@@ -61,12 +61,12 @@ import java.util.Locale
 
 const val SYSTEM_CONTROL_TAB_CGM = 0
 const val SYSTEM_CONTROL_TAB_PUMP = 1
-const val SYSTEM_CONTROL_TAB_ALGORITHM = 2
+const val SYSTEM_CONTROL_TAB_CORE = 2
 
 @Composable
 fun SystemControlScreen(
     onNavigateUp: () -> Unit,
-    onNavigateToAlgorithmDecisions: () -> Unit,
+    onNavigateToCoreDecisions: () -> Unit,
     onNavigateToPumpManagement: () -> Unit,
     viewModel: SystemControlViewModel,
     initialTab: Int = SYSTEM_CONTROL_TAB_CGM
@@ -77,7 +77,7 @@ fun SystemControlScreen(
         uiState = uiState,
         initialTab = initialTab,
         onNavigateUp = onNavigateUp,
-        onNavigateToAlgorithmDecisions = onNavigateToAlgorithmDecisions,
+        onNavigateToCoreDecisions = onNavigateToCoreDecisions,
         onNavigateToPumpManagement = onNavigateToPumpManagement,
         onCancelPumpJob = viewModel::cancelPumpJob,
         onRefreshPumpStatus = viewModel::refreshPumpStatus
@@ -90,7 +90,7 @@ fun SystemControlContent(
     uiState: SystemControlUiState,
     initialTab: Int = SYSTEM_CONTROL_TAB_CGM,
     onNavigateUp: () -> Unit,
-    onNavigateToAlgorithmDecisions: () -> Unit,
+    onNavigateToCoreDecisions: () -> Unit,
     onNavigateToPumpManagement: () -> Unit,
     onCancelPumpJob: (String) -> Unit,
     onRefreshPumpStatus: () -> Unit
@@ -100,7 +100,7 @@ fun SystemControlContent(
     val tabs = listOf(
         stringResource(id = R.string.system_control_tab_cgm),
         stringResource(id = R.string.system_control_tab_pump),
-        stringResource(id = R.string.system_control_tab_algorithm)
+        stringResource(id = R.string.system_control_tab_core)
     )
 
     Scaffold(
@@ -168,7 +168,7 @@ fun SystemControlContent(
                     }
                 }
 
-                SYSTEM_CONTROL_TAB_ALGORITHM -> {
+                SYSTEM_CONTROL_TAB_CORE -> {
                     item {
                         Spacer(modifier = Modifier.height(16.dp))
                         Card(
@@ -184,12 +184,12 @@ fun SystemControlContent(
                                 horizontalAlignment = Alignment.CenterHorizontally
                             ) {
                                 Text(
-                                    "Algorithm Status: Operational",
+                                    "System Status: Operational",
                                     style = MaterialTheme.typography.bodyLarge
                                 )
                                 Spacer(modifier = Modifier.height(8.dp))
-                                PrimaryButton(onClick = onNavigateToAlgorithmDecisions) {
-                                    Text(stringResource(id = R.string.system_control_algorithm_history_button))
+                                PrimaryButton(onClick = onNavigateToCoreDecisions) {
+                                    Text(stringResource(id = R.string.system_control_core_history_button))
                                 }
                             }
                         }
@@ -533,7 +533,7 @@ fun SystemControlCgmPreview() {
             uiState = previewUiState(),
             initialTab = SYSTEM_CONTROL_TAB_CGM,
             onNavigateUp = {},
-            onNavigateToAlgorithmDecisions = {},
+            onNavigateToCoreDecisions = {},
             onNavigateToPumpManagement = {},
             onCancelPumpJob = {},
             onRefreshPumpStatus = {}
@@ -556,7 +556,7 @@ fun SystemControlPumpPreview() {
             ),
             initialTab = SYSTEM_CONTROL_TAB_PUMP,
             onNavigateUp = {},
-            onNavigateToAlgorithmDecisions = {},
+            onNavigateToCoreDecisions = {},
             onNavigateToPumpManagement = {},
             onCancelPumpJob = {},
             onRefreshPumpStatus = {}
@@ -564,15 +564,15 @@ fun SystemControlPumpPreview() {
     }
 }
 
-@Preview(showBackground = true, name = "Algorithm Tab")
+@Preview(showBackground = true, name = "Core Tab")
 @Composable
-fun SystemControlAlgorithmPreview() {
+fun SystemControlCorePreview() {
     AppTheme {
         SystemControlContent(
             uiState = previewUiState(),
-            initialTab = SYSTEM_CONTROL_TAB_ALGORITHM,
+            initialTab = SYSTEM_CONTROL_TAB_CORE,
             onNavigateUp = {},
-            onNavigateToAlgorithmDecisions = {},
+            onNavigateToCoreDecisions = {},
             onNavigateToPumpManagement = {},
             onCancelPumpJob = {},
             onRefreshPumpStatus = {}

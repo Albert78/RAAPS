@@ -10,7 +10,7 @@ import de.dh.raaps.common.model.data.BgReadingsInterval
 import de.dh.raaps.common.model.data.GlucoseUnit
 import de.dh.raaps.common.model.data.Timestamp
 import de.dh.raaps.core.SystemRegistry
-import de.dh.raaps.core.aps.AlgorithmInsight
+import de.dh.raaps.core.aps.CoreInsight
 import de.dh.raaps.core.pump.PumpJob
 import de.dh.raaps.glucoseUnit
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -22,7 +22,7 @@ import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.stateIn
 
 data class SystemControlUiState(
-    val algorithmInsights: List<AlgorithmInsight> = emptyList(),
+    val coreInsights: List<CoreInsight> = emptyList(),
     val glucoseSourceName: String? = null,
     val sensorTypeName: String? = null,
     val readingsInterval: BgReadingsInterval? = null,
@@ -42,7 +42,7 @@ data class SystemControlUiState(
 class SystemControlViewModel(
     private val systemRegistry: SystemRegistry
 ) : ViewModel() {
-    private val algorithmInsightRepository = systemRegistry.algorithmInsightRepository
+    private val coreInsightRepository = systemRegistry.coreInsightRepository
     private val glucoseSourceManager = systemRegistry.glucoseSourceManager
     private val appPreferencesRepository = systemRegistry.appPreferencesRepository
     private val pumpManager = systemRegistry.pumpManager
@@ -80,12 +80,12 @@ class SystemControlViewModel(
     }
 
     val uiState: StateFlow<SystemControlUiState> = combine(
-        algorithmInsightRepository.observeInsights(),
+        coreInsightRepository.observeInsights(),
         glucoseInfo,
         pumpInfo
     ) { insights, gInfo, pInfo ->
         SystemControlUiState(
-            algorithmInsights = insights,
+            coreInsights = insights,
             glucoseSourceName = gInfo.sourceName,
             sensorTypeName = gInfo.sensorTypeName,
             readingsInterval = gInfo.readingsInterval,
