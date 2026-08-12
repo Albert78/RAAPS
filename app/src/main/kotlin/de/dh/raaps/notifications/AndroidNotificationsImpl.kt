@@ -11,11 +11,14 @@ import androidx.core.app.NotificationCompat
 import androidx.core.content.getSystemService
 import de.dh.raaps.R
 import de.dh.raaps.common.model.ToDo
+import de.dh.raaps.common.model.data.BgDelta
 import de.dh.raaps.common.model.data.BgValue
+import de.dh.raaps.common.model.data.GlucoseUnit
 import de.dh.raaps.core.aps.CoreIssue
 import de.dh.raaps.core.aps.ApsRecommendation
 import de.dh.raaps.core.aps.GlucoseSourceManager
 import de.dh.raaps.core.system.AndroidNotifications
+import de.dh.raaps.core.system.RegistryProvider
 import de.dh.raaps.ui.activities.MainActivity
 import de.dh.raaps.ui.screens.permissions.canPostNotifications
 import java.util.Locale
@@ -56,27 +59,44 @@ class AndroidNotificationsImpl(
         notificationManager.createNotificationChannel(issueChannel)
     }
 
-    fun getBgValueString(sample: BgValue?, forceSign: Boolean): String? {
+    private fun getGlucoseUnit(): GlucoseUnit {
+        val registry = (context.applicationContext as? RegistryProvider)?.registry
+        return registry?.appPreferencesRepository?.glucoseUnit?.value ?: GlucoseUnit.MG_DL
+    }
+
+    fun getBgValueString(sample: BgValue?, unit: GlucoseUnit, forceSign: Boolean): String? {
         if (sample == null) return null
+        val valStr = sample.toString(unit)
+        val unitStr = when (unit) {
+            GlucoseUnit.MG_DL -> context.getString(UiR.string.glucose_unit_mgdl)
+            GlucoseUnit.MMOL -> context.getString(UiR.string.glucose_unit_mmol)
+        }
         return if (forceSign) {
-            String.format(Locale.getDefault(), "%+d mg/dl", sample.mgdl)
+            val sign = if (sample.mgdl > 0) "+" else ""
+            "$sign$valStr $unitStr"
         } else {
-            "${sample.mgdl} mg/dl"
+            "$valStr $unitStr"
         }
     }
 
-    fun getBgDeltaString(delta: BgValue?): String? {
-        val bgDeltaStr = getBgValueString(delta, true)
-        return if (bgDeltaStr == null) null else "Delta: $bgDeltaStr"
+    fun getBgDeltaString(delta: BgValue?, unit: GlucoseUnit): String? {
+        if (delta == null) return null
+        val deltaValue = BgDelta.fromMgDl(delta.mgdl)
+        val valStr = deltaValue.toDiff(unit)
+        val unitStr = when (unit) {
+            GlucoseUnit.MG_DL -> context.getString(UiR.string.glucose_unit_mgdl)
+            GlucoseUnit.MMOL -> context.getString(UiR.string.glucose_unit_mmol)
+        }
+        return "Delta: $valStr $unitStr"
     }
 
     override fun createMainAppNotification(glucoseSourceManager: GlucoseSourceManager): Notification {
         val data = MainAppNotificationData.create(glucoseSourceManager)
         Log.d(TAG, "Build notification for ${data.lastBgSample}")
-        ToDo.toBeImplemented("Take glucose unit from preferences")
-        val bgValueStr = getBgValueString(data.lastBgSample?.value, false)
+        val unit = getGlucoseUnit()
+        val bgValueStr = getBgValueString(data.lastBgSample?.value, unit, false)
         val title = bgValueStr ?: context.getString(UiR.string.aps_service_notification_content_no_value_yet)
-        val details = getBgDeltaString(data.getBgDelta())
+        val details = getBgDeltaString(data.getBgDelta(), unit)
 
         val dashboardIntent = MainActivity.createStartDashboardIntent(context)
         val goToEventPendingIntent = PendingIntent.getActivity(

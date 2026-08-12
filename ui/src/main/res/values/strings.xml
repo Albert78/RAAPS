@@ -21,11 +21,12 @@
     <string name="insulin_profile_editor_dia_label">DIA (Min.)</string>
     <string name="insulin_profile_editor_peak_label">Peak (Min.)</string>
     <string name="insulin_profile_editor_basal_title">Basalrate</string>
-    <string name="insulin_profile_editor_basal_desc">Die Menge an Insulin, die kontinuierlich abgegeben wird (Einheit: U/h).</string>
+    <string name="insulin_profile_editor_basal_desc">Die Menge an Insulin, die kontinuierlich abgegeben wird.</string>
     <string name="insulin_profile_editor_isf_title">ISF (Insulin-Sensitivitäts-Faktor)</string>
-    <string name="insulin_profile_editor_isf_desc">Gibt an, wie stark eine Einheit Insulin den Blutzucker senkt (Einheit: mg/dL/U).</string>
+    <string name="insulin_profile_editor_isf_desc">Gibt an, wie stark eine Einheit Insulin den Blutzucker senkt.</string>
     <string name="insulin_profile_editor_cr_title">CR (Kohlenhydrat-Insulin-Verhältnis)</string>
-    <string name="insulin_profile_editor_cr_desc">Gibt an, wie viele Gramm Kohlenhydrate durch eine Einheit Insulin abgedeckt werden (Einheit: g/U).</string>
+    <string name="insulin_profile_editor_cr_desc">Gibt an, wie viele Gramm Kohlenhydrate durch eine Einheit Insulin abgedeckt werden.</string>
+    <string name="insulin_profile_editor_unit_info_format">Die Werte sind in der Einheit %1$s.</string>
     <string name="insulin_profile_editor_help_title">Anleitung: Insulin-Profil</string>
     <string name="help_24h_profile_general">Jeder Block definiert den Wert ab der gewählten Uhrzeit bis zum Start des nächsten Blocks.\n\n• Der erste Block beginnt immer um 00:00 Uhr.\n• Nutze das [+], um neue Zeitabschnitte einzufügen.\n• Die Uhrzeit eines Blocks kann nur zwischen seinen Nachbarn verschoben werden.\n• Am Ende des Tages schließt der letzte Block automatisch um 24:00 Uhr ab.</string>
     <string name="insulin_profile_editor_help_specific">Das Insulin-Profil ist die Basis für deine Therapieberechnungen.</string>
@@ -36,7 +37,7 @@
     <string name="insulin_profile_editor_copy_name_format">%1$s (Kopie)</string>
 
     <string name="bg_editor_title">Ziel-BZ &amp; Low-Schwelle</string>
-    <string name="bg_editor_desc">Der angestrebte Blutzucker und die Schwelle für niedrige Werte über den Tag (Einheit: mg/dL).</string>
+    <string name="bg_editor_desc">Der angestrebte Blutzucker und die Schwelle für niedrige Werte über den Tag.</string>
     <string name="bg_editor_discard_title">Änderungen speichern?</string>
     <string name="bg_editor_discard_message">Du hast Änderungen an den Zielwerten vorgenommen. Möchtest du die Änderungen speichern oder verwerfen?</string>
 
@@ -124,8 +125,6 @@
     <string name="unit_g_per_u">g/U</string>
     <string name="unit_mgdl_per_u">mg/dL/U</string>
     <string name="unit_mmol_per_u">mmol/l/U</string>
-    <string name="bg_value_single_format">%1$d mg/dL</string>
-    <string name="bg_value_range_format">%1$d–%2$d mg/dL</string>
 
     <string name="recommendation_notification_channel_name">Behandlungsempfehlungen</string>
     <string name="recommendation_title_carbs">Essensempfehlung</string>
@@ -184,7 +183,6 @@
     <string name="cob_format">%1$.1f g</string>
     <string name="iob_format">%1$.2f U</string>
 
-    <string name="history_impact_mgdl_label">mg/dl</string>
     <string name="history_impact_ie_label">I.E.</string>
     <string name="history_impact_ke_label">KE</string>
     <string name="cd_copy_profile">Profil kopieren</string>

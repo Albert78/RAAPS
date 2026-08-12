@@ -78,11 +78,15 @@ import de.dh.raaps.common.model.ISF_MIN
 import de.dh.raaps.common.model.InsulinConcentration
 import de.dh.raaps.common.model.InsulinType
 import de.dh.raaps.common.model.data.Block
+import de.dh.raaps.common.model.data.GlucoseUnit
 import de.dh.raaps.common.model.data.InsulinProfile
 import de.dh.raaps.common.model.data.Minutes
+import de.dh.raaps.common.model.data.BgDelta
 import de.dh.raaps.ui.R
 import de.dh.raaps.ui.common.DefaultSteppingStrategy
 import de.dh.raaps.ui.common.ValueDisplayStrategy
+import de.dh.raaps.ui.common.LocalGlucoseUnit
+import de.dh.raaps.ui.common.isfUnitLabel
 import de.dh.raaps.ui.common.composables.EditableValueStepper
 import de.dh.raaps.ui.common.composables.NormalTextButton
 import de.dh.raaps.ui.common.composables.StepperDefaults
@@ -377,7 +381,7 @@ fun InsulinProfileDetailEditor(
                     )
                     1 -> TherapyBlockListEditor(
                         title = stringResource(id = R.string.insulin_profile_editor_basal_title),
-                        description = stringResource(id = R.string.insulin_profile_editor_basal_desc),
+                        description = stringResource(id = R.string.insulin_profile_editor_basal_desc) + " " + stringResource(R.string.insulin_profile_editor_unit_info_format, stringResource(R.string.unit_u_per_h)),
                         blocks = basalBlocks,
                         onBlocksChanged = { basalBlocks = it },
                         step = 0.05,
@@ -385,19 +389,37 @@ fun InsulinProfileDetailEditor(
                         minValue = BASAL_MIN,
                         maxValue = BASAL_MAX
                     )
-                    2 -> TherapyBlockListEditor(
-                        title = stringResource(id = R.string.insulin_profile_editor_isf_title),
-                        description = stringResource(id = R.string.insulin_profile_editor_isf_desc),
-                        blocks = isfBlocks,
-                        onBlocksChanged = { isfBlocks = it },
-                        step = 1.0,
-                        format = "%.0f",
-                        minValue = ISF_MIN,
-                        maxValue = ISF_MAX
-                    )
+                    2 -> {
+                        val glucoseUnit = LocalGlucoseUnit.current
+                        val isfStep = if (glucoseUnit == GlucoseUnit.MG_DL) 1.0 else 0.1
+                        val isfFormat = if (glucoseUnit == GlucoseUnit.MG_DL) "%.0f" else "%.1f"
+                        val isfMin = if (glucoseUnit == GlucoseUnit.MG_DL) ISF_MIN else BgDelta.fromMgDl(ISF_MIN.toInt().toShort()).mmol
+                        val isfMax = if (glucoseUnit == GlucoseUnit.MG_DL) ISF_MAX else BgDelta.fromMgDl(ISF_MAX.toInt().toShort()).mmol
+
+                        val displayBlocks = remember(isfBlocks, glucoseUnit) {
+                            isfBlocks.map { block ->
+                                block.copy(amount = if (glucoseUnit == GlucoseUnit.MG_DL) block.amount else BgDelta.fromMgDl(block.amount.toInt().toShort()).mmol)
+                            }
+                        }
+
+                        TherapyBlockListEditor(
+                            title = stringResource(id = R.string.insulin_profile_editor_isf_title),
+                            description = stringResource(id = R.string.insulin_profile_editor_isf_desc) + " " + stringResource(R.string.insulin_profile_editor_unit_info_format, isfUnitLabel()),
+                            blocks = displayBlocks,
+                            onBlocksChanged = { newDisplayBlocks ->
+                                isfBlocks = newDisplayBlocks.map { block ->
+                                    block.copy(amount = if (glucoseUnit == GlucoseUnit.MG_DL) block.amount else BgDelta.fromMmol(block.amount).mgdl.toDouble())
+                                }
+                            },
+                            step = isfStep,
+                            format = isfFormat,
+                            minValue = isfMin,
+                            maxValue = isfMax
+                        )
+                    }
                     3 -> TherapyBlockListEditor(
                         title = stringResource(id = R.string.insulin_profile_editor_cr_title),
-                        description = stringResource(id = R.string.insulin_profile_editor_cr_desc),
+                        description = stringResource(id = R.string.insulin_profile_editor_cr_desc) + " " + stringResource(R.string.insulin_profile_editor_unit_info_format, stringResource(R.string.unit_g_per_u)),
                         blocks = crBlocks,
                         onBlocksChanged = { crBlocks = it },
                         step = 0.1,

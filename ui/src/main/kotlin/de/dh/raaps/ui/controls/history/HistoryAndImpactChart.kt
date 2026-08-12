@@ -73,6 +73,7 @@ import de.dh.raaps.common.model.data.Minutes
 import de.dh.raaps.common.model.data.Timeline
 import de.dh.raaps.common.model.data.Timestamp
 import de.dh.raaps.ui.R
+import de.dh.raaps.ui.common.glucoseUnitLabel
 import de.dh.raaps.ui.common.theme.AppTheme
 import de.dh.raaps.ui.common.theme.ColorBg
 import de.dh.raaps.ui.common.theme.ColorCarbs
@@ -528,7 +529,7 @@ fun HistoryAndImpactChart(
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
             Text(
-                text = stringResource(R.string.history_impact_mgdl_label),
+                text = glucoseUnitLabel(),
                 style = MaterialTheme.typography.labelSmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )

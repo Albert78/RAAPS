@@ -173,6 +173,14 @@ fun glucoseUnitLabel(unit: GlucoseUnit = LocalGlucoseUnit.current): String {
 }
 
 @Composable
+fun isfUnitLabel(unit: GlucoseUnit = LocalGlucoseUnit.current): String {
+    return when (unit) {
+        GlucoseUnit.MG_DL -> stringResource(de.dh.raaps.ui.R.string.unit_mgdl_per_u)
+        GlucoseUnit.MMOL -> stringResource(de.dh.raaps.ui.R.string.unit_mmol_per_u)
+    }
+}
+
+@Composable
 fun glucoseValue(
     value: BgValue?,
     unit: GlucoseUnit = LocalGlucoseUnit.current,

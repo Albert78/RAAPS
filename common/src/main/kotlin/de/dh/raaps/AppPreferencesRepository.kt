@@ -14,6 +14,7 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 
 val Context.dataStore: DataStore<Preferences> by preferencesDataStore(name = "settings")
@@ -50,6 +51,14 @@ class AppPreferencesRepository(private val context: Context, private val scope: 
             scope = scope,
             started = SharingStarted.Eagerly,
             initialValue = null
+        )
+
+    val glucoseUnit: StateFlow<GlucoseUnit> = cachedPreferences
+        .map { it.glucoseUnit }
+        .stateIn(
+            scope = scope,
+            started = SharingStarted.Eagerly,
+            initialValue = GlucoseUnit.MG_DL
         )
 
     /**
