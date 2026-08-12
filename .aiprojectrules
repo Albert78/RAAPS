@@ -19,3 +19,17 @@
 
 ## Tonalität und Ansprache
 - **Duzen**: Der Nutzer wird in der gesamten App konsequent geduzt (z. B. "Möchtest du...", "Gib deinen Wert ein...").
+
+## Unit Handling and Formatting
+
+### Glucose Units, ISF and CR
+- **Central Formatting**: Always use the central formatting functions defined in `Formatters.kt` to display blood glucose values, ISF (Insulin Sensitivity Factor), and CR (Carb Ratio).
+- **CompositionLocal**: In Composables, access the user's preferred glucose unit via `LocalGlucoseUnit.current`.
+- **Standard Functions**:
+    - Use `glucoseValue(value, withUnit = ...)` for BG values.
+    - Use `isfValue(delta, withUnit = ...)` for ISF factors.
+    - Use `deltaValue(delta, withUnit = ...)` for BG differences (shows sign like + or -).
+    - Use `crValue(value, withUnit = ...)` for carb ratios.
+- **Unit Labels**: Use `glucoseUnitLabel()` or `isfUnitLabel()` if you only need the unit string itself.
+- **Strings resources**: Avoid hardcoding units like "mg/dL" or "mmol/l" in `strings.xml` descriptions. Keep descriptions neutral and show the unit dynamically in the UI next to the value field.
+- **ViewModels**: ViewModels should provide data using specific domain types (`BgValue`, `BgDelta`, `InsulinAmount`) or raw numeric values. Do not pre-format values with units in the ViewModel; let the UI handle the formatting based on the current `LocalGlucoseUnit`.
