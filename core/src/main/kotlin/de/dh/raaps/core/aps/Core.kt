@@ -161,11 +161,59 @@ class Core(
         busyWork {
             val now = Timestamp.now()
             val res = therapyManager.tryAcquire(TAG ?: "Core") { treatmentLock ->
-                onClearRecommendations(treatmentLock)
                 atomic {
-                    val alg = calculationAlgorithm
-                    if (!onWaitForInsulinJobs(treatmentLock)) {
-                        Log.i(TAG, "onTick: Recalculation skipped: Insulin jobs are still pending.")
+                    try {
+                        onClearRecommendations(treatmentLock)
+                        if (!onWaitForInsulinJobs(treatmentLock)) {
+                            Log.i(TAG, "onTick: Recalculation skipped: Insulin jobs are still pending.")
+                            scope.launch {
+                                coreInsightRepository.saveInsight(
+                                    CoreInsight(
+                                        timestamp = now,
+                                        bgOriginal = BgValue.INVALID,
+                                        bgFiltered = BgValue.INVALID,
+                                        deviationPerTick = BgDelta.fromMgDl(0),
+                                        iobAtPeak = InsulinAmount.ZERO,
+                                        cobAtPeak = 0.0,
+                                        predictedBgAtPeak = BgValue.INVALID,
+                                        targetBg = BgValue.INVALID,
+                                        isf = BgDelta.fromMgDl(0),
+                                        cr = 0.0,
+                                        reasoning = CoreReasoning.PENDING_PUMP_JOBS
+                                    )
+                                )
+                            }
+                            return@atomic
+                        }
+
+                        val result = calculationAlgorithm.recalculate()
+
+                        result.metrics?.let { insight ->
+                            scope.launch {
+                                coreInsightRepository.saveInsight(insight)
+                            }
+                        }
+
+                        if (result.carbsInGHint != null) {
+                            onCarbsHint(treatmentLock, result.carbsInGHint)
+                        }
+                        if (result.tempBasal != null) {
+                            onSetTempBasal(treatmentLock, result.tempBasal.durationInHours, result.tempBasal.percent)
+                        }
+                        if (result.clearTempBasal) {
+                            onClearTempBasal(treatmentLock)
+                        }
+                        if (result.bolus != null && result.bolus >= InsulinAmount.EPSILON) {
+                            onDeliverBolus(treatmentLock, result.bolus, result.handledDeferredBoluses)
+                        }
+
+                        // Core can be active and yet have issues. In this case, the user is notified
+                        // about the issues (e.g. no BG values) but the algorithm will still be called.
+                        // If the algorithm can recover from the issues, it will continue working
+                        // and remove the issues.
+                        setCoreState(CoreState.Active(result.coreIssues ?: emptySet()))
+                    } catch (e: Exception) {
+                        Log.e(TAG, "Error during core execution", e)
                         scope.launch {
                             coreInsightRepository.saveInsight(
                                 CoreInsight(
@@ -179,37 +227,11 @@ class Core(
                                     targetBg = BgValue.INVALID,
                                     isf = BgDelta.fromMgDl(0),
                                     cr = 0.0,
-                                    reasoning = CoreReasoning.PENDING_PUMP_JOBS
+                                    reasoning = CoreReasoning.INTERNAL_ERROR
                                 )
                             )
                         }
-                        return@atomic
                     }
-                    val result = alg.recalculate()
-
-                    if (result.carbsInGHint != null) {
-                        onCarbsHint(treatmentLock, result.carbsInGHint)
-                    }
-                    if (result.tempBasal != null) {
-                        onSetTempBasal(treatmentLock, result.tempBasal.durationInHours, result.tempBasal.percent)
-                    }
-                    if (result.clearTempBasal) {
-                        onClearTempBasal(treatmentLock)
-                    }
-                    if (result.bolus != null && result.bolus >= InsulinAmount.EPSILON) {
-                        onDeliverBolus(treatmentLock, result.bolus, result.handledDeferredBoluses)
-                    }
-
-                    result.metrics?.let { insight ->
-                        scope.launch {
-                            coreInsightRepository.saveInsight(insight)
-                        }
-                    }
-                    // Core can be active and yet have issues. In this case, the user is notified
-                    // about the issues (e.g. no BG values) but the algorithm will still be called.
-                    // If the algorithm can recover from the issues, it will continue working
-                    // and remove the issues.
-                    setCoreState(CoreState.Active(result.coreIssues ?: emptySet()))
                 }
             }
             if (res is LockResult.Busy) {
