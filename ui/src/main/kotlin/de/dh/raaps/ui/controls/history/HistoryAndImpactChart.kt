@@ -114,7 +114,7 @@ data class HistoryAndImpactDiagramData(
              * Axis scales:
              * X-Axis: 1 unit = 1 minute
              * Y-Axis (BG): mg/dL or mmol/l
-             * Y-Axis (Impact): Insulin Activity (I.E.) or Carb Absorption (KE)
+             * Y-Axis (Impact): Insulin Activity (I.E./h) or Carb Absorption (KE/h)
              * The calculation interval is based on the default system tick interval to match BG data density.
              */
             val validReadings = readings.filter { it.sampleKind == BgSampleKind.Value }
@@ -143,7 +143,6 @@ data class HistoryAndImpactDiagramData(
                 }
             }
 
-            val interval = Timeline.DEFAULT_TICK_INTERVAL.value.toDouble()
             for (i in 0..maxX.toInt() step Timeline.DEFAULT_TICK_INTERVAL.value.toInt()) {
                 val x = i.toDouble()
                 insulinX.add(x)
@@ -153,8 +152,8 @@ data class HistoryAndImpactDiagramData(
                 for (app in insulinApplications) {
                     val xStart = (app.timestamp.ms - baseTimestamp).toDouble() / MS_PER_MINUTE
                     val timeSinceApp = x - xStart
-                    // normalizedActivity * interval gives activity in the specified time interval
-                    totalInsulinActivity += app.amount.iu * insulinCurve.normalizedActivity(timeSinceApp) * interval
+                    // normalizedActivity * 60.0 gives activity as hourly rate (IU/h)
+                    totalInsulinActivity += app.amount.iu * insulinCurve.normalizedActivity(timeSinceApp) * 60.0
                 }
                 insulinY.add(totalInsulinActivity)
 
@@ -168,7 +167,8 @@ data class HistoryAndImpactDiagramData(
                         for ((curve, weight) in components) {
                             mealAbsorptionRate += curve.normalizedActivity(timeSinceMeal) * weight
                         }
-                        totalCarbAbsorption += (meal.carbGrams * mealAbsorptionRate * interval) / 10.0
+                        // Multiply by 60.0 for hourly rate (g/h), divide by 10.0 for KE/h
+                        totalCarbAbsorption += (meal.carbGrams * mealAbsorptionRate * 60.0) / 10.0
                     }
                 }
                 carbY.add(totalCarbAbsorption)
@@ -480,10 +480,10 @@ fun HistoryAndImpactChart(
             private fun getValues(maxY: Double): List<Double> {
                 val v = mutableListOf<Double>()
                 val step = when {
-                    maxY <= 0.2 -> 0.05
-                    maxY <= 0.5 -> 0.1
                     maxY <= 1.0 -> 0.2
-                    maxY <= 10.0 -> 1.0
+                    maxY <= 2.0 -> 0.5
+                    maxY <= 5.0 -> 1.0
+                    maxY <= 10.0 -> 2.0
                     else -> 5.0
                 }
                 var c = 0.0
@@ -520,9 +520,9 @@ fun HistoryAndImpactChart(
     val keLabel = stringResource(R.string.history_impact_ke_label)
     val impactLabel = remember(showInsulin, showCarbs, ieLabel, keLabel) {
         listOfNotNull(
-            if (showInsulin) ieLabel else null,
-            if (showCarbs) keLabel else null
-        ).joinToString("/")
+            if (showInsulin) "$ieLabel/h" else null,
+            if (showCarbs) "$keLabel/h" else null
+        ).joinToString(" | ")
     }
 
     Column(modifier = modifier) {
@@ -559,7 +559,7 @@ fun HistoryAndImpactChart(
                     rangeProvider = remember(diagramData.minX, diagramData.maxX) {
                         object : CartesianLayerRangeProvider {
                             override fun getMinY(minY: Double, maxY: Double, extraStore: ExtraStore) = 0.0
-                            override fun getMaxY(minY: Double, maxY: Double, extraStore: ExtraStore) = maxY.coerceAtLeast(0.2) * 1.1
+                            override fun getMaxY(minY: Double, maxY: Double, extraStore: ExtraStore) = maxY.coerceAtLeast(2.0) * 1.1
                             override fun getMinX(minX: Double, maxX: Double, extraStore: ExtraStore) = diagramData.minX
                             override fun getMaxX(minX: Double, maxX: Double, extraStore: ExtraStore) = diagramData.maxX
                         }
