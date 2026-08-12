@@ -305,8 +305,8 @@ fun RaapsDrawerContent(
                 RaapsDrawerItem(
                     label = stringResource(id = R.string.menu_system_control_label),
                     icon = Icon_Menu_System_Control,
-                    selected = currentRoute == SystemControlRoute,
-                    onClick = { onRouteSelected(SystemControlRoute) }
+                    selected = currentRoute is SystemControlRoute,
+                    onClick = { onRouteSelected(SystemControlRoute()) }
                 )
             }
         }

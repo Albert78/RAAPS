@@ -461,7 +461,8 @@ class ApsAlgorithmImpl(
             ).copy(metrics = insight)
         }
     } catch (e: Exception) {
-        CalculationResult.algorithmIssues(AlgorithmIssue.InternalError(e.message))
+        Log.e(TAG, "Error while recalculating", e)
+        CalculationResult.algorithmIssues(AlgorithmIssue.InternalError(e.message ?: e.javaClass.simpleName))
     }
 
     companion object {

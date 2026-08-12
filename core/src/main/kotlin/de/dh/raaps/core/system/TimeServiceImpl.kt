@@ -15,7 +15,6 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import java.util.concurrent.CopyOnWriteArrayList
-import kotlin.time.Duration.Companion.milliseconds
 
 /**
  * Implementation of [TimeService] that synchronizes its ticking grid with an external reference.
@@ -45,11 +44,11 @@ class TimeServiceImpl(
 
     override fun onWakeup(wakeupId: UInt?, intent: Intent?) {
         Log.d(TAG, "System wakeup received (wakeupId=$wakeupId)")
-        
+
         scope.launch {
             try {
                 wakeService.acquireBusyState(TAG)
-                
+
                 val tick = timeline.getNowTick()
                 Log.d(TAG, "Tick triggered via system wakeup: $tick (timelineOffset=${timeline.offsetMs})")
 
@@ -111,7 +110,7 @@ class TimeServiceImpl(
             val adjustment = (diff * 0.2).toLong()
             timeline.offsetMs += adjustment
             Log.d(TAG, "Sync adjustment: targetOffset=$targetOffsetMs, currentOffset=${timeline.offsetMs}, adj=$adjustment")
-            
+
             // Re-schedule next tick to align with new offset
             scheduleNextTick()
         }
@@ -124,12 +123,12 @@ class TimeServiceImpl(
             Log.d(TAG, "Waiting for initial synchronization...")
             firstSyncDeferred.await()
             Log.d(TAG, "Starting event-driven ticking cycle with offset ${timeline.offsetMs}")
-            
+
             scheduleNextTick()
         }
     }
 
     companion object {
-        private const val TAG = "SynchronizedTimeService"
+        private val TAG = TimeServiceImpl::class.simpleName!!
     }
 }

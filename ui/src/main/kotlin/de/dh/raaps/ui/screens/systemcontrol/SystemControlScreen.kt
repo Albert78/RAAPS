@@ -1,6 +1,5 @@
 package de.dh.raaps.ui.screens.systemcontrol
 
-import android.content.res.Configuration
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -19,11 +18,9 @@ import androidx.compose.material.icons.filled.Cancel
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Pause
 import androidx.compose.material.icons.filled.PlayArrow
-import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Sync
 import androidx.compose.material.icons.filled.WaterDrop
-import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -31,13 +28,16 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.PrimaryTabRow
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Tab
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -53,24 +53,29 @@ import de.dh.raaps.common.model.data.Timestamp
 import de.dh.raaps.core.pump.PumpCommand
 import de.dh.raaps.ui.R
 import de.dh.raaps.ui.common.composables.PrimaryButton
-import de.dh.raaps.ui.common.composables.SecondaryButton
 import de.dh.raaps.ui.common.composables.screenTitle
 import de.dh.raaps.ui.common.theme.AppTheme
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 
+const val SYSTEM_CONTROL_TAB_CGM = 0
+const val SYSTEM_CONTROL_TAB_PUMP = 1
+const val SYSTEM_CONTROL_TAB_ALGORITHM = 2
+
 @Composable
 fun SystemControlScreen(
     onNavigateUp: () -> Unit,
     onNavigateToAlgorithmDecisions: () -> Unit,
     onNavigateToPumpManagement: () -> Unit,
-    viewModel: SystemControlViewModel
+    viewModel: SystemControlViewModel,
+    initialTab: Int = SYSTEM_CONTROL_TAB_CGM
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
     SystemControlContent(
         uiState = uiState,
+        initialTab = initialTab,
         onNavigateUp = onNavigateUp,
         onNavigateToAlgorithmDecisions = onNavigateToAlgorithmDecisions,
         onNavigateToPumpManagement = onNavigateToPumpManagement,
@@ -83,6 +88,7 @@ fun SystemControlScreen(
 @Composable
 fun SystemControlContent(
     uiState: SystemControlUiState,
+    initialTab: Int = SYSTEM_CONTROL_TAB_CGM,
     onNavigateUp: () -> Unit,
     onNavigateToAlgorithmDecisions: () -> Unit,
     onNavigateToPumpManagement: () -> Unit,
@@ -90,20 +96,43 @@ fun SystemControlContent(
     onRefreshPumpStatus: () -> Unit
 ) {
     val timeFormat = remember { SimpleDateFormat("HH:mm:ss", Locale.getDefault()) }
+    var selectedTabIndex by remember { mutableIntStateOf(initialTab) }
+    val tabs = listOf(
+        stringResource(id = R.string.system_control_tab_cgm),
+        stringResource(id = R.string.system_control_tab_pump),
+        stringResource(id = R.string.system_control_tab_algorithm)
+    )
 
     Scaffold(
         topBar = {
-            TopAppBar(
-                title = screenTitle(stringResource(id = R.string.system_control_screen_title)),
-                navigationIcon = {
-                    IconButton(onClick = onNavigateUp) {
-                        Icon(
-                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = stringResource(id = de.dh.raaps.common.R.string.cd_navigate_up)
+            Column {
+                TopAppBar(
+                    title = screenTitle(stringResource(id = R.string.system_control_screen_title)),
+                    navigationIcon = {
+                        IconButton(onClick = onNavigateUp) {
+                            Icon(
+                                imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                                contentDescription = stringResource(id = de.dh.raaps.common.R.string.cd_navigate_up)
+                            )
+                        }
+                    }
+                )
+                PrimaryTabRow(selectedTabIndex = selectedTabIndex) {
+                    tabs.forEachIndexed { index, title ->
+                        Tab(
+                            selected = selectedTabIndex == index,
+                            onClick = { selectedTabIndex = index },
+                            text = {
+                                Text(
+                                    text = title,
+                                    maxLines = 1,
+                                    style = MaterialTheme.typography.titleSmall
+                                )
+                            }
                         )
                     }
                 }
-            )
+            }
         }
     ) { innerPadding ->
         LazyColumn(
@@ -112,58 +141,62 @@ fun SystemControlContent(
                 .padding(innerPadding)
                 .padding(horizontal = 16.dp)
         ) {
-            item {
-                Spacer(modifier = Modifier.height(16.dp))
-                SectionHeader(title = stringResource(id = R.string.system_control_cgm_subsystem))
-                CgmOverviewCard(uiState, timeFormat)
-            }
-
-            item {
-                Spacer(modifier = Modifier.height(24.dp))
-                SectionHeader(title = stringResource(id = R.string.system_control_pump_subsystem))
-                // TODO Ideas for Pump Subsystem:
-                // - Display current Basal Rate (U/h) from pump.basalStatus
-                // - Show active Bolus progress
-                // - Pump Time vs System Time sync status
-                // - Predicted time until reservoir is empty
-                // - Display active Pump Alerts (batteryLow, reservoirLow, etc.)
-                PumpOverviewCard(uiState, timeFormat)
-                PumpActionsCard(
-                    uiState = uiState,
-                    onNavigateToPumpManagement = onNavigateToPumpManagement,
-                    onRefreshPumpStatus = onRefreshPumpStatus
-                )
-            }
-
-            if (uiState.pendingPumpJobs.isNotEmpty()) {
-                item {
-                    Spacer(modifier = Modifier.height(16.dp))
-                    PumpJobsCard(uiState, onCancelPumpJob)
+            when (selectedTabIndex) {
+                SYSTEM_CONTROL_TAB_CGM -> {
+                    item {
+                        Spacer(modifier = Modifier.height(16.dp))
+                        CgmOverviewCard(uiState, timeFormat)
+                    }
                 }
-            }
 
-            item {
-                Spacer(modifier = Modifier.height(24.dp))
-                SectionHeader(title = stringResource(id = R.string.system_control_algorithm_subsystem))
-                Card(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(vertical = 8.dp),
-                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
-                ) {
-                    Column(
-                        modifier = Modifier
-                            .padding(16.dp)
-                            .fillMaxWidth(),
-                        horizontalAlignment = Alignment.CenterHorizontally
-                    ) {
-                        Text("Algorithm Status: Operational", style = MaterialTheme.typography.bodyLarge)
-                        Spacer(modifier = Modifier.height(8.dp))
-                        PrimaryButton(onClick = onNavigateToAlgorithmDecisions) {
-                            Text(stringResource(id = R.string.system_control_algorithm_history_button))
+                SYSTEM_CONTROL_TAB_PUMP -> {
+                    item {
+                        Spacer(modifier = Modifier.height(16.dp))
+                        PumpOverviewCard(uiState, timeFormat)
+                        PumpActionsCard(
+                            uiState = uiState,
+                            onNavigateToPumpManagement = onNavigateToPumpManagement,
+                            onRefreshPumpStatus = onRefreshPumpStatus
+                        )
+                    }
+
+                    if (uiState.pendingPumpJobs.isNotEmpty()) {
+                        item {
+                            Spacer(modifier = Modifier.height(16.dp))
+                            PumpJobsCard(uiState, onCancelPumpJob)
                         }
                     }
                 }
+
+                SYSTEM_CONTROL_TAB_ALGORITHM -> {
+                    item {
+                        Spacer(modifier = Modifier.height(16.dp))
+                        Card(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(vertical = 8.dp),
+                            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
+                        ) {
+                            Column(
+                                modifier = Modifier
+                                    .padding(16.dp)
+                                    .fillMaxWidth(),
+                                horizontalAlignment = Alignment.CenterHorizontally
+                            ) {
+                                Text(
+                                    "Algorithm Status: Operational",
+                                    style = MaterialTheme.typography.bodyLarge
+                                )
+                                Spacer(modifier = Modifier.height(8.dp))
+                                PrimaryButton(onClick = onNavigateToAlgorithmDecisions) {
+                                    Text(stringResource(id = R.string.system_control_algorithm_history_button))
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            item {
                 Spacer(modifier = Modifier.height(16.dp))
             }
         }
@@ -492,23 +525,13 @@ fun SectionHeader(title: String) {
     }
 }
 
-@Preview(showBackground = true, name = "Light Mode")
-@Preview(showBackground = true, uiMode = Configuration.UI_MODE_NIGHT_YES, name = "Dark Mode")
+@Preview(showBackground = true, name = "CGM Tab")
 @Composable
-fun SystemControlPreview() {
+fun SystemControlCgmPreview() {
     AppTheme {
         SystemControlContent(
-            uiState = SystemControlUiState(
-                glucoseSourceName = "Dexcom G6",
-                sensorTypeName = "G6-Sensor",
-                readingsInterval = BgReadingsInterval.FiveMinutes,
-                lastBgReading = null,
-                nextPredictedTimestamp = de.dh.raaps.common.model.data.Timestamp(System.currentTimeMillis() + 300000),
-                glucoseUnit = de.dh.raaps.common.model.data.GlucoseUnit.MG_DL,
-                pumpConnected = true,
-                pumpModel = "DANA-i",
-                pendingPumpJobs = emptyList()
-            ),
+            uiState = previewUiState(),
+            initialTab = SYSTEM_CONTROL_TAB_CGM,
             onNavigateUp = {},
             onNavigateToAlgorithmDecisions = {},
             onNavigateToPumpManagement = {},
@@ -517,3 +540,53 @@ fun SystemControlPreview() {
         )
     }
 }
+
+@Preview(showBackground = true, name = "Pump Tab")
+@Composable
+fun SystemControlPumpPreview() {
+    AppTheme {
+        SystemControlContent(
+            uiState = previewUiState().copy(
+                pendingPumpJobs = listOf(
+                    de.dh.raaps.core.pump.PumpJob(
+                        command = de.dh.raaps.core.pump.PumpCommand.DeliverBolus(de.dh.raaps.common.model.InsulinAmount(1.5)),
+                        isCancelableAPSCommand = false
+                    )
+                )
+            ),
+            initialTab = SYSTEM_CONTROL_TAB_PUMP,
+            onNavigateUp = {},
+            onNavigateToAlgorithmDecisions = {},
+            onNavigateToPumpManagement = {},
+            onCancelPumpJob = {},
+            onRefreshPumpStatus = {}
+        )
+    }
+}
+
+@Preview(showBackground = true, name = "Algorithm Tab")
+@Composable
+fun SystemControlAlgorithmPreview() {
+    AppTheme {
+        SystemControlContent(
+            uiState = previewUiState(),
+            initialTab = SYSTEM_CONTROL_TAB_ALGORITHM,
+            onNavigateUp = {},
+            onNavigateToAlgorithmDecisions = {},
+            onNavigateToPumpManagement = {},
+            onCancelPumpJob = {},
+            onRefreshPumpStatus = {}
+        )
+    }
+}
+
+private fun previewUiState() = SystemControlUiState(
+    glucoseSourceName = "Dexcom G6",
+    sensorTypeName = "G6-Sensor",
+    readingsInterval = BgReadingsInterval.FiveMinutes,
+    lastBgReading = null,
+    nextPredictedTimestamp = de.dh.raaps.common.model.data.Timestamp(System.currentTimeMillis() + 300000),
+    glucoseUnit = de.dh.raaps.common.model.data.GlucoseUnit.MG_DL,
+    pumpConnected = true,
+    pumpModel = "DANA-i"
+)

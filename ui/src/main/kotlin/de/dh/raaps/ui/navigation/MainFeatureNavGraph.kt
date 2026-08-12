@@ -294,6 +294,7 @@ class MainFeatureNavGraph(
                 )
                 SystemControlScreen(
                     viewModel = vm,
+                    initialTab = key.initialTab,
                     onNavigateUp = { navViewModel.pop() },
                     onNavigateToAlgorithmDecisions = { navViewModel.push(AlgorithmDecisionsRoute) },
                     onNavigateToPumpManagement = { navViewModel.push(PumpManagementRoute) }

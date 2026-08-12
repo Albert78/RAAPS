@@ -239,7 +239,7 @@
     <string name="bolus_origin_manual">Manuell</string>
     <string name="cd_edit">Bearbeiten</string>
     <string name="system_control_screen_title">Systemsteuerung</string>
-    <string name="system_control_cgm_subsystem">CGM-Teilsystem</string>
+    <string name="system_control_tab_cgm">CGM</string>
     <string name="system_control_cgm_source_label">Quelle:</string>
     <string name="system_control_cgm_sensor_type_label">Sensortyp:</string>
     <string name="system_control_cgm_interval_label">Intervall:</string>
@@ -251,7 +251,7 @@
     <string name="system_control_cgm_interval_5min">5 Min.</string>
     <string name="system_control_cgm_interval_adhoc">Ad-hoc</string>
     <string name="system_control_cgm_not_connected">Nicht verbunden</string>
-    <string name="system_control_pump_subsystem">Pumpen-Teilsystem</string>
+    <string name="system_control_tab_pump">Pumpe</string>
     <string name="system_control_pump_model_label">Modell:</string>
     <string name="system_control_pump_status_label">Status:</string>
     <string name="system_control_pump_battery_label">Batterie:</string>
@@ -281,7 +281,7 @@
     <string name="pump_management_prime_cannula">Katheter füllen (Prime)</string>
     <string name="pump_management_prime_tubing">Schlauch füllen</string>
 
-    <string name="system_control_algorithm_subsystem">Algorithmus</string>
+    <string name="system_control_tab_algorithm">Algorithmus</string>
     <string name="system_control_algorithm_history_button">Verlauf</string>
 
     <string name="algorithm_decisions_screen_title">Algorithmus-Entscheidungen</string>
