@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -67,6 +68,8 @@ import de.dh.raaps.common.model.data.BgSampleKind
 import de.dh.raaps.common.model.data.GlucoseUnit
 import de.dh.raaps.common.model.data.Timestamp
 import de.dh.raaps.ui.R
+import de.dh.raaps.ui.common.LocalGlucoseUnit
+import de.dh.raaps.ui.common.LocalAppFormatters
 import de.dh.raaps.ui.common.LocalGlucoseUnit
 import de.dh.raaps.ui.common.glucoseValue
 import de.dh.raaps.ui.common.composables.BlueA200
@@ -607,18 +610,24 @@ fun createSampleDiagramData(size: Int, minsInterval: Short): HistoryDiagramData 
 @Composable
 fun HistoryChart5Preview() {
     val diagramData = remember { createSampleDiagramData(120, 5) }
-    AppTheme { BgHistoryChart(diagramData, modifier = Modifier.height(300.dp)) }
+    CompositionLocalProvider(LocalGlucoseUnit provides GlucoseUnit.MG_DL) {
+        AppTheme { BgHistoryChart(diagramData, modifier = Modifier.height(300.dp)) }
+    }
 }
 
 @Preview(showBackground = true)
 @Composable
 fun HistoryChart1Preview() {
     val diagramData = remember { createSampleDiagramData(600, 1) }
-    AppTheme { BgHistoryChart(diagramData, modifier = Modifier.height(300.dp)) }
+    CompositionLocalProvider(LocalGlucoseUnit provides GlucoseUnit.MG_DL) {
+        AppTheme { BgHistoryChart(diagramData, modifier = Modifier.height(300.dp)) }
+    }
 }
 
 @Preview(showBackground = true)
 @Composable
 fun HistoryChartDefaultPreview() {
-    AppTheme { BgHistoryChartOrDefault(diagramData = null, modifier = Modifier.height(300.dp)) }
+    CompositionLocalProvider(LocalGlucoseUnit provides GlucoseUnit.MG_DL) {
+        AppTheme { BgHistoryChartOrDefault(diagramData = null, modifier = Modifier.height(300.dp)) }
+    }
 }

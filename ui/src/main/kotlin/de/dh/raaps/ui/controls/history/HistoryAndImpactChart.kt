@@ -22,6 +22,7 @@ import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextStyle
@@ -74,6 +75,7 @@ import de.dh.raaps.common.model.data.Minutes
 import de.dh.raaps.common.model.data.Timeline
 import de.dh.raaps.common.model.data.Timestamp
 import de.dh.raaps.ui.R
+import de.dh.raaps.ui.common.LocalGlucoseUnit
 import de.dh.raaps.ui.common.glucoseUnitLabel
 import de.dh.raaps.ui.common.theme.AppTheme
 import de.dh.raaps.ui.common.theme.ColorBg
@@ -657,21 +659,25 @@ fun HistoryAndImpactChartOrDefault(
 @Composable
 fun HistoryAndImpactChartPreview() {
     val diagramData = remember { createSampleImpactDiagramData() }
-    AppTheme {
-        HistoryAndImpactChart(
-            diagramData = diagramData,
-            modifier = Modifier.height(300.dp)
-        )
+    CompositionLocalProvider(LocalGlucoseUnit provides GlucoseUnit.MG_DL) {
+        AppTheme {
+            HistoryAndImpactChart(
+                diagramData = diagramData,
+                modifier = Modifier.height(300.dp)
+            )
+        }
     }
 }
 
 @Preview(showBackground = true)
 @Composable
 fun HistoryAndImpactChartDefaultPreview() {
-    AppTheme {
-        HistoryAndImpactChartOrDefault(
-            diagramData = null,
-            modifier = Modifier.height(300.dp)
-        )
+    CompositionLocalProvider(LocalGlucoseUnit provides GlucoseUnit.MG_DL) {
+        AppTheme {
+            HistoryAndImpactChartOrDefault(
+                diagramData = null,
+                modifier = Modifier.height(300.dp)
+            )
+        }
     }
 }
