@@ -12,7 +12,7 @@ import androidx.core.content.getSystemService
 import de.dh.raaps.R
 import de.dh.raaps.common.model.ToDo
 import de.dh.raaps.common.model.data.BgValue
-import de.dh.raaps.core.aps.AlgorithmIssue
+import de.dh.raaps.core.aps.CoreIssue
 import de.dh.raaps.core.aps.ApsRecommendation
 import de.dh.raaps.core.aps.GlucoseSourceManager
 import de.dh.raaps.core.system.AndroidNotifications
@@ -142,18 +142,19 @@ class AndroidNotificationsImpl(
         manager.cancel(RECOMMENDATION_NOTIFICATION_ID)
     }
 
-    override fun showAlgorithmIssueNotification(issue: AlgorithmIssue) {
-        val title = context.getString(UiR.string.algorithm_issue_title)
+    override fun showCoreIssueNotification(issue: CoreIssue) {
+        val title = context.getString(UiR.string.core_issue_title)
         val text = when (issue) {
-            is AlgorithmIssue.NoRecentValues -> context.getString(
-                UiR.string.algorithm_issue_no_recent_values,
+            is CoreIssue.NoRecentValues -> context.getString(
+                UiR.string.core_issue_no_recent_values,
                 issue.minutes
             )
-            is AlgorithmIssue.NoisyValues -> context.getString(UiR.string.algorithm_issue_noisy_values)
-            is AlgorithmIssue.InternalError -> context.getString(
-                UiR.string.algorithm_issue_internal_error,
+            is CoreIssue.NoisyValues -> context.getString(UiR.string.core_issue_noisy_values)
+            is CoreIssue.InternalError -> context.getString(
+                UiR.string.core_issue_internal_error,
                 issue.message ?: "Unknown"
             )
+            CoreIssue.TherapyLockBusy -> context.getString(UiR.string.core_issue_therapy_lock_busy)
         }
 
         val dashboardIntent = MainActivity.createStartDashboardIntent(context)
@@ -177,7 +178,7 @@ class AndroidNotificationsImpl(
         notify(ALGORITHM_ISSUE_NOTIFICATION_ID, notification)
     }
 
-    override fun cancelAlgorithmIssueNotification() {
+    override fun cancelCoreIssueNotification() {
         manager.cancel(ALGORITHM_ISSUE_NOTIFICATION_ID)
     }
 

@@ -99,7 +99,7 @@ class ApsAlgorithmImpl(
         val clearTempBasal: Boolean,
         val bolus: InsulinAmount?,
         val handledDeferredBoluses: List<DeferredBolus>?,
-        val algorithmIssues: List<AlgorithmIssue>?,
+        val coreIssues: Set<CoreIssue>?,
         val reasoning: CoreReasoning,
         val metrics: CoreInsight? = null
     ) {
@@ -110,7 +110,7 @@ class ApsAlgorithmImpl(
                 clearTempBasal = true,
                 bolus = null,
                 handledDeferredBoluses = null,
-                algorithmIssues = null,
+                coreIssues = null,
                 reasoning = CoreReasoning.SAFETY_BASAL_FALLBACK
             )
 
@@ -120,7 +120,7 @@ class ApsAlgorithmImpl(
                 clearTempBasal = true,
                 bolus = null,
                 handledDeferredBoluses = null,
-                algorithmIssues = null,
+                coreIssues = null,
                 reasoning = CoreReasoning.NORMAL_CONDITION_SAFETY_BASAL
             )
 
@@ -133,7 +133,7 @@ class ApsAlgorithmImpl(
                 clearTempBasal = false,
                 bolus = null,
                 handledDeferredBoluses = null,
-                algorithmIssues = null,
+                coreIssues = null,
                 reasoning = CoreReasoning.LOW_PREDICTED_LOW_BASAL
             )
 
@@ -143,7 +143,7 @@ class ApsAlgorithmImpl(
                 clearTempBasal = false,
                 bolus = null,
                 handledDeferredBoluses = null,
-                algorithmIssues = null,
+                coreIssues = null,
                 reasoning = CoreReasoning.LOW_PREDICTED_ZERO_TEMP
             )
 
@@ -153,7 +153,7 @@ class ApsAlgorithmImpl(
                 clearTempBasal = false,
                 bolus = null,
                 handledDeferredBoluses = null,
-                algorithmIssues = null,
+                coreIssues = null,
                 reasoning = CoreReasoning.LOW_PREDICTED_CARBS_SUGGESTION
             )
 
@@ -166,18 +166,18 @@ class ApsAlgorithmImpl(
                 clearTempBasal = true,
                 bolus = bolusAmount,
                 handledDeferredBoluses = handledDeferredBoluses,
-                algorithmIssues = null,
+                coreIssues = null,
                 reasoning = CoreReasoning.MEAL_OR_CORRECTION_BOLUS
             )
 
-            fun algorithmIssues(vararg issues: AlgorithmIssue) = CalculationResult(
+            fun coreIssues(vararg issues: CoreIssue) = CalculationResult(
                 carbsInGHint = null,
                 tempBasal = null,
                 clearTempBasal = true,
                 bolus = null,
                 handledDeferredBoluses = null,
-                algorithmIssues = issues.toList(),
-                reasoning = if (issues.any { it is AlgorithmIssue.NoRecentValues })
+                coreIssues = issues.toSet(),
+                reasoning = if (issues.any { it is CoreIssue.NoRecentValues })
                     CoreReasoning.NO_RECENT_VALUES
                 else
                     CoreReasoning.INTERNAL_ERROR
@@ -185,7 +185,7 @@ class ApsAlgorithmImpl(
         }
     }
 
-    override suspend fun recalculate(treatmentLock: TreatmentLock): List<AlgorithmIssue> {
+    override suspend fun recalculate(treatmentLock: TreatmentLock): Set<CoreIssue> {
         onCancelInsulinJobs(treatmentLock)
 
         val result = doRecalculate()
@@ -212,7 +212,7 @@ class ApsAlgorithmImpl(
             ))
         }
 
-        return result.algorithmIssues ?: emptyList()
+        return result.coreIssues ?: emptySet()
     }
 
     suspend fun doRecalculate(): CalculationResult = try {
@@ -234,6 +234,9 @@ class ApsAlgorithmImpl(
                 filtered = sampledBgReadings.calculatePTWMA(0.7)
             }
 
+            // TODO: Add detection for noisy values. If values are too noisy,
+            // If too noisy, return CalculationResult.coreIssues(NoisyValues)
+
             // ----------------------------- Switch off algorithm handling -----------------------------
             if (filtered.isInvalid()) {
                 var receivedValidValue = false
@@ -244,8 +247,8 @@ class ApsAlgorithmImpl(
                     }
                 }
                 if (!receivedValidValue) {
-                    return@doRecalculate CalculationResult.algorithmIssues(
-                        AlgorithmIssue.NoRecentValues(SWITCH_OFF_ALGORITHM_INVALID_VALUES_THRESHOLD_IN_MINUTES)
+                    return@doRecalculate CalculationResult.coreIssues(
+                        CoreIssue.NoRecentValues(SWITCH_OFF_ALGORITHM_INVALID_VALUES_THRESHOLD_IN_MINUTES)
                     )
                 }
                 // We cannot make any new predictions if we don't have fresh values.
@@ -462,7 +465,7 @@ class ApsAlgorithmImpl(
         }
     } catch (e: Exception) {
         Log.e(TAG, "Error while recalculating", e)
-        CalculationResult.algorithmIssues(AlgorithmIssue.InternalError(e.message ?: e.javaClass.simpleName))
+        CalculationResult.coreIssues(CoreIssue.InternalError(e.message ?: e.javaClass.simpleName))
     }
 
     companion object {

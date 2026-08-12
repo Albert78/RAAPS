@@ -5,10 +5,11 @@ import de.dh.raaps.common.model.data.BgDelta
 import de.dh.raaps.common.model.data.BgValue
 import de.dh.raaps.common.model.data.Timestamp
 
-sealed class AlgorithmIssue {
-    data class NoRecentValues(val minutes: Int) : AlgorithmIssue()
-    data object NoisyValues : AlgorithmIssue()
-    data class InternalError(val message: String?) : AlgorithmIssue()
+sealed class CoreIssue {
+    data class NoRecentValues(val minutes: Int) : CoreIssue()
+    data object NoisyValues : CoreIssue()
+    data class InternalError(val message: String?) : CoreIssue()
+    data object TherapyLockBusy : CoreIssue()
 }
 
 enum class CoreReasoning {
@@ -45,7 +46,7 @@ interface ApsAlgorithm {
     suspend fun updateTherapySettings()
     suspend fun updateMeals()
     suspend fun updateInsulin()
-    suspend fun recalculate(treatmentLock: TreatmentLock): List<AlgorithmIssue>
+    suspend fun recalculate(treatmentLock: TreatmentLock): Set<CoreIssue>
 }
 
 class NoopAlgorithm: ApsAlgorithm {
@@ -61,7 +62,7 @@ class NoopAlgorithm: ApsAlgorithm {
         // Do nothing
     }
 
-    override suspend fun recalculate(treatmentLock: TreatmentLock): List<AlgorithmIssue> {
-        return emptyList()
+    override suspend fun recalculate(treatmentLock: TreatmentLock): Set<CoreIssue> {
+        return emptySet()
     }
 }

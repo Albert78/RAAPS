@@ -19,5 +19,5 @@ import kotlinx.serialization.Serializable
 @Serializable object TherapyAdjustmentRoute : NavKey
 @Serializable data class SystemControlRoute(val initialTab: Int = 0) : NavKey
 @Serializable object PumpManagementRoute : NavKey
-@Serializable object AlgorithmDecisionsRoute : NavKey
+@Serializable object CoreDecisionsRoute : NavKey
 @Serializable object AlarmsRoute : NavKey

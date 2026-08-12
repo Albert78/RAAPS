@@ -33,7 +33,9 @@ sealed interface CoreState {
     /**
      * The APS core is working and all data are valid.
      */
-    data class Active(val issues: List<AlgorithmIssue> = emptyList()) : CoreState
+    data class Active(val issues: Set<CoreIssue> = emptySet()) : CoreState {
+        constructor(vararg issues: CoreIssue) : this(issues.toSet())
+    }
 
     /**
      * The APS Core is suspended by the user.
@@ -202,8 +204,9 @@ class Core(
                 }
             }
             if (res is LockResult.Busy) {
-                // TODO: Show popup to the user about skipping algorithm calculation
                 Log.i(TAG, "Core skipping tick since therapy manager is busy (lock owner: ${res.owner})")
+                setCoreState(CoreState.Active(CoreIssue.TherapyLockBusy))
+
                 scope.launch {
                     coreInsightRepository.saveInsight(
                         CoreInsight(

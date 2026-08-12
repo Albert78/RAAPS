@@ -129,10 +129,11 @@
     <string name="recommendation_text_bolus">Verabreiche dir %1$.2fU Insulin, um einen hohen Blutzucker zu korrigieren.</string>
 
     <string name="algorithm_issue_notification_channel_name">Algorithmus-Warnungen</string>
-    <string name="algorithm_issue_title">Eingriff erforderlich</string>
-    <string name="algorithm_issue_no_recent_values">Keine aktuellen Glukosewerte seit %1$d Minuten. Bitte kontrolliere deine Werte manuell.</string>
-    <string name="algorithm_issue_noisy_values">Die Glukosewerte sind zu verrauscht für eine sichere Berechnung. Bitte kontrolliere deine Werte manuell.</string>
-    <string name="algorithm_issue_internal_error">Interner Fehler im Algorithmus: %1$s</string>
+    <string name="core_issue_title">Berechnungen blockiert</string>
+    <string name="core_issue_no_recent_values">Keine aktuellen Glukosewerte seit %1$d Minuten.</string>
+    <string name="core_issue_noisy_values">Die Glukosewerte sind zu verrauscht für eine sichere Berechnung.</string>
+    <string name="core_issue_internal_error">Interner Fehler im Algorithmus: %1$s</string>
+    <string name="core_issue_therapy_lock_busy">Therapie-Sperre aktiv (Nutzer-Aktion)</string>
 
     <string name="insulin_unit_label_format">%1$.2f I.E.</string>
 

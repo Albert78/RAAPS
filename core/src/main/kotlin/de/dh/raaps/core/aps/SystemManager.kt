@@ -192,9 +192,9 @@ class SystemManagerImpl(
         scope.launch {
             coreState.collect { state ->
                 if (state is CoreState.Active && state.issues.isNotEmpty()) {
-                    androidNotifications.showAlgorithmIssueNotification(state.issues.first())
+                    androidNotifications.showCoreIssueNotification(state.issues.first())
                 } else {
-                    androidNotifications.cancelAlgorithmIssueNotification()
+                    androidNotifications.cancelCoreIssueNotification()
                 }
             }
         }

@@ -14,9 +14,9 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation3.runtime.NavEntry
 import androidx.navigation3.runtime.NavKey
 import de.dh.raaps.common.navigation.AlarmsRoute
-import de.dh.raaps.common.navigation.AlgorithmDecisionsRoute
 import de.dh.raaps.common.navigation.BgEditorRoute
 import de.dh.raaps.common.navigation.BolusHistoryRoute
+import de.dh.raaps.common.navigation.CoreDecisionsRoute
 import de.dh.raaps.common.navigation.CurrentTherapySettingsRoute
 import de.dh.raaps.common.navigation.DashboardRoute
 import de.dh.raaps.common.navigation.FeatureNavGraph
@@ -296,7 +296,7 @@ class MainFeatureNavGraph(
                     viewModel = vm,
                     initialTab = key.initialTab,
                     onNavigateUp = { navViewModel.pop() },
-                    onNavigateToAlgorithmDecisions = { navViewModel.push(AlgorithmDecisionsRoute) },
+                    onNavigateToCoreDecisions = { navViewModel.push(CoreDecisionsRoute) },
                     onNavigateToPumpManagement = { navViewModel.push(PumpManagementRoute) }
                 )
             }
@@ -307,7 +307,7 @@ class MainFeatureNavGraph(
                 )
             }
 
-            is AlgorithmDecisionsRoute -> NavEntry(key) {
+            is CoreDecisionsRoute -> NavEntry(key) {
                 val vm: SystemControlViewModel = viewModel(
                     factory = SystemControlViewModel.Companion.Factory(registry)
                 )

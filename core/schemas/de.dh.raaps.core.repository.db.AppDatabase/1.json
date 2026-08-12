@@ -2,7 +2,7 @@
   "formatVersion": 1,
   "database": {
     "version": 1,
-    "identityHash": "5d7beaac0005de3478475d61041b2175",
+    "identityHash": "0d1d32662e0565a2e474642cdc0f8112",
     "entities": [
       {
         "tableName": "sensor_type",
@@ -536,7 +536,7 @@
         }
       },
       {
-        "tableName": "algorithm_insights",
+        "tableName": "core_insights",
         "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `timestamp` INTEGER NOT NULL, `bgOriginal` INTEGER NOT NULL, `bgFiltered` INTEGER NOT NULL, `deviationPerTick` INTEGER NOT NULL, `iobAtPeak` REAL NOT NULL, `cobAtPeak` REAL NOT NULL, `predictedBgAtPeak` INTEGER NOT NULL, `targetBg` INTEGER NOT NULL, `isf` INTEGER NOT NULL, `cr` REAL NOT NULL, `actionBolus` REAL, `actionTempBasalPercent` INTEGER, `actionTempBasalDurationInHours` INTEGER, `reasoning` TEXT NOT NULL)",
         "fields": [
           {
@@ -637,7 +637,7 @@
     ],
     "setupQueries": [
       "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
-      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '5d7beaac0005de3478475d61041b2175')"
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '0d1d32662e0565a2e474642cdc0f8112')"
     ]
   }
 }
