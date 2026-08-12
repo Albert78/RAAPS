@@ -36,6 +36,7 @@ import de.dh.raaps.ui.common.composables.Red
 import de.dh.raaps.ui.common.composables.Yellow
 import de.dh.raaps.ui.common.shortRelativeTimeAgo
 import de.dh.raaps.ui.common.theme.AppTheme
+import de.dh.raaps.ui.common.theme.ExtendedTheme
 import de.dh.raaps.ui.common.glucoseValue
 import de.dh.raaps.ui.common.deltaValue
 import de.dh.raaps.ui.controls.history.BgTrend
@@ -125,7 +126,7 @@ fun CurrentBgViewSquare(
                         modifier = Modifier
                             .size(24.dp)
                             .rotate(trendRotation),
-                        tint = Color.White
+                        tint = ExtendedTheme.semanticColors.highContrast
                     )
                 }
             }

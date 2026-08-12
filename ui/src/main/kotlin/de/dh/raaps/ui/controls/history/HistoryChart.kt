@@ -27,6 +27,7 @@ import androidx.compose.ui.graphics.drawscope.translate
 import androidx.compose.ui.graphics.withSave
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.patrykandpatrick.vico.compose.cartesian.CartesianChartHost
@@ -72,6 +73,7 @@ import de.dh.raaps.ui.common.composables.BlueA200
 import de.dh.raaps.ui.common.composables.DeepOrangeA700
 import de.dh.raaps.ui.common.composables.RedA700
 import de.dh.raaps.ui.common.theme.AppTheme
+import de.dh.raaps.ui.common.theme.ExtendedTheme
 import kotlinx.coroutines.launch
 import java.util.Calendar
 import java.util.Locale
@@ -299,7 +301,7 @@ fun BgHistoryChart(
     val mmolStr = stringResource(R.string.glucose_unit_mmol)
 
     val marker = if (showMarkers) rememberDefaultCartesianMarker(
-        label = rememberAxisLabelComponent(),
+        label = rememberAxisLabelComponent(style = TextStyle(color = ExtendedTheme.semanticColors.highContrast)),
         valueFormatter = DefaultCartesianMarker.ValueFormatter { _, targets ->
             val target = targets.firstOrNull() ?: return@ValueFormatter ""
             val time = synchronized(sharedCalendar) {
@@ -370,9 +372,14 @@ fun BgHistoryChart(
             ),
             startAxis = VerticalAxis.rememberStart(
                 itemPlacer = yItemPlacer,
+                label = rememberAxisLabelComponent(style = TextStyle(color = ExtendedTheme.semanticColors.highContrast)),
                 size = BaseAxis.Size.Fixed(45.dp)
             ),
-            bottomAxis = HorizontalAxis.rememberBottom(valueFormatter = xAxisValueFormatter, itemPlacer = xItemPlacer),
+            bottomAxis = HorizontalAxis.rememberBottom(
+                label = rememberAxisLabelComponent(style = TextStyle(color = ExtendedTheme.semanticColors.highContrast)),
+                valueFormatter = xAxisValueFormatter,
+                itemPlacer = xItemPlacer
+            ),
             marker = marker,
             decorations = decorations,
         ),
@@ -452,6 +459,7 @@ fun BgOverviewChart(
                 ),
                 startAxis = VerticalAxis.rememberStart(
                     size = BaseAxis.Size.Fixed(45.dp),
+                    label = rememberAxisLabelComponent(style = TextStyle(color = ExtendedTheme.semanticColors.highContrast)),
                     itemPlacer = remember {
                     object : VerticalAxis.ItemPlacer {
                         override fun getLabelValues(
@@ -496,6 +504,7 @@ fun BgOverviewChart(
                     }
                 }),
                 bottomAxis = HorizontalAxis.rememberBottom(
+                    label = rememberAxisLabelComponent(style = TextStyle(color = ExtendedTheme.semanticColors.highContrast)),
                     valueFormatter = { _, x, _ ->
                         val cal = Calendar.getInstance().apply { timeInMillis = diagramData.baseTimestamp + x.toLong() * MS_PER_MINUTE }
                         String.format(Locale.getDefault(), "%02d", cal.get(Calendar.HOUR_OF_DAY))
@@ -558,6 +567,7 @@ fun BgOverviewChart(
             val totalRange = diagramData.maxX - diagramData.minX
             val leftFrac = ((visibleRange.start - diagramData.minX) / totalRange).coerceIn(0.0, 1.0)
             val rightFrac = ((visibleRange.endInclusive - diagramData.minX) / totalRange).coerceIn(0.0, 1.0)
+            val overlayColor = ExtendedTheme.semanticColors.highContrast
 
             Canvas(
                 modifier = Modifier.fillMaxSize().pointerInput(diagramData.dataSignature, totalRange) {
@@ -580,8 +590,8 @@ fun BgOverviewChart(
                 translate(left = layerBounds.left, top = layerBounds.top) {
                     val left = leftFrac.toFloat() * layerBounds.width
                     val right = rightFrac.toFloat() * layerBounds.width
-                    drawRect(Color.White.copy(alpha = 0.3f), Offset(left, 0f), Size(right - left, layerBounds.height))
-                    drawRect(Color.White, Offset(left, 0f), Size(right - left, layerBounds.height), style = Stroke(width = 2.dp.toPx()))
+                    drawRect(overlayColor.copy(alpha = 0.3f), Offset(left, 0f), Size(right - left, layerBounds.height))
+                    drawRect(overlayColor, Offset(left, 0f), Size(right - left, layerBounds.height), style = Stroke(width = 2.dp.toPx()))
                 }
             }
         }

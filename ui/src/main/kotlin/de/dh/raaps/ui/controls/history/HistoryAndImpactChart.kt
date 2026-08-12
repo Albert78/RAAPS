@@ -24,6 +24,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.patrykandpatrick.vico.compose.cartesian.CartesianChartHost
@@ -78,6 +79,7 @@ import de.dh.raaps.ui.common.theme.AppTheme
 import de.dh.raaps.ui.common.theme.ColorBg
 import de.dh.raaps.ui.common.theme.ColorCarbs
 import de.dh.raaps.ui.common.theme.ColorInsulin
+import de.dh.raaps.ui.common.theme.ExtendedTheme
 import java.util.Calendar
 import java.util.Locale
 
@@ -563,14 +565,14 @@ fun HistoryAndImpactChart(
                     verticalAxisPosition = Axis.Position.Vertical.End
                 ),
                 startAxis = VerticalAxis.rememberStart(
-                    label = rememberAxisLabelComponent(),
+                    label = rememberAxisLabelComponent(style = TextStyle(color = ExtendedTheme.semanticColors.highContrast)),
                     itemPlacer = bgAxisItemPlacer,
                     horizontalLabelPosition = VerticalAxis.HorizontalLabelPosition.Inside,
                     line = null
                 ),
                 endAxis = if (showInsulin || showCarbs) {
                     VerticalAxis.rememberEnd(
-                        label = rememberAxisLabelComponent(),
+                        label = rememberAxisLabelComponent(style = TextStyle(color = ExtendedTheme.semanticColors.highContrast)),
                         itemPlacer = impactAxisItemPlacer,
                         valueFormatter = impactAxisValueFormatter,
                         horizontalLabelPosition = VerticalAxis.HorizontalLabelPosition.Inside,
@@ -579,7 +581,7 @@ fun HistoryAndImpactChart(
                     )
                 } else null,
                 bottomAxis = HorizontalAxis.rememberBottom(
-                    label = rememberAxisLabelComponent(),
+                    label = rememberAxisLabelComponent(style = TextStyle(color = ExtendedTheme.semanticColors.highContrast)),
                     valueFormatter = xAxisValueFormatter,
                     itemPlacer = xItemPlacer
                 ),
