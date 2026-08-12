@@ -61,6 +61,11 @@ fun PumpTabContent(
             Spacer(modifier = Modifier.height(16.dp))
             PumpJobsCard(uiState, onCancelPumpJob)
         }
+
+        if (uiState.pumpPluginUiProvider != null) {
+            Spacer(modifier = Modifier.height(16.dp))
+            uiState.pumpPluginUiProvider.PumpControlSection()
+        }
     }
 }
 
@@ -317,7 +322,22 @@ fun PumpTabPreview() {
                         command = de.dh.raaps.core.pump.PumpCommand.DeliverBolus(de.dh.raaps.common.model.InsulinAmount(1.5)),
                         isCancelableAPSCommand = false
                     )
-                )
+                ),
+                pumpPluginUiProvider = object : PumpPluginUiProvider {
+                    @Composable
+                    override fun PumpControlSection() {
+                        Card(
+                            modifier = Modifier.fillMaxWidth(),
+                            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
+                        ) {
+                            Text(
+                                "Sample Pump Plugin Content from Provider",
+                                modifier = Modifier.padding(16.dp),
+                                style = MaterialTheme.typography.bodyMedium
+                            )
+                        }
+                    }
+                }
             ),
             timeFormat = SimpleDateFormat("HH:mm:ss", java.util.Locale.getDefault()),
             onNavigateToPumpManagement = {},

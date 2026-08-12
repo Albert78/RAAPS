@@ -30,6 +30,9 @@ data class SystemControlUiState(
     val nextPredictedTimestamp: Timestamp? = null,
     val glucoseUnit: GlucoseUnit = GlucoseUnit.MG_DL,
 
+    val cgmPluginUiProvider: CgmPluginUiProvider? = null,
+    val pumpPluginUiProvider: PumpPluginUiProvider? = null,
+
     // Pump Subsystem
     val pumpConnected: Boolean = false,
     val pumpModel: String? = null,
@@ -58,7 +61,8 @@ class SystemControlViewModel(
             readingsInterval = source?.readingsInterval,
             lastBgReading = currentBg,
             nextPredictedTimestamp = if (source != null) glucoseSourceManager.predictNextValueTimestamp() else null,
-            glucoseUnit = preferences.glucoseUnit
+            glucoseUnit = preferences.glucoseUnit,
+            pluginUiProvider = source as? CgmPluginUiProvider
         )
     }
 
@@ -74,7 +78,7 @@ class SystemControlViewModel(
                 coordinator?.pendingJobs ?: flowOf(emptyList()),
                 coordinator?.lastConnectionTime ?: flowOf(Timestamp.INVALID)
             ) { connected, hardware, status, jobs, lastConn ->
-                PumpUiData(connected, hardware?.model, status, lastConn, jobs)
+                PumpUiData(connected, hardware?.model, status, lastConn, jobs, pump as? PumpPluginUiProvider)
             }
         }
     }
@@ -92,6 +96,8 @@ class SystemControlViewModel(
             lastBgReading = gInfo.lastBgReading,
             nextPredictedTimestamp = gInfo.nextPredictedTimestamp,
             glucoseUnit = gInfo.glucoseUnit,
+            cgmPluginUiProvider = gInfo.pluginUiProvider,
+            pumpPluginUiProvider = pInfo.pluginUiProvider,
             pumpConnected = pInfo.connected,
             pumpModel = pInfo.model,
             pumpStatus = pInfo.status,
@@ -118,7 +124,8 @@ class SystemControlViewModel(
         val readingsInterval: BgReadingsInterval?,
         val lastBgReading: BgReading?,
         val nextPredictedTimestamp: Timestamp?,
-        val glucoseUnit: GlucoseUnit
+        val glucoseUnit: GlucoseUnit,
+        val pluginUiProvider: CgmPluginUiProvider?
     )
 
     private data class PumpUiData(
@@ -126,7 +133,8 @@ class SystemControlViewModel(
         val model: String? = null,
         val status: InsulinPumpStatus? = null,
         val lastConnection: Timestamp = Timestamp.INVALID,
-        val jobs: List<PumpJob> = emptyList()
+        val jobs: List<PumpJob> = emptyList(),
+        val pluginUiProvider: PumpPluginUiProvider? = null
     )
 
     companion object {

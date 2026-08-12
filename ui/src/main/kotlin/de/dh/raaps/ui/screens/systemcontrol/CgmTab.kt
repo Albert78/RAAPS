@@ -42,6 +42,11 @@ fun CgmTabContent(
 ) {
     Spacer(modifier = Modifier.height(16.dp))
     CgmOverviewCard(uiState, timeFormat, tick)
+
+    if (uiState.cgmPluginUiProvider != null) {
+        Spacer(modifier = Modifier.height(16.dp))
+        uiState.cgmPluginUiProvider.CgmControlSection()
+    }
 }
 
 @Composable
@@ -234,7 +239,22 @@ fun CgmTabPreview() {
                 nextPredictedTimestamp = de.dh.raaps.common.model.data.Timestamp(System.currentTimeMillis() + 300000),
                 glucoseUnit = de.dh.raaps.common.model.data.GlucoseUnit.MG_DL,
                 pumpConnected = true,
-                pumpModel = "DANA-i"
+                pumpModel = "DANA-i",
+                cgmPluginUiProvider = object : CgmPluginUiProvider {
+                    @Composable
+                    override fun CgmControlSection() {
+                        Card(
+                            modifier = Modifier.fillMaxWidth(),
+                            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
+                        ) {
+                            Text(
+                                "Sample Plugin Content from Provider",
+                                modifier = Modifier.padding(16.dp),
+                                style = MaterialTheme.typography.bodyMedium
+                            )
+                        }
+                    }
+                }
             ),
             timeFormat = SimpleDateFormat("HH:mm:ss", java.util.Locale.getDefault()),
             tick = System.currentTimeMillis()

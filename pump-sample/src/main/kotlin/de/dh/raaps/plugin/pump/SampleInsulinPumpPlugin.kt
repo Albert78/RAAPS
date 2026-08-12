@@ -11,10 +11,22 @@ import de.dh.raaps.common.model.PluginManager
 import de.dh.raaps.common.model.PumpAlerts
 import de.dh.raaps.common.model.PumpCapabilities
 import de.dh.raaps.common.model.data.InsulinProfile
+import de.dh.raaps.ui.screens.systemcontrol.PumpPluginUiProvider
+import de.dh.raaps.ui.screens.systemcontrol.SectionHeader
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 
-class SampleInsulinPumpPlugin : InsulinPump, Plugin {
+class SampleInsulinPumpPlugin : InsulinPump, Plugin, PumpPluginUiProvider {
     // *************************** Plugin members ********************************
 
     override val neededPermissions: Collection<String> = emptyList()
@@ -87,5 +99,29 @@ class SampleInsulinPumpPlugin : InsulinPump, Plugin {
 
     override fun stop() {
         // TODO
+    }
+
+    @Composable
+    override fun PumpControlSection() {
+        Card(
+            modifier = Modifier.fillMaxWidth(),
+            colors = CardDefaults.cardColors(
+                containerColor = MaterialTheme.colorScheme.surfaceVariant
+            )
+        ) {
+            Column(modifier = Modifier.padding(16.dp)) {
+                SectionHeader(title = "Sample Pump Extra Info")
+                Text(
+                    text = "This content is provided by the Sample Pump Plugin.",
+                    style = MaterialTheme.typography.bodyMedium,
+                    modifier = Modifier.padding(top = 8.dp)
+                )
+                Text(
+                    text = "Maintenance status: Optimal",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.secondary
+                )
+            }
+        }
     }
 }
