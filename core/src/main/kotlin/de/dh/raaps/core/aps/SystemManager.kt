@@ -191,8 +191,8 @@ class SystemManagerImpl(
 
         scope.launch {
             coreState.collect { state ->
-                if (state is CoreState.Blocked) {
-                    androidNotifications.showAlgorithmIssueNotification(state.issue)
+                if (state is CoreState.Active && state.issues.isNotEmpty()) {
+                    androidNotifications.showAlgorithmIssueNotification(state.issues.first())
                 } else {
                     androidNotifications.cancelAlgorithmIssueNotification()
                 }

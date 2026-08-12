@@ -33,7 +33,7 @@ sealed interface CoreState {
     /**
      * The APS core is working and all data are valid.
      */
-    data object Active : CoreState
+    data class Active(val issues: List<AlgorithmIssue> = emptyList()) : CoreState
 
     /**
      * The APS Core is suspended by the user.
@@ -44,11 +44,6 @@ sealed interface CoreState {
      * The system is being shut down. No more calculation will take place anymore.
      */
     data object Shutdown : CoreState
-
-    /**
-     * The algorithm is blocked due to technical issues (e.g. missing values).
-     */
-    data class Blocked(val issue: AlgorithmIssue) : CoreState
 }
 
 /**
@@ -128,7 +123,7 @@ class Core(
     }
 
     fun activate() {
-        setCoreState(CoreState.Active)
+        setCoreState(CoreState.Active())
     }
 
     private fun setCoreState(state: CoreState) {
@@ -204,11 +199,7 @@ class Core(
                         return@atomic
                     }
                     val issues = alg.recalculate(treatmentLock)
-                    if (issues.isNotEmpty()) {
-                        setCoreState(CoreState.Blocked(issues.first()))
-                    } else if (coreState is CoreState.Blocked) {
-                        setCoreState(CoreState.Active)
-                    }
+                    setCoreState(CoreState.Active(issues))
                 }
             }
             if (res is LockResult.Busy) {
