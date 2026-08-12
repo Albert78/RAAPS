@@ -24,7 +24,6 @@ class ApsAlgorithmImpl(
     val predictionModel: PredictionModel,
     val carbsInsulinCalculationModel: CarbsInsulinCalculationModel,
     val therapyManager: TherapyManager,
-    val onCancelInsulinJobs: (treatmentLock: TreatmentLock) -> Unit,
     val onDeliverBolus: suspend (treatmentLock: TreatmentLock, amount: InsulinAmount, handledDeferredBoluses: List<DeferredBolus>?) -> Unit,
     val onSetTempBasal: (treatmentLock: TreatmentLock, durationInHours: Int, percent: Int) -> Unit,
     val onClearTempBasal: (treatmentLock: TreatmentLock) -> Unit,
@@ -188,8 +187,6 @@ class ApsAlgorithmImpl(
     }
 
     override suspend fun recalculate(treatmentLock: TreatmentLock): Set<CoreIssue> {
-        onCancelInsulinJobs(treatmentLock)
-
         val result = doRecalculate()
         if (result.carbsInGHint != null) {
             onCarbsHint(treatmentLock, result.carbsInGHint)
@@ -508,7 +505,6 @@ class ApsAlgorithmImpl(
             treatmentRepository: TreatmentRepository,
             sampledBgReadings: SampledBgReadings,
             therapyManager: TherapyManager,
-            onCancelInsulinJobs: (treatmentLock: TreatmentLock) -> Unit,
             onDeliverBolus: suspend (treatmentLock: TreatmentLock, amount: InsulinAmount, handledDeferredBoluses: List<DeferredBolus>?) -> Unit,
             onSetTempBasal: (treatmentLock: TreatmentLock, durationInHours: Int, percent: Int) -> Unit,
             onClearTempBasal: (treatmentLock: TreatmentLock) -> Unit,
@@ -531,7 +527,6 @@ class ApsAlgorithmImpl(
                 predictionModel = predictionModel,
                 carbsInsulinCalculationModel = carbsInsulinCalculationModel,
                 therapyManager = therapyManager,
-                onCancelInsulinJobs = onCancelInsulinJobs,
                 onSetTempBasal = onSetTempBasal,
                 onClearTempBasal = onClearTempBasal,
                 onCarbsHint = onCarbsHint,

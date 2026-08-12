@@ -69,7 +69,6 @@ class Core(
     private val onAcquireBusyState: () -> Unit,
     private val onReleaseBusyState: () -> Unit,
 
-    private val onCancelInsulinJobs: (treatmentLock: TreatmentLock) -> Unit,
     private val onDeliverBolus: suspend (treatmentLock: TreatmentLock, amount: InsulinAmount, handledDeferredBoluses: List<DeferredBolus>?) -> Unit,
     private val onSetTempBasal: (treatmentLock: TreatmentLock, durationInHours: Int, percent: Int) -> Unit,
     private val onClearTempBasal: (treatmentLock: TreatmentLock) -> Unit,
@@ -142,7 +141,6 @@ class Core(
                     treatmentRepository,
                     glucoseSourceManager.sampledBgReadings,
                     therapyManager,
-                    onCancelInsulinJobs = onCancelInsulinJobs,
                     onDeliverBolus = { lock, amount, deferred ->
                         onDeliverBolus(lock, amount, deferred)
                     },
@@ -274,7 +272,6 @@ class Core(
             onAcquireBusyState: () -> Unit,
             onReleaseBusyState: () -> Unit,
 
-            onCancelInsulinJobs: (treatmentLock: TreatmentLock) -> Unit,
             onDeliverBolus: suspend (treatmentLock: TreatmentLock, amount: InsulinAmount, handledDeferredBoluses: List<DeferredBolus>?) -> Unit,
             onSetTempBasal: (treatmentLock: TreatmentLock, durationInHours: Int, percent: Int) -> Unit,
             onClearTempBasal: (treatmentLock: TreatmentLock) -> Unit,
@@ -295,7 +292,6 @@ class Core(
                 onAcquireBusyState = onAcquireBusyState,
                 onReleaseBusyState = onReleaseBusyState,
 
-                onCancelInsulinJobs = onCancelInsulinJobs,
                 onDeliverBolus = onDeliverBolus,
                 onSetTempBasal = onSetTempBasal,
                 onClearTempBasal = onClearTempBasal,

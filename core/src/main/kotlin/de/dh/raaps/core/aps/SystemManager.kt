@@ -216,7 +216,6 @@ class SystemManagerImpl(
             onAcquireBusyState = { acquireBusyState() },
             onReleaseBusyState = { releaseBusyState() },
 
-            onCancelInsulinJobs = { treatmentLock -> therapyManager.coreCancelInsulinJobs(treatmentLock) },
             onDeliverBolus = { treatmentLock, amount, handledDeferredBoluses ->
                 therapyManager.issueBolus(treatmentLock, amount, handledDeferredBoluses)
             },
