@@ -21,7 +21,7 @@
     <string name="insulin_profile_editor_dia_label">DIA (Min.)</string>
     <string name="insulin_profile_editor_peak_label">Peak (Min.)</string>
     <string name="insulin_profile_editor_basal_title">Basalrate</string>
-    <string name="insulin_profile_editor_basal_desc">Die Menge an Insulin, die kontinuierlich abgegeben wird.</string>
+    <string name="insulin_profile_editor_basal_desc">Die Menge an Insulin pro Stunde, die kontinuierlich abgegeben wird.</string>
     <string name="insulin_profile_editor_isf_title">ISF (Insulin-Sensitivitäts-Faktor)</string>
     <string name="insulin_profile_editor_isf_desc">Gibt an, wie stark eine Einheit Insulin den Blutzucker senkt.</string>
     <string name="insulin_profile_editor_cr_title">CR (Kohlenhydrat-Insulin-Verhältnis)</string>
