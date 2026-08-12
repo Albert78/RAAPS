@@ -14,6 +14,8 @@ import de.dh.raaps.common.model.data.Tick
 import de.dh.raaps.common.model.data.Timeline
 import de.dh.raaps.common.model.data.Timestamp
 import de.dh.raaps.core.repository.TreatmentRepository
+import java.text.SimpleDateFormat
+import java.util.Locale
 
 class ApsAlgorithmImpl(
     val timeline: Timeline,
@@ -306,6 +308,29 @@ class ApsAlgorithmImpl(
         val isfValue = therapyManager.getIsfFactor(now)
         val crValue = therapyManager.getCrFactor(now)
 
+        // ------------------------------ Recovery Check -------------------------------------------
+
+        // If we're currently low, check if we're already recovering.
+        if (currentBgMgDl < lowThreshold.mgdl) {
+            // Phase 1: Find the first point within the next 30 minutes where we're back above the threshold
+            val recoveryStart = predictionModel.findNext(startAt = nowTick, until = nowTick.plusMinutes(30)) {
+                it.predictedBg.isValid() && it.predictedBg >= lowThreshold
+            }
+
+            if (recoveryStart != null) {
+                // Phase 2: Check the following 30 minutes to ensure we stay above the threshold
+                val relapse = predictionModel.findNext(startAt = recoveryStart.tick, until = recoveryStart.tick.plusMinutes(30)) {
+                    it.predictedBg.isValid() && it.predictedBg < lowThreshold
+                }
+
+                if (relapse == null) {
+                    val recoveryTime = SimpleDateFormat("HH:mm", Locale.getDefault()).format(timeline.timestamp(recoveryStart.tick).ms)
+                    Log.d(TAG, "Recovery detected: We're currently low ($currentBgMgDl mg/dl), but returning above threshold of ${lowThreshold.mgdl} mg/dl at $recoveryTime and staying stable for 30m. Don't suggest carbs.")
+                    return@doRecalculate CalculationResult.normalSafetyBasal()
+                }
+            }
+        }
+
         // -------------------------------- Low handling -------------------------------------------
 
         // Get out of a current or impending low by suggesting carbs
@@ -315,7 +340,7 @@ class ApsAlgorithmImpl(
         }?.let { _ ->
             var carbsInGHint: Int? = null
 
-            // We're too low. Find out, now low we'll come to calculate the amount of suggested carbs.
+            // We're too low. Find out, how low we'll come to calculate the amount of suggested carbs.
 
             // Correct the minimum BG for twice the peak time of fast KE -> Don't look into the future too much
             val bgMin = predictionModel.findBgMin(startAt = nowTick, nowTick.plusMinutes(FAST_KE_DEFAULT_PEAK.value.toInt()))

@@ -19,14 +19,18 @@ value class BgValue(val mgdl: Short): Comparable<BgValue> {
     operator fun plus(other: BgDelta): BgValue = fromMgDl(mgdl + other.mgdl)
     operator fun div(other: Double): BgValue = fromMgDl((mgdl / other).toInt())
 
+    fun isValid(): Boolean = mgdl > 0
+    fun isInvalid(): Boolean = !isValid()
+
     fun toString(glucoseUnit: GlucoseUnit) =
         when (glucoseUnit) {
             GlucoseUnit.MG_DL -> mgdl.toString()
             GlucoseUnit.MMOL -> String.format(Locale.getDefault(), "%.1f", mmol)
         }
 
-    fun isValid(): Boolean = mgdl > 0
-    fun isInvalid(): Boolean = !isValid()
+    override fun toString(): String {
+        return toString(GlucoseUnit.MG_DL)
+    }
 
     companion object {
         val INVALID = BgValue(0)
