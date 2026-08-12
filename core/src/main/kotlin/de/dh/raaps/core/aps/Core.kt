@@ -141,17 +141,6 @@ class Core(
                     treatmentRepository,
                     glucoseSourceManager.sampledBgReadings,
                     therapyManager,
-                    onDeliverBolus = { lock, amount, deferred ->
-                        onDeliverBolus(lock, amount, deferred)
-                    },
-                    onSetTempBasal = onSetTempBasal,
-                    onClearTempBasal = onClearTempBasal,
-                    onCarbsHint = onCarbsHint,
-                    onCoreInsight = { insight ->
-                        scope.launch {
-                            coreInsightRepository.saveInsight(insight)
-                        }
-                    },
                     tickInterval = timeService.tickInterval,
                     carbsInsulinCalculationModel = carbsInsulinCalculationModel
                 )
@@ -196,12 +185,31 @@ class Core(
                         }
                         return@atomic
                     }
-                    val issues = alg.recalculate(treatmentLock)
+                    val result = alg.recalculate()
+
+                    if (result.carbsInGHint != null) {
+                        onCarbsHint(treatmentLock, result.carbsInGHint)
+                    }
+                    if (result.tempBasal != null) {
+                        onSetTempBasal(treatmentLock, result.tempBasal.durationInHours, result.tempBasal.percent)
+                    }
+                    if (result.clearTempBasal) {
+                        onClearTempBasal(treatmentLock)
+                    }
+                    if (result.bolus != null && result.bolus >= InsulinAmount.EPSILON) {
+                        onDeliverBolus(treatmentLock, result.bolus, result.handledDeferredBoluses)
+                    }
+
+                    result.metrics?.let { insight ->
+                        scope.launch {
+                            coreInsightRepository.saveInsight(insight)
+                        }
+                    }
                     // Core can be active and yet have issues. In this case, the user is notified
                     // about the issues (e.g. no BG values) but the algorithm will still be called.
                     // If the algorithm can recover from the issues, it will continue working
                     // and remove the issues.
-                    setCoreState(CoreState.Active(issues))
+                    setCoreState(CoreState.Active(result.coreIssues ?: emptySet()))
                 }
             }
             if (res is LockResult.Busy) {

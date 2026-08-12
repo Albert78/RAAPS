@@ -42,11 +42,108 @@ data class CoreInsight(
     val reasoning: CoreReasoning
 )
 
+data class TempBasalResult(
+    val percent: Int,
+    val durationInHours: Int
+)
+
+data class CalculationResult(
+    val carbsInGHint: Int?,
+    val tempBasal: TempBasalResult?,
+    val clearTempBasal: Boolean,
+    val bolus: InsulinAmount?,
+    val handledDeferredBoluses: List<DeferredBolus>?,
+    val coreIssues: Set<CoreIssue>?,
+    val reasoning: CoreReasoning,
+    val metrics: CoreInsight? = null
+) {
+    companion object {
+        fun safetyBasal(): CalculationResult = CalculationResult(
+            carbsInGHint = null,
+            tempBasal = null,
+            clearTempBasal = true,
+            bolus = null,
+            handledDeferredBoluses = null,
+            coreIssues = null,
+            reasoning = CoreReasoning.SAFETY_BASAL_FALLBACK
+        )
+
+        fun normalSafetyBasal(): CalculationResult = CalculationResult(
+            carbsInGHint = null,
+            tempBasal = null,
+            clearTempBasal = true,
+            bolus = null,
+            handledDeferredBoluses = null,
+            coreIssues = null,
+            reasoning = CoreReasoning.NORMAL_CONDITION_SAFETY_BASAL
+        )
+
+        fun tempBasal(percent: Int, durationInHours: Int) = CalculationResult(
+            carbsInGHint = null,
+            tempBasal = TempBasalResult(
+                percent = percent,
+                durationInHours = durationInHours
+            ),
+            clearTempBasal = false,
+            bolus = null,
+            handledDeferredBoluses = null,
+            coreIssues = null,
+            reasoning = CoreReasoning.LOW_PREDICTED_LOW_BASAL
+        )
+
+        fun zeroTemp(durationInHours: Int): CalculationResult = CalculationResult(
+            carbsInGHint = null,
+            tempBasal = TempBasalResult(percent = 0, durationInHours = durationInHours),
+            clearTempBasal = false,
+            bolus = null,
+            handledDeferredBoluses = null,
+            coreIssues = null,
+            reasoning = CoreReasoning.LOW_PREDICTED_ZERO_TEMP
+        )
+
+        fun carbsSuggestion(carbsInGHint: Int?) = CalculationResult(
+            carbsInGHint = carbsInGHint,
+            tempBasal = TempBasalResult(percent = 0, durationInHours = 1),
+            clearTempBasal = false,
+            bolus = null,
+            handledDeferredBoluses = null,
+            coreIssues = null,
+            reasoning = CoreReasoning.LOW_PREDICTED_CARBS_SUGGESTION
+        )
+
+        fun mealOrCorrectionBolus(
+            bolusAmount: InsulinAmount,
+            handledDeferredBoluses: MutableList<DeferredBolus>
+        ) = CalculationResult(
+            carbsInGHint = null,
+            tempBasal = null,
+            clearTempBasal = true,
+            bolus = bolusAmount,
+            handledDeferredBoluses = handledDeferredBoluses,
+            coreIssues = null,
+            reasoning = CoreReasoning.MEAL_OR_CORRECTION_BOLUS
+        )
+
+        fun coreIssues(vararg issues: CoreIssue) = CalculationResult(
+            carbsInGHint = null,
+            tempBasal = null,
+            clearTempBasal = true,
+            bolus = null,
+            handledDeferredBoluses = null,
+            coreIssues = issues.toSet(),
+            reasoning = if (issues.any { it is CoreIssue.NoRecentValues })
+                CoreReasoning.NO_RECENT_VALUES
+            else
+                CoreReasoning.INTERNAL_ERROR
+        )
+    }
+}
+
 interface ApsAlgorithm {
     suspend fun updateTherapySettings()
     suspend fun updateMeals()
     suspend fun updateInsulin()
-    suspend fun recalculate(treatmentLock: TreatmentLock): Set<CoreIssue>
+    suspend fun recalculate(): CalculationResult
 }
 
 class NoopAlgorithm: ApsAlgorithm {
@@ -62,7 +159,7 @@ class NoopAlgorithm: ApsAlgorithm {
         // Do nothing
     }
 
-    override suspend fun recalculate(treatmentLock: TreatmentLock): Set<CoreIssue> {
-        return emptySet()
+    override suspend fun recalculate(): CalculationResult {
+        return CalculationResult.normalSafetyBasal()
     }
 }

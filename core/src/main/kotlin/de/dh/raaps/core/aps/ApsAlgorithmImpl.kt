@@ -23,12 +23,7 @@ class ApsAlgorithmImpl(
     val sampledBgReadings: SampledBgReadings,
     val predictionModel: PredictionModel,
     val carbsInsulinCalculationModel: CarbsInsulinCalculationModel,
-    val therapyManager: TherapyManager,
-    val onDeliverBolus: suspend (treatmentLock: TreatmentLock, amount: InsulinAmount, handledDeferredBoluses: List<DeferredBolus>?) -> Unit,
-    val onSetTempBasal: (treatmentLock: TreatmentLock, durationInHours: Int, percent: Int) -> Unit,
-    val onClearTempBasal: (treatmentLock: TreatmentLock) -> Unit,
-    val onCarbsHint: (treatmentLock: TreatmentLock, Int) -> Unit,
-    private val onCoreInsight: (CoreInsight) -> Unit
+    val therapyManager: TherapyManager
 ): ApsAlgorithm {
     // --- Time-based extensions for Tick to provide a Timestamp-like API ---
     private fun Tick.plusMinutes(minutes: Int): Tick = this + (minutes / timeline.tickDuration.value.toInt())
@@ -89,132 +84,7 @@ class ApsAlgorithmImpl(
         return BgDelta.fromMgDl((totalDeviation / numTicks).toInt())
     }
 
-    data class TempBasalResult(
-        val percent: Int,
-        val durationInHours: Int
-    )
-
-    data class CalculationResult(
-        val carbsInGHint: Int?,
-        val tempBasal: TempBasalResult?,
-        val clearTempBasal: Boolean,
-        val bolus: InsulinAmount?,
-        val handledDeferredBoluses: List<DeferredBolus>?,
-        val coreIssues: Set<CoreIssue>?,
-        val reasoning: CoreReasoning,
-        val metrics: CoreInsight? = null
-    ) {
-        companion object {
-            fun safetyBasal(): CalculationResult = CalculationResult(
-                carbsInGHint = null,
-                tempBasal = null,
-                clearTempBasal = true,
-                bolus = null,
-                handledDeferredBoluses = null,
-                coreIssues = null,
-                reasoning = CoreReasoning.SAFETY_BASAL_FALLBACK
-            )
-
-            fun normalSafetyBasal(): CalculationResult = CalculationResult(
-                carbsInGHint = null,
-                tempBasal = null,
-                clearTempBasal = true,
-                bolus = null,
-                handledDeferredBoluses = null,
-                coreIssues = null,
-                reasoning = CoreReasoning.NORMAL_CONDITION_SAFETY_BASAL
-            )
-
-            fun tempBasal(percent: Int, durationInHours: Int) = CalculationResult(
-                carbsInGHint = null,
-                tempBasal = TempBasalResult(
-                    percent = percent,
-                    durationInHours = durationInHours
-                ),
-                clearTempBasal = false,
-                bolus = null,
-                handledDeferredBoluses = null,
-                coreIssues = null,
-                reasoning = CoreReasoning.LOW_PREDICTED_LOW_BASAL
-            )
-
-            fun zeroTemp(durationInHours: Int): CalculationResult = CalculationResult(
-                carbsInGHint = null,
-                tempBasal = TempBasalResult(percent = 0, durationInHours = durationInHours),
-                clearTempBasal = false,
-                bolus = null,
-                handledDeferredBoluses = null,
-                coreIssues = null,
-                reasoning = CoreReasoning.LOW_PREDICTED_ZERO_TEMP
-            )
-
-            fun carbsSuggestion(carbsInGHint: Int?) = CalculationResult(
-                carbsInGHint = carbsInGHint,
-                tempBasal = TempBasalResult(percent = 0, durationInHours = 1),
-                clearTempBasal = false,
-                bolus = null,
-                handledDeferredBoluses = null,
-                coreIssues = null,
-                reasoning = CoreReasoning.LOW_PREDICTED_CARBS_SUGGESTION
-            )
-
-            fun mealOrCorrectionBolus(
-                bolusAmount: InsulinAmount,
-                handledDeferredBoluses: MutableList<DeferredBolus>
-            ) = CalculationResult(
-                carbsInGHint = null,
-                tempBasal = null,
-                clearTempBasal = true,
-                bolus = bolusAmount,
-                handledDeferredBoluses = handledDeferredBoluses,
-                coreIssues = null,
-                reasoning = CoreReasoning.MEAL_OR_CORRECTION_BOLUS
-            )
-
-            fun coreIssues(vararg issues: CoreIssue) = CalculationResult(
-                carbsInGHint = null,
-                tempBasal = null,
-                clearTempBasal = true,
-                bolus = null,
-                handledDeferredBoluses = null,
-                coreIssues = issues.toSet(),
-                reasoning = if (issues.any { it is CoreIssue.NoRecentValues })
-                    CoreReasoning.NO_RECENT_VALUES
-                else
-                    CoreReasoning.INTERNAL_ERROR
-            )
-        }
-    }
-
-    override suspend fun recalculate(treatmentLock: TreatmentLock): Set<CoreIssue> {
-        val result = doRecalculate()
-        if (result.carbsInGHint != null) {
-            onCarbsHint(treatmentLock, result.carbsInGHint)
-        }
-        if (result.tempBasal != null) {
-            onSetTempBasal(treatmentLock, result.tempBasal.durationInHours, result.tempBasal.percent)
-        }
-
-        if (result.clearTempBasal) {
-            onClearTempBasal(treatmentLock)
-        }
-        if (result.bolus != null && result.bolus >= InsulinAmount.EPSILON) {
-            onDeliverBolus(treatmentLock, result.bolus, result.handledDeferredBoluses)
-        }
-
-        result.metrics?.let { metrics ->
-            onCoreInsight(metrics.copy(
-                reasoning = result.reasoning,
-                actionBolus = result.bolus,
-                actionTempBasalPercent = result.tempBasal?.percent,
-                actionTempBasalDurationInHours = result.tempBasal?.durationInHours
-            ))
-        }
-
-        return result.coreIssues ?: emptySet()
-    }
-
-    suspend fun doRecalculate(): CalculationResult = try {
+    override suspend fun recalculate(): CalculationResult = try {
         Log.d(TAG, "Algorithm is calculating...")
         val nowTick = timeline.getNowTick()
         val now = Timestamp.now()
@@ -246,13 +116,13 @@ class ApsAlgorithmImpl(
                     }
                 }
                 if (!receivedValidValue) {
-                    return@doRecalculate CalculationResult.coreIssues(
+                    return@recalculate CalculationResult.coreIssues(
                         CoreIssue.NoRecentValues(SWITCH_OFF_ALGORITHM_INVALID_VALUES_THRESHOLD_IN_MINUTES)
                     )
                 }
                 // We cannot make any new predictions if we don't have fresh values.
                 // Fallback to safe basal
-                return@doRecalculate CalculationResult.safetyBasal()
+                return@recalculate CalculationResult.safetyBasal()
             }
             filtered.mgdl
         }
@@ -323,7 +193,7 @@ class ApsAlgorithmImpl(
                 if (relapse == null) {
                     val recoveryTime = SimpleDateFormat("HH:mm", Locale.getDefault()).format(timeline.timestamp(recoveryStart.tick).ms)
                     Log.d(TAG, "Recovery detected: We're currently low ($currentBgMgDl mg/dl), but returning above threshold of ${lowThreshold.mgdl} mg/dl at $recoveryTime and staying stable for 30m. Don't suggest carbs.")
-                    return@doRecalculate CalculationResult.normalSafetyBasal()
+                    return@recalculate CalculationResult.normalSafetyBasal()
                 }
             }
         }
@@ -350,7 +220,7 @@ class ApsAlgorithmImpl(
                 )
                 carbsInGHint = lowCorrectionCarbsForMinInG.toInt()
             }
-            return@doRecalculate CalculationResult.carbsSuggestion(carbsInGHint = carbsInGHint) // Stop further processing when we're currently low
+            return@recalculate CalculationResult.carbsSuggestion(carbsInGHint = carbsInGHint) // Stop further processing when we're currently low
         }
 
         val cobAtPeak = carbsInsulinCalculationModel.cob(meals, now + insulinPeak)
@@ -505,11 +375,6 @@ class ApsAlgorithmImpl(
             treatmentRepository: TreatmentRepository,
             sampledBgReadings: SampledBgReadings,
             therapyManager: TherapyManager,
-            onDeliverBolus: suspend (treatmentLock: TreatmentLock, amount: InsulinAmount, handledDeferredBoluses: List<DeferredBolus>?) -> Unit,
-            onSetTempBasal: (treatmentLock: TreatmentLock, durationInHours: Int, percent: Int) -> Unit,
-            onClearTempBasal: (treatmentLock: TreatmentLock) -> Unit,
-            onCarbsHint: (treatmentLock: TreatmentLock, Int) -> Unit,
-            onCoreInsight: (CoreInsight) -> Unit,
             tickInterval: Minutes,
             carbsInsulinCalculationModel: CarbsInsulinCalculationModel,
         ): ApsAlgorithm {
@@ -526,12 +391,7 @@ class ApsAlgorithmImpl(
                 sampledBgReadings = sampledBgReadings,
                 predictionModel = predictionModel,
                 carbsInsulinCalculationModel = carbsInsulinCalculationModel,
-                therapyManager = therapyManager,
-                onSetTempBasal = onSetTempBasal,
-                onClearTempBasal = onClearTempBasal,
-                onCarbsHint = onCarbsHint,
-                onDeliverBolus = onDeliverBolus,
-                onCoreInsight = onCoreInsight
+                therapyManager = therapyManager
             )
         }
     }
