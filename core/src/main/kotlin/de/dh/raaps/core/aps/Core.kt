@@ -5,7 +5,6 @@ import de.dh.raaps.common.model.InsulinAmount
 import de.dh.raaps.common.model.calculation.CarbsInsulinCalculationModel
 import de.dh.raaps.common.model.data.BgDelta
 import de.dh.raaps.common.model.data.BgValue
-import de.dh.raaps.common.model.data.CurrentTherapySettings
 import de.dh.raaps.common.model.data.Tick
 import de.dh.raaps.common.model.data.TickHandler
 import de.dh.raaps.common.model.data.TickPriority
@@ -200,6 +199,10 @@ class Core(
                         return@atomic
                     }
                     val issues = alg.recalculate(treatmentLock)
+                    // Core can be active and yet have issues. In this case, the user is notified
+                    // about the issues (e.g. no BG values) but the algorithm will still be called.
+                    // If the algorithm can recover from the issues, it will continue working
+                    // and remove the issues.
                     setCoreState(CoreState.Active(issues))
                 }
             }
@@ -231,14 +234,14 @@ class Core(
     /**
      * Triggered when the therapy settings (i.e. profile) has changed.
      */
-    suspend fun onTherapySettingsChanged(newData: CurrentTherapySettings?) {
+    suspend fun onTherapySettingsChanged() {
         atomic {
             calculationAlgorithm.updateTherapySettings()
         }
     }
 
     /**
-     * Triggered on meal events.
+     * Triggered when the list of declared meals changes.
      */
     suspend fun onMealsChanged() {
         atomic {
@@ -247,7 +250,7 @@ class Core(
     }
 
     /**
-     * Triggered on insulin events.
+     * Triggered when the list of insulin applications changes.
      */
     suspend fun onInsulinChanged() {
         atomic {

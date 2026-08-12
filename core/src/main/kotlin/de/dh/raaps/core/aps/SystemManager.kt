@@ -236,8 +236,8 @@ class SystemManagerImpl(
                 }
             }
             launch {
-                therapyManager.currentTherapySettingsFlow.drop(1).collect { settings ->
-                    core.onTherapySettingsChanged(settings)
+                therapyManager.currentTherapySettingsFlow.drop(1).collect { _ ->
+                    core.onTherapySettingsChanged()
                 }
             }
             launch {
