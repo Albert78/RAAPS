@@ -180,6 +180,12 @@ class SystemManagerImpl(
         timeService.registerTickHandler(TickPriority.UI, NotificationTickHandler())
 
         scope.launch {
+            appPreferencesRepository.glucoseUnit.drop(1).collect {
+                androidNotifications.updateMainAppNotification(glucoseSourceManager)
+            }
+        }
+
+        scope.launch {
             therapyManager.recommendations.collect { recommendations ->
                 if (recommendations.isEmpty()) {
                     androidNotifications.cancelRecommendationNotification()
