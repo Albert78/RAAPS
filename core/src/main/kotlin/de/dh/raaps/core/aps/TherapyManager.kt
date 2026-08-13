@@ -379,6 +379,20 @@ class TherapyManager(
         treatmentRepository.removeDeferredBolus(deferredBolus)
     }
 
+    /**
+     * Cancels all cancellable APS commands currently pending in the pump manager.
+     */
+    fun coreCancelInsulinJobs(treatmentLock: TreatmentLock) {
+        checkLock(treatmentLock)
+        when (systemManager.apsMode.value) {
+            ApsMode.Suspend -> return
+            ApsMode.BasalOnly -> return
+            ApsMode.AutoCorrection -> {
+                pumpManager.cancelJobs { it.isCancelableAPSCommand }
+            }
+        }
+    }
+
     suspend fun waitForInsulinJobs(treatmentLock: TreatmentLock): Boolean {
         checkLock(treatmentLock)
         if (pumpManager.hasPendingJobs()) {

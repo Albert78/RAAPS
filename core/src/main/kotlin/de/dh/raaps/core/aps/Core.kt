@@ -74,6 +74,8 @@ class Core(
     private val onClearTempBasal: (treatmentLock: TreatmentLock) -> Unit,
     private val onCarbsHint: (treatmentLock: TreatmentLock, Int) -> Unit,
     private val onClearRecommendations: (treatmentLock: TreatmentLock) -> Unit,
+
+    private val onCancelInsulinJobs: (treatmentLock: TreatmentLock) -> Unit,
     private val onWaitForInsulinJobs: suspend (treatmentLock: TreatmentLock) -> Boolean,
     private val coreInsightRepository: CoreInsightRepository,
     private val scope: CoroutineScope
@@ -171,7 +173,7 @@ class Core(
                         if (!onWaitForInsulinJobs(treatmentLock)) {
                             Log.i(
                                 TAG,
-                                "onTick: Recalculation skipped: Insulin jobs are still pending."
+                                "processCalculation: Insulin jobs were not executed! Cancelling pending jobs."
                             )
                             scope.launch {
                                 coreInsightRepository.saveInsight(
@@ -190,7 +192,7 @@ class Core(
                                     )
                                 )
                             }
-                            return@atomic
+                            onCancelInsulinJobs(treatmentLock)
                         }
 
                         val result = calculationAlgorithm.recalculate()
@@ -328,6 +330,7 @@ class Core(
             onClearTempBasal: (treatmentLock: TreatmentLock) -> Unit,
             onCarbsHint: (treatmentLock: TreatmentLock, amountInGram: Int) -> Unit,
             onClearRecommendations: (treatmentLock: TreatmentLock) -> Unit,
+            onCancelInsulinJobs: (treatmentLock: TreatmentLock) -> Unit,
             onWaitForInsulinJobs: suspend (treatmentLock: TreatmentLock) -> Boolean,
             coreInsightRepository: CoreInsightRepository,
             scope: CoroutineScope
@@ -348,6 +351,7 @@ class Core(
                 onClearTempBasal = onClearTempBasal,
                 onCarbsHint = onCarbsHint,
                 onClearRecommendations = onClearRecommendations,
+                onCancelInsulinJobs = onCancelInsulinJobs,
                 onWaitForInsulinJobs = onWaitForInsulinJobs,
                 coreInsightRepository = coreInsightRepository,
                 scope = scope
