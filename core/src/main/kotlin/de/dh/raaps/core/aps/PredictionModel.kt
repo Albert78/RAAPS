@@ -14,6 +14,8 @@ import de.dh.raaps.common.model.data.Timeline
 import de.dh.raaps.common.model.data.Timestamp
 import de.dh.raaps.common.model.data.times
 import de.dh.raaps.core.aps.ApsAlgorithmImpl.Companion.DEVIATION_DECAY_FACTOR_PER_TICK
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 
 /**
  * Predicts future blood glucose levels based on current blood glucose, treatment history
@@ -30,37 +32,43 @@ class PredictionModel(
     val predictionWindowHours: Int = 10,
     val timeline: Timeline
 ) {
-    var rollingHistory = RollingPredictionWindow(
+    private val mutex = Mutex()
+
+    private var rollingHistory = RollingPredictionWindow(
         predictionWindowHours = predictionWindowHours,
         timeline = timeline,
         timeline.tick(Timestamp.now())
     )
 
-    inline fun getFirstTick() = rollingHistory.getFirstTick()
-    inline fun getLastTick() = rollingHistory.getLastTick()
+    suspend fun getFirstTick() = mutex.withLock { rollingHistory.getFirstTick() }
+    suspend fun getLastTick() = mutex.withLock { rollingHistory.getLastTick() }
 
-    inline fun initializeToTick(newAnchorTimestamp: Timestamp) {
+    suspend fun initializeToTick(newAnchorTimestamp: Timestamp) = mutex.withLock {
         rollingHistory.init(timeline.tick(newAnchorTimestamp))
     }
 
-    inline fun tryGetTickState(tick: Tick): PredictionTickState? {
-        return rollingHistory.tryGetTickState(tick)
+    /**
+     * Executes a block with access to a specific [ReadOnlyPredictionTickState].
+     * Returns the result of the block, or null if the tick is not in the window.
+     */
+    suspend fun <T> withTickState(tick: Tick, block: (ReadOnlyPredictionTickState) -> T): T? = mutex.withLock {
+        rollingHistory.tryGetTickState(tick)?.let(block)
     }
 
-    inline fun invalidateCarbsCache() {
-        forEach { _, tickState ->
+    suspend fun invalidateCarbsCache() = mutex.withLock {
+        rollingHistory.forEach { _, tickState ->
             tickState.effectiveCarbs = null
         }
     }
 
-    inline fun invalidateInsulinCache() {
-        forEach { _, tickState ->
+    suspend fun invalidateInsulinCache() = mutex.withLock {
+        rollingHistory.forEach { _, tickState ->
             tickState.effectiveInsulin = null
         }
     }
 
-    inline fun invalidateTherapySettingsCache() {
-        forEach { _, tickState ->
+    suspend fun invalidateTherapySettingsCache() = mutex.withLock {
+        rollingHistory.forEach { _, tickState ->
             tickState.isf = null
             tickState.cr = null
             tickState.basalRateUph = null
@@ -72,7 +80,7 @@ class PredictionModel(
      * @return `true` if values have changed compared to the previous settings; next stages must be
      * calculated. Else `false`.
      */
-    suspend inline fun calculate(
+    suspend fun calculate(
         currentBGMgDl: Short,
         avgCurrentDeviationPerTick: BgDelta,
         meals: List<MealEntry>,
@@ -81,14 +89,14 @@ class PredictionModel(
         insulinPeak: Minutes,
         therapyManager: TherapyManager,
         carbsInsulinCalculationModel: CarbsInsulinCalculationModel
-    ) {
+    ) = mutex.withLock {
         var bg = BgValue.fromMgDl(currentBGMgDl)
         val nowTick = timeline.getNowTick()
-        tryGetTickState(nowTick)?.predictedBg = bg
+        rollingHistory.tryGetTickState(nowTick)?.predictedBg = bg
 
         var deviationPerTick = avgCurrentDeviationPerTick
         var runningCumulatedBasal = InsulinAmount.ZERO
-        forEachS(from = getFirstTick(), to = getLastTick()) { tick, state ->
+        rollingHistory.forEachS(from = rollingHistory.getFirstTick(), to = rollingHistory.getLastTick()) { tick, state ->
             if (state.effectiveCarbs == null) {
                 state.effectiveCarbs = carbsInsulinCalculationModel.carbAbsorption(
                     meals,
@@ -154,46 +162,73 @@ class PredictionModel(
         }
     }
 
-    inline fun advanceToTick(newAnchor: Tick) {
+    suspend fun advanceToTick(newAnchor: Tick) = mutex.withLock {
         rollingHistory.moveWindowTo(newAnchor)
     }
 
-    inline fun latestPredictionTickState(): PredictionTickState? {
-        return rollingHistory.tryGetTickState(rollingHistory.getLastTick())
+    /**
+     * Executes a block with access to the last [ReadOnlyPredictionTickState] in the window.
+     */
+    suspend fun <T> withLatestPredictionTickState(block: (ReadOnlyPredictionTickState) -> T): T? = mutex.withLock {
+        rollingHistory.tryGetTickState(rollingHistory.getLastTick())?.let(block)
     }
 
-    inline fun findBgMin(startAt: Tick, until: Tick): PredictionTickState? {
+    /**
+     * Finds the state with the minimum BG value and executes the block with it.
+     */
+    suspend fun <T> findBgMin(startAt: Tick, until: Tick, block: (ReadOnlyPredictionTickState) -> T): T? = mutex.withLock {
         var min: BgValue = BgValue.INVALID
         var minState: PredictionTickState? = null
-        rollingHistory.forEach(from = startAt, to = until) { tick, state ->
+        rollingHistory.forEach(from = startAt, to = until) { _, state ->
             val currentBg = state.predictedBg
             if (min.isInvalid() || (currentBg.isValid() && currentBg.mgdl < min.mgdl)) {
                 min = currentBg
                 minState = state
             }
         }
-        return minState
+        minState?.let(block)
     }
 
-    fun findNext(startAt: Tick, until: Tick, predicate: (PredictionTickState) -> Boolean): PredictionTickState? {
-        return rollingHistory.findForward(startTick = startAt, endTick = until, predicate = predicate)
+    /**
+     * Finds the next state matching the predicate and executes the block with it.
+     */
+    suspend fun <T> findNext(
+        startAt: Tick,
+        until: Tick,
+        predicate: (ReadOnlyPredictionTickState) -> Boolean,
+        block: (ReadOnlyPredictionTickState) -> T
+    ): T? = mutex.withLock {
+        rollingHistory.findForward(startTick = startAt, endTick = until, predicate = predicate)?.let(block)
     }
 
-    suspend fun findNextS(startAt: Tick, predicate: suspend (PredictionTickState) -> Boolean): PredictionTickState? {
-        return rollingHistory.findForwardS(startTick = startAt, predicate)
+    /**
+     * Suspended version of findNext.
+     */
+    suspend fun <T> findNextS(
+        startAt: Tick,
+        predicate: suspend (ReadOnlyPredictionTickState) -> Boolean,
+        block: suspend (ReadOnlyPredictionTickState) -> T
+    ): T? = mutex.withLock {
+        rollingHistory.findForwardS(startTick = startAt, predicate = predicate)?.let { block(it) }
     }
 
-    fun forEach(
-        from: Tick = getFirstTick(),
-        to: Tick = getLastTick(),
-        action: (Tick, PredictionTickState) -> Unit) {
-        rollingHistory.forEach(from = from, to = to, action)
+    suspend fun forEach(
+        from: Tick? = null,
+        to: Tick? = null,
+        action: (Tick, ReadOnlyPredictionTickState) -> Unit
+    ) = mutex.withLock {
+        val f = from ?: rollingHistory.getFirstTick()
+        val t = to ?: rollingHistory.getLastTick()
+        rollingHistory.forEach(from = f, to = t, action)
     }
 
     suspend fun forEachS(
-        from: Tick = getFirstTick(),
-        to: Tick = getLastTick(),
-        action: suspend (Tick, PredictionTickState) -> Unit) {
-        rollingHistory.forEachS(from = from, to = to, action = action)
+        from: Tick? = null,
+        to: Tick? = null,
+        action: suspend (Tick, ReadOnlyPredictionTickState) -> Unit
+    ) = mutex.withLock {
+        val f = from ?: rollingHistory.getFirstTick()
+        val t = to ?: rollingHistory.getLastTick()
+        rollingHistory.forEachS(from = f, to = t, action = action)
     }
 }

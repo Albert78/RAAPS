@@ -59,7 +59,7 @@ class ApsAlgorithmImpl(
      * Deviations typically occur due to unannounced meals or variations in insulin/carb sensitivity
      * compared to the prediction model.
      */
-    private fun calcAvgDeviationPerTick(pastTime: Minutes): BgDelta {
+    private suspend fun calcAvgDeviationPerTick(pastTime: Minutes): BgDelta {
         val endTick = timeline.getNowTick()
         val startTick = endTick.minus(pastTime)
 
@@ -181,18 +181,24 @@ class ApsAlgorithmImpl(
         // If we're currently low, check if we're already recovering.
         if (currentBgMgDl < lowThreshold.mgdl) {
             // Phase 1: Find the first point within the next 30 minutes where we're back above the threshold
-            val recoveryStart = predictionModel.findNext(startAt = nowTick, until = nowTick.plusMinutes(30)) {
-                it.predictedBg.isValid() && it.predictedBg >= lowThreshold
-            }
+            val recoveryStartTick = predictionModel.findNext(
+                startAt = nowTick,
+                until = nowTick.plusMinutes(30),
+                predicate = { it.predictedBg.isValid() && it.predictedBg >= lowThreshold },
+                block = { it.tick }
+            )
 
-            if (recoveryStart != null) {
+            if (recoveryStartTick != null) {
                 // Phase 2: Check the following 30 minutes to ensure we stay above the threshold
-                val relapse = predictionModel.findNext(startAt = recoveryStart.tick, until = recoveryStart.tick.plusMinutes(30)) {
-                    it.predictedBg.isValid() && it.predictedBg < lowThreshold
-                }
+                val relapseFound = predictionModel.findNext(
+                    startAt = recoveryStartTick,
+                    until = recoveryStartTick.plusMinutes(30),
+                    predicate = { it.predictedBg.isValid() && it.predictedBg < lowThreshold },
+                    block = { true }
+                ) ?: false
 
-                if (relapse == null) {
-                    val recoveryTime = SimpleDateFormat("HH:mm", Locale.getDefault()).format(timeline.timestamp(recoveryStart.tick).ms)
+                if (!relapseFound) {
+                    val recoveryTime = SimpleDateFormat("HH:mm", Locale.getDefault()).format(timeline.timestamp(recoveryStartTick).ms)
                     Log.d(TAG, "Recovery detected: We're currently low ($currentBgMgDl mg/dl), but returning above threshold of ${lowThreshold.mgdl} mg/dl at $recoveryTime and staying stable for 30m. Don't suggest carbs.")
                     return@recalculate CalculationResult.normalSafetyBasal()
                 }
@@ -201,19 +207,32 @@ class ApsAlgorithmImpl(
 
         // -------------------------------- Low handling -------------------------------------------
 
+        val recentCarbsInG = meals.
+            filter { meal -> meal.timestamp > now.minusMinutes(20) }.
+            sumOf { meal -> meal.carbGrams }
+
         // Get out of a current or impending low by suggesting carbs
         // Find the next occurrence where the value falls below the minimum; find the minimum with time
-        predictionModel.findNext(startAt = nowTick, until = nowTick.plusMinutes(LOW_WARNING_THRESHOLD.value.toInt())) {
-            it.predictedBg.isValid() && it.predictedBg < lowThreshold + LOW_BG_SAFETY_MARGIN
-        }?.let { _ ->
+        val impendingLow = predictionModel.findNext(
+            startAt = nowTick,
+            until = nowTick.plusMinutes(LOW_WARNING_THRESHOLD.value.toInt()),
+            predicate = { it.predictedBg.isValid() && it.predictedBg < lowThreshold + LOW_BG_SAFETY_MARGIN },
+            block = { true }
+        ) ?: false
+
+        if (impendingLow) {
             var carbsInGHint: Int? = null
 
             // We're too low. Find out, how low we'll come to calculate the amount of suggested carbs.
 
             // Correct the minimum BG for twice the peak time of fast KE -> Don't look into the future too much
-            val bgMin = predictionModel.findBgMin(startAt = nowTick, nowTick.plusMinutes(FAST_KE_DEFAULT_PEAK.value.toInt()))
-            if (bgMin != null && bgMin.predictedBg.isValid()) {
-                val bgErrorAtMin = targetBg - bgMin.predictedBg
+            val bgMin = predictionModel.findBgMin(
+                startAt = nowTick,
+                until = nowTick.plusMinutes(FAST_KE_DEFAULT_PEAK.value.toInt()),
+                block = { it.predictedBg }
+            )
+            if (bgMin != null && bgMin.isValid()) {
+                val bgErrorAtMin = targetBg - bgMin
                 val lowCorrectionCarbsForMinInG = convertToCarbsFromBgDelta(
                     bgDelta = bgErrorAtMin,
                     isf = isfValue,
@@ -252,16 +271,13 @@ class ApsAlgorithmImpl(
             reasoning = CoreReasoning.INTERNAL_ERROR // Dummy, will be overwritten
         )
 
-        val recentCarbsInG = meals.
-            filter { meal -> meal.timestamp > now.minusMinutes(20) }.
-            sumOf { meal -> meal.carbGrams }
-        val tickStateAtPeak = predictionModel.tryGetTickState(
-            nowTick + insulinPeakTicks
-        ) ?: return CalculationResult.safetyBasal().copy(metrics = insightTemplate) // This should never happen if we have BG values. If not, fall back to safety basal.
-        val predictedBgAtPeak = tickStateAtPeak?.
-            predictedBg?.
-            takeIf { it.isValid() } ?:
-            return CalculationResult.safetyBasal().copy(metrics = insightTemplate) // This should never happen if we have BG values. If not, fall back to safety basal.
+        val tickStateAtPeakValues = predictionModel.withTickState(nowTick + insulinPeakTicks) {
+            it.predictedBg to it.cumulatedBasalInsulin
+        } ?: return CalculationResult.safetyBasal().copy(metrics = insightTemplate)
+
+        val predictedBgAtPeak = tickStateAtPeakValues.first.takeIf { it.isValid() }
+            ?: return CalculationResult.safetyBasal().copy(metrics = insightTemplate)
+        val cumulatedBasalInsulinAtPeak = tickStateAtPeakValues.second
 
         val insight = insightTemplate.copy(predictedBgAtPeak = predictedBgAtPeak)
         val bgErrorAtPeak = predictedBgAtPeak - targetBg // < 0 if too low
@@ -273,7 +289,7 @@ class ApsAlgorithmImpl(
 
             val cumulatedInsulinActivityUntilPeak = iobNow - iobAtPeak
             val currentInsulinEffectUntilPeak = -convertToBgDeltaFromUnits(cumulatedInsulinActivityUntilPeak, isfValue)
-            val normalBasalEffectUntilPeak = -convertToBgDeltaFromUnits(tickStateAtPeak.cumulatedBasalInsulin, isfValue)
+            val normalBasalEffectUntilPeak = -convertToBgDeltaFromUnits(cumulatedBasalInsulinAtPeak, isfValue)
             val lowTempBasalEffectUntilPeak = currentInsulinEffectUntilPeak - normalBasalEffectUntilPeak
 
             if (bgErrorAtPeak + lowTempBasalEffectUntilPeak < BgDelta(-20)) {
@@ -372,7 +388,7 @@ class ApsAlgorithmImpl(
 
         val LOW_BG_SAFETY_MARGIN = BgDelta(10)
 
-        fun create(
+        suspend fun create(
             treatmentRepository: TreatmentRepository,
             sampledBgReadings: SampledBgReadings,
             therapyManager: TherapyManager,
