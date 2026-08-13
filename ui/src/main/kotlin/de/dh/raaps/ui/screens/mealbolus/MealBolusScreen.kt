@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowForward
@@ -33,6 +34,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -58,6 +60,7 @@ import de.dh.raaps.common.model.InsulinAmount
 import de.dh.raaps.common.model.MealType
 import de.dh.raaps.common.model.data.BgDelta
 import de.dh.raaps.common.model.data.BgValue
+import de.dh.raaps.common.model.data.GlucoseUnit
 import de.dh.raaps.common.model.data.Minutes
 import de.dh.raaps.common.model.data.Timestamp
 import de.dh.raaps.ui.R
@@ -71,8 +74,10 @@ import de.dh.raaps.ui.common.carbsKeUnitLabel
 import de.dh.raaps.ui.common.carbsGramsValue
 import de.dh.raaps.ui.common.DefaultSteppingStrategy
 import de.dh.raaps.ui.common.ValueDisplayStrategy
+import de.dh.raaps.ui.common.LocalGlucoseUnit
 import de.dh.raaps.ui.common.time
 import de.dh.raaps.ui.common.composables.EditableValueStepper
+import de.dh.raaps.ui.common.composables.AppColorBlue
 import de.dh.raaps.ui.common.composables.LightGreenA700
 import de.dh.raaps.ui.common.composables.PrimaryButton
 import de.dh.raaps.ui.common.composables.Red
@@ -213,7 +218,14 @@ fun MealBolusContent(
                 )
 
                 // Mahlzeit Card (Carbs + Food Type)
-                Card(modifier = Modifier.fillMaxWidth()) {
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(12.dp),
+                    border = BorderStroke(2.dp, AppColorBlue.copy(alpha = 0.3f)),
+                    colors = CardDefaults.cardColors(
+                        containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
+                    )
+                ) {
                     Column(
                         modifier = Modifier.padding(16.dp),
                         horizontalAlignment = Alignment.CenterHorizontally,
@@ -252,7 +264,14 @@ fun MealBolusContent(
 
                 // Insulin Card (Final Insulin Stepper)
                 if (!uiState.isEditMode) {
-                    Card(modifier = Modifier.fillMaxWidth()) {
+                    Card(
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(12.dp),
+                        border = BorderStroke(2.dp, AppColorBlue.copy(alpha = 0.3f)),
+                        colors = CardDefaults.cardColors(
+                            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
+                        )
+                    ) {
                         Column(
                             modifier = Modifier.padding(16.dp),
                             horizontalAlignment = Alignment.CenterHorizontally,
@@ -332,10 +351,10 @@ fun CalculationDetailsSelector(
     Card(
         modifier = Modifier.fillMaxWidth(),
         onClick = { expanded = !expanded },
-        shape = MaterialTheme.shapes.medium,
-        border = BorderStroke(1.dp, MaterialTheme.colorScheme.secondary.copy(alpha = 0.2f)),
+        shape = RoundedCornerShape(12.dp),
+        border = BorderStroke(2.dp, AppColorBlue.copy(alpha = 0.3f)),
         colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.4f)
+            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
         )
     ) {
         Column(
@@ -467,41 +486,43 @@ fun MealBolusDefaultPreview() {
         MealType(name = "Langsames Essen", components = listOf(CarbCurveComponentData(100, Minutes(60))), cat = Minutes(180)),
     )
     AppTheme {
-        MealBolusContent(
-            uiState = MealBolusUiState(
-                isLoading = false,
-                carbsKe = 4.5,
-                mealTypes = sampleMealTypes,
-                selectedMealType = sampleMealTypes[0],
-                currentBg = 140,
-                targetBg = 100,
-                isf = 50,
-                cr = 10.0,
-                iob = InsulinAmount.ZERO,
-                cob = 0.0,
-                mealPart = InsulinAmount(4.5),
-                correctionPart = InsulinAmount(0.8),
-                proposedBolus = InsulinAmount(5.3),
-                manualBolus = InsulinAmount(5.3),
-                isAutomaticMode = false
-            ),
-            currentBgValue = CurrentBgData.valid(
-                bgValue = BgValue(140),
-                delta = BgDelta(5),
-                trend = BgTrend.FortyFiveUp,
-                timestamp = Timestamp.now()
-            ),
-            iob = InsulinAmount(1.2),
-            cob = 25.0,
-            onNavigateUp = {},
-            onCarbsChange = {},
-            onMealTimeChange = {},
-            onMealTypeChange = {},
-            onManualBolusChange = {},
-            onPlannedInsulinTimeChange = { _, _ -> },
-            onToggleInsulinPlan = {},
-            onSubmit = {}
-        )
+        CompositionLocalProvider(LocalGlucoseUnit provides GlucoseUnit.MG_DL) {
+            MealBolusContent(
+                uiState = MealBolusUiState(
+                    isLoading = false,
+                    carbsKe = 4.5,
+                    mealTypes = sampleMealTypes,
+                    selectedMealType = sampleMealTypes[0],
+                    currentBg = 140,
+                    targetBg = 100,
+                    isf = 50,
+                    cr = 10.0,
+                    iob = InsulinAmount.ZERO,
+                    cob = 0.0,
+                    mealPart = InsulinAmount(4.5),
+                    correctionPart = InsulinAmount(0.8),
+                    proposedBolus = InsulinAmount(5.3),
+                    manualBolus = InsulinAmount(5.3),
+                    isAutomaticMode = false
+                ),
+                currentBgValue = CurrentBgData.valid(
+                    bgValue = BgValue(140),
+                    delta = BgDelta(5),
+                    trend = BgTrend.FortyFiveUp,
+                    timestamp = Timestamp.now()
+                ),
+                iob = InsulinAmount(1.2),
+                cob = 25.0,
+                onNavigateUp = {},
+                onCarbsChange = {},
+                onMealTimeChange = {},
+                onMealTypeChange = {},
+                onManualBolusChange = {},
+                onPlannedInsulinTimeChange = { _, _ -> },
+                onToggleInsulinPlan = {},
+                onSubmit = {}
+            )
+        }
     }
 }
 
@@ -582,8 +603,10 @@ fun MealBolusHeader(
 fun LockErrorCard(owner: String?, onNavigateUp: () -> Unit) {
     Card(
         modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(12.dp),
+        border = BorderStroke(2.dp, Red.copy(alpha = 0.5f)),
         colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.errorContainer
+            containerColor = MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.5f)
         )
     ) {
         Column(
@@ -608,6 +631,8 @@ fun LockErrorCard(owner: String?, onNavigateUp: () -> Unit) {
 fun EditWarningCard() {
     Card(
         modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(12.dp),
+        border = BorderStroke(2.dp, Red.copy(alpha = 0.5f)),
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.5f)
         )
@@ -626,7 +651,14 @@ fun MealTimeCard(
     mealTimestamp: Timestamp,
     onTimeChange: (Timestamp) -> Unit
 ) {
-    Card(modifier = Modifier.fillMaxWidth()) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(12.dp),
+        border = BorderStroke(2.dp, AppColorBlue.copy(alpha = 0.3f)),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
+        )
+    ) {
         Column(
             modifier = Modifier.padding(16.dp),
             horizontalAlignment = Alignment.CenterHorizontally
@@ -662,9 +694,10 @@ fun InsulinPlanCard(
     Card(
         modifier = Modifier.fillMaxWidth(),
         onClick = onToggleExpanded,
-        border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.2f)),
+        shape = RoundedCornerShape(12.dp),
+        border = BorderStroke(2.dp, AppColorBlue.copy(alpha = 0.3f)),
         colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.2f)
+            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
         )
     ) {
         Column(modifier = Modifier.padding(12.dp)) {
@@ -681,7 +714,12 @@ fun InsulinPlanCard(
                         color = MaterialTheme.colorScheme.primary
                     )
                     if (!isExpanded) {
-                        val planSummary = plan.joinToString(" + ") { String.format(Locale.getDefault(), "%.2f E", it.amount.iu) }
+                        val planSummary = buildString {
+                            plan.forEachIndexed { index, item ->
+                                append(insulinValue(item.amount.iu))
+                                if (index < plan.size - 1) append(" + ")
+                            }
+                        }
                         Text(
                             text = planSummary,
                             style = MaterialTheme.typography.bodySmall,

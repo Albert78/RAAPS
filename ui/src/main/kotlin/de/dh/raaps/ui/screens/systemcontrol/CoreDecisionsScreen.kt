@@ -38,6 +38,7 @@ import de.dh.raaps.ui.R
 import de.dh.raaps.ui.common.LocalGlucoseUnit
 import de.dh.raaps.ui.common.glucoseValue
 import de.dh.raaps.ui.common.isfValue
+import de.dh.raaps.ui.common.insulinValue
 import de.dh.raaps.ui.common.crValue
 import de.dh.raaps.ui.common.deltaValue
 import de.dh.raaps.ui.common.composables.screenTitle
@@ -137,7 +138,7 @@ fun InsightCard(insight: CoreInsight) {
             Row(modifier = Modifier.fillMaxWidth()) {
                 MetricItem(stringResource(id = R.string.core_insight_label_bg), "${glucoseValue(insight.bgFiltered, glucoseUnit)} (raw: ${glucoseValue(insight.bgOriginal, glucoseUnit)})")
                 Spacer(modifier = Modifier.width(16.dp))
-                MetricItem(stringResource(id = R.string.core_insight_label_iob), "%.2f U".format(insight.iobAtPeak.iu))
+                MetricItem(stringResource(id = R.string.core_insight_label_iob), insulinValue(insight.iobAtPeak.iu))
                 Spacer(modifier = Modifier.width(16.dp))
                 MetricItem(stringResource(id = R.string.core_insight_label_cob), "%.1f g".format(insight.cobAtPeak))
             }
@@ -158,7 +159,7 @@ fun InsightCard(insight: CoreInsight) {
 
             val actionText = when {
                 insight.actionBolus != null && insight.actionBolus!! > InsulinAmount.ZERO -> {
-                    stringResource(id = R.string.core_insight_action_bolus, insight.actionBolus!!.iu)
+                    stringResource(id = R.string.core_insight_action_bolus, insulinValue(insight.actionBolus!!.iu))
                 }
                 insight.actionTempBasalPercent != null -> {
                     stringResource(

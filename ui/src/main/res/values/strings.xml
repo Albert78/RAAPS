@@ -307,7 +307,7 @@
     <string name="core_insight_label_target">Ziel</string>
     <string name="core_insight_label_isf">ISF</string>
     <string name="core_insight_label_cr">CR</string>
-    <string name="core_insight_action_bolus">Aktion: Bolus %1$.2f E</string>
+    <string name="core_insight_action_bolus">Aktion: Bolus %1$s</string>
     <string name="core_insight_action_temp_basal">Aktion: Temp-Basal %1$d%% für %2$d h</string>
 
     <string name="alarms_screen_title">Warnungen und Alarme</string>
