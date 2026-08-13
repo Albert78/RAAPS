@@ -47,8 +47,7 @@ class TimeServiceImpl(
 
         scope.launch {
             try {
-                wakeService.acquireBusyState(TAG)
-
+                wakeService.acquireBusyState(WAKE_TAG)
                 val tick = timeline.getNowTick()
                 Log.d(TAG, "Tick triggered via system wakeup: $tick (timelineOffset=${timeline.offsetMs})")
 
@@ -65,7 +64,7 @@ class TimeServiceImpl(
             } finally {
                 // Schedule next tick before releasing busy state
                 scheduleNextTick()
-                wakeService.releaseBusyState(TAG)
+                wakeService.releaseBusyState(WAKE_TAG)
             }
         }
     }
@@ -83,7 +82,7 @@ class TimeServiceImpl(
         }
 
         val nextTickTimestamp = Timestamp(nextTickTimeMs)
-        wakeService.scheduleWakeup(TAG, null, nextTickTimestamp)
+        wakeService.scheduleWakeup(WAKE_TAG, null, nextTickTimestamp)
         Log.d(TAG, "Scheduled next system wakeup at $nextTickTimestamp")
     }
 
@@ -117,7 +116,7 @@ class TimeServiceImpl(
     }
 
     init {
-        wakeService.registerHandler(TAG, this)
+        wakeService.registerHandler(WAKE_TAG, this)
 
         scope.launch {
             Log.d(TAG, "Waiting for initial synchronization...")
@@ -130,5 +129,6 @@ class TimeServiceImpl(
 
     companion object {
         private val TAG = TimeServiceImpl::class.simpleName!!
+        private val WAKE_TAG = "TIME_SERVICE"
     }
 }

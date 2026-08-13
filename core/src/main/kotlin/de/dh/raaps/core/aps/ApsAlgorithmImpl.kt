@@ -353,16 +353,20 @@ class ApsAlgorithmImpl(
         if (futureInsulin + InsulinAmount.EPSILON >= insulinEquivalentOfCob + bgErrorCorrectionUnits) {
             // Meals and BG error are covered by IOB/planned boluses.
             // Return to normal basal rate and wait for insulin/carbs to act.
-            if (dueDeferredBoluses.isEmpty())
+            if (dueDeferredBoluses.isEmpty()) {
                 CalculationResult.normalSafetyBasal().copy(metrics = insight)
-            else
-                // TODO: If BG is too high, consider administering a deferred bolus at once
+            } else {
+                // Administer due deferred bolus.
+                // It might be that this is too much for the COB but this is in the
+                // responsibility of the user.
                 CalculationResult.mealOrCorrectionBolus(
                     bolusAmount = dueMealBolusAmount,
                     handledDeferredBoluses = dueDeferredBoluses
                 ).copy(metrics = insight)
+            }
         } else {
             // Insufficient insulin: Calculate the delta needed to cover the gap.
+            // TODO: If BG is too high, consider administering a deferred bolus at once
             val neededInsulin = (insulinEquivalentOfCob * AGGRESSIVENESS_CARBS_CORRECTION) +
                     bgErrorCorrectionUnits
             val futureAvailableInsulin = iobAtPeak + dueMealBolusAmount + sumFutureDeferredBolus
