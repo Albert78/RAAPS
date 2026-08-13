@@ -16,6 +16,7 @@ import de.dh.raaps.common.model.data.Timestamp
 import de.dh.raaps.core.repository.TreatmentRepository
 import java.text.SimpleDateFormat
 import java.util.Locale
+import kotlin.math.ceil
 
 class ApsAlgorithmImpl(
     val timeline: Timeline,
@@ -207,10 +208,6 @@ class ApsAlgorithmImpl(
 
         // -------------------------------- Low handling -------------------------------------------
 
-        val recentCarbsInG = meals.
-            filter { meal -> meal.timestamp > now.minusMinutes(20) }.
-            sumOf { meal -> meal.carbGrams }
-
         // Get out of a current or impending low by suggesting carbs
         // Find the next occurrence where the value falls below the minimum; find the minimum with time
         val impendingLow = predictionModel.findNext(
@@ -221,8 +218,6 @@ class ApsAlgorithmImpl(
         ) ?: false
 
         if (impendingLow) {
-            var carbsInGHint: Int? = null
-
             // We're too low. Find out, how low we'll come to calculate the amount of suggested carbs.
 
             // Correct the minimum BG for twice the peak time of fast KE -> Don't look into the future too much
@@ -238,9 +233,15 @@ class ApsAlgorithmImpl(
                     isf = isfValue,
                     cr = crValue
                 )
-                carbsInGHint = lowCorrectionCarbsForMinInG.toInt()
+                val recentCarbsInG = meals.
+                    filter { meal -> meal.timestamp > now.minusMinutes(20) }.
+                    sumOf { meal -> meal.carbGrams }
+                val rawCarbsInGHint = lowCorrectionCarbsForMinInG - recentCarbsInG
+                val carbsInGHint = (ceil(rawCarbsInGHint / 5.0) * 5).toInt()
+                if (carbsInGHint > 0) {
+                    return CalculationResult.carbsSuggestion(carbsInGHint = carbsInGHint) // Stop further processing when we're currently low
+                }
             }
-            return@recalculate CalculationResult.carbsSuggestion(carbsInGHint = carbsInGHint) // Stop further processing when we're currently low
         }
 
         val cobAtPeak = carbsInsulinCalculationModel.cob(meals, now + insulinPeak)
