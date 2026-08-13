@@ -56,19 +56,19 @@ class PredictionModel(
     }
 
     suspend fun invalidateCarbsCache() = mutex.withLock {
-        rollingHistory.forEach { _, tickState ->
+        rollingHistory.forEachS { _, tickState ->
             tickState.effectiveCarbs = null
         }
     }
 
     suspend fun invalidateInsulinCache() = mutex.withLock {
-        rollingHistory.forEach { _, tickState ->
+        rollingHistory.forEachS { _, tickState ->
             tickState.effectiveInsulin = null
         }
     }
 
     suspend fun invalidateTherapySettingsCache() = mutex.withLock {
-        rollingHistory.forEach { _, tickState ->
+        rollingHistory.forEachS { _, tickState ->
             tickState.isf = null
             tickState.cr = null
             tickState.basalRateUph = null
@@ -179,7 +179,7 @@ class PredictionModel(
     suspend fun <T> findBgMin(startAt: Tick, until: Tick, block: (ReadOnlyPredictionTickState) -> T): T? = mutex.withLock {
         var min: BgValue = BgValue.INVALID
         var minState: PredictionTickState? = null
-        rollingHistory.forEach(from = startAt, to = until) { _, state ->
+        rollingHistory.forEachS(from = startAt, to = until) { _, state ->
             val currentBg = state.predictedBg
             if (min.isInvalid() || (currentBg.isValid() && currentBg.mgdl < min.mgdl)) {
                 min = currentBg
@@ -194,35 +194,14 @@ class PredictionModel(
      */
     suspend fun <T> findNext(
         startAt: Tick,
-        until: Tick,
-        predicate: (ReadOnlyPredictionTickState) -> Boolean,
-        block: (ReadOnlyPredictionTickState) -> T
-    ): T? = mutex.withLock {
-        rollingHistory.findForward(startTick = startAt, endTick = until, predicate = predicate)?.let(block)
-    }
-
-    /**
-     * Suspended version of findNext.
-     */
-    suspend fun <T> findNextS(
-        startAt: Tick,
+        until: Tick? = null,
         predicate: suspend (ReadOnlyPredictionTickState) -> Boolean,
         block: suspend (ReadOnlyPredictionTickState) -> T
     ): T? = mutex.withLock {
-        rollingHistory.findForwardS(startTick = startAt, predicate = predicate)?.let { block(it) }
+        rollingHistory.findForwardS(startTick = startAt, endTick = until, predicate = predicate)?.let { block(it) }
     }
 
     suspend fun forEach(
-        from: Tick? = null,
-        to: Tick? = null,
-        action: (Tick, ReadOnlyPredictionTickState) -> Unit
-    ) = mutex.withLock {
-        val f = from ?: rollingHistory.getFirstTick()
-        val t = to ?: rollingHistory.getLastTick()
-        rollingHistory.forEach(from = f, to = t, action)
-    }
-
-    suspend fun forEachS(
         from: Tick? = null,
         to: Tick? = null,
         action: suspend (Tick, ReadOnlyPredictionTickState) -> Unit
