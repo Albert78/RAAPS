@@ -77,7 +77,7 @@ class MealBolusViewModel(
         acquireLock()
         viewModelScope.launch {
             val now = Timestamp.now()
-            val therapySettings = therapyManager.getActiveTherapySettings()
+            val therapySettings = therapyManager.getCurrentTherapySettings()
             val isf = therapyManager.getIsfFactor(now).mgdl.toInt()
             val cr = therapyManager.getCrFactor(now)
             val bgSettings = therapyManager.getBgSettings()

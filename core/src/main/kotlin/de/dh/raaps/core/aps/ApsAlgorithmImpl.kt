@@ -145,7 +145,7 @@ class ApsAlgorithmImpl(
         val defaultBasal = therapyManager.getBasalPerHour(now)
         val meals = treatmentRepository.getMeals()
         val insulinApplications = treatmentRepository.getInsulinApplications()
-        val settings = therapyManager.getActiveTherapySettings()
+        val settings = therapyManager.getCurrentTherapySettings()
         val dia = settings.insulinProfile.dia
         val insulinPeak = settings.insulinProfile.peak
 

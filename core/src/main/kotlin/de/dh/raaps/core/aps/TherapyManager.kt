@@ -114,13 +114,13 @@ class TherapyManager(
     // --- Section: Therapy Settings Management ---
     // -----------------------------------------------------------------------------------------
 
-    suspend fun getActiveTherapySettings(): CurrentTherapySettings = therapyRepository.getCurrentTherapySettings()
+    suspend fun getCurrentTherapySettings(): CurrentTherapySettings = therapyRepository.getCurrentTherapySettings()
 
     /**
      * Gets the planned basal rate at the given timestamp.
      */
     suspend fun getBasalPerHour(timestamp: Timestamp): InsulinAmount {
-        val settings = getActiveTherapySettings()
+        val settings = getCurrentTherapySettings()
         val profile = settings.insulinProfile
         val baseBasal = profile.basalBlocks.getAmountForMinute(timestamp.minutesSinceMidnight())
         val factor = (100.0 + settings.insulinAdjustmentPercentage) / 100.0
@@ -133,7 +133,7 @@ class TherapyManager(
      * Unit: Grams of carbs.
      */
     suspend fun getCrFactor(timestamp: Timestamp): Double {
-        val settings = getActiveTherapySettings()
+        val settings = getCurrentTherapySettings()
         val profile = settings.insulinProfile
         val baseCr = profile.crBlocks.getAmountForMinute(timestamp.minutesSinceMidnight())
         val factor = (100.0 + settings.insulinAdjustmentPercentage) / 100.0
@@ -147,7 +147,7 @@ class TherapyManager(
      * Unit: Blood glucose delta.
      */
     suspend fun getIsfFactor(timestamp: Timestamp): BgDelta {
-        val settings = getActiveTherapySettings()
+        val settings = getCurrentTherapySettings()
         val profile = settings.insulinProfile
         val amount = profile.isfBlocks.getAmountForMinute(timestamp.minutesSinceMidnight())
         val factor = (100.0 + settings.insulinAdjustmentPercentage) / 100.0
@@ -155,7 +155,7 @@ class TherapyManager(
     }
 
     suspend fun getBgSettings(): Pair<BgValue, BgValue> {
-        val settings = getActiveTherapySettings()
+        val settings = getCurrentTherapySettings()
         val defaultBg = settings.defaultBgBlocks.getBgForMinute(Timestamp.now().minutesSinceMidnight())
         return Pair(
             settings.targetBgOverride ?: defaultBg.first,
@@ -165,7 +165,7 @@ class TherapyManager(
 
     suspend fun updateDefaultBgBlocks(blocks: List<BgBlock>) {
         mutex.withLock {
-            val currentSettings = getActiveTherapySettings()
+            val currentSettings = getCurrentTherapySettings()
             val newSettings = currentSettings.copy(
                 defaultBgBlocks = blocks
             )
@@ -174,7 +174,7 @@ class TherapyManager(
     }
 
     suspend fun getPumpInsulinType(): InsulinType {
-        val currentSettings = getActiveTherapySettings()
+        val currentSettings = getCurrentTherapySettings()
         return currentSettings.insulinProfile.insulinType
     }
 
@@ -188,7 +188,7 @@ class TherapyManager(
      */
     suspend fun selectInsulinProfile(profile: InsulinProfile) {
         mutex.withLock {
-            val currentSettings = getActiveTherapySettings()
+            val currentSettings = getCurrentTherapySettings()
 
             val newSettings = currentSettings.copy(
                 insulinProfile = profile
@@ -199,7 +199,7 @@ class TherapyManager(
 
     suspend fun setTherapyAdjustment(percentage: Int, targetBg: BgValue?, lowThreshold: BgValue?, adjustmentHint: String?) {
         mutex.withLock {
-            val currentSettings = getActiveTherapySettings()
+            val currentSettings = getCurrentTherapySettings()
             val newSettings = currentSettings.copy(
                 insulinAdjustmentPercentage = percentage,
                 targetBgOverride = targetBg,
@@ -212,7 +212,7 @@ class TherapyManager(
 
     suspend fun setInsulinAdjustmentPercentage(percentage: Int) {
         mutex.withLock {
-            val currentSettings = getActiveTherapySettings()
+            val currentSettings = getCurrentTherapySettings()
             val newSettings = currentSettings.copy(
                 insulinAdjustmentPercentage = percentage
             )
@@ -222,7 +222,7 @@ class TherapyManager(
 
     suspend fun setTargetBgOverride(target: BgValue?) {
         mutex.withLock {
-            val currentSettings = getActiveTherapySettings()
+            val currentSettings = getCurrentTherapySettings()
             val newSettings = currentSettings.copy(
                 targetBgOverride = target
             )
@@ -232,7 +232,7 @@ class TherapyManager(
 
     suspend fun setLowThresholdOverride(threshold: BgValue?) {
         mutex.withLock {
-            val currentSettings = getActiveTherapySettings()
+            val currentSettings = getCurrentTherapySettings()
             val newSettings = currentSettings.copy(
                 lowThresholdOverride = threshold
             )
@@ -258,7 +258,7 @@ class TherapyManager(
      * Triggered when the history of actual bolus and basal values was updated.
      */
     suspend fun updatePumpHistory(history: InsulinHistory) {
-        val cts = getActiveTherapySettings()
+        val cts = getCurrentTherapySettings()
         treatmentRepository.mergeInsulinHistory(history, cts.insulinProfile.insulinType)
     }
 
@@ -377,20 +377,6 @@ class TherapyManager(
     suspend fun markDeferredBolusHandled(treatmentLock: TreatmentLock, deferredBolus: DeferredBolus) {
         checkLock(treatmentLock)
         treatmentRepository.removeDeferredBolus(deferredBolus)
-    }
-
-    /**
-     * Cancels all cancellable APS commands currently pending in the pump manager.
-     */
-    fun coreCancelInsulinJobs(treatmentLock: TreatmentLock) {
-        checkLock(treatmentLock)
-        when (systemManager.apsMode.value) {
-            ApsMode.Suspend -> return
-            ApsMode.BasalOnly -> return
-            ApsMode.AutoCorrection -> {
-                pumpManager.cancelJobs { it.isCancelableAPSCommand }
-            }
-        }
     }
 
     suspend fun waitForInsulinJobs(treatmentLock: TreatmentLock): Boolean {
