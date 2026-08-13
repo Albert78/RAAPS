@@ -76,7 +76,7 @@ class Core(
     private val onClearRecommendations: (treatmentLock: TreatmentLock) -> Unit,
 
     private val onCancelInsulinJobs: (treatmentLock: TreatmentLock) -> Unit,
-    private val onWaitForInsulinJobs: suspend (treatmentLock: TreatmentLock) -> Boolean,
+    private val onWaitForInsulinJobs: suspend (treatmentLock: TreatmentLock) -> Int,
     private val coreInsightRepository: CoreInsightRepository,
     private val scope: CoroutineScope
 ) : TickHandler {
@@ -170,10 +170,11 @@ class Core(
                 atomic {
                     try {
                         onClearRecommendations(treatmentLock)
-                        if (!onWaitForInsulinJobs(treatmentLock)) {
-                            Log.i(
+                        val pendingCount = onWaitForInsulinJobs(treatmentLock)
+                        if (pendingCount > 0) {
+                            Log.w(
                                 TAG,
-                                "processCalculation: Insulin jobs were not executed! Cancelling pending jobs."
+                                "processCalculation: Insulin jobs were not executed! Cancelling $pendingCount pending jobs."
                             )
                             scope.launch {
                                 coreInsightRepository.saveInsight(
@@ -331,7 +332,7 @@ class Core(
             onCarbsHint: (treatmentLock: TreatmentLock, amountInGram: Int) -> Unit,
             onClearRecommendations: (treatmentLock: TreatmentLock) -> Unit,
             onCancelInsulinJobs: (treatmentLock: TreatmentLock) -> Unit,
-            onWaitForInsulinJobs: suspend (treatmentLock: TreatmentLock) -> Boolean,
+            onWaitForInsulinJobs: suspend (treatmentLock: TreatmentLock) -> Int,
             coreInsightRepository: CoreInsightRepository,
             scope: CoroutineScope
         ): Core {

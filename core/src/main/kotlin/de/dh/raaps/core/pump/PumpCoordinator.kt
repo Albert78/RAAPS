@@ -141,6 +141,8 @@ class PumpCoordinator(
 
     fun hasPendingJobs() = _pendingJobs.value.isNotEmpty()
 
+    fun getPendingJobsCount() = _pendingJobs.value.size
+
     fun clearPendingJobs() {
         _pendingJobs.value = emptyList()
     }

@@ -59,6 +59,11 @@ interface PumpManager {
     fun hasPendingJobs(): Boolean
 
     /**
+     * Returns the number of pending jobs in the queue.
+     */
+    fun getPendingJobsCount(): Int
+
+    /**
      * Sets a listener to be notified when new insulin history data is received from the pump.
      */
     fun setOnHistoryUpdateListener(listener: suspend (InsulinHistory) -> Unit)

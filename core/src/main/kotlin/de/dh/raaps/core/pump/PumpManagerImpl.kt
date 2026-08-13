@@ -100,6 +100,10 @@ class PumpManagerImpl(
         return pumpCoordinator?.hasPendingJobs() ?: false
     }
 
+    override fun getPendingJobsCount(): Int {
+        return pumpCoordinator?.getPendingJobsCount() ?: 0
+    }
+
     override fun setOnHistoryUpdateListener(listener: suspend (InsulinHistory) -> Unit) {
         historyUpdateListener = listener
         scope.launch {

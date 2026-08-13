@@ -393,14 +393,14 @@ class TherapyManager(
         }
     }
 
-    suspend fun waitForInsulinJobs(treatmentLock: TreatmentLock): Boolean {
+    suspend fun waitForInsulinJobs(treatmentLock: TreatmentLock): Int {
         checkLock(treatmentLock)
         if (pumpManager.hasPendingJobs()) {
             pumpManager.wakeup()
             pumpManager.waitForIdle()
             delay(10.seconds)
         }
-        return !pumpManager.hasPendingJobs()
+        return pumpManager.getPendingJobsCount()
     }
 
     /**
