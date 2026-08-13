@@ -235,3 +235,48 @@ fun crValue(value: Double?, default: String = "-", withUnit: Boolean = true): St
         else valStr
     } ?: default
 }
+
+@Composable
+fun insulinUnitLabel(): String {
+    return stringResource(de.dh.raaps.ui.R.string.history_impact_ie_label)
+}
+
+@Composable
+fun insulinValue(value: Double?, default: String = "-", withUnit: Boolean = true, signed: Boolean = false): String {
+    return value?.let {
+        val format = if (signed) "%+.2f" else "%.2f"
+        val valStr = String.format(Locale.getDefault(), format, it)
+        if (withUnit) "$valStr ${insulinUnitLabel()}"
+        else valStr
+    } ?: default
+}
+
+@Composable
+fun carbsKeUnitLabel(): String {
+    return stringResource(de.dh.raaps.ui.R.string.history_impact_ke_label)
+}
+
+@Composable
+fun carbsKeValue(value: Double?, default: String = "-", withUnit: Boolean = true, signed: Boolean = false): String {
+    return value?.let {
+        val format = if (signed) "%+.1f" else "%.1f"
+        val valStr = String.format(Locale.getDefault(), format, it)
+        if (withUnit) "$valStr ${carbsKeUnitLabel()}"
+        else valStr
+    } ?: default
+}
+
+@Composable
+fun carbsGramsUnitLabel(): String {
+    return "g" // Not in strings.xml as standalone, but used in formats
+}
+
+@Composable
+fun carbsGramsValue(value: Double?, default: String = "-", withUnit: Boolean = true, signed: Boolean = false): String {
+    return value?.let {
+        val format = if (signed) "%+.0f" else "%.0f"
+        val valStr = String.format(Locale.getDefault(), format, it)
+        if (withUnit) "$valStr ${carbsGramsUnitLabel()}"
+        else valStr
+    } ?: default
+}

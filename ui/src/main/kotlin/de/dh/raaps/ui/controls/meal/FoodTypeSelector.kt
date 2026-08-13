@@ -97,7 +97,7 @@ fun FoodTypeSelector(
                     IconButton(onClick = { expanded = true }) {
                         Icon(
                             imageVector = Icons.Default.KeyboardArrowDown,
-                            contentDescription = "Expand",
+                            contentDescription = stringResource(de.dh.raaps.common.R.string.cd_expand),
                             tint = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }
@@ -118,7 +118,7 @@ fun FoodTypeSelector(
                     IconButton(onClick = { expanded = false }) {
                         Icon(
                             imageVector = Icons.Default.KeyboardArrowUp,
-                            contentDescription = "Collapse",
+                            contentDescription = stringResource(de.dh.raaps.common.R.string.cd_collapse),
                             tint = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }

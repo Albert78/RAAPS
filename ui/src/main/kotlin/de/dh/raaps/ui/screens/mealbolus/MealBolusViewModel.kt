@@ -41,6 +41,7 @@ data class MealBolusUiState(
     val selectedMealType: MealType? = null,
     val currentBg: Int? = null,
     val targetBg: Int = 100,
+    val lowThreshold: Int = 70,
     val isf: Int = 50,
     val cr: Double = 10.0,
     val iob: InsulinAmount = InsulinAmount.ZERO,
@@ -106,6 +107,7 @@ class MealBolusViewModel(
                     selectedMealType = existingMeal?.mealType ?: mealTypes.find { it.id == ID_MEAL_STANDARD } ?: mealTypes.firstOrNull(),
                     currentBg = currentBg,
                     targetBg = bgSettings.first.mgdl.toInt(),
+                    lowThreshold = bgSettings.second.mgdl.toInt(),
                     isf = if (isf == 0) DEFAULT_ISF_MGDL_PER_UNIT.toInt() else isf,
                     cr = if (cr == 0.0) DEFAULT_CR_GRAM_PER_UNIT else cr,
                     iob = iob,
@@ -172,8 +174,8 @@ class MealBolusViewModel(
         val carbsGrams = state.carbsKe * 10.0
         val mealPart = convertToInsulinAmountFromCarbs(carbsGrams, state.cr)
 
-        val currentBg = state.currentBg ?: state.targetBg
-        val bgDiff = currentBg - state.targetBg
+        val currentBgValue = state.currentBg ?: state.targetBg
+        val bgDiff = currentBgValue - state.targetBg
 
         // Can be positive or negative
         val correctionPart = convertToInsulinAmountFromBgDelta(BgDelta(bgDiff.toShort()), BgDelta(state.isf.toShort()))
@@ -185,7 +187,12 @@ class MealBolusViewModel(
 
         // Round to 2 decimal places
         val roundedTotal = round(total.iu * 100.0) / 100.0
-        val bolusAmount = InsulinAmount(roundedTotal)
+        var bolusAmount = InsulinAmount(roundedTotal)
+
+        // If BG is unknown or below low threshold, no insulin is proposed
+        if (state.currentBg == null || state.currentBg <= state.lowThreshold) {
+            bolusAmount = InsulinAmount.ZERO
+        }
 
         _uiState.update {
             it.copy(

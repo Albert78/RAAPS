@@ -33,6 +33,7 @@ import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
@@ -43,6 +44,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import de.dh.raaps.ui.R
 import de.dh.raaps.ui.common.DefaultSteppingStrategy
 import de.dh.raaps.ui.common.DefaultValueDisplayStrategy
 import de.dh.raaps.ui.common.SteppingStrategy
@@ -104,7 +106,7 @@ fun EditableValueStepper(
             modifier = Modifier.size(style.buttonSize),
             enabled = currentValue > minValue
         ) {
-            Icon(Icons.Default.Remove, contentDescription = "Decrease", modifier = Modifier.size(style.buttonSize * 0.5f))
+            Icon(Icons.Default.Remove, contentDescription = stringResource(R.string.cd_decrease_value), modifier = Modifier.size(style.buttonSize * 0.5f))
         }
 
         Spacer(Modifier.width(style.spacing))
@@ -212,7 +214,7 @@ fun EditableValueStepper(
             modifier = Modifier.size(style.buttonSize),
             enabled = currentValue < maxValue
         ) {
-            Icon(Icons.Default.Add, contentDescription = "Increase", modifier = Modifier.size(style.buttonSize * 0.5f))
+            Icon(Icons.Default.Add, contentDescription = stringResource(R.string.cd_increase_value), modifier = Modifier.size(style.buttonSize * 0.5f))
         }
     }
 }

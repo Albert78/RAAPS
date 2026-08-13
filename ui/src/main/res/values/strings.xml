@@ -180,8 +180,8 @@
     <string name="approx_prefix">ca.</string>
     <string name="active_carbs_label">Aktive KH</string>
     <string name="active_insulin_label">Akt. Insulin</string>
-    <string name="cob_format">%1$.1f g</string>
-    <string name="iob_format">%1$.2f E</string>
+    <string name="meal_bolus_active_carbs_format">Aktive Kohlenhydrate: %1$s</string>
+    <string name="meal_bolus_active_insulin_format">Aktives Insulin: %1$s</string>
 
     <string name="history_impact_ie_label">I.E.</string>
     <string name="history_impact_ke_label">KE</string>
@@ -193,6 +193,8 @@
 
     <string name="dashboard_meal_bolus_button">Mahlzeit/Korrektur</string>
     <string name="meal_add_screen_title">Mahlzeit/Korrekturbolus</string>
+    <string name="meal_bolus_busy_system">System belegt…</string>
+    <string name="meal_bolus_lock_error_message">Das System ist aktuell belegt (%1$s). Bitte versuche es später noch einmal.</string>
     <string name="meal_edit_screen_title">Mahlzeit bearbeiten</string>
     <string name="meal_edit_save_button">Speichern</string>
     <string name="meal_edit_warning_bolus">Bereits verabreichtes Insulin kann hier nicht bearbeitet werden.</string>
@@ -200,11 +202,13 @@
     <string name="meal_bolus_food_type_label">Nahrungstyp</string>
     <string name="meal_bolus_calculation_title">Berechnung</string>
     <string name="meal_bolus_calc_factors_label">ISF: %1$s, CR: %2$s</string>
-    <string name="meal_bolus_calc_result_label">Vorgeschlagener Bolus: %1$.2f U</string>
-    <string name="meal_bolus_calc_meal_part">Mahlzeit: +%1$.2f U</string>
-    <string name="meal_bolus_calc_correction_part">Korrektur: +%1$.2f U</string>
-    <string name="meal_bolus_calc_iob_part">IOB Abzug: -%1$.2f U</string>
-    <string name="meal_bolus_calc_cob_part">COB Ausgleich: +%1$.2f U</string>
+    <string name="meal_bolus_calc_result_label">Vorgeschlagener Bolus: %1$s</string>
+    <string name="meal_bolus_calc_meal_part">Mahlzeit: %1$s</string>
+    <string name="meal_bolus_calc_correction_part">Korrektur: %1$s</string>
+    <string name="meal_bolus_calc_iob_part">IOB Abzug: %1$s</string>
+    <string name="meal_bolus_calc_cob_part">COB Ausgleich: %1$s</string>
+    <string name="meal_bolus_calc_low_bg_warning">Blutzucker ≤ %1$s</string>
+    <string name="meal_bolus_calc_no_bg_warning">Kein aktueller Blutzucker</string>
     <string name="meal_bolus_insulin_label">Insulinmenge</string>
     <string name="meal_bolus_administer_button">Bestätigen</string>
 

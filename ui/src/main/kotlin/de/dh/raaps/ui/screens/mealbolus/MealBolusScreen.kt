@@ -63,6 +63,10 @@ import de.dh.raaps.ui.common.glucoseValue
 import de.dh.raaps.ui.common.isfValue
 import de.dh.raaps.ui.common.crValue
 import de.dh.raaps.ui.common.glucoseUnitLabel
+import de.dh.raaps.ui.common.insulinUnitLabel
+import de.dh.raaps.ui.common.insulinValue
+import de.dh.raaps.ui.common.carbsKeUnitLabel
+import de.dh.raaps.ui.common.carbsGramsValue
 import de.dh.raaps.ui.common.DefaultSteppingStrategy
 import de.dh.raaps.ui.common.ValueDisplayStrategy
 import de.dh.raaps.ui.common.composables.EditableValueStepper
@@ -133,7 +137,7 @@ fun MealBolusContent(
                     CircularProgressIndicator()
                     Spacer(Modifier.height(16.dp))
                     Text(
-                        text = "System belegt...",
+                        text = stringResource(R.string.meal_bolus_busy_system),
                         style = MaterialTheme.typography.bodyMedium
                     )
                 }
@@ -223,12 +227,12 @@ fun MealBolusContent(
                     }
                     Spacer(Modifier.height(8.dp))
                     Text(
-                        text = "Aktive Kohlenhydrate: " + stringResource(R.string.cob_format).format(cob),
+                        text = stringResource(R.string.meal_bolus_active_carbs_format, carbsGramsValue(cob)),
                         style = MaterialTheme.typography.bodyLarge,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                     Text(
-                        text = "Aktives Insulin: " + stringResource(R.string.iob_format).format(iob.iu),
+                        text = stringResource(R.string.meal_bolus_active_insulin_format, insulinValue(iob.iu)),
                         style = MaterialTheme.typography.bodyLarge,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -254,14 +258,14 @@ fun MealBolusContent(
                             horizontalAlignment = Alignment.CenterHorizontally
                         ) {
                             Text(
-                                text = "Das System ist aktuell belegt (${uiState.lockBusyOwner}). Bitte probieren Sie es später noch einmal.",
+                                text = stringResource(R.string.meal_bolus_lock_error_message, uiState.lockBusyOwner ?: ""),
                                 style = MaterialTheme.typography.bodyLarge,
                                 textAlign = TextAlign.Center,
                                 color = MaterialTheme.colorScheme.onErrorContainer
                             )
                             Spacer(Modifier.height(16.dp))
                             PrimaryButton(onClick = onNavigateUp) {
-                                Text("Zurück")
+                                Text(stringResource(id = de.dh.raaps.common.R.string.cd_navigate_up))
                             }
                         }
                     }
@@ -309,7 +313,7 @@ fun MealBolusContent(
 
                                     override fun color(value: Double): Color = Color.Unspecified
                                 },
-                                suffix = " KE"
+                                suffix = " ${carbsKeUnitLabel()}"
                             )
                         }
 
@@ -349,7 +353,7 @@ fun MealBolusContent(
 
                                         override fun color(value: Double): Color = Color.Unspecified
                                     },
-                                    suffix = " U"
+                                    suffix = " ${insulinUnitLabel()}"
                                 )
                             }
                         }
@@ -406,7 +410,7 @@ fun CalculationDetailsSelector(
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     Text(
-                        text = stringResource(R.string.meal_bolus_calc_result_label, uiState.proposedBolus.iu),
+                        text = stringResource(R.string.meal_bolus_calc_result_label, insulinValue(uiState.proposedBolus.iu)),
                         style = MaterialTheme.typography.bodyMedium,
                         fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.primary
@@ -414,7 +418,7 @@ fun CalculationDetailsSelector(
 
                     Icon(
                         imageVector = Icons.Default.KeyboardArrowDown,
-                        contentDescription = "Expand",
+                        contentDescription = stringResource(de.dh.raaps.common.R.string.cd_expand),
                         tint = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
@@ -432,7 +436,7 @@ fun CalculationDetailsSelector(
                     )
                     Icon(
                         imageVector = Icons.Default.KeyboardArrowUp,
-                        contentDescription = "Collapse",
+                        contentDescription = stringResource(de.dh.raaps.common.R.string.cd_collapse),
                         tint = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
@@ -450,28 +454,47 @@ fun CalculationDetailsSelector(
                     style = MaterialTheme.typography.bodySmall
                 )
 
+                if (uiState.currentBg == null) {
+                    Text(
+                        text = stringResource(R.string.meal_bolus_calc_no_bg_warning),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.error,
+                        fontWeight = FontWeight.Bold
+                    )
+                } else if (uiState.currentBg <= uiState.lowThreshold) {
+                    Text(
+                        text = stringResource(
+                            R.string.meal_bolus_calc_low_bg_warning,
+                            glucoseValue(BgValue(uiState.lowThreshold.toShort()), withUnit = true)
+                        ),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.error,
+                        fontWeight = FontWeight.Bold
+                    )
+                }
+
                 Spacer(Modifier.height(4.dp))
 
                 Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
                     Text(
-                        text = stringResource(R.string.meal_bolus_calc_meal_part, uiState.mealPart.iu),
+                        text = stringResource(R.string.meal_bolus_calc_meal_part, insulinValue(uiState.mealPart.iu, signed = true)),
                         style = MaterialTheme.typography.bodySmall
                     )
                     Text(
-                        text = stringResource(R.string.meal_bolus_calc_correction_part, uiState.correctionPart.iu),
+                        text = stringResource(R.string.meal_bolus_calc_correction_part, insulinValue(uiState.correctionPart.iu, signed = true)),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                     if (uiState.iobPart > InsulinAmount.ZERO) {
                         Text(
-                            text = stringResource(R.string.meal_bolus_calc_iob_part, uiState.iobPart.iu),
+                            text = stringResource(R.string.meal_bolus_calc_iob_part, insulinValue(-uiState.iobPart.iu, signed = true)),
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.error
                         )
                     }
                     if (uiState.cobPart > InsulinAmount.ZERO) {
                         Text(
-                            text = stringResource(R.string.meal_bolus_calc_cob_part, uiState.cobPart.iu),
+                            text = stringResource(R.string.meal_bolus_calc_cob_part, insulinValue(uiState.cobPart.iu, signed = true)),
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.primary
                         )
@@ -482,7 +505,7 @@ fun CalculationDetailsSelector(
                 HorizontalDivider(color = MaterialTheme.colorScheme.secondary.copy(alpha = 0.2f))
                 Spacer(Modifier.height(4.dp))
                 Text(
-                    text = stringResource(R.string.meal_bolus_calc_result_label, uiState.proposedBolus.iu),
+                    text = stringResource(R.string.meal_bolus_calc_result_label, insulinValue(uiState.proposedBolus.iu)),
                     style = MaterialTheme.typography.bodyMedium,
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.primary,

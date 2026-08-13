@@ -54,6 +54,8 @@ import de.dh.raaps.ui.common.theme.AppTheme
 import de.dh.raaps.ui.common.glucoseValue
 import de.dh.raaps.ui.common.deltaValue
 import de.dh.raaps.ui.common.glucoseUnitLabel
+import de.dh.raaps.ui.common.insulinValue
+import de.dh.raaps.ui.common.carbsGramsValue
 import de.dh.raaps.ui.controls.history.BgTrend
 import de.dh.raaps.ui.controls.history.CurrentBgData
 import de.dh.raaps.ui.controls.history.CurrentBgUiState
@@ -113,10 +115,8 @@ fun CurrentStateView(
         else -> 0f
     }
 
-    val cobFormat = stringResource(R.string.cob_format)
-    val iobFormat = stringResource(R.string.iob_format)
-    val cobText = remember(cob, cobFormat) { cobFormat.format(cob) }
-    val iobText = remember(iob, iobFormat) { iobFormat.format(iob.iu) }
+    val cobText = carbsGramsValue(cob)
+    val iobText = insulinValue(iob.iu)
 
     Surface(
         modifier = modifier,
