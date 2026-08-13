@@ -13,6 +13,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.Stable
 import androidx.compose.runtime.derivedStateOf
@@ -22,7 +23,6 @@ import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextStyle
@@ -123,11 +123,22 @@ data class HistoryAndImpactDiagramData(
             val firstTs = validReadings.first().timestamp.ms
             val baseTimestamp = firstTs
 
-            val lastTs = validReadings.last().timestamp.ms
+            val lastReadingTs = validReadings.last().timestamp.ms
             val minX = 0.0
 
-            val endTs = (((lastTs + MS_PER_HOUR / 2) / MS_PER_HOUR) + 1) * MS_PER_HOUR
-            val maxX = ((endTs - baseTimestamp).toDouble() / MS_PER_MINUTE).coerceAtLeast(INITIAL_SHOW_HOURS * 60.0)
+            val now = System.currentTimeMillis()
+            val lastFutureEntryTs = (insulinApplications.map { it.timestamp.ms + 4 * MS_PER_HOUR } + meals.map { it.timestamp.ms + 4 * MS_PER_HOUR })
+                .filter { it > now }
+                .maxOrNull()
+
+            val baseEndTs = (((lastReadingTs + MS_PER_HOUR / 2) / MS_PER_HOUR) + 1) * MS_PER_HOUR
+            val endTs = if (lastFutureEntryTs != null) {
+                maxOf(baseEndTs, minOf(now + 3 * MS_PER_HOUR, lastFutureEntryTs))
+            } else {
+                baseEndTs
+            }
+            val maxX = ((endTs - baseTimestamp).toDouble() / MS_PER_MINUTE).
+                coerceAtLeast(INITIAL_SHOW_HOURS * 60.0)
 
             val insulinX = mutableListOf<Double>()
             val insulinY = mutableListOf<Double>()
