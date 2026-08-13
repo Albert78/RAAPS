@@ -27,8 +27,8 @@ import de.dh.raaps.common.model.data.BgReadingsInterval
 import de.dh.raaps.ui.R
 import de.dh.raaps.ui.common.LocalGlucoseUnit
 import de.dh.raaps.ui.common.glucoseValue
-import de.dh.raaps.ui.common.icons.next
-import de.dh.raaps.ui.common.icons.previous
+import de.dh.raaps.ui.common.icons.Icon_Next
+import de.dh.raaps.ui.common.icons.Icon_Previous
 import de.dh.raaps.ui.common.shortRelativeTimeAgo
 import de.dh.raaps.ui.common.shortRelativeTimeUntil
 import de.dh.raaps.ui.common.theme.AppTheme
@@ -118,7 +118,7 @@ fun CgmOverviewCard(uiState: SystemControlUiState, timeFormat: SimpleDateFormat,
 
                 ControlDetailRow(
                     label = stringResource(id = R.string.system_control_cgm_last_value_label),
-                    icon = previous
+                    icon = Icon_Previous
                 ) {
                     val bgValueText = glucoseValue(uiState.lastBgReading?.value, withUnit = true, default = "--")
                     val timeText = uiState.lastBgReading?.timestamp?.let { timeFormat.format(Date(it.ms)) } ?: "--"
@@ -138,7 +138,7 @@ fun CgmOverviewCard(uiState: SystemControlUiState, timeFormat: SimpleDateFormat,
                     Spacer(modifier = Modifier.height(12.dp))
                     ControlDetailRow(
                         label = stringResource(id = R.string.system_control_cgm_next_value_label),
-                        icon = next
+                        icon = Icon_Next
                     ) {
                         val nextTimeText = timeFormat.format(Date(uiState.nextPredictedTimestamp.ms))
                         val remainingTime = run {

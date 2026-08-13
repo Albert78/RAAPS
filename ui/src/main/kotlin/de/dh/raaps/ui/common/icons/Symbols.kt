@@ -70,8 +70,10 @@ val Icon_Comments = Icons.AutoMirrored.Outlined.Comment
 val Icon_Settings = Icons.Outlined.Settings
 val Icon_Check_Yes = Icons.Outlined.Check
 val Icon_Arrow_Down = Icons.Outlined.ArrowDownward
-val next = Icons.Filled.Next
-val previous = Icons.Filled.Previous
+val Icon_Next = Icons.Filled.Next
+val Icon_Previous = Icons.Filled.Previous
+val Icon_Plus = Icons.Filled.Plus
+val Icon_Minus = Icons.Filled.Minus
 val Icon_Alarm_Snooze = Icons.Outlined.Snooze
 val Icon_Theme_Light_Dark = Icons.Outlined.Theme_Light_Dark
 val Icon_Scrollview_Arrow_Up = Icons.Outlined.KeyboardArrowUp
@@ -138,8 +140,10 @@ private val iconsForPreview = listOf(
     IconPreview("Ui", Icon_Ui),
     IconPreview("Backup", Icon_Backup),
     IconPreview("Restore", Icon_Restore),
-    IconPreview("next", next),
-    IconPreview("previous", previous)
+    IconPreview("Next", Icon_Next),
+    IconPreview("Previous", Icon_Previous),
+    IconPreview("Plus", Icon_Plus),
+    IconPreview("Minus", Icon_Minus)
 )
 
 @Preview(showBackground = true, widthDp = 320, heightDp = 1400, name = "Icon Catalog")

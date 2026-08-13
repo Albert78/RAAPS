@@ -11,9 +11,8 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.Remove
+import de.dh.raaps.ui.common.icons.Icon_Minus
+import de.dh.raaps.ui.common.icons.Icon_Plus
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -106,7 +105,7 @@ fun EditableValueStepper(
             modifier = Modifier.size(style.buttonSize),
             enabled = currentValue > minValue
         ) {
-            Icon(Icons.Default.Remove, contentDescription = stringResource(R.string.cd_decrease_value), modifier = Modifier.size(style.buttonSize * 0.5f))
+            Icon(Icon_Minus, contentDescription = stringResource(R.string.cd_decrease_value), modifier = Modifier.size(style.buttonSize * 0.5f))
         }
 
         Spacer(Modifier.width(style.spacing))
@@ -214,7 +213,7 @@ fun EditableValueStepper(
             modifier = Modifier.size(style.buttonSize),
             enabled = currentValue < maxValue
         ) {
-            Icon(Icons.Default.Add, contentDescription = stringResource(R.string.cd_increase_value), modifier = Modifier.size(style.buttonSize * 0.5f))
+            Icon(Icon_Plus, contentDescription = stringResource(R.string.cd_increase_value), modifier = Modifier.size(style.buttonSize * 0.5f))
         }
     }
 }
