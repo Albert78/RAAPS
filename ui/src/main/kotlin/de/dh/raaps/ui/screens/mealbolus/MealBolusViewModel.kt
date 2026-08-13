@@ -174,7 +174,9 @@ class MealBolusViewModel(
 
         val currentBg = state.currentBg ?: state.targetBg
         val bgDiff = currentBg - state.targetBg
-        val correctionPart = if (bgDiff > 0) convertToInsulinAmountFromBgDelta(BgDelta(bgDiff.toShort()), BgDelta(state.isf.toShort())) else InsulinAmount.ZERO
+
+        // Can be positive or negative
+        val correctionPart = convertToInsulinAmountFromBgDelta(BgDelta(bgDiff.toShort()), BgDelta(state.isf.toShort()))
 
         val iobPart = state.iob
         val cobPart = convertToInsulinAmountFromCarbs(state.cob, state.cr)
