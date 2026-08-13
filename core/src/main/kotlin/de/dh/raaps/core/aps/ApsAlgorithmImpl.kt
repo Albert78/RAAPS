@@ -269,15 +269,15 @@ class ApsAlgorithmImpl(
             targetBg = targetBg,
             isf = isfValue,
             cr = crValue,
-            reasoning = CoreReasoning.INTERNAL_ERROR // Dummy, will be overwritten
+            reasoning = CoreReasoning.INTERNAL_ERROR // Will be overwritten by withMetrics()
         )
 
         val tickStateAtPeakValues = predictionModel.withTickState(nowTick + insulinPeakTicks) {
             it.predictedBg to it.cumulatedBasalInsulin
-        } ?: return CalculationResult.safetyBasal().copy(metrics = insightTemplate)
+        } ?: return CalculationResult.safetyBasal().withMetrics(insightTemplate)
 
         val predictedBgAtPeak = tickStateAtPeakValues.first.takeIf { it.isValid() }
-            ?: return CalculationResult.safetyBasal().copy(metrics = insightTemplate)
+            ?: return CalculationResult.safetyBasal().withMetrics(insightTemplate)
         val cumulatedBasalInsulinAtPeak = tickStateAtPeakValues.second
 
         val insight = insightTemplate.copy(predictedBgAtPeak = predictedBgAtPeak)
@@ -295,7 +295,7 @@ class ApsAlgorithmImpl(
 
             if (bgErrorAtPeak + lowTempBasalEffectUntilPeak < BgDelta(-20)) {
                 // Prediction is too low -> Defer ongoing meal boluses
-                return CalculationResult.zeroTemp(durationInHours = 1).copy(metrics = insight)
+                return CalculationResult.zeroTemp(durationInHours = 1).withMetrics(insight)
             }
             // Else go on with decreased basal
             val safetCorrectionUnits = convertToInsulinAmountFromBgDelta(-bgErrorAtPeak, isfValue)
@@ -308,7 +308,7 @@ class ApsAlgorithmImpl(
             return CalculationResult.tempBasal(
                 percent = percent,
                 durationInHours = 1
-            ).copy(metrics = insight)
+            ).withMetrics(insight)
         }
 
         // Calculation of recovery phase
@@ -322,7 +322,7 @@ class ApsAlgorithmImpl(
 
             // Return to normal basal rate (clear temp basal) but do not calculate
             // any correction boluses yet to avoid overshooting during recovery.
-            return CalculationResult.normalSafetyBasal().copy(metrics = insight)
+            return CalculationResult.normalSafetyBasal().withMetrics(insight)
         }
 
         // *****************************************************************************************
@@ -354,7 +354,7 @@ class ApsAlgorithmImpl(
             // Meals and BG error are covered by IOB/planned boluses.
             // Return to normal basal rate and wait for insulin/carbs to act.
             if (dueDeferredBoluses.isEmpty()) {
-                CalculationResult.normalSafetyBasal().copy(metrics = insight)
+                CalculationResult.normalSafetyBasal().withMetrics(insight)
             } else {
                 // Administer due deferred bolus.
                 // It might be that this is too much for the COB but this is in the
@@ -362,7 +362,7 @@ class ApsAlgorithmImpl(
                 CalculationResult.mealOrCorrectionBolus(
                     bolusAmount = dueMealBolusAmount,
                     handledDeferredBoluses = dueDeferredBoluses
-                ).copy(metrics = insight)
+                ).withMetrics(insight)
             }
         } else {
             // Insufficient insulin: Calculate the delta needed to cover the gap.
@@ -375,7 +375,7 @@ class ApsAlgorithmImpl(
             CalculationResult.mealOrCorrectionBolus(
                 bolusAmount = bolusAmount,
                 handledDeferredBoluses = dueDeferredBoluses
-            ).copy(metrics = insight)
+            ).withMetrics(insight)
         }
     } catch (e: Exception) {
         Log.e(TAG, "Error while recalculating", e)

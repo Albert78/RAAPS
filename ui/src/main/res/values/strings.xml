@@ -210,6 +210,8 @@
     <string name="meal_bolus_calc_low_bg_warning">Blutzucker ≤ %1$s</string>
     <string name="meal_bolus_calc_no_bg_warning">Kein aktueller Blutzucker</string>
     <string name="meal_bolus_insulin_label">Insulinmenge</string>
+    <string name="meal_bolus_meal_time_label">Zeit der Mahlzeit</string>
+    <string name="meal_bolus_insulin_plan_title">Insulin-Planung</string>
     <string name="meal_bolus_administer_button">Bestätigen</string>
 
     <string name="drawer_header_title">RAAPS</string>

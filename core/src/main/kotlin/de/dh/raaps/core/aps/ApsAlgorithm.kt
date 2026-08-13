@@ -60,6 +60,17 @@ data class CalculationResult(
     val reasoning: CoreReasoning,
     val metrics: CoreInsight? = null
 ) {
+    fun withMetrics(insight: CoreInsight): CalculationResult {
+        return this.copy(
+            metrics = insight.copy(
+                reasoning = this.reasoning,
+                actionBolus = this.bolus,
+                actionTempBasalPercent = this.tempBasal?.percent,
+                actionTempBasalDurationInHours = this.tempBasal?.durationInHours
+            )
+        )
+    }
+
     companion object {
         fun safetyBasal(): CalculationResult = CalculationResult(
             carbsInGHint = null,

@@ -6,6 +6,7 @@ import de.dh.raaps.common.model.ApsMode
 import de.dh.raaps.common.model.InsulinAmount
 import de.dh.raaps.common.model.InsulinHistory
 import de.dh.raaps.common.model.InsulinType
+import de.dh.raaps.common.model.ToDo
 import de.dh.raaps.common.model.data.BgBlock
 import de.dh.raaps.common.model.data.BgDelta
 import de.dh.raaps.common.model.data.BgValue
@@ -363,6 +364,19 @@ class TherapyManager(
     fun recommendBolus(treatmentLock: TreatmentLock, amount: InsulinAmount) {
         checkLock(treatmentLock)
         _recommendations.value += ApsRecommendation.Bolus(amount)
+    }
+
+    /**
+     * Schedules a reminder for the user to eat their meal.
+     *
+     * @param treatmentLock The lock held by the caller.
+     * @param mealTimestamp The time when the meal is planned to be eaten.
+     */
+    fun scheduleMealReminder(treatmentLock: TreatmentLock, mealTimestamp: Timestamp) {
+        checkLock(treatmentLock)
+        ToDo.toBeImplemented("Schedule meal reminder")
+        // TODO: Implement meal reminder notification logic
+        Log.i(TAG, "Scheduled meal reminder for $mealTimestamp")
     }
 
     suspend fun addDeferredBolus(treatmentLock: TreatmentLock, deferredBolus: DeferredBolus) {

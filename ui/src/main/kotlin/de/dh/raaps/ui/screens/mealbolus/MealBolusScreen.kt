@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
@@ -25,6 +26,7 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
@@ -69,12 +71,17 @@ import de.dh.raaps.ui.common.carbsKeUnitLabel
 import de.dh.raaps.ui.common.carbsGramsValue
 import de.dh.raaps.ui.common.DefaultSteppingStrategy
 import de.dh.raaps.ui.common.ValueDisplayStrategy
+import de.dh.raaps.ui.common.time
 import de.dh.raaps.ui.common.composables.EditableValueStepper
 import de.dh.raaps.ui.common.composables.LightGreenA700
 import de.dh.raaps.ui.common.composables.PrimaryButton
 import de.dh.raaps.ui.common.composables.Red
+import de.dh.raaps.ui.common.composables.StepperDefaults
+import de.dh.raaps.ui.common.composables.StepperStyle
 import de.dh.raaps.ui.common.composables.Yellow
 import de.dh.raaps.ui.common.composables.contentScrollIndicator
+import de.dh.raaps.ui.common.icons.Icon_Minus
+import de.dh.raaps.ui.common.icons.Icon_Plus
 import de.dh.raaps.ui.common.theme.AppTheme
 import de.dh.raaps.ui.controls.history.BgTrend
 import de.dh.raaps.ui.controls.history.CurrentBgData
@@ -100,8 +107,11 @@ fun MealBolusScreen(
         cob = cob,
         onNavigateUp = onNavigateUp,
         onCarbsChange = { viewModel.onCarbsChange(it) },
+        onMealTimeChange = { viewModel.onMealTimeChange(it) },
         onMealTypeChange = { viewModel.onMealTypeChange(it) },
         onManualBolusChange = { viewModel.onManualBolusChange(it) },
+        onPlannedInsulinTimeChange = { index, time -> viewModel.onPlannedInsulinTimeChange(index, time) },
+        onToggleInsulinPlan = { viewModel.toggleInsulinPlanExpanded() },
         onSubmit = { viewModel.submit(onNavigateUp) }
     )
 }
@@ -115,8 +125,11 @@ fun MealBolusContent(
     cob: Double,
     onNavigateUp: () -> Unit,
     onCarbsChange: (Double) -> Unit,
+    onMealTimeChange: (Timestamp) -> Unit,
     onMealTypeChange: (MealType) -> Unit,
     onManualBolusChange: (Double) -> Unit,
+    onPlannedInsulinTimeChange: (Int, Timestamp) -> Unit,
+    onToggleInsulinPlan: () -> Unit,
     onSubmit: () -> Unit
 ) {
     if (uiState.isBusy) {
@@ -172,121 +185,32 @@ fun MealBolusContent(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(24.dp)
         ) {
-            // Header with BG, IOB, COB (Full width background)
-            Surface(
-                modifier = Modifier.fillMaxWidth(),
-                color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
-            ) {
-                Column(
-                    modifier = Modifier.padding(16.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally
-                ) {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(4.dp)
-                    ) {
-                        val bgText = glucoseValue(currentBgValue?.bgValue, default = "?")
-                        val textColor = if (currentBgValue == null || (currentBgValue.isValueOld)) {
-                            Color.Gray
-                        } else when {
-                            currentBgValue.bgValue.mgdl < 70 -> Red
-                            currentBgValue.bgValue.mgdl < 180 -> LightGreenA700
-                            else -> Yellow
-                        }
-                        Text(
-                            text = bgText,
-                            style = MaterialTheme.typography.displayMedium.copy(fontWeight = FontWeight.Bold),
-                            color = textColor
-                        )
-                        Text(
-                            text = glucoseUnitLabel(),
-                            style = MaterialTheme.typography.titleMedium,
-                            color = Color.Gray,
-                            modifier = Modifier
-                                .align(Alignment.Bottom)
-                                .padding(bottom = 12.dp)
-                        )
-                        if (currentBgValue?.trend != null && currentBgValue.trend != BgTrend.NotComputable) {
-                            val trendRotation = when (currentBgValue.trend) {
-                                BgTrend.DoubleUp, BgTrend.SingleUp -> -90f
-                                BgTrend.FortyFiveUp -> -45f
-                                BgTrend.Flat -> 0f
-                                BgTrend.FortyFiveDown -> 45f
-                                BgTrend.SingleDown, BgTrend.DoubleDown -> 90f
-                                BgTrend.NotComputable -> 0f
-                            }
-                            Icon(
-                                imageVector = Icons.AutoMirrored.Filled.ArrowForward,
-                                contentDescription = null,
-                                modifier = Modifier
-                                    .size(48.dp)
-                                    .rotate(trendRotation),
-                                tint = MaterialTheme.colorScheme.onSurface
-                            )
-                        }
-                    }
-                    Spacer(Modifier.height(8.dp))
-                    Text(
-                        text = stringResource(R.string.meal_bolus_active_carbs_format, carbsGramsValue(cob)),
-                        style = MaterialTheme.typography.bodyLarge,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                    Text(
-                        text = stringResource(R.string.meal_bolus_active_insulin_format, insulinValue(iob.iu)),
-                        style = MaterialTheme.typography.bodyLarge,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                }
-            }
+            // Header with BG, IOB, COB
+            // ... (keep existing header)
+            MealBolusHeader(currentBgValue, cob, iob)
 
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(horizontal = 16.dp),
                 horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.spacedBy(24.dp)
+                verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
                 if (uiState.lockError) {
-                    Card(
-                        modifier = Modifier.fillMaxWidth(),
-                        colors = CardDefaults.cardColors(
-                            containerColor = MaterialTheme.colorScheme.errorContainer
-                        )
-                    ) {
-                        Column(
-                            modifier = Modifier.padding(16.dp),
-                            horizontalAlignment = Alignment.CenterHorizontally
-                        ) {
-                            Text(
-                                text = stringResource(R.string.meal_bolus_lock_error_message, uiState.lockBusyOwner ?: ""),
-                                style = MaterialTheme.typography.bodyLarge,
-                                textAlign = TextAlign.Center,
-                                color = MaterialTheme.colorScheme.onErrorContainer
-                            )
-                            Spacer(Modifier.height(16.dp))
-                            PrimaryButton(onClick = onNavigateUp) {
-                                Text(stringResource(id = de.dh.raaps.common.R.string.cd_navigate_up))
-                            }
-                        }
-                    }
+                    // ...
+                    LockErrorCard(uiState.lockBusyOwner, onNavigateUp)
                     return@Column
                 }
 
                 if (uiState.isEditMode) {
-                    Card(
-                        modifier = Modifier.fillMaxWidth(),
-                        colors = CardDefaults.cardColors(
-                            containerColor = MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.5f)
-                        )
-                    ) {
-                        Text(
-                            text = stringResource(R.string.meal_edit_warning_bolus),
-                            modifier = Modifier.padding(16.dp),
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onErrorContainer
-                        )
-                    }
+                    EditWarningCard()
                 }
+
+                // NEW: Meal Time Card
+                MealTimeCard(
+                    mealTimestamp = uiState.mealTimestamp,
+                    onTimeChange = onMealTimeChange
+                )
 
                 // Mahlzeit Card (Carbs + Food Type)
                 Card(modifier = Modifier.fillMaxWidth()) {
@@ -320,7 +244,8 @@ fun MealBolusContent(
                         FoodTypeSelector(
                             mealTypes = uiState.mealTypes,
                             selectedType = uiState.selectedMealType,
-                            onTypeSelected = onMealTypeChange
+                            onTypeSelected = onMealTypeChange,
+                            isMandatory = uiState.carbsKe > 0.0
                         )
                     }
                 }
@@ -358,10 +283,25 @@ fun MealBolusContent(
                             }
                         }
                     }
+
+                    // NEW: Insulin Plan Card
+                    if (uiState.insulinPlan.isNotEmpty()) {
+                        InsulinPlanCard(
+                            plan = uiState.insulinPlan,
+                            isExpanded = uiState.isInsulinPlanExpanded,
+                            onToggleExpanded = onToggleInsulinPlan,
+                            onTimeChange = onPlannedInsulinTimeChange
+                        )
+                    }
                 }
 
                 // Bottom Button
-                val isInputValid = uiState.carbsKe > 0.0 || uiState.manualBolus > InsulinAmount.ZERO
+                val isInputValid = if (uiState.carbsKe > 0.0) {
+                    uiState.selectedMealType != null
+                } else {
+                    uiState.manualBolus > InsulinAmount.ZERO
+                }
+
                 PrimaryButton(
                     onClick = onSubmit,
                     modifier = Modifier
@@ -516,8 +456,10 @@ fun CalculationDetailsSelector(
     }
 }
 
+@Preview(showBackground = true, name = "Default Mode")
+@Preview(showBackground = true, name = "Default Mode - Dark", uiMode = Configuration.UI_MODE_NIGHT_YES)
 @Composable
-private fun MealBolusPreview() {
+fun MealBolusDefaultPreview() {
     val sampleMealTypes = listOf(
         MealType(name = "Schnelle KE", components = listOf(CarbCurveComponentData(100, Minutes(60))), cat = Minutes(180)),
         MealType(name = "Standard-Essen", components = listOf(CarbCurveComponentData(100, Minutes(60))), cat = Minutes(180)),
@@ -553,16 +495,299 @@ private fun MealBolusPreview() {
             cob = 25.0,
             onNavigateUp = {},
             onCarbsChange = {},
+            onMealTimeChange = {},
             onMealTypeChange = {},
             onManualBolusChange = {},
+            onPlannedInsulinTimeChange = { _, _ -> },
+            onToggleInsulinPlan = {},
             onSubmit = {}
         )
     }
 }
 
-@Preview(showBackground = true, name = "Default Mode")
-@Preview(showBackground = true, name = "Default Mode - Dark", uiMode = Configuration.UI_MODE_NIGHT_YES)
 @Composable
-fun MealBolusDefaultPreview() {
-    MealBolusPreview()
+fun MealBolusHeader(
+    currentBgValue: CurrentBgData?,
+    cob: Double,
+    iob: InsulinAmount
+) {
+    Surface(
+        modifier = Modifier.fillMaxWidth(),
+        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
+    ) {
+        Column(
+            modifier = Modifier.padding(16.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(4.dp)
+            ) {
+                val bgText = glucoseValue(currentBgValue?.bgValue, default = "?")
+                val textColor = if (currentBgValue == null || (currentBgValue.isValueOld)) {
+                    Color.Gray
+                } else when {
+                    currentBgValue.bgValue.mgdl < 70 -> Red
+                    currentBgValue.bgValue.mgdl < 180 -> LightGreenA700
+                    else -> Yellow
+                }
+                Text(
+                    text = bgText,
+                    style = MaterialTheme.typography.displayMedium.copy(fontWeight = FontWeight.Bold),
+                    color = textColor
+                )
+                Text(
+                    text = glucoseUnitLabel(),
+                    style = MaterialTheme.typography.titleMedium,
+                    color = Color.Gray,
+                    modifier = Modifier
+                        .align(Alignment.Bottom)
+                        .padding(bottom = 12.dp)
+                )
+                if (currentBgValue?.trend != null && currentBgValue.trend != BgTrend.NotComputable) {
+                    val trendRotation = when (currentBgValue.trend) {
+                        BgTrend.DoubleUp, BgTrend.SingleUp -> -90f
+                        BgTrend.FortyFiveUp -> -45f
+                        BgTrend.Flat -> 0f
+                        BgTrend.FortyFiveDown -> 45f
+                        BgTrend.SingleDown, BgTrend.DoubleDown -> 90f
+                        BgTrend.NotComputable -> 0f
+                    }
+                    Icon(
+                        imageVector = Icons.AutoMirrored.Filled.ArrowForward,
+                        contentDescription = null,
+                        modifier = Modifier
+                            .size(48.dp)
+                            .rotate(trendRotation),
+                        tint = MaterialTheme.colorScheme.onSurface
+                    )
+                }
+            }
+            Spacer(Modifier.height(8.dp))
+            Text(
+                text = stringResource(R.string.meal_bolus_active_carbs_format, carbsGramsValue(cob)),
+                style = MaterialTheme.typography.bodyLarge,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+            Text(
+                text = stringResource(R.string.meal_bolus_active_insulin_format, insulinValue(iob.iu)),
+                style = MaterialTheme.typography.bodyLarge,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
+    }
+}
+
+@Composable
+fun LockErrorCard(owner: String?, onNavigateUp: () -> Unit) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.errorContainer
+        )
+    ) {
+        Column(
+            modifier = Modifier.padding(16.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Text(
+                text = stringResource(R.string.meal_bolus_lock_error_message, owner ?: ""),
+                style = MaterialTheme.typography.bodyLarge,
+                textAlign = TextAlign.Center,
+                color = MaterialTheme.colorScheme.onErrorContainer
+            )
+            Spacer(Modifier.height(16.dp))
+            PrimaryButton(onClick = onNavigateUp) {
+                Text(stringResource(id = de.dh.raaps.common.R.string.cd_navigate_up))
+            }
+        }
+    }
+}
+
+@Composable
+fun EditWarningCard() {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.5f)
+        )
+    ) {
+        Text(
+            text = stringResource(R.string.meal_edit_warning_bolus),
+            modifier = Modifier.padding(16.dp),
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onErrorContainer
+        )
+    }
+}
+
+@Composable
+fun MealTimeCard(
+    mealTimestamp: Timestamp,
+    onTimeChange: (Timestamp) -> Unit
+) {
+    Card(modifier = Modifier.fillMaxWidth()) {
+        Column(
+            modifier = Modifier.padding(16.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Text(
+                text = stringResource(R.string.meal_bolus_meal_time_label),
+                style = MaterialTheme.typography.titleMedium
+            )
+            Spacer(Modifier.height(8.dp))
+            TimeStepper(
+                currentTime = mealTimestamp,
+                onTimeChange = onTimeChange,
+                modifier = Modifier.fillMaxWidth()
+            )
+            Spacer(Modifier.height(4.dp))
+            Text(
+                text = time(mealTimestamp),
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.primary
+            )
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun InsulinPlanCard(
+    plan: List<PlannedInsulin>,
+    isExpanded: Boolean,
+    onToggleExpanded: () -> Unit,
+    onTimeChange: (Int, Timestamp) -> Unit
+) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        onClick = onToggleExpanded,
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.2f)),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.2f)
+        )
+    ) {
+        Column(modifier = Modifier.padding(12.dp)) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Column {
+                    Text(
+                        text = stringResource(R.string.meal_bolus_insulin_plan_title),
+                        style = MaterialTheme.typography.titleSmall,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.primary
+                    )
+                    if (!isExpanded) {
+                        val planSummary = plan.joinToString(" + ") { String.format(Locale.getDefault(), "%.2f E", it.amount.iu) }
+                        Text(
+                            text = planSummary,
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                }
+                Icon(
+                    imageVector = if (isExpanded) Icons.Default.KeyboardArrowUp else Icons.Default.KeyboardArrowDown,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.primary
+                )
+            }
+
+            if (isExpanded) {
+                Spacer(Modifier.height(16.dp))
+                Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
+                    plan.forEachIndexed { index, item ->
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text(
+                                    text = item.description,
+                                    style = MaterialTheme.typography.labelMedium,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                                Text(
+                                    text = insulinValue(item.amount.iu),
+                                    style = MaterialTheme.typography.titleMedium,
+                                    fontWeight = FontWeight.Bold
+                                )
+                                Text(
+                                    text = time(item.timestamp),
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.primary
+                                )
+                            }
+                            TimeStepper(
+                                currentTime = item.timestamp,
+                                onTimeChange = { onTimeChange(index, it) },
+                                style = StepperDefaults.compactStyle().copy(valueWidth = 70.dp)
+                            )
+                        }
+                        if (index < plan.size - 1) {
+                            HorizontalDivider(
+                                modifier = Modifier.padding(vertical = 4.dp),
+                                color = LocalContentColor.current.copy(alpha = 0.12f)
+                            )
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun TimeStepper(
+    currentTime: Timestamp,
+    onTimeChange: (Timestamp) -> Unit,
+    modifier: Modifier = Modifier,
+    stepMinutes: Int = 5,
+    style: StepperStyle = StepperDefaults.defaultStyle()
+) {
+    val now = Timestamp.now()
+    val diffMin = kotlin.math.round((currentTime.ms - now.ms) / 60000.0).toInt()
+    val relativeText = if (diffMin > 0) "+$diffMin Min" else if (diffMin < 0) "$diffMin Min" else "Sofort"
+
+    Row(
+        modifier = modifier,
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.Center
+    ) {
+        IconButton(
+            onClick = { onTimeChange(currentTime - Minutes(stepMinutes.toShort())) },
+            modifier = Modifier.size(style.buttonSize)
+        ) {
+            Icon(Icon_Minus, contentDescription = null, modifier = Modifier.size(style.buttonSize * 0.5f))
+        }
+
+        Spacer(Modifier.width(style.spacing))
+
+        Text(
+            text = relativeText,
+            style = style.textStyle,
+            textAlign = TextAlign.Center,
+            modifier = Modifier.width(style.valueWidth)
+        )
+
+        Spacer(Modifier.width(style.spacing))
+
+        IconButton(
+            onClick = { onTimeChange(currentTime + Minutes(stepMinutes.toShort())) },
+            modifier = Modifier.size(style.buttonSize)
+        ) {
+            Icon(Icon_Plus, contentDescription = null, modifier = Modifier.size(style.buttonSize * 0.5f))
+        }
+    }
+}
+
+private fun time(timestamp: Timestamp): String {
+    val localTime = java.time.Instant.ofEpochMilli(timestamp.ms)
+        .atZone(java.time.ZoneId.systemDefault())
+        .toLocalTime()
+    return time(localTime)
 }

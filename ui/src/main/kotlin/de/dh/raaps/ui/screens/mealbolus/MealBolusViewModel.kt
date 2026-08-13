@@ -7,7 +7,6 @@ import androidx.lifecycle.viewmodel.CreationExtras
 import de.dh.raaps.common.model.ApsMode
 import de.dh.raaps.common.model.DEFAULT_CR_GRAM_PER_UNIT
 import de.dh.raaps.common.model.DEFAULT_ISF_MGDL_PER_UNIT
-import de.dh.raaps.common.model.ID_MEAL_STANDARD
 import de.dh.raaps.common.model.ID_UNDEFINED
 import de.dh.raaps.common.model.InsulinAmount
 import de.dh.raaps.common.model.MealEntry
@@ -18,6 +17,7 @@ import de.dh.raaps.common.model.data.BgDelta
 import de.dh.raaps.common.model.data.Minutes
 import de.dh.raaps.common.model.data.Timestamp
 import de.dh.raaps.core.SystemRegistry
+import de.dh.raaps.core.aps.DeferredBolus
 import de.dh.raaps.core.aps.LockResult
 import de.dh.raaps.core.aps.TreatmentLock
 import kotlinx.coroutines.awaitCancellation
@@ -31,11 +31,21 @@ import kotlin.math.max
 import kotlin.math.round
 import kotlin.time.Duration.Companion.seconds
 
+data class PlannedInsulin(
+    val amount: InsulinAmount,
+    val timestamp: Timestamp,
+    val offsetMinutes: Int = 0,
+    val description: String = "",
+    val isUserModified: Boolean = false
+)
+
 data class MealBolusUiState(
     val isLoading: Boolean = true,
     val isEditMode: Boolean = false,
     val originalMealTimestamp: Timestamp? = null,
     val originalMealId: Long = ID_UNDEFINED,
+    val mealTimestamp: Timestamp = Timestamp.now(),
+    val seaMinutes: Int = 0,
     val carbsKe: Double = 0.0,
     val mealTypes: List<MealType> = emptyList(),
     val selectedMealType: MealType? = null,
@@ -52,6 +62,8 @@ data class MealBolusUiState(
     val cobPart: InsulinAmount = InsulinAmount.ZERO,
     val proposedBolus: InsulinAmount = InsulinAmount.ZERO,
     val manualBolus: InsulinAmount = InsulinAmount.ZERO,
+    val insulinPlan: List<PlannedInsulin> = emptyList(),
+    val isInsulinPlanExpanded: Boolean = false,
     val isAutomaticMode: Boolean = false,
     val isSubmitting: Boolean = false,
     val isLockAcquired: Boolean = false,
@@ -95,16 +107,20 @@ class MealBolusViewModel(
             val cob = calculationModel.cob(mealsHistory, now)
 
             val existingMeal = mealId?.let { treatmentRepository.getMeal(it) }
-
+            val initialMealTimestamp = existingMeal?.timestamp ?: now
+            val suggestedSea = calculateSuggestedSea(currentBg, bgSettings.first.mgdl.toInt())
+            
             _uiState.update {
                 it.copy(
                     isLoading = false,
                     isEditMode = existingMeal != null,
                     originalMealTimestamp = existingMeal?.timestamp,
                     originalMealId = existingMeal?.id ?: ID_UNDEFINED,
+                    mealTimestamp = if (existingMeal == null) now + Minutes(suggestedSea.toShort()) else initialMealTimestamp,
+                    seaMinutes = if (existingMeal == null) suggestedSea else 0,
                     carbsKe = existingMeal?.let { meal -> meal.carbGrams / 10.0 } ?: 0.0,
                     mealTypes = mealTypes,
-                    selectedMealType = existingMeal?.mealType ?: mealTypes.find { it.id == ID_MEAL_STANDARD } ?: mealTypes.firstOrNull(),
+                    selectedMealType = existingMeal?.mealType,
                     currentBg = currentBg,
                     targetBg = bgSettings.first.mgdl.toInt(),
                     lowThreshold = bgSettings.second.mgdl.toInt(),
@@ -115,6 +131,7 @@ class MealBolusViewModel(
                 )
             }
             calculateBolus()
+            startTicker()
         }
 
         viewModelScope.launch {
@@ -160,13 +177,52 @@ class MealBolusViewModel(
         calculateBolus()
     }
 
+    fun onMealTimeChange(timestamp: Timestamp) {
+        val now = Timestamp.now()
+        val offset = kotlin.math.round((timestamp.ms - now.ms) / 60000.0)
+        _uiState.update { it.copy(mealTimestamp = timestamp, seaMinutes = offset.toInt()) }
+        calculateBolus()
+    }
+
     fun onMealTypeChange(mealType: MealType) {
         _uiState.update { it.copy(selectedMealType = mealType) }
+        calculateBolus()
     }
 
     fun onManualBolusChange(amount: Double) {
         if (_uiState.value.isEditMode) return // Prevent bolus change in edit mode
         _uiState.update { it.copy(manualBolus = InsulinAmount(amount).coerceAtLeast(InsulinAmount.ZERO)) }
+        updateInsulinPlanTimes() // Re-calculate distribution if manual amount changes
+    }
+
+    fun onPlannedInsulinTimeChange(index: Int, newTimestamp: Timestamp) {
+        val now = Timestamp.now()
+        val offset = kotlin.math.round((newTimestamp.ms - now.ms) / 60000.0)
+        _uiState.update { state ->
+            val newPlan = state.insulinPlan.toMutableList()
+            if (index in newPlan.indices) {
+                newPlan[index] = newPlan[index].copy(
+                    timestamp = newTimestamp,
+                    offsetMinutes = offset.toInt(),
+                    isUserModified = true
+                )
+            }
+            state.copy(insulinPlan = newPlan)
+        }
+    }
+
+    fun toggleInsulinPlanExpanded() {
+        _uiState.update { it.copy(isInsulinPlanExpanded = !it.isInsulinPlanExpanded) }
+    }
+
+    private fun calculateSuggestedSea(currentBg: Int?, targetBg: Int): Int {
+        if (currentBg == null) return 0
+        val diff = currentBg - targetBg
+        if (diff <= 0) return 0
+        
+        // Simple rule: 5 minutes per 20 mg/dL above target, max 45 min
+        val suggested = (diff / 20) * 5
+        return suggested.coerceIn(0, 45)
     }
 
     private fun calculateBolus() {
@@ -204,6 +260,45 @@ class MealBolusViewModel(
                 manualBolus = if (state.isEditMode) InsulinAmount.ZERO else bolusAmount
             )
         }
+        updateInsulinPlanTimes()
+    }
+
+    private fun updateInsulinPlanTimes() {
+        val state = _uiState.value
+        if (state.isEditMode || state.manualBolus <= InsulinAmount.ZERO) {
+            _uiState.update { it.copy(insulinPlan = emptyList()) }
+            return
+        }
+
+        val totalAmount = state.manualBolus
+        val mealType = state.selectedMealType ?: return
+        val now = Timestamp.now()
+        
+        val isLowBg = state.currentBg != null && state.currentBg <= state.lowThreshold
+        
+        val newPlan = mealType.components.mapIndexed { index, component ->
+            val amount = InsulinAmount(round(totalAmount.iu * (component.weight / 100.0) * 100.0) / 100.0)
+            
+            // Suggested offset:
+            val suggestedOffset = if (isLowBg) 15 else 0
+            val delayFromBase = if (index == 0) 0 else component.peakMinutes.value.toInt()
+            val finalOffset = suggestedOffset + delayFromBase
+
+            // Preserve user modification if possible
+            val existing = state.insulinPlan.getOrNull(index)
+            val offsetToUse = if (existing?.isUserModified == true) existing.offsetMinutes else finalOffset
+            val finalTimestamp = now + Minutes(offsetToUse.toShort())
+
+            PlannedInsulin(
+                amount = amount,
+                timestamp = finalTimestamp,
+                offsetMinutes = offsetToUse,
+                description = if (mealType.components.size > 1) "Teil ${index + 1} (${component.weight}%)" else "Bolus",
+                isUserModified = existing?.isUserModified ?: false
+            )
+        }.filter { it.amount > InsulinAmount.ZERO }
+
+        _uiState.update { it.copy(insulinPlan = newPlan) }
     }
 
     fun submit(onSuccess: () -> Unit) {
@@ -213,24 +308,40 @@ class MealBolusViewModel(
         viewModelScope.launch {
             _uiState.update { it.copy(isSubmitting = true) }
             try {
-                val now = Timestamp.now()
+                val lock = treatmentLock ?: throw IllegalStateException("Action attempted without holding the lock")
 
                 // 1. Record/Update Meal
                 if (state.carbsKe > 0 && state.selectedMealType != null) {
                     val mealEntry = MealEntry(
                         id = if (state.isEditMode) state.originalMealId else ID_UNDEFINED,
-                        timestamp = if (state.isEditMode) (state.originalMealTimestamp ?: now) else now,
+                        timestamp = state.mealTimestamp,
                         carbGrams = state.carbsKe * 10.0,
                         mealType = state.selectedMealType
                     )
                     treatmentRepository.addMealEntry(mealEntry)
+                    
+                    // Schedule reminder
+                    if (!state.isEditMode) {
+                        therapyManager.scheduleMealReminder(lock, state.mealTimestamp)
+                    }
                 }
 
-                // 2. Deliver Bolus (only if NOT editing)
-                if (!state.isEditMode && state.manualBolus > InsulinAmount.ZERO) {
-                    val amount = state.manualBolus
-                    val lock = treatmentLock ?: throw IllegalStateException("Bolus delivery attempted without holding the lock")
-                    therapyManager.issueBolus(lock, amount)
+                // 2. Deliver Insulin Plan (only if NOT editing)
+                if (!state.isEditMode && state.insulinPlan.isNotEmpty()) {
+                    val now = Timestamp.now()
+                    val immediateBolus = state.insulinPlan.filter { it.timestamp <= now + Minutes(1) }
+                        .fold(InsulinAmount.ZERO) { acc, next -> acc + next.amount }
+                    
+                    val deferredBoluses = state.insulinPlan.filter { it.timestamp > now + Minutes(1) }
+                        .map { DeferredBolus(id = ID_UNDEFINED, amount = it.amount, timestamp = it.timestamp) }
+
+                    if (immediateBolus > InsulinAmount.ZERO) {
+                        therapyManager.issueBolus(lock, immediateBolus)
+                    }
+                    
+                    deferredBoluses.forEach { 
+                        therapyManager.addDeferredBolus(lock, it)
+                    }
                 }
 
                 _uiState.update { it.copy(isSubmitting = false) }
@@ -238,6 +349,28 @@ class MealBolusViewModel(
             } catch (_: Exception) {
                 // TODO: Error handling
                 _uiState.update { it.copy(isSubmitting = false) }
+            }
+        }
+    }
+
+    private fun startTicker() {
+        viewModelScope.launch {
+            while (true) {
+                delay(5.seconds)
+                val now = Timestamp.now()
+                _uiState.update { state ->
+                    if (state.isEditMode || state.isSubmitting) return@update state
+                    
+                    val updatedMealTime = now + Minutes(state.seaMinutes.toShort())
+                    val updatedPlan = state.insulinPlan.map { planItem ->
+                        planItem.copy(timestamp = now + Minutes(planItem.offsetMinutes.toShort()))
+                    }
+                    
+                    state.copy(
+                        mealTimestamp = updatedMealTime,
+                        insulinPlan = updatedPlan
+                    )
+                }
             }
         }
     }

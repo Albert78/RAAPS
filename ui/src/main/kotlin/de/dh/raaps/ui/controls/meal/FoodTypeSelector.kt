@@ -22,7 +22,6 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -42,25 +41,24 @@ import de.dh.raaps.ui.screens.meals.getIcon
 fun FoodTypeSelector(
     mealTypes: List<MealType>,
     selectedType: MealType?,
-    onTypeSelected: (MealType) -> Unit
+    onTypeSelected: (MealType) -> Unit,
+    isMandatory: Boolean = false
 ) {
     var expanded by remember { mutableStateOf(false) }
 
-    val effectiveSelected = selectedType ?: mealTypes.find { it.id == ID_MEAL_STANDARD } ?: mealTypes.firstOrNull()
-
-    // Sync default selection if nothing is selected
-    LaunchedEffect(selectedType, mealTypes) {
-        if (selectedType == null && effectiveSelected != null) {
-            onTypeSelected(effectiveSelected)
-        }
-    }
+    val isError = isMandatory && selectedType == null
 
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = MaterialTheme.shapes.medium,
-        border = BorderStroke(1.dp, MaterialTheme.colorScheme.secondary.copy(alpha = 0.2f)),
+        border = BorderStroke(
+            1.dp,
+            if (isError) MaterialTheme.colorScheme.error.copy(alpha = 0.5f)
+            else MaterialTheme.colorScheme.secondary.copy(alpha = 0.2f)
+        ),
         colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.4f)
+            containerColor = if (isError) MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.2f)
+            else MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.4f)
         )
     ) {
         Column(
@@ -73,9 +71,9 @@ fun FoodTypeSelector(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    // Show icons of all meal types, highlight selected
+                    // Always show icons of all meal types, highlight selected
                     mealTypes.forEach { type ->
-                        val isSelected = type == effectiveSelected
+                        val isSelected = type == selectedType
                         IconButton(
                             onClick = { onTypeSelected(type) },
                             modifier = Modifier.size(40.dp)
@@ -86,10 +84,22 @@ fun FoodTypeSelector(
                                 modifier = Modifier.size(24.dp),
                                 tint = if (isSelected)
                                     MaterialTheme.colorScheme.primary
+                                else if (isError)
+                                    MaterialTheme.colorScheme.error.copy(alpha = 0.6f)
                                 else
                                     MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f)
                             )
                         }
+                    }
+
+                    if (isError) {
+                        Text(
+                            text = "!",
+                            style = MaterialTheme.typography.titleLarge,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.error,
+                            modifier = Modifier.padding(horizontal = 4.dp)
+                        )
                     }
 
                     Spacer(modifier = Modifier.weight(1f))
@@ -132,7 +142,7 @@ fun FoodTypeSelector(
                 ) {
                     mealTypes.forEach { type ->
                         FilterChip(
-                            selected = (type == effectiveSelected),
+                            selected = (type == selectedType),
                             onClick = {
                                 onTypeSelected(type)
                                 expanded = false
