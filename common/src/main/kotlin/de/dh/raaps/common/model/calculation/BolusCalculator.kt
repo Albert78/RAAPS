@@ -6,6 +6,7 @@ import de.dh.raaps.common.model.PlannedInsulin
 import de.dh.raaps.common.model.convertToInsulinAmountFromBgDelta
 import de.dh.raaps.common.model.convertToInsulinAmountFromCarbs
 import de.dh.raaps.common.model.data.BgDelta
+import de.dh.raaps.common.model.data.BgValue
 import de.dh.raaps.common.model.data.Minutes
 import de.dh.raaps.common.model.data.Timestamp
 import kotlin.math.abs
@@ -21,9 +22,9 @@ data class BolusParts(
 )
 
 object BolusCalculator {
-    fun calculateSuggestedSea(currentBg: Int?, targetBg: Int): Int {
-        if (currentBg == null) return 0
-        val diff = currentBg - targetBg
+    fun calculateSuggestedSea(currentBg: BgValue?, targetBg: BgValue): Int {
+        if (currentBg == null || currentBg.isInvalid()) return 0
+        val diff = currentBg.mgdl - targetBg.mgdl
         if (diff <= 0) return 0
 
         // Simple rule: 5 minutes per 20 mg/dL above target, max 45 min
@@ -35,17 +36,17 @@ object BolusCalculator {
         carbsKe: Double,
         cr: Double,
         isf: Int,
-        currentBg: Int?,
-        targetBg: Int,
-        lowThreshold: Int,
+        currentBg: BgValue?,
+        targetBg: BgValue,
+        lowThreshold: BgValue,
         iob: InsulinAmount,
         cob: Double
     ): BolusParts {
         val carbsGrams = carbsKe * 10.0
         val mealPart = convertToInsulinAmountFromCarbs(carbsGrams, cr)
 
-        val currentBgValue = currentBg ?: targetBg
-        val bgDiff = currentBgValue - targetBg
+        val currentBgMgdl = currentBg?.mgdl ?: targetBg.mgdl
+        val bgDiff = currentBgMgdl - targetBg.mgdl
 
         // Can be positive or negative
         val correctionPart = convertToInsulinAmountFromBgDelta(BgDelta(bgDiff.toShort()), BgDelta(isf.toShort()))
@@ -60,7 +61,7 @@ object BolusCalculator {
         var bolusAmount = InsulinAmount(roundedTotal)
 
         // If BG is unknown or below low threshold, no insulin is proposed
-        if (currentBg == null || currentBg <= lowThreshold) {
+        if (currentBg == null || currentBg.isInvalid() || currentBg.mgdl <= lowThreshold.mgdl) {
             bolusAmount = InsulinAmount.ZERO
         }
 
@@ -77,8 +78,8 @@ object BolusCalculator {
         manualBolus: InsulinAmount,
         correctionPart: InsulinAmount,
         mealType: MealType?,
-        currentBg: Int?,
-        lowThreshold: Int,
+        currentBg: BgValue?,
+        lowThreshold: BgValue,
         now: Timestamp,
         existingPlan: List<PlannedInsulin> = emptyList()
     ): List<PlannedInsulin> {
@@ -86,7 +87,7 @@ object BolusCalculator {
             return emptyList()
         }
 
-        val isLowBg = currentBg != null && currentBg <= lowThreshold
+        val isLowBg = currentBg != null && !currentBg.isInvalid() && currentBg.mgdl <= lowThreshold.mgdl
         val suggestedOffset = if (isLowBg) 15 else 0
 
         if (mealType == null) {

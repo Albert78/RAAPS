@@ -4,6 +4,8 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.CreationExtras
+import de.dh.raaps.common.model.DEFAULT_BG_LOW_THRESHOLD_MGDL
+import de.dh.raaps.common.model.DEFAULT_BG_TARGET_MGDL
 import de.dh.raaps.common.model.DEFAULT_CR_GRAM_PER_UNIT
 import de.dh.raaps.common.model.DEFAULT_ISF_MGDL_PER_UNIT
 import de.dh.raaps.common.model.ID_UNDEFINED
@@ -44,10 +46,10 @@ data class MealBolusUiState(
     val selectedMealType: MealType? = null,
     val currentBg: BgValue? = null,
     val currentBgTimestamp: Timestamp? = null,
-    val targetBg: Int = 100,
-    val lowThreshold: Int = 70,
-    val isf: Int = 50,
-    val cr: Double = 10.0,
+    val targetBg: BgValue = BgValue(DEFAULT_BG_TARGET_MGDL),
+    val lowThreshold: BgValue = BgValue(DEFAULT_BG_LOW_THRESHOLD_MGDL),
+    val isf: Int = DEFAULT_ISF_MGDL_PER_UNIT.toInt(),
+    val cr: Double = DEFAULT_CR_GRAM_PER_UNIT,
     val iob: InsulinAmount = InsulinAmount.ZERO,
     val cob: Double = 0.0,
     val projectedIob: InsulinAmount = InsulinAmount.ZERO,
@@ -103,7 +105,7 @@ class MealBolusViewModel(
 
             val existingMeal = mealId?.let { treatmentRepository.getMeal(it) }
             val initialMealTimestamp = existingMeal?.timestamp ?: now
-            val suggestedSea = BolusCalculator.calculateSuggestedSea(currentBg, bgSettings.first.mgdl.toInt())
+            val suggestedSea = BolusCalculator.calculateSuggestedSea(currentBg?.let { BgValue(it.toShort()) }, bgSettings.first)
 
             _uiState.update {
                 it.copy(
@@ -120,8 +122,8 @@ class MealBolusViewModel(
                     bgValue = currentBg?.let { bg -> BgValue(bg.toShort()) },
                     bgTimestamp = now,
                     isProjected = false,
-                    targetBg = bgSettings.first.mgdl.toInt(),
-                    lowThreshold = bgSettings.second.mgdl.toInt(),
+                    targetBg = bgSettings.first,
+                    lowThreshold = bgSettings.second,
                     isf = if (isf == 0) DEFAULT_ISF_MGDL_PER_UNIT.toInt() else isf,
                     cr = if (cr == 0.0) DEFAULT_CR_GRAM_PER_UNIT else cr,
                     iob = iob,
@@ -212,10 +214,14 @@ class MealBolusViewModel(
             val state = _uiState.value
             val now = Timestamp.now()
 
-            val referenceTimestamp = if (state.carbsKe > 0.0) {
-                state.mealTimestamp.plusMinutes(15)
+            val futureTimestamp = state.mealTimestamp.plusMinutes(15)
+            val futureBg = registry.systemManager.getPredictedBg(futureTimestamp)
+
+            val (bgTimestamp, bgValue) = if (state.carbsKe > 0.0 && futureBg.isValid()) {
+                futureTimestamp to futureBg
             } else {
-                now
+                val currentBg = registry.systemManager.getPredictedBg(now)
+                now to (if (currentBg.isValid()) currentBg else state.currentBg)
             }
 
             // Fetch history data for projected IOB/COB
@@ -224,22 +230,19 @@ class MealBolusViewModel(
             val mealsHistory = treatmentRepository.getMeals(from = historyLimit)
             val therapySettings = therapyManager.getCurrentTherapySettings()
 
-            val projectedBgValue = registry.systemManager.getPredictedBg(referenceTimestamp)
-            val projectedBg = if (projectedBgValue.isValid()) projectedBgValue.mgdl.toInt() else state.currentBg?.mgdl?.toInt()
-
             val projectedIob = carbsInsulinCalculator.iob(
                 insulinHistory,
-                referenceTimestamp,
+                bgTimestamp,
                 therapySettings.insulinProfile.dia,
                 therapySettings.insulinProfile.peak
             )
-            val projectedCob = carbsInsulinCalculator.cob(mealsHistory, referenceTimestamp)
+            val projectedCob = carbsInsulinCalculator.cob(mealsHistory, bgTimestamp)
 
             val result = BolusCalculator.calculateBolusParts(
                 carbsKe = state.carbsKe,
                 cr = state.cr,
                 isf = state.isf,
-                currentBg = projectedBg,
+                currentBg = bgValue,
                 targetBg = state.targetBg,
                 lowThreshold = state.lowThreshold,
                 iob = projectedIob,
@@ -248,9 +251,9 @@ class MealBolusViewModel(
 
             _uiState.update {
                 it.copy(
-                    bgValue = projectedBg?.let { BgValue(it.toShort()) },
-                    bgTimestamp = referenceTimestamp,
-                    isProjected = referenceTimestamp.ms > now.ms,
+                    bgValue = bgValue,
+                    bgTimestamp = bgTimestamp,
+                    isProjected = bgTimestamp.ms > now.ms,
                     projectedIob = projectedIob,
                     projectedCob = projectedCob,
                     mealPart = result.mealPart,
@@ -276,7 +279,7 @@ class MealBolusViewModel(
             manualBolus = state.manualBolus,
             correctionPart = state.correctionPart,
             mealType = state.selectedMealType,
-            currentBg = state.currentBg?.mgdl?.toInt(),
+            currentBg = state.currentBg,
             lowThreshold = state.lowThreshold,
             now = Timestamp.now(),
             existingPlan = state.insulinPlan

@@ -420,11 +420,11 @@ fun CalculationDetailsSelector(
                         color = MaterialTheme.colorScheme.error,
                         fontWeight = FontWeight.Bold
                     )
-                } else if (uiState.currentBg.mgdl <= uiState.lowThreshold) {
+                } else if (uiState.currentBg.mgdl <= uiState.lowThreshold.mgdl) {
                     Text(
                         text = stringResource(
                             R.string.meal_bolus_calc_low_bg_warning,
-                            glucoseValue(BgValue(uiState.lowThreshold.toShort()), withUnit = true)
+                            glucoseValue(uiState.lowThreshold, withUnit = true)
                         ),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.error,
@@ -752,7 +752,7 @@ fun MealBolusZeroKePreview() {
                     bgValue = BgValue(140),
                     bgTimestamp = Timestamp.now(),
                     isProjected = false,
-                    targetBg = 100,
+                    targetBg = BgValue(100),
                     isf = 50,
                     cr = 10.0,
                     proposedBolus = InsulinAmount(0.8),
@@ -793,7 +793,7 @@ fun MealBolusDefaultPreview() {
                     bgValue = BgValue(145),
                     bgTimestamp = Timestamp.now().plusMinutes(15),
                     isProjected = true,
-                    targetBg = 100,
+                    targetBg = BgValue(100),
                     isf = 50,
                     cr = 10.0,
                     iob = InsulinAmount(1.2),
