@@ -100,6 +100,42 @@ class ApsAlgorithmImpl(
     }
 
     private inner class BolusCorrectionCalculatorImpl : BolusCorrectionCalculator {
+        override suspend fun calculateBaseData(): BolusScreenBaseData {
+            val now = Timestamp.now()
+            val futureTime = now + Minutes(15)
+            val futureBg = getPredictedBg(futureTime)
+
+            val (referenceTimestamp, referenceBg) = if (futureBg.isValid()) {
+                futureTime to futureBg
+            } else {
+                val nowTick = timeline.getNowTick()
+                now to (predictionModel.withTickState(nowTick) { it.predictedBg } ?: BgValue.INVALID)
+            }
+
+            val bgSettings = therapyManager.getBgSettings()
+            val targetBg = bgSettings.first
+            val isf = therapyManager.getIsfFactor(now)
+            val cr = therapyManager.getCrFactor(now)
+
+            var suggestedCarbsKe = 0.0
+            if (referenceBg.isValid() && referenceBg < targetBg) {
+                val bgDiff = targetBg - referenceBg
+                val carbsGrams = convertToCarbsFromBgDelta(bgDiff, isf, cr)
+                // Round up to whole 5g
+                val roundedCarbsGrams = ceil(carbsGrams / 5.0) * 5.0
+                suggestedCarbsKe = roundedCarbsGrams / 10.0
+            }
+
+            val sea = calculateSuggestedSea()
+
+            return BolusScreenBaseData(
+                referenceTimestamp = referenceTimestamp,
+                referenceBg = referenceBg,
+                suggestedCarbsKe = suggestedCarbsKe,
+                suggestedSea = sea
+            )
+        }
+
         override suspend fun calculateSuggestedSea(): Int {
             val bgSettings = therapyManager.getBgSettings()
             val targetBg = bgSettings.first
@@ -122,7 +158,7 @@ class ApsAlgorithmImpl(
             return suggested.coerceIn(0, 45)
         }
 
-        override suspend fun calculateBolusParts(carbsKe: Double, mealTimestamp: Timestamp): BolusParts {
+        override suspend fun calculateBolusParts(carbsKe: Double, mealTimestamp: Timestamp, referenceTimestamp: Timestamp): BolusParts {
             val now = Timestamp.now()
             val settings = therapyManager.getCurrentTherapySettings()
             val dia = settings.insulinProfile.dia
@@ -138,11 +174,11 @@ class ApsAlgorithmImpl(
             val insulinHistory = treatmentRepository.getInsulinApplications(from = historyLimit)
             val mealsHistory = treatmentRepository.getMeals(from = historyLimit)
 
-            val projectedIob = carbsInsulinCalculator.iob(insulinHistory, mealTimestamp, dia, peak)
-            val projectedCob = carbsInsulinCalculator.cob(mealsHistory, mealTimestamp)
+            val projectedIob = carbsInsulinCalculator.iob(insulinHistory, referenceTimestamp, dia, peak)
+            val projectedCob = carbsInsulinCalculator.cob(mealsHistory, referenceTimestamp)
 
             val bgValue = run {
-                val tick = timeline.tick(mealTimestamp)
+                val tick = timeline.tick(referenceTimestamp)
                 predictionModel.withTickState(tick) { it.predictedBg } ?: BgValue.INVALID
             }
 
@@ -169,7 +205,9 @@ class ApsAlgorithmImpl(
                 iobPart = projectedIob,
                 cobPart = cobPart,
                 totalProposed = bolusAmount,
-                cobGrams = projectedCob
+                cobGrams = projectedCob,
+                calculationBg = bgValue,
+                calculationTimestamp = mealTimestamp
             )
         }
 

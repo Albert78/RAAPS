@@ -3,6 +3,7 @@ package de.dh.raaps.core.aps
 import de.dh.raaps.common.model.InsulinAmount
 import de.dh.raaps.common.model.MealType
 import de.dh.raaps.common.model.PlannedInsulin
+import de.dh.raaps.common.model.data.BgValue
 import de.dh.raaps.common.model.data.Timestamp
 
 data class BolusParts(
@@ -11,13 +12,27 @@ data class BolusParts(
     val iobPart: InsulinAmount,
     val cobPart: InsulinAmount,
     val totalProposed: InsulinAmount,
-    val cobGrams: Double
+    val cobGrams: Double,
+    val calculationBg: BgValue,
+    val calculationTimestamp: Timestamp
+)
+
+data class BolusScreenBaseData(
+    val referenceTimestamp: Timestamp,
+    val referenceBg: BgValue,
+    val suggestedCarbsKe: Double,
+    val suggestedSea: Int
 )
 
 /**
  * Smart bolus calculator that has access to the internal state of the APS algorithm.
  */
 interface BolusCorrectionCalculator {
+    /**
+     * Calculates the base data for the meal bolus screen.
+     */
+    suspend fun calculateBaseData(): BolusScreenBaseData
+
     /**
      * Calculates the suggested SEA (Schätzwert der Essens-Anpassung) in minutes.
      */
@@ -28,7 +43,8 @@ interface BolusCorrectionCalculator {
      */
     suspend fun calculateBolusParts(
         carbsKe: Double,
-        mealTimestamp: Timestamp
+        mealTimestamp: Timestamp,
+        referenceTimestamp: Timestamp
     ): BolusParts
 
     /**

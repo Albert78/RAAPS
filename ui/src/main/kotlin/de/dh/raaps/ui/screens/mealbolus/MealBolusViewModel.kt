@@ -36,15 +36,13 @@ data class MealBolusUiState(
     val originalMealTimestamp: Timestamp? = null,
     val originalMealId: Long = ID_UNDEFINED,
     val mealTimestamp: Timestamp = Timestamp.now(),
-    val bgValue: BgValue? = null,
-    val bgTimestamp: Timestamp = Timestamp.now(),
+    val referenceBg: BgValue? = null,
+    val referenceTimestamp: Timestamp = Timestamp.now(),
     val isProjected: Boolean = false,
     val seaMinutes: Int = 0,
     val carbsKe: Double = 0.0,
     val mealTypes: List<MealType> = emptyList(),
     val selectedMealType: MealType? = null,
-    val currentBg: BgValue? = null,
-    val currentBgTimestamp: Timestamp? = null,
     val targetBg: BgValue = BgValue(DEFAULT_BG_TARGET_MGDL),
     val lowThreshold: BgValue = BgValue(DEFAULT_BG_LOW_THRESHOLD_MGDL),
     val isf: Int = DEFAULT_ISF_MGDL_PER_UNIT.toInt(),
@@ -76,7 +74,6 @@ class MealBolusViewModel(
     val uiState: StateFlow<MealBolusUiState> = _uiState.asStateFlow()
 
     private val therapyManager = registry.therapyManager
-    private val glucoseRepository = registry.glucoseRepository
     private val treatmentRepository = registry.treatmentRepository
 
     private var treatmentLock: TreatmentLock? = null
@@ -90,12 +87,8 @@ class MealBolusViewModel(
             val bgSettings = therapyManager.getBgSettings()
             val mealTypes = treatmentRepository.getAllMealTypes()
 
-            val lastReading = glucoseRepository.loadBgReadings(now - Minutes(30)).lastOrNull()
-            val currentBg = lastReading?.value?.mgdl?.toInt()
-
             val existingMeal = mealId?.let { treatmentRepository.getMeal(it) }
-            val currentBgValue = currentBg?.let { bg -> BgValue(bg.toShort()) }
-            val suggestedSea = registry.systemManager.getBolusCorrectionCalculator().calculateSuggestedSea()
+            val baseData = registry.systemManager.getBolusCorrectionCalculator().calculateBaseData()
 
             _uiState.update {
                 it.copy(
@@ -105,19 +98,16 @@ class MealBolusViewModel(
                     originalMealId = existingMeal?.id ?: ID_UNDEFINED,
                     mealTimestamp = if (existingMeal != null) {
                         existingMeal.timestamp
-                    } else if (suggestedSea > 0) {
-                        now + Minutes(suggestedSea.toShort())
                     } else {
-                        now
+                        now + Minutes(max(0, baseData.suggestedSea).toShort())
                     },
-                    seaMinutes = if (existingMeal == null && suggestedSea > 0) suggestedSea else 0,
-                    carbsKe = existingMeal?.let { meal -> meal.carbGrams / 10.0 } ?: 0.0,
+                    seaMinutes = if (existingMeal == null) baseData.suggestedSea else 0,
+                    carbsKe = existingMeal?.let { meal -> meal.carbGrams / 10.0 } ?: baseData.suggestedCarbsKe,
                     mealTypes = mealTypes,
                     selectedMealType = existingMeal?.mealType,
-                    currentBg = currentBgValue,
-                    bgValue = currentBgValue,
-                    bgTimestamp = now,
-                    isProjected = false,
+                    referenceBg = baseData.referenceBg,
+                    referenceTimestamp = baseData.referenceTimestamp,
+                    isProjected = baseData.referenceTimestamp.ms > now.ms,
                     targetBg = bgSettings.first,
                     lowThreshold = bgSettings.second,
                     isf = if (isf == 0) DEFAULT_ISF_MGDL_PER_UNIT.toInt() else isf,
@@ -210,14 +200,15 @@ class MealBolusViewModel(
 
             val result = registry.systemManager.getBolusCorrectionCalculator().calculateBolusParts(
                 carbsKe = state.carbsKe,
-                mealTimestamp = state.mealTimestamp
+                mealTimestamp = state.mealTimestamp,
+                referenceTimestamp = state.referenceTimestamp
             )
 
             _uiState.update {
                 it.copy(
-                    bgValue = if (state.carbsKe > 0.0) it.bgValue else state.currentBg,
-                    bgTimestamp = if (state.carbsKe > 0.0) state.mealTimestamp else now,
-                    isProjected = state.mealTimestamp.ms > now.ms,
+                    referenceBg = result.calculationBg,
+                    referenceTimestamp = result.calculationTimestamp,
+                    isProjected = result.calculationTimestamp.ms > now.ms,
                     iob = result.iobPart,
                     cob = result.cobGrams,
                     projectedIob = result.iobPart,
@@ -242,11 +233,13 @@ class MealBolusViewModel(
                 return@launch
             }
 
+            val bolusBaseTime = state.mealTimestamp - Minutes(state.seaMinutes.toShort())
+
             val newPlan = registry.systemManager.getBolusCorrectionCalculator().distributeInsulinPlan(
                 manualBolus = state.manualBolus,
                 correctionPart = state.correctionPart,
                 mealType = state.selectedMealType,
-                mealTimestamp = state.mealTimestamp,
+                mealTimestamp = bolusBaseTime,
                 existingPlan = state.insulinPlan
             )
             _uiState.update { it.copy(insulinPlan = newPlan) }

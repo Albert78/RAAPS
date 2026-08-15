@@ -413,18 +413,19 @@ fun CalculationDetailsSelector(
                     style = MaterialTheme.typography.bodySmall
                 )
 
-                if (uiState.currentBg == null) {
+                if (uiState.referenceBg == null) {
                     Text(
                         text = stringResource(R.string.meal_bolus_calc_no_bg_warning),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.error,
                         fontWeight = FontWeight.Bold
                     )
-                } else if (uiState.currentBg.mgdl <= uiState.lowThreshold.mgdl) {
+                } else if (uiState.referenceBg.mgdl <= uiState.lowThreshold.mgdl) {
                     Text(
                         text = stringResource(
                             R.string.meal_bolus_calc_low_bg_warning,
-                            glucoseValue(uiState.lowThreshold, withUnit = true)
+                            glucoseValue(uiState.lowThreshold, withUnit = true),
+                            time(uiState.referenceTimestamp)
                         ),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.error,
@@ -500,8 +501,8 @@ fun MealBolusHeader(
                     )
                 }
 
-                val displayBgValue = uiState.bgValue
-                val bgText = glucoseValue(displayBgValue, default = "?")
+                val displayBgValue = uiState.referenceBg
+                val bgText = glucoseValue(displayBgValue, default = "??")
                 val textColor = if (displayBgValue == null || displayBgValue.isInvalid()) {
                     Color.Gray
                 } else when {
@@ -525,7 +526,7 @@ fun MealBolusHeader(
             }
 
             Text(
-                text = "um ${time(uiState.bgTimestamp)}",
+                text = "um ${time(uiState.referenceTimestamp)}",
                 style = MaterialTheme.typography.bodySmall,
                 color = Color.Gray
             )
@@ -748,9 +749,8 @@ fun MealBolusZeroKePreview() {
                     carbsKe = 0.0,
                     mealTypes = emptyList(),
                     selectedMealType = null,
-                    currentBg = BgValue(140),
-                    bgValue = BgValue(140),
-                    bgTimestamp = Timestamp.now(),
+                    referenceBg = BgValue(140),
+                    referenceTimestamp = Timestamp.now(),
                     isProjected = false,
                     targetBg = BgValue(100),
                     isf = 50,
@@ -789,9 +789,8 @@ fun MealBolusDefaultPreview() {
                     carbsKe = 4.5,
                     mealTypes = sampleMealTypes,
                     selectedMealType = sampleMealTypes[0],
-                    currentBg = BgValue(140),
-                    bgValue = BgValue(145),
-                    bgTimestamp = Timestamp.now().plusMinutes(15),
+                    referenceBg = BgValue(145),
+                    referenceTimestamp = Timestamp.now().plusMinutes(15),
                     isProjected = true,
                     targetBg = BgValue(100),
                     isf = 50,

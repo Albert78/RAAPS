@@ -209,7 +209,8 @@ fun glucoseValue(
     default: String = "-",
     withUnit: Boolean = false
 ): String {
-    val valStr = value?.toString(unit) ?: return default
+    if (value == null || value.isInvalid()) return default
+    val valStr = value.toString(unit)
     return if (withUnit) {
         "$valStr ${glucoseUnitLabel(unit)}"
     } else valStr
