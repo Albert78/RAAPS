@@ -196,7 +196,7 @@ class NoopAlgorithm: ApsAlgorithm {
 
     override fun getBolusCalculator(): BolusCalculator {
         return object : BolusCalculator {
-            override suspend fun calculateSuggestedSea(overrideBg: BgValue?): Int = 0
+            override suspend fun calculateSuggestedSea(): Int = 0
             override suspend fun calculateBolusParts(carbsKe: Double, mealTimestamp: Timestamp): BolusParts =
                 BolusParts(InsulinAmount.ZERO, InsulinAmount.ZERO, InsulinAmount.ZERO, InsulinAmount.ZERO, InsulinAmount.ZERO, 0.0)
             override suspend fun distributeInsulinPlan(

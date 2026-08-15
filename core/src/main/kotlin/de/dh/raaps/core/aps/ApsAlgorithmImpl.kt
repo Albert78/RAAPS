@@ -100,15 +100,13 @@ class ApsAlgorithmImpl(
     }
 
     private inner class BolusCalculatorImpl : BolusCalculator {
-        override suspend fun calculateSuggestedSea(overrideBg: BgValue?): Int {
+        override suspend fun calculateSuggestedSea(): Int {
             val bgSettings = therapyManager.getBgSettings()
             val targetBg = bgSettings.first
             val lowThreshold = bgSettings.second
 
-            val currentBg = overrideBg ?: run {
-                val nowTick = timeline.getNowTick()
-                predictionModel.withTickState(nowTick) { it.predictedBg }
-            }
+            val nowTick = timeline.getNowTick()
+            val currentBg = predictionModel.withTickState(nowTick) { it.predictedBg }
 
             if ((currentBg == null) || currentBg.isInvalid()) return 0
 

@@ -21,9 +21,8 @@ data class BolusParts(
 interface BolusCalculator {
     /**
      * Calculates the suggested SEA (Schätzwert der Essens-Anpassung) in minutes.
-     * @param overrideBg Optional blood glucose value to use instead of the current/predicted value.
      */
-    suspend fun calculateSuggestedSea(overrideBg: BgValue? = null): Int
+    suspend fun calculateSuggestedSea(): Int
 
     /**
      * Calculates the bolus parts for a given carb intake at a specific time.

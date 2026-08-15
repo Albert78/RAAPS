@@ -95,7 +95,7 @@ class MealBolusViewModel(
 
             val existingMeal = mealId?.let { treatmentRepository.getMeal(it) }
             val currentBgValue = currentBg?.let { bg -> BgValue(bg.toShort()) }
-            val suggestedSea = registry.systemManager.getBolusCalculator().calculateSuggestedSea(currentBgValue)
+            val suggestedSea = registry.systemManager.getBolusCalculator().calculateSuggestedSea()
 
             _uiState.update {
                 it.copy(
