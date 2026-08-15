@@ -49,6 +49,8 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.compose.LifecycleEventEffect
 import de.dh.raaps.common.model.BOLUS_MAX
 import de.dh.raaps.common.model.BOLUS_MIN
 import de.dh.raaps.common.model.CARBS_KE_MAX
@@ -97,6 +99,11 @@ fun MealBolusScreen(
     onNavigateUp: () -> Unit
 ) {
     val uiState by viewModel.uiState.collectAsState()
+
+    LifecycleEventEffect(Lifecycle.Event.ON_PAUSE) {
+        // Automatically leave screen to release therapy manager lock
+        onNavigateUp()
+    }
 
     MealBolusContent(
         uiState = uiState,
