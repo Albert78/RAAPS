@@ -4,15 +4,15 @@ import android.app.Service
 import android.content.Context
 import de.dh.raaps.AppPreferencesRepository
 import de.dh.raaps.common.model.PluginManager
-import de.dh.raaps.common.model.calculation.CarbsInsulinCalculationModel
+import de.dh.raaps.common.model.calculation.CarbsInsulinCalculator
 import de.dh.raaps.common.model.data.TimeService
 import de.dh.raaps.core.aps.GlucoseSourceManager
 import de.dh.raaps.core.aps.SystemManager
 import de.dh.raaps.core.aps.TherapyManager
 import de.dh.raaps.core.pump.PumpManager
+import de.dh.raaps.core.repository.CoreInsightRepository
 import de.dh.raaps.core.repository.DeviceManagementRepository
 import de.dh.raaps.core.repository.FoodRepository
-import de.dh.raaps.core.repository.CoreInsightRepository
 import de.dh.raaps.core.repository.GlucoseRepository
 import de.dh.raaps.core.repository.SettingsRepository
 import de.dh.raaps.core.repository.TherapyRepository
@@ -105,7 +105,7 @@ interface SystemRegistry {
     /**
      * The mathematical core for calculating insulin-on-board (IOB) and carbs-on-board (COB).
      */
-    val carbsInsulinCalculationModel: CarbsInsulinCalculationModel
+    val carbsInsulinCalculator: CarbsInsulinCalculator
 
     /**
      * Manages the active glucose data source and processes incoming blood glucose readings.

@@ -2,7 +2,7 @@ package de.dh.raaps.core.aps
 
 import android.util.Log
 import de.dh.raaps.common.model.InsulinAmount
-import de.dh.raaps.common.model.calculation.CarbsInsulinCalculationModel
+import de.dh.raaps.common.model.calculation.CarbsInsulinCalculator
 import de.dh.raaps.common.model.convertToBgDeltaFromUnits
 import de.dh.raaps.common.model.convertToCarbsFromBgDelta
 import de.dh.raaps.common.model.convertToInsulinAmountFromBgDelta
@@ -23,7 +23,7 @@ class ApsAlgorithmImpl(
     val treatmentRepository: TreatmentRepository,
     val sampledBgReadings: SampledBgReadings,
     val predictionModel: PredictionModel,
-    val carbsInsulinCalculationModel: CarbsInsulinCalculationModel,
+    val carbsInsulinCalculator: CarbsInsulinCalculator,
     val therapyManager: TherapyManager
 ): ApsAlgorithm {
     // --- Time-based extensions for Tick to provide a Timestamp-like API ---
@@ -166,7 +166,7 @@ class ApsAlgorithmImpl(
             dia = dia,
             insulinPeak = insulinPeak,
             therapyManager = therapyManager,
-            carbsInsulinCalculationModel = carbsInsulinCalculationModel
+            carbsInsulinCalculator = carbsInsulinCalculator
         )
 
         val bgSettings = therapyManager.getBgSettings()
@@ -244,14 +244,14 @@ class ApsAlgorithmImpl(
             }
         }
 
-        val cobAtPeak = carbsInsulinCalculationModel.cob(meals, now + insulinPeak)
-        val iobNow = carbsInsulinCalculationModel.iob(
+        val cobAtPeak = carbsInsulinCalculator.cob(meals, now + insulinPeak)
+        val iobNow = carbsInsulinCalculator.iob(
             insulinApplications = insulinApplications,
             timestamp = now,
             dia = dia,
             peak = insulinPeak
         )
-        val iobAtPeak = carbsInsulinCalculationModel.iob(
+        val iobAtPeak = carbsInsulinCalculator.iob(
             insulinApplications = insulinApplications,
             timestamp = now + insulinPeak,
             dia = dia,
@@ -398,7 +398,7 @@ class ApsAlgorithmImpl(
             sampledBgReadings: SampledBgReadings,
             therapyManager: TherapyManager,
             tickInterval: Minutes,
-            carbsInsulinCalculationModel: CarbsInsulinCalculationModel,
+            carbsInsulinCalculator: CarbsInsulinCalculator,
         ): ApsAlgorithm {
             val timeline = Timeline(tickInterval)
             val predictionModel = PredictionModel(
@@ -412,7 +412,7 @@ class ApsAlgorithmImpl(
                 treatmentRepository = treatmentRepository,
                 sampledBgReadings = sampledBgReadings,
                 predictionModel = predictionModel,
-                carbsInsulinCalculationModel = carbsInsulinCalculationModel,
+                carbsInsulinCalculator = carbsInsulinCalculator,
                 therapyManager = therapyManager
             )
         }

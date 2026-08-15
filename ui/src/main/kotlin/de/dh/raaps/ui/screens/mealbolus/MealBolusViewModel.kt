@@ -70,7 +70,7 @@ class MealBolusViewModel(
     private val therapyManager = registry.therapyManager
     private val glucoseRepository = registry.glucoseRepository
     private val treatmentRepository = registry.treatmentRepository
-    private val calculationModel = registry.carbsInsulinCalculationModel
+    private val carbsInsulinCalculator = registry.carbsInsulinCalculator
 
     private var treatmentLock: TreatmentLock? = null
 
@@ -91,13 +91,13 @@ class MealBolusViewModel(
             val insulinHistory = treatmentRepository.getInsulinApplications(from = historyLimit)
             val mealsHistory = treatmentRepository.getMeals(from = historyLimit)
 
-            val iob = calculationModel.iob(insulinHistory, now, therapySettings.insulinProfile.dia, therapySettings.insulinProfile.peak)
-            val cob = calculationModel.cob(mealsHistory, now)
+            val iob = carbsInsulinCalculator.iob(insulinHistory, now, therapySettings.insulinProfile.dia, therapySettings.insulinProfile.peak)
+            val cob = carbsInsulinCalculator.cob(mealsHistory, now)
 
             val existingMeal = mealId?.let { treatmentRepository.getMeal(it) }
             val initialMealTimestamp = existingMeal?.timestamp ?: now
             val suggestedSea = BolusCalculator.calculateSuggestedSea(currentBg, bgSettings.first.mgdl.toInt())
-            
+
             _uiState.update {
                 it.copy(
                     isLoading = false,
@@ -259,7 +259,7 @@ class MealBolusViewModel(
                         mealType = state.selectedMealType
                     )
                     treatmentRepository.addMealEntry(mealEntry)
-                    
+
                     // Schedule reminder
                     if (!state.isEditMode) {
                         therapyManager.scheduleMealReminder(lock, state.mealTimestamp)
@@ -271,15 +271,15 @@ class MealBolusViewModel(
                     val now = Timestamp.now()
                     val immediateBolus = state.insulinPlan.filter { it.timestamp <= now + Minutes(1) }
                         .fold(InsulinAmount.ZERO) { acc, next -> acc + next.amount }
-                    
+
                     val deferredBoluses = state.insulinPlan.filter { it.timestamp > now + Minutes(1) }
                         .map { DeferredBolus(id = ID_UNDEFINED, amount = it.amount, timestamp = it.timestamp) }
 
                     if (immediateBolus > InsulinAmount.ZERO) {
                         therapyManager.issueBolus(lock, immediateBolus)
                     }
-                    
-                    deferredBoluses.forEach { 
+
+                    deferredBoluses.forEach {
                         therapyManager.addDeferredBolus(lock, it)
                     }
                 }
@@ -300,12 +300,12 @@ class MealBolusViewModel(
                 val now = Timestamp.now()
                 _uiState.update { state ->
                     if (state.isEditMode || state.isSubmitting) return@update state
-                    
+
                     val updatedMealTime = now + Minutes(state.seaMinutes.toShort())
                     val updatedPlan = state.insulinPlan.map { planItem ->
                         planItem.copy(timestamp = now + Minutes(planItem.offsetMinutes.toShort()))
                     }
-                    
+
                     state.copy(
                         mealTimestamp = updatedMealTime,
                         insulinPlan = updatedPlan

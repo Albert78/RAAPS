@@ -8,7 +8,6 @@ import androidx.lifecycle.viewmodel.CreationExtras
 import de.dh.raaps.common.model.InsulinAmount
 import de.dh.raaps.common.model.InsulinApplication
 import de.dh.raaps.common.model.MealEntry
-import de.dh.raaps.common.model.ToDo
 import de.dh.raaps.common.model.data.BgDelta
 import de.dh.raaps.common.model.data.BgReading
 import de.dh.raaps.common.model.data.BgSampleKind
@@ -24,7 +23,6 @@ import de.dh.raaps.glucoseUnit
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
@@ -121,7 +119,7 @@ class HistoryViewModel(
     private val treatmentRepository = systemRegistry.treatmentRepository
     private val therapyManager = systemRegistry.therapyManager
 
-    val calculationModel = systemRegistry.carbsInsulinCalculationModel
+    val carbsInsulinCalculator = systemRegistry.carbsInsulinCalculator
 
     private val _tickCounter = MutableStateFlow(0)
 
@@ -149,8 +147,8 @@ class HistoryViewModel(
                 val peak = settings.insulinProfile.peak
 
                 val now = Timestamp.now()
-                _iob.value = calculationModel.iob(filteredInsulin, now, dia, peak)
-                _cob.value = calculationModel.cob(filteredMeals, now)
+                _iob.value = carbsInsulinCalculator.iob(filteredInsulin, now, dia, peak)
+                _cob.value = carbsInsulinCalculator.cob(filteredMeals, now)
 
                 updateUiModel(filteredReadings, filteredInsulin, filteredMeals)
             }.collect { }

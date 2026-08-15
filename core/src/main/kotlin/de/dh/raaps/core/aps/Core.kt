@@ -2,7 +2,7 @@ package de.dh.raaps.core.aps
 
 import android.util.Log
 import de.dh.raaps.common.model.InsulinAmount
-import de.dh.raaps.common.model.calculation.CarbsInsulinCalculationModel
+import de.dh.raaps.common.model.calculation.CarbsInsulinCalculator
 import de.dh.raaps.common.model.data.BgDelta
 import de.dh.raaps.common.model.data.BgValue
 import de.dh.raaps.common.model.data.Tick
@@ -62,7 +62,7 @@ class Core(
     val treatmentRepository: TreatmentRepository,
     val therapyManager: TherapyManager,
     private val timeService: TimeService,
-    private val carbsInsulinCalculationModel: CarbsInsulinCalculationModel,
+    private val carbsInsulinCalculator: CarbsInsulinCalculator,
     private val glucoseSourceManager: GlucoseSourceManager,
 
     private val onCoreStateChanged: () -> Unit,
@@ -144,7 +144,7 @@ class Core(
                     glucoseSourceManager.sampledBgReadings,
                     therapyManager,
                     tickInterval = timeService.tickInterval,
-                    carbsInsulinCalculationModel = carbsInsulinCalculationModel
+                    carbsInsulinCalculator = carbsInsulinCalculator
                 )
 
                 timeService.registerTickHandler(TickPriority.APS, this@Core)
@@ -319,7 +319,7 @@ class Core(
             therapyManager: TherapyManager,
             treatmentRepository: TreatmentRepository,
             timeService: TimeService,
-            carbsInsulinCalculationModel: CarbsInsulinCalculationModel,
+            carbsInsulinCalculator: CarbsInsulinCalculator,
             glucoseSourceManager: GlucoseSourceManager,
 
             onCoreStateChanged: () -> Unit,
@@ -340,7 +340,7 @@ class Core(
                 treatmentRepository = treatmentRepository,
                 therapyManager = therapyManager,
                 timeService = timeService,
-                carbsInsulinCalculationModel = carbsInsulinCalculationModel,
+                carbsInsulinCalculator = carbsInsulinCalculator,
                 glucoseSourceManager = glucoseSourceManager,
 
                 onCoreStateChanged = onCoreStateChanged,

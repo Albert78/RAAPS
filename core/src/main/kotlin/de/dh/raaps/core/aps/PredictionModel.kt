@@ -3,7 +3,7 @@ package de.dh.raaps.core.aps
 import de.dh.raaps.common.model.InsulinAmount
 import de.dh.raaps.common.model.InsulinApplication
 import de.dh.raaps.common.model.MealEntry
-import de.dh.raaps.common.model.calculation.CarbsInsulinCalculationModel
+import de.dh.raaps.common.model.calculation.CarbsInsulinCalculator
 import de.dh.raaps.common.model.convertToBgDeltaFromUnits
 import de.dh.raaps.common.model.convertToInsulinAmountFromCarbs
 import de.dh.raaps.common.model.data.BgDelta
@@ -12,7 +12,6 @@ import de.dh.raaps.common.model.data.Minutes
 import de.dh.raaps.common.model.data.Tick
 import de.dh.raaps.common.model.data.Timeline
 import de.dh.raaps.common.model.data.Timestamp
-import de.dh.raaps.common.model.data.times
 import de.dh.raaps.core.aps.ApsAlgorithmImpl.Companion.DEVIATION_DECAY_FACTOR_PER_TICK
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
@@ -88,7 +87,7 @@ class PredictionModel(
         dia: Minutes,
         insulinPeak: Minutes,
         therapyManager: TherapyManager,
-        carbsInsulinCalculationModel: CarbsInsulinCalculationModel
+        carbsInsulinCalculator: CarbsInsulinCalculator
     ) = mutex.withLock {
         var bg = BgValue.fromMgDl(currentBGMgDl)
         val nowTick = timeline.getNowTick()
@@ -98,13 +97,13 @@ class PredictionModel(
         var runningCumulatedBasal = InsulinAmount.ZERO
         rollingHistory.forEachS(from = rollingHistory.getFirstTick(), to = rollingHistory.getLastTick()) { tick, state ->
             if (state.effectiveCarbs == null) {
-                state.effectiveCarbs = carbsInsulinCalculationModel.carbAbsorption(
+                state.effectiveCarbs = carbsInsulinCalculator.carbAbsorption(
                     meals,
                     timeline.timestamp(tick)
                 )
             }
             if (state.effectiveInsulin == null) {
-                state.effectiveInsulin = carbsInsulinCalculationModel.effectiveInsulin(
+                state.effectiveInsulin = carbsInsulinCalculator.effectiveInsulin(
                     insulinApplications = insulinApplications,
                     timestamp = timeline.timestamp(tick),
                     dia = dia,

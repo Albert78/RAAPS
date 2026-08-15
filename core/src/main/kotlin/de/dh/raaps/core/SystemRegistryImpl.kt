@@ -5,7 +5,7 @@ import android.app.Service
 import android.content.Context
 import de.dh.raaps.AppPreferencesRepository
 import de.dh.raaps.common.model.PluginManager
-import de.dh.raaps.common.model.calculation.CarbsInsulinCalculationModel
+import de.dh.raaps.common.model.calculation.CarbsInsulinCalculator
 import de.dh.raaps.common.model.data.Minutes
 import de.dh.raaps.common.model.data.TimeService
 import de.dh.raaps.core.aps.Core
@@ -15,10 +15,10 @@ import de.dh.raaps.core.aps.SystemManagerImpl
 import de.dh.raaps.core.aps.TherapyManager
 import de.dh.raaps.core.pump.PumpManager
 import de.dh.raaps.core.pump.PumpManagerImpl
+import de.dh.raaps.core.repository.CoreInsightRepository
 import de.dh.raaps.core.repository.DatabaseInitializer
 import de.dh.raaps.core.repository.DeviceManagementRepository
 import de.dh.raaps.core.repository.FoodRepository
-import de.dh.raaps.core.repository.CoreInsightRepository
 import de.dh.raaps.core.repository.GlucoseRepository
 import de.dh.raaps.core.repository.SettingsRepository
 import de.dh.raaps.core.repository.TherapyRepository
@@ -52,7 +52,7 @@ class SystemRegistryImpl(
     override val wakeService: SystemWakeService,
     override val timeService: TimeService,
     override val pumpManager: PumpManager,
-    override val carbsInsulinCalculationModel: CarbsInsulinCalculationModel,
+    override val carbsInsulinCalculator: CarbsInsulinCalculator,
     override val permissionsChangedHandler: PermissionsChangedHandler,
     override val apsServiceClass: Class<out Service>
 ) : SystemRegistry {
@@ -114,7 +114,7 @@ class SystemRegistryImpl(
                 systemManager = systemManager,
                 scope = scope
             )
-            val carbsInsulinCalculationModel = CarbsInsulinCalculationModel(timeService.tickInterval)
+            val carbsInsulinCalculator = CarbsInsulinCalculator(timeService.tickInterval)
 
             runBlocking {
                 treatmentRepository.load()
@@ -127,7 +127,7 @@ class SystemRegistryImpl(
                 treatmentRepository = treatmentRepository,
                 therapyManager = therapyManager,
                 appPreferencesRepository = appPreferencesRepository,
-                carbsInsulinCalculationModel = carbsInsulinCalculationModel,
+                carbsInsulinCalculator = carbsInsulinCalculator,
                 coreInsightRepository = coreInsightRepository,
                 context = application
             )
@@ -154,7 +154,7 @@ class SystemRegistryImpl(
                 wakeService = wakeService,
                 timeService = timeService,
                 pumpManager = pumpManager,
-                carbsInsulinCalculationModel = carbsInsulinCalculationModel,
+                carbsInsulinCalculator = carbsInsulinCalculator,
                 permissionsChangedHandler = permissionsHandler,
                 apsServiceClass = apsServiceClass
             )

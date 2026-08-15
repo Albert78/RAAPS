@@ -5,7 +5,7 @@ import android.content.Context
 import android.content.Intent
 import de.dh.raaps.AppPreferencesRepository
 import de.dh.raaps.common.model.ApsMode
-import de.dh.raaps.common.model.calculation.CarbsInsulinCalculationModel
+import de.dh.raaps.common.model.calculation.CarbsInsulinCalculator
 import de.dh.raaps.common.model.data.Tick
 import de.dh.raaps.common.model.data.TickHandler
 import de.dh.raaps.common.model.data.TickPriority
@@ -74,7 +74,7 @@ interface SystemManager {
         treatmentRepository: TreatmentRepository,
         therapyManager: TherapyManager,
         appPreferencesRepository: AppPreferencesRepository,
-        carbsInsulinCalculationModel: CarbsInsulinCalculationModel,
+        carbsInsulinCalculator: CarbsInsulinCalculator,
         coreInsightRepository: CoreInsightRepository,
         context: Context
     )
@@ -146,7 +146,7 @@ class SystemManagerImpl(
         treatmentRepository: TreatmentRepository,
         therapyManager: TherapyManager,
         appPreferencesRepository: AppPreferencesRepository,
-        carbsInsulinCalculationModel: CarbsInsulinCalculationModel,
+        carbsInsulinCalculator: CarbsInsulinCalculator,
         coreInsightRepository: CoreInsightRepository,
         context: Context
     ) {
@@ -209,7 +209,7 @@ class SystemManagerImpl(
             therapyManager = therapyManager,
             treatmentRepository = treatmentRepository,
             timeService = timeService,
-            carbsInsulinCalculationModel = carbsInsulinCalculationModel,
+            carbsInsulinCalculator = carbsInsulinCalculator,
             glucoseSourceManager = glucoseSourceManager,
 
             onCoreStateChanged = { handleCoreStateChanged() },
