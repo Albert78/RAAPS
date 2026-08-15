@@ -232,7 +232,7 @@ class MealBolusViewModel(
         val newPlan = BolusCalculator.distributeInsulinPlan(
             manualBolus = state.manualBolus,
             correctionPart = state.correctionPart,
-            selectedMealType = state.selectedMealType,
+            mealType = state.selectedMealType,
             currentBg = state.currentBg,
             lowThreshold = state.lowThreshold,
             now = Timestamp.now(),

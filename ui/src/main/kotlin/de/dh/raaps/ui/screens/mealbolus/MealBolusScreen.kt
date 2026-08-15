@@ -213,7 +213,7 @@ fun MealBolusContent(
                     EditWarningCard()
                 }
 
-                // NEW: Meal Time Card
+                // Meal Time Card
                 MealTimeCard(
                     mealTimestamp = uiState.mealTimestamp,
                     onTimeChange = onMealTimeChange
@@ -305,7 +305,7 @@ fun MealBolusContent(
                         }
                     }
 
-                    // NEW: Insulin Plan Card
+                    // Insulin Plan Card
                     if (uiState.insulinPlan.isNotEmpty()) {
                         InsulinPlanCard(
                             plan = uiState.insulinPlan,

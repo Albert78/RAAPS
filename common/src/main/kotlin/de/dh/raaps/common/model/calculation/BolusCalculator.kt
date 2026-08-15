@@ -76,7 +76,7 @@ object BolusCalculator {
     fun distributeInsulinPlan(
         manualBolus: InsulinAmount,
         correctionPart: InsulinAmount,
-        selectedMealType: MealType?,
+        mealType: MealType?,
         currentBg: Int?,
         lowThreshold: Int,
         now: Timestamp,
@@ -89,7 +89,7 @@ object BolusCalculator {
         val isLowBg = currentBg != null && currentBg <= lowThreshold
         val suggestedOffset = if (isLowBg) 15 else 0
 
-        if (selectedMealType == null) {
+        if (mealType == null) {
             // Fallback: Use a single bolus if no meal type is selected but insulin is required (e.g. correction)
             val existing = existingPlan.getOrNull(0)
             val offsetToUse = if (existing?.isUserModified == true) existing.offsetMinutes else suggestedOffset
@@ -107,7 +107,6 @@ object BolusCalculator {
         val totalAmount = manualBolus.iu
         val correction = correctionPart.iu
         val restToDistribute = totalAmount - correction
-        val mealType = selectedMealType
 
         val rawAmounts = DoubleArray(mealType.components.size) { i ->
             val weight = mealType.components[i].weight / 100.0

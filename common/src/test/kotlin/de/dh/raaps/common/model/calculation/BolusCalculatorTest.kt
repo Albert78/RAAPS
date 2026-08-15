@@ -86,7 +86,7 @@ class BolusCalculatorTest {
         val plan = BolusCalculator.distributeInsulinPlan(
             manualBolus = InsulinAmount(5.0),
             correctionPart = InsulinAmount.ZERO,
-            selectedMealType = mealType,
+            mealType = mealType,
             currentBg = 100,
             lowThreshold = 70,
             now = now
@@ -115,7 +115,7 @@ class BolusCalculatorTest {
         val plan = BolusCalculator.distributeInsulinPlan(
             manualBolus = InsulinAmount(5.0),
             correctionPart = InsulinAmount(1.0),
-            selectedMealType = mealType,
+            mealType = mealType,
             currentBg = 100,
             lowThreshold = 70,
             now = now
@@ -150,7 +150,7 @@ class BolusCalculatorTest {
         val plan = BolusCalculator.distributeInsulinPlan(
             manualBolus = InsulinAmount(1.0),
             correctionPart = InsulinAmount(-2.0),
-            selectedMealType = mealType,
+            mealType = mealType,
             currentBg = 60,
             lowThreshold = 70,
             now = Timestamp.now()
@@ -168,7 +168,7 @@ class BolusCalculatorTest {
         val plan = BolusCalculator.distributeInsulinPlan(
             manualBolus = InsulinAmount(2.0),
             correctionPart = InsulinAmount(2.0),
-            selectedMealType = null,
+            mealType = null,
             currentBg = 200,
             lowThreshold = 70,
             now = now
@@ -185,7 +185,7 @@ class BolusCalculatorTest {
         val plan = BolusCalculator.distributeInsulinPlan(
             manualBolus = InsulinAmount(1.0),
             correctionPart = InsulinAmount(-0.5),
-            selectedMealType = null,
+            mealType = null,
             currentBg = 60,
             lowThreshold = 70,
             now = now
