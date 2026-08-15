@@ -6,6 +6,7 @@ import android.content.Intent
 import de.dh.raaps.AppPreferencesRepository
 import de.dh.raaps.common.model.ApsMode
 import de.dh.raaps.common.model.calculation.CarbsInsulinCalculator
+import de.dh.raaps.common.model.data.BgValue
 import de.dh.raaps.common.model.data.Tick
 import de.dh.raaps.common.model.data.TickHandler
 import de.dh.raaps.common.model.data.TickPriority
@@ -88,6 +89,11 @@ interface SystemManager {
      * Gracefully stops the system.
      */
     fun stop()
+
+    /**
+     * Returns the predicted blood glucose value for the given timestamp.
+     */
+    suspend fun getPredictedBg(timestamp: Timestamp): BgValue
 }
 
 /**
@@ -280,6 +286,14 @@ class SystemManagerImpl(
     override fun stop() {
         coreScope.cancel()
         coreDispatcher.close()
+    }
+
+    override suspend fun getPredictedBg(timestamp: Timestamp): BgValue {
+        return if (::core.isInitialized) {
+            core.getPredictedBg(timestamp)
+        } else {
+            BgValue.INVALID
+        }
     }
 
     override fun setApsMode(mode: ApsMode) {

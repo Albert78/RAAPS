@@ -167,6 +167,7 @@ interface ApsAlgorithm {
     suspend fun updateMeals()
     suspend fun updateInsulin()
     suspend fun recalculate(): CalculationResult
+    suspend fun getPredictedBg(timestamp: Timestamp): BgValue
 }
 
 class NoopAlgorithm: ApsAlgorithm {
@@ -184,5 +185,9 @@ class NoopAlgorithm: ApsAlgorithm {
 
     override suspend fun recalculate(): CalculationResult {
         return CalculationResult.normalSafetyBasal()
+    }
+
+    override suspend fun getPredictedBg(timestamp: Timestamp): BgValue {
+        return BgValue.INVALID
     }
 }

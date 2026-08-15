@@ -545,12 +545,27 @@ fun MealBolusHeader(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(4.dp)
             ) {
-                val bgText = glucoseValue(currentBgValue?.bgValue, default = "?")
+                if (currentBgValue?.predictedBg?.isValid() == true) {
+                    Text(
+                        text = stringResource(R.string.approx_prefix),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = Color.Gray,
+                        modifier = Modifier.align(Alignment.CenterVertically)
+                    )
+                }
+
+                val displayBgValue = if (currentBgValue?.predictedBg?.isValid() == true) {
+                    currentBgValue.predictedBg
+                } else {
+                    currentBgValue?.bgValue
+                }
+
+                val bgText = glucoseValue(displayBgValue, default = "?")
                 val textColor = if (currentBgValue == null || (currentBgValue.isValueOld)) {
                     Color.Gray
                 } else when {
-                    currentBgValue.bgValue.mgdl < 70 -> Red
-                    currentBgValue.bgValue.mgdl < 180 -> LightGreenA700
+                    displayBgValue!!.mgdl < 70 -> Red
+                    displayBgValue.mgdl < 180 -> LightGreenA700
                     else -> Yellow
                 }
                 Text(
@@ -585,6 +600,21 @@ fun MealBolusHeader(
                     )
                 }
             }
+
+            val displayTime = if (currentBgValue?.predictedBg?.isValid() == true) {
+                currentBgValue.predictedTimestamp?.let { time(it) }
+            } else {
+                currentBgValue?.timestamp?.let { time(it) }
+            }
+
+            if (displayTime != null) {
+                Text(
+                    text = "um $displayTime",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = Color.Gray
+                )
+            }
+
             Spacer(Modifier.height(8.dp))
             Text(
                 text = stringResource(R.string.meal_bolus_active_carbs_format, carbsGramsValue(cob)),

@@ -310,6 +310,10 @@ class Core(
         }
     }
 
+    suspend fun getPredictedBg(timestamp: Timestamp): BgValue {
+        return calculationAlgorithm.getPredictedBg(timestamp)
+    }
+
     companion object {
         val TAG = Core::class.simpleName
 

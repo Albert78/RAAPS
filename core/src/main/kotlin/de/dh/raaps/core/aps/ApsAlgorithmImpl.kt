@@ -85,6 +85,11 @@ class ApsAlgorithmImpl(
         return BgDelta.fromMgDl((totalDeviation / numTicks).toInt())
     }
 
+    override suspend fun getPredictedBg(timestamp: Timestamp): BgValue {
+        val tick = timeline.tick(timestamp)
+        return predictionModel.withTickState(tick) { it.predictedBg } ?: BgValue.INVALID
+    }
+
     override suspend fun recalculate(): CalculationResult = try {
         Log.d(TAG, "Algorithm is calculating...")
         val nowTick = timeline.getNowTick()

@@ -43,7 +43,9 @@ data class CurrentBgData (
     val delta: BgDelta? = null,
     val trend: BgTrend? = BgTrend.Flat,
     val timestamp: Timestamp = Timestamp(0),
-    val glucoseUnit: GlucoseUnit = GlucoseUnit.MG_DL
+    val glucoseUnit: GlucoseUnit = GlucoseUnit.MG_DL,
+    val predictedBg: BgValue = BgValue.INVALID,
+    val predictedTimestamp: Timestamp? = null
 ) {
     companion object {
         fun valid(
@@ -51,27 +53,35 @@ data class CurrentBgData (
             delta: BgDelta? = null,
             trend: BgTrend? = BgTrend.Flat,
             timestamp: Timestamp = Timestamp(0),
-            glucoseUnit: GlucoseUnit = GlucoseUnit.MG_DL
+            glucoseUnit: GlucoseUnit = GlucoseUnit.MG_DL,
+            predictedBg: BgValue = BgValue.INVALID,
+            predictedTimestamp: Timestamp? = null
         ) = CurrentBgData(
             isValueOld = false,
             bgValue = bgValue,
             delta = delta,
             trend = trend,
             timestamp = timestamp,
-            glucoseUnit = glucoseUnit
+            glucoseUnit = glucoseUnit,
+            predictedBg = predictedBg,
+            predictedTimestamp = predictedTimestamp
         )
 
         fun oldValue(
             bgValue: BgValue,
             timestamp: Timestamp = Timestamp(0),
-            glucoseUnit: GlucoseUnit = GlucoseUnit.MG_DL
+            glucoseUnit: GlucoseUnit = GlucoseUnit.MG_DL,
+            predictedBg: BgValue = BgValue.INVALID,
+            predictedTimestamp: Timestamp? = null
         ) = CurrentBgData(
             isValueOld = true,
             bgValue = bgValue,
             delta = null,
             trend = null,
             timestamp = timestamp,
-            glucoseUnit = glucoseUnit
+            glucoseUnit = glucoseUnit,
+            predictedBg = predictedBg,
+            predictedTimestamp = predictedTimestamp
         )
 
         fun invalid(): CurrentBgData? = null
@@ -150,20 +160,26 @@ class HistoryViewModel(
                 _iob.value = carbsInsulinCalculator.iob(filteredInsulin, now, dia, peak)
                 _cob.value = carbsInsulinCalculator.cob(filteredMeals, now)
 
-                updateUiModel(filteredReadings, filteredInsulin, filteredMeals)
+                launch {
+                    updateUiModel(filteredReadings, filteredInsulin, filteredMeals)
+                }
             }.collect { }
         }
     }
 
-    private fun updateUiModel(
+    private suspend fun updateUiModel(
         readings: List<BgReading>,
         insulin: List<InsulinApplication>,
         meals: List<MealEntry>
     ) {
         val glucoseUnit = systemRegistry.appPreferencesRepository.cachedPreferences.value?.glucoseUnit ?: GlucoseUnit.MG_DL
 
-        val timestampNowMs = Timestamp.now().ms
+        val now = Timestamp.now()
+        val timestampNowMs = now.ms
         val limitMs = timestampNowMs - 20 * 60 * 1000L
+
+        val predictedTimestamp = now.plusMinutes(15)
+        val predictedBg = systemRegistry.systemManager.getPredictedBg(predictedTimestamp)
 
         val recentReadings = readings.filter {
             it.sampleKind == BgSampleKind.Value && it.timestamp.ms >= limitMs
@@ -194,7 +210,9 @@ class HistoryViewModel(
                         isError = false,
                         currentBgValue = CurrentBgData.oldValue(
                             bgValue = olderReading.value,
-                            timestamp = olderReading.timestamp
+                            timestamp = olderReading.timestamp,
+                            predictedBg = predictedBg,
+                            predictedTimestamp = predictedTimestamp
                         ),
                         nextExpectedTimestamp = nextExpectedTimestamp,
                         readingsTimeDelay = readingsTimeDelay
@@ -245,7 +263,9 @@ class HistoryViewModel(
                         delta = regressionDelta5m?.let { BgDelta.fromMgDl(it.toInt()) },
                         trend = trend,
                         timestamp = latest.timestamp,
-                        glucoseUnit = glucoseUnit
+                        glucoseUnit = glucoseUnit,
+                        predictedBg = predictedBg,
+                        predictedTimestamp = predictedTimestamp
                     ),
                     nextExpectedTimestamp = nextExpectedTimestamp,
                     readingsTimeDelay = readingsTimeDelay
