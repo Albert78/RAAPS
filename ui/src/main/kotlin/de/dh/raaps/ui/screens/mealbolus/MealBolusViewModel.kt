@@ -4,7 +4,6 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.CreationExtras
-import de.dh.raaps.common.model.ApsMode
 import de.dh.raaps.common.model.DEFAULT_CR_GRAM_PER_UNIT
 import de.dh.raaps.common.model.DEFAULT_ISF_MGDL_PER_UNIT
 import de.dh.raaps.common.model.ID_UNDEFINED
@@ -65,7 +64,6 @@ data class MealBolusUiState(
     val manualBolus: InsulinAmount = InsulinAmount.ZERO,
     val insulinPlan: List<PlannedInsulin> = emptyList(),
     val isInsulinPlanExpanded: Boolean = false,
-    val isAutomaticMode: Boolean = false,
     val isSubmitting: Boolean = false,
     val isLockAcquired: Boolean = false,
     val isBusy: Boolean = false,
@@ -74,7 +72,7 @@ data class MealBolusUiState(
 )
 
 class MealBolusViewModel(
-    private val systemRegistry: SystemRegistry,
+    systemRegistry: SystemRegistry,
     private val mealId: Long? = null
 ) : ViewModel() {
     private val _uiState = MutableStateFlow(MealBolusUiState())
@@ -133,13 +131,6 @@ class MealBolusViewModel(
             }
             calculateBolus()
             startTicker()
-        }
-
-        viewModelScope.launch {
-            systemRegistry.systemManager.apsMode.collect { mode ->
-                _uiState.update { it.copy(isAutomaticMode = mode == ApsMode.AutoCorrection) }
-                calculateBolus()
-            }
         }
     }
 

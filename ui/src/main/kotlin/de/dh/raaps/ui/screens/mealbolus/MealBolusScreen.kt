@@ -502,8 +502,7 @@ fun MealBolusDefaultPreview() {
                     mealPart = InsulinAmount(4.5),
                     correctionPart = InsulinAmount(0.8),
                     proposedBolus = InsulinAmount(5.3),
-                    manualBolus = InsulinAmount(5.3),
-                    isAutomaticMode = false
+                    manualBolus = InsulinAmount(5.3)
                 ),
                 currentBgValue = CurrentBgData.valid(
                     bgValue = BgValue(140),
