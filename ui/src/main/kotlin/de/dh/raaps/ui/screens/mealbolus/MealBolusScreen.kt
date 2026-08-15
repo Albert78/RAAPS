@@ -65,20 +65,13 @@ import de.dh.raaps.common.model.data.GlucoseUnit
 import de.dh.raaps.common.model.data.Minutes
 import de.dh.raaps.common.model.data.Timestamp
 import de.dh.raaps.ui.R
-import de.dh.raaps.ui.common.glucoseValue
-import de.dh.raaps.ui.common.isfValue
-import de.dh.raaps.ui.common.crValue
-import de.dh.raaps.ui.common.glucoseUnitLabel
-import de.dh.raaps.ui.common.insulinUnitLabel
-import de.dh.raaps.ui.common.insulinValue
-import de.dh.raaps.ui.common.carbsKeUnitLabel
-import de.dh.raaps.ui.common.carbsGramsValue
 import de.dh.raaps.ui.common.DefaultSteppingStrategy
-import de.dh.raaps.ui.common.ValueDisplayStrategy
 import de.dh.raaps.ui.common.LocalGlucoseUnit
-import de.dh.raaps.ui.common.time
-import de.dh.raaps.ui.common.composables.EditableValueStepper
+import de.dh.raaps.ui.common.ValueDisplayStrategy
+import de.dh.raaps.ui.common.carbsGramsValue
+import de.dh.raaps.ui.common.carbsKeUnitLabel
 import de.dh.raaps.ui.common.composables.AppColorBlue
+import de.dh.raaps.ui.common.composables.EditableValueStepper
 import de.dh.raaps.ui.common.composables.LightGreenA700
 import de.dh.raaps.ui.common.composables.PrimaryButton
 import de.dh.raaps.ui.common.composables.Red
@@ -86,9 +79,17 @@ import de.dh.raaps.ui.common.composables.StepperDefaults
 import de.dh.raaps.ui.common.composables.StepperStyle
 import de.dh.raaps.ui.common.composables.Yellow
 import de.dh.raaps.ui.common.composables.contentScrollIndicator
+import de.dh.raaps.ui.common.crValue
+import de.dh.raaps.ui.common.glucoseUnitLabel
+import de.dh.raaps.ui.common.glucoseValue
 import de.dh.raaps.ui.common.icons.Icon_Minus
 import de.dh.raaps.ui.common.icons.Icon_Plus
+import de.dh.raaps.ui.common.insulinUnitLabel
+import de.dh.raaps.ui.common.insulinValue
+import de.dh.raaps.ui.common.isfValue
 import de.dh.raaps.ui.common.theme.AppTheme
+import de.dh.raaps.ui.common.time
+import de.dh.raaps.ui.common.withinTimeDescription
 import de.dh.raaps.ui.controls.history.BgTrend
 import de.dh.raaps.ui.controls.history.CurrentBgData
 import de.dh.raaps.ui.controls.history.HistoryViewModel
@@ -719,6 +720,11 @@ fun InsulinPlanCard(
                                 append(insulinValue(item.amount.iu))
                                 if (index < plan.size - 1) append(" + ")
                             }
+
+                            val lastOffset = plan.lastOrNull()?.offsetMinutes ?: 0
+                            append(" (")
+                            append(withinTimeDescription(lastOffset))
+                            append(")")
                         }
                         Text(
                             text = planSummary,

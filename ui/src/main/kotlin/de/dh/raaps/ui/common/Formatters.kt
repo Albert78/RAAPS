@@ -162,6 +162,21 @@ fun shortRelativeTimeUntil(timestamp: Timestamp): String {
     return shortRelativeTimeUntil(diffMs)
 }
 
+@Composable
+fun withinTimeDescription(minutes: Int): String {
+    if (minutes <= 0) return "sofort"
+    val hours = minutes / 60
+    val mins = minutes % 60
+
+    val timeStr = when {
+        hours == 0 -> stringResource(de.dh.raaps.ui.R.string.duration_minutes_format, mins)
+        mins == 0 -> stringResource(de.dh.raaps.ui.R.string.duration_hours_format, hours)
+        else -> stringResource(de.dh.raaps.ui.R.string.duration_hours_and_minutes_format, hours, mins)
+    }
+
+    return "innerhalb von $timeStr"
+}
+
 /////////////////////////////////////////////// Glucose & Therapy //////////////////////////////////////
 
 @Composable
