@@ -27,6 +27,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlin.math.abs
 import kotlin.math.max
 import kotlin.math.round
 import kotlin.time.Duration.Companion.seconds
@@ -270,15 +271,50 @@ class MealBolusViewModel(
             return
         }
 
-        val totalAmount = state.manualBolus
+        val totalAmount = state.manualBolus.iu
+        val correction = state.correctionPart.iu
+        val restToDistribute = totalAmount - correction
         val mealType = state.selectedMealType ?: return
         val now = Timestamp.now()
-        
+
+        val rawAmounts = DoubleArray(mealType.components.size) { i ->
+            val weight = mealType.components[i].weight / 100.0
+            val share = restToDistribute * weight
+            if (i == 0) share + correction else share
+        }
+
+        // Re-balance negatives forward (drain deficit to next part)
+        for (i in 0 until rawAmounts.size - 1) {
+            if (rawAmounts[i] < 0) {
+                rawAmounts[i + 1] += rawAmounts[i]
+                rawAmounts[i] = 0.0
+            }
+        }
+        // Re-balance negatives backward (safety check)
+        for (i in rawAmounts.size - 1 downTo 1) {
+            if (rawAmounts[i] < 0) {
+                rawAmounts[i - 1] += rawAmounts[i]
+                rawAmounts[i] = 0.0
+            }
+        }
+
+        val roundedAmounts = rawAmounts.map { round(max(0.0, it) * 100.0) / 100.0 }.toDoubleArray()
+
+        // Final adjustment to ensure sum matches exactly the totalAmount
+        val currentSum = roundedAmounts.sum()
+        val targetSum = round(totalAmount * 100.0) / 100.0
+        val diff = round((targetSum - currentSum) * 100.0) / 100.0
+
+        if (abs(diff) >= 0.01) {
+            val indexToAdjust = roundedAmounts.indices.maxByOrNull { roundedAmounts[it] } ?: 0
+            roundedAmounts[indexToAdjust] = round((roundedAmounts[indexToAdjust] + diff) * 100.0) / 100.0
+        }
+
         val isLowBg = state.currentBg != null && state.currentBg <= state.lowThreshold
-        
+
         val newPlan = mealType.components.mapIndexed { index, component ->
-            val amount = InsulinAmount(round(totalAmount.iu * (component.weight / 100.0) * 100.0) / 100.0)
-            
+            val amount = InsulinAmount(roundedAmounts[index])
+
             // Suggested offset:
             val suggestedOffset = if (isLowBg) 15 else 0
             val delayFromBase = if (index == 0) 0 else component.peakMinutes.value.toInt()
