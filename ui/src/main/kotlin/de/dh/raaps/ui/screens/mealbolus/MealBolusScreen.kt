@@ -196,7 +196,7 @@ fun MealBolusContent(
                     EditWarningCard()
                 }
 
-                // Mahlzeit Card (Carbs + Food Type)
+                // Mahlzeit Card (Carbs + Food Type + Meal Time)
                 Card(
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(12.dp),
@@ -206,7 +206,9 @@ fun MealBolusContent(
                     )
                 ) {
                     Column(
-                        modifier = Modifier.padding(16.dp),
+                        modifier = Modifier
+                            .padding(16.dp)
+                            .fillMaxWidth(),
                         horizontalAlignment = Alignment.CenterHorizontally,
                         verticalArrangement = Arrangement.spacedBy(16.dp)
                     ) {
@@ -232,21 +234,35 @@ fun MealBolusContent(
                             )
                         }
 
-                        FoodTypeSelector(
-                            mealTypes = uiState.mealTypes,
-                            selectedType = uiState.selectedMealType,
-                            onTypeSelected = onMealTypeChange,
-                            isMandatory = uiState.carbsKe > 0.0
-                        )
-                    }
-                }
+                        if (uiState.carbsKe > 0.0) {
+                            HorizontalDivider(color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.1f))
+                            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                Text(
+                                    text = stringResource(R.string.meal_bolus_meal_time_label),
+                                    style = MaterialTheme.typography.titleMedium
+                                )
+                                Spacer(Modifier.height(8.dp))
+                                TimeStepper(
+                                    currentTime = uiState.mealTimestamp,
+                                    onTimeChange = onMealTimeChange,
+                                    modifier = Modifier.fillMaxWidth()
+                                )
+                                Spacer(Modifier.height(4.dp))
+                                Text(
+                                    text = time(uiState.mealTimestamp),
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = MaterialTheme.colorScheme.primary
+                                )
+                            }
 
-                // Meal Time Card (Only if carbs > 0)
-                if (uiState.carbsKe > 0.0) {
-                    MealTimeCard(
-                        mealTimestamp = uiState.mealTimestamp,
-                        onTimeChange = onMealTimeChange
-                    )
+                            FoodTypeSelector(
+                                mealTypes = uiState.mealTypes,
+                                selectedType = uiState.selectedMealType,
+                                onTypeSelected = onMealTypeChange,
+                                isMandatory = true
+                            )
+                        }
+                    }
                 }
 
                 // Insulin Card (Final Insulin Stepper)
@@ -260,7 +276,9 @@ fun MealBolusContent(
                         )
                     ) {
                         Column(
-                            modifier = Modifier.padding(16.dp),
+                            modifier = Modifier
+                                .padding(16.dp)
+                                .fillMaxWidth(),
                             horizontalAlignment = Alignment.CenterHorizontally,
                             verticalArrangement = Arrangement.spacedBy(16.dp)
                         ) {
@@ -462,6 +480,38 @@ fun CalculationDetailsSelector(
     }
 }
 
+@Preview(showBackground = true, name = "0 KE Mode")
+@Composable
+fun MealBolusZeroKePreview() {
+    AppTheme {
+        CompositionLocalProvider(LocalGlucoseUnit provides GlucoseUnit.MG_DL) {
+            MealBolusContent(
+                uiState = MealBolusUiState(
+                    isLoading = false,
+                    carbsKe = 0.0,
+                    mealTypes = emptyList(),
+                    selectedMealType = null,
+                    currentBg = 140,
+                    projectedBg = null,
+                    targetBg = 100,
+                    isf = 50,
+                    cr = 10.0,
+                    proposedBolus = InsulinAmount(0.8),
+                    manualBolus = InsulinAmount(0.8)
+                ),
+                onNavigateUp = {},
+                onCarbsChange = {},
+                onMealTimeChange = {},
+                onMealTypeChange = {},
+                onManualBolusChange = {},
+                onPlannedInsulinTimeChange = { _, _ -> },
+                onToggleInsulinPlan = {},
+                onSubmit = {}
+            )
+        }
+    }
+}
+
 @Preview(showBackground = true, name = "Default Mode")
 @Preview(showBackground = true, name = "Default Mode - Dark", uiMode = Configuration.UI_MODE_NIGHT_YES)
 @Composable
@@ -523,8 +573,8 @@ fun MealBolusHeader(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(4.dp)
             ) {
-                val isProjected = uiState.carbsKe > 0.0 && uiState.projectedBg != null
-                if (isProjected) {
+                val isFuture = uiState.referenceTimestamp.ms > Timestamp.now().ms
+                if (isFuture) {
                     Text(
                         text = stringResource(R.string.approx_prefix),
                         style = MaterialTheme.typography.bodySmall,
@@ -533,8 +583,8 @@ fun MealBolusHeader(
                     )
                 }
 
-                val displayBgValue = if (isProjected) {
-                    BgValue(uiState.projectedBg!!.toShort())
+                val displayBgValue = if (uiState.carbsKe > 0.0 || isFuture) {
+                    uiState.projectedBg?.let { BgValue(it.toShort()) } ?: uiState.currentBg?.let { BgValue(it.toShort()) }
                 } else {
                     uiState.currentBg?.let { BgValue(it.toShort()) }
                 }
@@ -562,19 +612,11 @@ fun MealBolusHeader(
                 )
             }
 
-            val displayTime = if (uiState.carbsKe > 0.0) {
-                time(uiState.referenceTimestamp)
-            } else {
-                null
-            }
-
-            if (displayTime != null) {
-                Text(
-                    text = "um $displayTime",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = Color.Gray
-                )
-            }
+            Text(
+                text = "um ${time(uiState.referenceTimestamp)}",
+                style = MaterialTheme.typography.bodySmall,
+                color = Color.Gray
+            )
 
             Spacer(Modifier.height(8.dp))
             Text(
@@ -635,43 +677,6 @@ fun EditWarningCard() {
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onErrorContainer
         )
-    }
-}
-
-@Composable
-fun MealTimeCard(
-    mealTimestamp: Timestamp,
-    onTimeChange: (Timestamp) -> Unit
-) {
-    Card(
-        modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(12.dp),
-        border = BorderStroke(2.dp, AppColorBlue.copy(alpha = 0.3f)),
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
-        )
-    ) {
-        Column(
-            modifier = Modifier.padding(16.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
-            Text(
-                text = stringResource(R.string.meal_bolus_meal_time_label),
-                style = MaterialTheme.typography.titleMedium
-            )
-            Spacer(Modifier.height(8.dp))
-            TimeStepper(
-                currentTime = mealTimestamp,
-                onTimeChange = onTimeChange,
-                modifier = Modifier.fillMaxWidth()
-            )
-            Spacer(Modifier.height(4.dp))
-            Text(
-                text = time(mealTimestamp),
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.primary
-            )
-        }
     }
 }
 
