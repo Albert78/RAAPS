@@ -146,7 +146,7 @@ class Core(
                     treatmentRepository,
                     glucoseSourceManager.sampledBgReadings,
                     therapyManager,
-                    tickInterval = timeService.tickInterval,
+                    timeline = timeService.timeline,
                     carbsInsulinCalculator = carbsInsulinCalculator
                 )
 

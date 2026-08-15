@@ -1,6 +1,9 @@
 package de.dh.raaps.common.model.data
 
+import java.text.SimpleDateFormat
 import java.util.Calendar
+import java.util.Date
+import java.util.Locale
 import kotlin.math.max
 import kotlin.time.Instant
 
@@ -39,6 +42,10 @@ value class Timestamp(val ms: Long): Comparable<Timestamp> {
         val calendar = Calendar.getInstance()
         calendar.timeInMillis = ms
         return Minutes((calendar.get(Calendar.HOUR_OF_DAY) * 60 + calendar.get(Calendar.MINUTE)).toShort())
+    }
+
+    override fun toString(): String {
+        return SimpleDateFormat("HH:mm:ss.SSS", Locale.getDefault()).format(Date(ms))
     }
 
     companion object {

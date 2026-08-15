@@ -16,6 +16,8 @@ value class Tick(val value: Int) : Comparable<Tick> {
 
     override fun compareTo(other: Tick): Int = value.compareTo(other.value)
 
+    override fun toString(): String = "Tick($value)"
+
     companion object {
         fun invalid(): Tick {
             return Tick(-1)

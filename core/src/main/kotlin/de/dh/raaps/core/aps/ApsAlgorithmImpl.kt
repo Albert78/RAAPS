@@ -402,10 +402,9 @@ class ApsAlgorithmImpl(
             treatmentRepository: TreatmentRepository,
             sampledBgReadings: SampledBgReadings,
             therapyManager: TherapyManager,
-            tickInterval: Minutes,
+            timeline: Timeline,
             carbsInsulinCalculator: CarbsInsulinCalculator,
         ): ApsAlgorithm {
-            val timeline = Timeline(tickInterval)
             val predictionModel = PredictionModel(
                 predictionWindowHours = PREDICTION_WINDOW_HOURS,
                 timeline = timeline
