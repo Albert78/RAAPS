@@ -161,4 +161,38 @@ class BolusCalculatorTest {
         // Since it's Component 2, it should have the offset 120 + 15 (hypo) = 135
         assertEquals(135, plan[0].offsetMinutes)
     }
+
+    @Test
+    fun testDistributeInsulinPlan_NoMealType() {
+        val now = Timestamp.now()
+        val plan = BolusCalculator.distributeInsulinPlan(
+            manualBolus = InsulinAmount(2.0),
+            correctionPart = InsulinAmount(2.0),
+            selectedMealType = null,
+            currentBg = 200,
+            lowThreshold = 70,
+            now = now
+        )
+
+        assertEquals(1, plan.size)
+        assertEquals(2.0, plan[0].amount.iu, 0.01)
+        assertEquals(0, plan[0].offsetMinutes)
+    }
+
+    @Test
+    fun testDistributeInsulinPlan_NoMealTypeLowBg() {
+        val now = Timestamp.now()
+        val plan = BolusCalculator.distributeInsulinPlan(
+            manualBolus = InsulinAmount(1.0),
+            correctionPart = InsulinAmount(-0.5),
+            selectedMealType = null,
+            currentBg = 60,
+            lowThreshold = 70,
+            now = now
+        )
+
+        assertEquals(1, plan.size)
+        assertEquals(1.0, plan[0].amount.iu, 0.01)
+        assertEquals(15, plan[0].offsetMinutes)
+    }
 }

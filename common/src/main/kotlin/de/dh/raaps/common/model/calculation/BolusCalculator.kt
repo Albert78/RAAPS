@@ -82,8 +82,26 @@ object BolusCalculator {
         now: Timestamp,
         existingPlan: List<PlannedInsulin> = emptyList()
     ): List<PlannedInsulin> {
-        if (manualBolus <= InsulinAmount.ZERO || selectedMealType == null) {
+        if (manualBolus <= InsulinAmount.ZERO) {
             return emptyList()
+        }
+
+        val isLowBg = currentBg != null && currentBg <= lowThreshold
+        val suggestedOffset = if (isLowBg) 15 else 0
+
+        if (selectedMealType == null) {
+            // Fallback: Use a single bolus if no meal type is selected but insulin is required (e.g. correction)
+            val existing = existingPlan.getOrNull(0)
+            val offsetToUse = if (existing?.isUserModified == true) existing.offsetMinutes else suggestedOffset
+            return listOf(
+                PlannedInsulin(
+                    amount = manualBolus,
+                    timestamp = now + Minutes(offsetToUse.toShort()),
+                    offsetMinutes = offsetToUse,
+                    description = "Bolus",
+                    isUserModified = existing?.isUserModified ?: false
+                )
+            )
         }
 
         val totalAmount = manualBolus.iu
@@ -124,13 +142,10 @@ object BolusCalculator {
             roundedAmounts[indexToAdjust] = round((roundedAmounts[indexToAdjust] + diff) * 100.0) / 100.0
         }
 
-        val isLowBg = currentBg != null && currentBg <= lowThreshold
-
         return mealType.components.mapIndexed { index, component ->
             val amount = InsulinAmount(roundedAmounts[index])
 
             // Suggested offset:
-            val suggestedOffset = if (isLowBg) 15 else 0
             val delayFromBase = if (index == 0) 0 else component.peakMinutes.value.toInt()
             val finalOffset = suggestedOffset + delayFromBase
 
