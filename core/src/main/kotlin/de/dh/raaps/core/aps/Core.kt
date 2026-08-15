@@ -85,6 +85,8 @@ class Core(
     var coreState: CoreState = CoreState.Uninitialized
         private set
 
+    private var isReadOnly: Boolean = true
+
     /**
      * Lock which is acquired in situations where a suspend function
      * must be atomic. Other (non-suspend) functions don't need to be locked since
@@ -124,7 +126,8 @@ class Core(
         setCoreState(CoreState.Suspended)
     }
 
-    fun activate() {
+    fun activate(isReadOnly: Boolean = false) {
+        this.isReadOnly = isReadOnly
         setCoreState(CoreState.Active())
     }
 
@@ -204,25 +207,27 @@ class Core(
                             }
                         }
 
-                        if (result.carbsInGHint != null) {
-                            onCarbsHint(treatmentLock, result.carbsInGHint)
-                        }
-                        if (result.tempBasal != null) {
-                            onSetTempBasal(
-                                treatmentLock,
-                                result.tempBasal.durationInHours,
-                                result.tempBasal.percent
-                            )
-                        }
-                        if (result.clearTempBasal) {
-                            onClearTempBasal(treatmentLock)
-                        }
-                        if (result.bolus != null && result.bolus >= InsulinAmount.EPSILON) {
-                            onDeliverBolus(
-                                treatmentLock,
-                                result.bolus,
-                                result.handledDeferredBoluses
-                            )
+                        if (!isReadOnly) {
+                            if (result.carbsInGHint != null) {
+                                onCarbsHint(treatmentLock, result.carbsInGHint)
+                            }
+                            if (result.tempBasal != null) {
+                                onSetTempBasal(
+                                    treatmentLock,
+                                    result.tempBasal.durationInHours,
+                                    result.tempBasal.percent
+                                )
+                            }
+                            if (result.clearTempBasal) {
+                                onClearTempBasal(treatmentLock)
+                            }
+                            if (result.bolus != null && result.bolus >= InsulinAmount.EPSILON) {
+                                onDeliverBolus(
+                                    treatmentLock,
+                                    result.bolus,
+                                    result.handledDeferredBoluses
+                                )
+                            }
                         }
 
                         // Core can be active and yet have issues. In this case, the user is notified

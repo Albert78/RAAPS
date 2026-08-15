@@ -240,10 +240,10 @@ class SystemManagerImpl(
 
             launch {
                 apsMode.collect { mode ->
-                    if (mode == ApsMode.AutoCorrection) {
-                        core.activate()
-                    } else {
-                        core.suspend()
+                    when (mode) {
+                        ApsMode.AutoCorrection -> core.activate(isReadOnly = false)
+                        ApsMode.BasalOnly -> core.activate(isReadOnly = true)
+                        ApsMode.Suspend -> core.suspend()
                     }
                 }
             }
@@ -298,6 +298,9 @@ class SystemManagerImpl(
 
     override fun setApsMode(mode: ApsMode) {
         _apsMode.value = mode
+        // Trigger a tick to update predictions immediately
+        timeService.synchronize(Timestamp.now())
+
         scope.launch {
             val currentSettings = settingsRepository.getCurrentSettings()
             if (currentSettings != null) {
