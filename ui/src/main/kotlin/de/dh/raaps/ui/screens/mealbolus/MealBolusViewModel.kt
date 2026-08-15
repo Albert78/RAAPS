@@ -34,17 +34,22 @@ data class MealBolusUiState(
     val originalMealTimestamp: Timestamp? = null,
     val originalMealId: Long = ID_UNDEFINED,
     val mealTimestamp: Timestamp = Timestamp.now(),
+    val referenceTimestamp: Timestamp = Timestamp.now(),
     val seaMinutes: Int = 0,
     val carbsKe: Double = 0.0,
     val mealTypes: List<MealType> = emptyList(),
     val selectedMealType: MealType? = null,
     val currentBg: Int? = null,
+    val currentBgTimestamp: Timestamp? = null,
+    val projectedBg: Int? = null,
     val targetBg: Int = 100,
     val lowThreshold: Int = 70,
     val isf: Int = 50,
     val cr: Double = 10.0,
     val iob: InsulinAmount = InsulinAmount.ZERO,
     val cob: Double = 0.0,
+    val projectedIob: InsulinAmount = InsulinAmount.ZERO,
+    val projectedCob: Double = 0.0,
     val mealPart: InsulinAmount = InsulinAmount.ZERO,
     val correctionPart: InsulinAmount = InsulinAmount.ZERO,
     val iobPart: InsulinAmount = InsulinAmount.ZERO,
@@ -160,8 +165,9 @@ class MealBolusViewModel(
 
     fun onMealTimeChange(timestamp: Timestamp) {
         val now = Timestamp.now()
-        val offset = kotlin.math.round((timestamp.ms - now.ms) / 60000.0)
-        _uiState.update { it.copy(mealTimestamp = timestamp, seaMinutes = offset.toInt()) }
+        val offset = kotlin.math.round((timestamp.ms - now.ms) / 60000.0).toInt().coerceIn(-120, 60)
+        val cappedTimestamp = now + Minutes(offset.toShort())
+        _uiState.update { it.copy(mealTimestamp = cappedTimestamp, seaMinutes = offset) }
         calculateBolus()
     }
 
@@ -197,29 +203,60 @@ class MealBolusViewModel(
     }
 
     private fun calculateBolus() {
-        val state = _uiState.value
-        val result = BolusCalculator.calculateBolusParts(
-            carbsKe = state.carbsKe,
-            cr = state.cr,
-            isf = state.isf,
-            currentBg = state.currentBg,
-            targetBg = state.targetBg,
-            lowThreshold = state.lowThreshold,
-            iob = state.iob,
-            cob = state.cob
-        )
+        viewModelScope.launch {
+            val state = _uiState.value
+            val now = Timestamp.now()
 
-        _uiState.update {
-            it.copy(
-                mealPart = result.mealPart,
-                correctionPart = result.correctionPart,
-                iobPart = result.iobPart,
-                cobPart = result.cobPart,
-                proposedBolus = result.totalProposed,
-                manualBolus = if (state.isEditMode) InsulinAmount.ZERO else result.totalProposed
+            val referenceTimestamp = if (state.carbsKe > 0.0) {
+                state.mealTimestamp.plusMinutes(15)
+            } else {
+                now
+            }
+
+            // Fetch history data for projected IOB/COB
+            val historyLimit = now.minusHours(25)
+            val insulinHistory = treatmentRepository.getInsulinApplications(from = historyLimit)
+            val mealsHistory = treatmentRepository.getMeals(from = historyLimit)
+            val therapySettings = therapyManager.getCurrentTherapySettings()
+
+            val projectedBgValue = registry.systemManager.getPredictedBg(referenceTimestamp)
+            val projectedBg = if (projectedBgValue.isValid()) projectedBgValue.mgdl.toInt() else state.currentBg
+
+            val projectedIob = carbsInsulinCalculator.iob(
+                insulinHistory,
+                referenceTimestamp,
+                therapySettings.insulinProfile.dia,
+                therapySettings.insulinProfile.peak
             )
+            val projectedCob = carbsInsulinCalculator.cob(mealsHistory, referenceTimestamp)
+
+            val result = BolusCalculator.calculateBolusParts(
+                carbsKe = state.carbsKe,
+                cr = state.cr,
+                isf = state.isf,
+                currentBg = projectedBg,
+                targetBg = state.targetBg,
+                lowThreshold = state.lowThreshold,
+                iob = projectedIob,
+                cob = projectedCob
+            )
+
+            _uiState.update {
+                it.copy(
+                    referenceTimestamp = referenceTimestamp,
+                    projectedBg = projectedBg,
+                    projectedIob = projectedIob,
+                    projectedCob = projectedCob,
+                    mealPart = result.mealPart,
+                    correctionPart = result.correctionPart,
+                    iobPart = result.iobPart,
+                    cobPart = result.cobPart,
+                    proposedBolus = result.totalProposed,
+                    manualBolus = if (state.isEditMode) InsulinAmount.ZERO else result.totalProposed
+                )
+            }
+            updateInsulinPlanTimes()
         }
-        updateInsulinPlanTimes()
     }
 
     private fun updateInsulinPlanTimes() {

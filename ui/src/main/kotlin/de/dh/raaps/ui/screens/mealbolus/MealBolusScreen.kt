@@ -16,7 +16,6 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowForward
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.KeyboardArrowUp
@@ -42,7 +41,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -90,28 +88,18 @@ import de.dh.raaps.ui.common.isfValue
 import de.dh.raaps.ui.common.theme.AppTheme
 import de.dh.raaps.ui.common.time
 import de.dh.raaps.ui.common.withinTimeDescription
-import de.dh.raaps.ui.controls.history.BgTrend
-import de.dh.raaps.ui.controls.history.CurrentBgData
-import de.dh.raaps.ui.controls.history.HistoryViewModel
 import de.dh.raaps.ui.controls.meal.FoodTypeSelector
 import java.util.Locale
 
 @Composable
 fun MealBolusScreen(
     viewModel: MealBolusViewModel,
-    historyViewModel: HistoryViewModel,
     onNavigateUp: () -> Unit
 ) {
     val uiState by viewModel.uiState.collectAsState()
-    val currentBgUiState by historyViewModel.currentBgUiState.collectAsState()
-    val iob by historyViewModel.iob.collectAsState()
-    val cob by historyViewModel.cob.collectAsState()
 
     MealBolusContent(
         uiState = uiState,
-        currentBgValue = currentBgUiState.currentBgValue,
-        iob = iob,
-        cob = cob,
         onNavigateUp = onNavigateUp,
         onCarbsChange = { viewModel.onCarbsChange(it) },
         onMealTimeChange = { viewModel.onMealTimeChange(it) },
@@ -127,9 +115,6 @@ fun MealBolusScreen(
 @Composable
 fun MealBolusContent(
     uiState: MealBolusUiState,
-    currentBgValue: CurrentBgData?,
-    iob: InsulinAmount,
-    cob: Double,
     onNavigateUp: () -> Unit,
     onCarbsChange: (Double) -> Unit,
     onMealTimeChange: (Timestamp) -> Unit,
@@ -193,8 +178,7 @@ fun MealBolusContent(
             verticalArrangement = Arrangement.spacedBy(24.dp)
         ) {
             // Header with BG, IOB, COB
-            // ... (keep existing header)
-            MealBolusHeader(currentBgValue, cob, iob)
+            MealBolusHeader(uiState)
 
             Column(
                 modifier = Modifier
@@ -204,7 +188,6 @@ fun MealBolusContent(
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
                 if (uiState.lockError) {
-                    // ...
                     LockErrorCard(uiState.lockBusyOwner, onNavigateUp)
                     return@Column
                 }
@@ -212,12 +195,6 @@ fun MealBolusContent(
                 if (uiState.isEditMode) {
                     EditWarningCard()
                 }
-
-                // Meal Time Card
-                MealTimeCard(
-                    mealTimestamp = uiState.mealTimestamp,
-                    onTimeChange = onMealTimeChange
-                )
 
                 // Mahlzeit Card (Carbs + Food Type)
                 Card(
@@ -262,6 +239,14 @@ fun MealBolusContent(
                             isMandatory = uiState.carbsKe > 0.0
                         )
                     }
+                }
+
+                // Meal Time Card (Only if carbs > 0)
+                if (uiState.carbsKe > 0.0) {
+                    MealTimeCard(
+                        mealTimestamp = uiState.mealTimestamp,
+                        onTimeChange = onMealTimeChange
+                    )
                 }
 
                 // Insulin Card (Final Insulin Stepper)
@@ -496,24 +481,19 @@ fun MealBolusDefaultPreview() {
                     mealTypes = sampleMealTypes,
                     selectedMealType = sampleMealTypes[0],
                     currentBg = 140,
+                    projectedBg = 145,
                     targetBg = 100,
                     isf = 50,
                     cr = 10.0,
-                    iob = InsulinAmount.ZERO,
-                    cob = 0.0,
+                    iob = InsulinAmount(1.2),
+                    cob = 25.0,
+                    projectedIob = InsulinAmount(1.1),
+                    projectedCob = 20.0,
                     mealPart = InsulinAmount(4.5),
                     correctionPart = InsulinAmount(0.8),
                     proposedBolus = InsulinAmount(5.3),
                     manualBolus = InsulinAmount(5.3)
                 ),
-                currentBgValue = CurrentBgData.valid(
-                    bgValue = BgValue(140),
-                    delta = BgDelta(5),
-                    trend = BgTrend.FortyFiveUp,
-                    timestamp = Timestamp.now()
-                ),
-                iob = InsulinAmount(1.2),
-                cob = 25.0,
                 onNavigateUp = {},
                 onCarbsChange = {},
                 onMealTimeChange = {},
@@ -529,9 +509,7 @@ fun MealBolusDefaultPreview() {
 
 @Composable
 fun MealBolusHeader(
-    currentBgValue: CurrentBgData?,
-    cob: Double,
-    iob: InsulinAmount
+    uiState: MealBolusUiState
 ) {
     Surface(
         modifier = Modifier.fillMaxWidth(),
@@ -545,7 +523,8 @@ fun MealBolusHeader(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(4.dp)
             ) {
-                if (currentBgValue?.predictedBg?.isValid() == true) {
+                val isProjected = uiState.carbsKe > 0.0 && uiState.projectedBg != null
+                if (isProjected) {
                     Text(
                         text = stringResource(R.string.approx_prefix),
                         style = MaterialTheme.typography.bodySmall,
@@ -554,17 +533,17 @@ fun MealBolusHeader(
                     )
                 }
 
-                val displayBgValue = if (currentBgValue?.predictedBg?.isValid() == true) {
-                    currentBgValue.predictedBg
+                val displayBgValue = if (isProjected) {
+                    BgValue(uiState.projectedBg!!.toShort())
                 } else {
-                    currentBgValue?.bgValue
+                    uiState.currentBg?.let { BgValue(it.toShort()) }
                 }
 
                 val bgText = glucoseValue(displayBgValue, default = "?")
-                val textColor = if (currentBgValue == null || (currentBgValue.isValueOld)) {
+                val textColor = if (displayBgValue == null || displayBgValue.isInvalid()) {
                     Color.Gray
                 } else when {
-                    displayBgValue!!.mgdl < 70 -> Red
+                    displayBgValue.mgdl < 70 -> Red
                     displayBgValue.mgdl < 180 -> LightGreenA700
                     else -> Yellow
                 }
@@ -581,30 +560,12 @@ fun MealBolusHeader(
                         .align(Alignment.Bottom)
                         .padding(bottom = 12.dp)
                 )
-                if (currentBgValue?.trend != null && currentBgValue.trend != BgTrend.NotComputable) {
-                    val trendRotation = when (currentBgValue.trend) {
-                        BgTrend.DoubleUp, BgTrend.SingleUp -> -90f
-                        BgTrend.FortyFiveUp -> -45f
-                        BgTrend.Flat -> 0f
-                        BgTrend.FortyFiveDown -> 45f
-                        BgTrend.SingleDown, BgTrend.DoubleDown -> 90f
-                        BgTrend.NotComputable -> 0f
-                    }
-                    Icon(
-                        imageVector = Icons.AutoMirrored.Filled.ArrowForward,
-                        contentDescription = null,
-                        modifier = Modifier
-                            .size(48.dp)
-                            .rotate(trendRotation),
-                        tint = MaterialTheme.colorScheme.onSurface
-                    )
-                }
             }
 
-            val displayTime = if (currentBgValue?.predictedBg?.isValid() == true) {
-                currentBgValue.predictedTimestamp?.let { time(it) }
+            val displayTime = if (uiState.carbsKe > 0.0) {
+                time(uiState.referenceTimestamp)
             } else {
-                currentBgValue?.timestamp?.let { time(it) }
+                null
             }
 
             if (displayTime != null) {
@@ -617,12 +578,12 @@ fun MealBolusHeader(
 
             Spacer(Modifier.height(8.dp))
             Text(
-                text = stringResource(R.string.meal_bolus_active_carbs_format, carbsGramsValue(cob)),
+                text = stringResource(R.string.meal_bolus_active_carbs_format, carbsGramsValue(uiState.projectedCob)),
                 style = MaterialTheme.typography.bodyLarge,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
             Text(
-                text = stringResource(R.string.meal_bolus_active_insulin_format, insulinValue(iob.iu)),
+                text = stringResource(R.string.meal_bolus_active_insulin_format, insulinValue(uiState.projectedIob.iu)),
                 style = MaterialTheme.typography.bodyLarge,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
