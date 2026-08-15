@@ -118,6 +118,17 @@ data class InsulinApplication(
 )
 
 /**
+ * Represents a bolus that is planned for a future timestamp.
+ */
+data class PlannedInsulin(
+    val amount: InsulinAmount,
+    val timestamp: Timestamp,
+    val offsetMinutes: Int = 0,
+    val description: String = "",
+    val isUserModified: Boolean = false
+)
+
+/**
  * Snapshot of an insulin delivery point.
  */
 interface InsulinHistoryPoint {

@@ -10,9 +10,8 @@ import de.dh.raaps.common.model.ID_UNDEFINED
 import de.dh.raaps.common.model.InsulinAmount
 import de.dh.raaps.common.model.MealEntry
 import de.dh.raaps.common.model.MealType
-import de.dh.raaps.common.model.convertToInsulinAmountFromBgDelta
-import de.dh.raaps.common.model.convertToInsulinAmountFromCarbs
-import de.dh.raaps.common.model.data.BgDelta
+import de.dh.raaps.common.model.PlannedInsulin
+import de.dh.raaps.common.model.calculation.BolusCalculator
 import de.dh.raaps.common.model.data.Minutes
 import de.dh.raaps.common.model.data.Timestamp
 import de.dh.raaps.core.SystemRegistry
@@ -26,18 +25,8 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import kotlin.math.abs
 import kotlin.math.max
-import kotlin.math.round
 import kotlin.time.Duration.Companion.seconds
-
-data class PlannedInsulin(
-    val amount: InsulinAmount,
-    val timestamp: Timestamp,
-    val offsetMinutes: Int = 0,
-    val description: String = "",
-    val isUserModified: Boolean = false
-)
 
 data class MealBolusUiState(
     val isLoading: Boolean = true,
@@ -107,7 +96,7 @@ class MealBolusViewModel(
 
             val existingMeal = mealId?.let { treatmentRepository.getMeal(it) }
             val initialMealTimestamp = existingMeal?.timestamp ?: now
-            val suggestedSea = calculateSuggestedSea(currentBg, bgSettings.first.mgdl.toInt())
+            val suggestedSea = BolusCalculator.calculateSuggestedSea(currentBg, bgSettings.first.mgdl.toInt())
             
             _uiState.update {
                 it.copy(
@@ -207,49 +196,27 @@ class MealBolusViewModel(
         _uiState.update { it.copy(isInsulinPlanExpanded = !it.isInsulinPlanExpanded) }
     }
 
-    private fun calculateSuggestedSea(currentBg: Int?, targetBg: Int): Int {
-        if (currentBg == null) return 0
-        val diff = currentBg - targetBg
-        if (diff <= 0) return 0
-        
-        // Simple rule: 5 minutes per 20 mg/dL above target, max 45 min
-        val suggested = (diff / 20) * 5
-        return suggested.coerceIn(0, 45)
-    }
-
     private fun calculateBolus() {
         val state = _uiState.value
-        val carbsGrams = state.carbsKe * 10.0
-        val mealPart = convertToInsulinAmountFromCarbs(carbsGrams, state.cr)
-
-        val currentBgValue = state.currentBg ?: state.targetBg
-        val bgDiff = currentBgValue - state.targetBg
-
-        // Can be positive or negative
-        val correctionPart = convertToInsulinAmountFromBgDelta(BgDelta(bgDiff.toShort()), BgDelta(state.isf.toShort()))
-
-        val iobPart = state.iob
-        val cobPart = convertToInsulinAmountFromCarbs(state.cob, state.cr)
-
-        val total = (mealPart + correctionPart - iobPart + cobPart).coerceAtLeast(InsulinAmount.ZERO)
-
-        // Round to 2 decimal places
-        val roundedTotal = round(total.iu * 100.0) / 100.0
-        var bolusAmount = InsulinAmount(roundedTotal)
-
-        // If BG is unknown or below low threshold, no insulin is proposed
-        if (state.currentBg == null || state.currentBg <= state.lowThreshold) {
-            bolusAmount = InsulinAmount.ZERO
-        }
+        val result = BolusCalculator.calculateBolusParts(
+            carbsKe = state.carbsKe,
+            cr = state.cr,
+            isf = state.isf,
+            currentBg = state.currentBg,
+            targetBg = state.targetBg,
+            lowThreshold = state.lowThreshold,
+            iob = state.iob,
+            cob = state.cob
+        )
 
         _uiState.update {
             it.copy(
-                mealPart = mealPart,
-                correctionPart = correctionPart,
-                iobPart = iobPart,
-                cobPart = cobPart,
-                proposedBolus = bolusAmount,
-                manualBolus = if (state.isEditMode) InsulinAmount.ZERO else bolusAmount
+                mealPart = result.mealPart,
+                correctionPart = result.correctionPart,
+                iobPart = result.iobPart,
+                cobPart = result.cobPart,
+                proposedBolus = result.totalProposed,
+                manualBolus = if (state.isEditMode) InsulinAmount.ZERO else result.totalProposed
             )
         }
         updateInsulinPlanTimes()
@@ -257,74 +224,20 @@ class MealBolusViewModel(
 
     private fun updateInsulinPlanTimes() {
         val state = _uiState.value
-        if (state.isEditMode || state.manualBolus <= InsulinAmount.ZERO) {
+        if (state.isEditMode) {
             _uiState.update { it.copy(insulinPlan = emptyList()) }
             return
         }
 
-        val totalAmount = state.manualBolus.iu
-        val correction = state.correctionPart.iu
-        val restToDistribute = totalAmount - correction
-        val mealType = state.selectedMealType ?: return
-        val now = Timestamp.now()
-
-        val rawAmounts = DoubleArray(mealType.components.size) { i ->
-            val weight = mealType.components[i].weight / 100.0
-            val share = restToDistribute * weight
-            if (i == 0) share + correction else share
-        }
-
-        // Re-balance negatives forward (drain deficit to next part)
-        for (i in 0 until rawAmounts.size - 1) {
-            if (rawAmounts[i] < 0) {
-                rawAmounts[i + 1] += rawAmounts[i]
-                rawAmounts[i] = 0.0
-            }
-        }
-        // Re-balance negatives backward (safety check)
-        for (i in rawAmounts.size - 1 downTo 1) {
-            if (rawAmounts[i] < 0) {
-                rawAmounts[i - 1] += rawAmounts[i]
-                rawAmounts[i] = 0.0
-            }
-        }
-
-        val roundedAmounts = rawAmounts.map { round(max(0.0, it) * 100.0) / 100.0 }.toDoubleArray()
-
-        // Final adjustment to ensure sum matches exactly the totalAmount
-        val currentSum = roundedAmounts.sum()
-        val targetSum = round(totalAmount * 100.0) / 100.0
-        val diff = round((targetSum - currentSum) * 100.0) / 100.0
-
-        if (abs(diff) >= 0.01) {
-            val indexToAdjust = roundedAmounts.indices.maxByOrNull { roundedAmounts[it] } ?: 0
-            roundedAmounts[indexToAdjust] = round((roundedAmounts[indexToAdjust] + diff) * 100.0) / 100.0
-        }
-
-        val isLowBg = state.currentBg != null && state.currentBg <= state.lowThreshold
-
-        val newPlan = mealType.components.mapIndexed { index, component ->
-            val amount = InsulinAmount(roundedAmounts[index])
-
-            // Suggested offset:
-            val suggestedOffset = if (isLowBg) 15 else 0
-            val delayFromBase = if (index == 0) 0 else component.peakMinutes.value.toInt()
-            val finalOffset = suggestedOffset + delayFromBase
-
-            // Preserve user modification if possible
-            val existing = state.insulinPlan.getOrNull(index)
-            val offsetToUse = if (existing?.isUserModified == true) existing.offsetMinutes else finalOffset
-            val finalTimestamp = now + Minutes(offsetToUse.toShort())
-
-            PlannedInsulin(
-                amount = amount,
-                timestamp = finalTimestamp,
-                offsetMinutes = offsetToUse,
-                description = if (mealType.components.size > 1) "Teil ${index + 1} (${component.weight}%)" else "Bolus",
-                isUserModified = existing?.isUserModified ?: false
-            )
-        }.filter { it.amount > InsulinAmount.ZERO }
-
+        val newPlan = BolusCalculator.distributeInsulinPlan(
+            manualBolus = state.manualBolus,
+            correctionPart = state.correctionPart,
+            selectedMealType = state.selectedMealType,
+            currentBg = state.currentBg,
+            lowThreshold = state.lowThreshold,
+            now = Timestamp.now(),
+            existingPlan = state.insulinPlan
+        )
         _uiState.update { it.copy(insulinPlan = newPlan) }
     }
 

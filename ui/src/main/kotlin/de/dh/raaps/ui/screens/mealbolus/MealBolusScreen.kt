@@ -58,6 +58,7 @@ import de.dh.raaps.common.model.CARBS_KE_MIN
 import de.dh.raaps.common.model.CarbCurveComponentData
 import de.dh.raaps.common.model.InsulinAmount
 import de.dh.raaps.common.model.MealType
+import de.dh.raaps.common.model.PlannedInsulin
 import de.dh.raaps.common.model.data.BgDelta
 import de.dh.raaps.common.model.data.BgValue
 import de.dh.raaps.common.model.data.GlucoseUnit
