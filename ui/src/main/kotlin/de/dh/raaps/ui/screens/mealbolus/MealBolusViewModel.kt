@@ -95,7 +95,7 @@ class MealBolusViewModel(
 
             val existingMeal = mealId?.let { treatmentRepository.getMeal(it) }
             val currentBgValue = currentBg?.let { bg -> BgValue(bg.toShort()) }
-            val suggestedSea = registry.systemManager.getBolusCalculator().calculateSuggestedSea()
+            val suggestedSea = registry.systemManager.getBolusCorrectionCalculator().calculateSuggestedSea()
 
             _uiState.update {
                 it.copy(
@@ -208,7 +208,7 @@ class MealBolusViewModel(
             val state = _uiState.value
             val now = Timestamp.now()
 
-            val result = registry.systemManager.getBolusCalculator().calculateBolusParts(
+            val result = registry.systemManager.getBolusCorrectionCalculator().calculateBolusParts(
                 carbsKe = state.carbsKe,
                 mealTimestamp = state.mealTimestamp
             )
@@ -242,7 +242,7 @@ class MealBolusViewModel(
                 return@launch
             }
 
-            val newPlan = registry.systemManager.getBolusCalculator().distributeInsulinPlan(
+            val newPlan = registry.systemManager.getBolusCorrectionCalculator().distributeInsulinPlan(
                 manualBolus = state.manualBolus,
                 correctionPart = state.correctionPart,
                 mealType = state.selectedMealType,

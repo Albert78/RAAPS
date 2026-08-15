@@ -3,7 +3,6 @@ package de.dh.raaps.core.aps
 import de.dh.raaps.common.model.InsulinAmount
 import de.dh.raaps.common.model.MealType
 import de.dh.raaps.common.model.PlannedInsulin
-import de.dh.raaps.common.model.data.BgValue
 import de.dh.raaps.common.model.data.Timestamp
 
 data class BolusParts(
@@ -18,7 +17,7 @@ data class BolusParts(
 /**
  * Smart bolus calculator that has access to the internal state of the APS algorithm.
  */
-interface BolusCalculator {
+interface BolusCorrectionCalculator {
     /**
      * Calculates the suggested SEA (Schätzwert der Essens-Anpassung) in minutes.
      */

@@ -319,8 +319,8 @@ class Core(
         return calculationAlgorithm.getPredictedBg(timestamp)
     }
 
-    fun getBolusCalculator(): BolusCalculator {
-        return calculationAlgorithm.getBolusCalculator()
+    fun getBolusCorrectionCalculator(): BolusCorrectionCalculator {
+        return calculationAlgorithm.getBolusCorrectionCalculator()
     }
 
     companion object {

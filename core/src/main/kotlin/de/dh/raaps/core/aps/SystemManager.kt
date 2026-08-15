@@ -96,9 +96,9 @@ interface SystemManager {
     suspend fun getPredictedBg(timestamp: Timestamp): BgValue
 
     /**
-     * Returns the bolus calculator.
+     * Returns the bolus correction calculator.
      */
-    fun getBolusCalculator(): BolusCalculator
+    fun getBolusCorrectionCalculator(): BolusCorrectionCalculator
 }
 
 /**
@@ -301,11 +301,11 @@ class SystemManagerImpl(
         }
     }
 
-    override fun getBolusCalculator(): BolusCalculator {
+    override fun getBolusCorrectionCalculator(): BolusCorrectionCalculator {
         return if (::core.isInitialized) {
-            core.getBolusCalculator()
+            core.getBolusCorrectionCalculator()
         } else {
-            NoopAlgorithm().getBolusCalculator()
+            NoopAlgorithm().getBolusCorrectionCalculator()
         }
     }
 

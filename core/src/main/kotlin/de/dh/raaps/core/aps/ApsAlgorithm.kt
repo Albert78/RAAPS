@@ -170,7 +170,7 @@ interface ApsAlgorithm {
     suspend fun updateInsulin()
     suspend fun recalculate(): CalculationResult
     suspend fun getPredictedBg(timestamp: Timestamp): BgValue
-    fun getBolusCalculator(): BolusCalculator
+    fun getBolusCorrectionCalculator(): BolusCorrectionCalculator
 }
 
 class NoopAlgorithm: ApsAlgorithm {
@@ -194,8 +194,8 @@ class NoopAlgorithm: ApsAlgorithm {
         return BgValue.INVALID
     }
 
-    override fun getBolusCalculator(): BolusCalculator {
-        return object : BolusCalculator {
+    override fun getBolusCorrectionCalculator(): BolusCorrectionCalculator {
+        return object : BolusCorrectionCalculator {
             override suspend fun calculateSuggestedSea(): Int = 0
             override suspend fun calculateBolusParts(carbsKe: Double, mealTimestamp: Timestamp): BolusParts =
                 BolusParts(InsulinAmount.ZERO, InsulinAmount.ZERO, InsulinAmount.ZERO, InsulinAmount.ZERO, InsulinAmount.ZERO, 0.0)

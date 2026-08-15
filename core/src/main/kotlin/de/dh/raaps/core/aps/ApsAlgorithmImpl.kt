@@ -95,11 +95,11 @@ class ApsAlgorithmImpl(
         return predictionModel.withTickState(tick) { it.predictedBg } ?: BgValue.INVALID
     }
 
-    override fun getBolusCalculator(): BolusCalculator {
-        return BolusCalculatorImpl()
+    override fun getBolusCorrectionCalculator(): BolusCorrectionCalculator {
+        return BolusCorrectionCalculatorImpl()
     }
 
-    private inner class BolusCalculatorImpl : BolusCalculator {
+    private inner class BolusCorrectionCalculatorImpl : BolusCorrectionCalculator {
         override suspend fun calculateSuggestedSea(): Int {
             val bgSettings = therapyManager.getBgSettings()
             val targetBg = bgSettings.first
