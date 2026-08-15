@@ -72,16 +72,16 @@ data class MealBolusUiState(
 )
 
 class MealBolusViewModel(
-    systemRegistry: SystemRegistry,
+    private val registry: SystemRegistry,
     private val mealId: Long? = null
 ) : ViewModel() {
     private val _uiState = MutableStateFlow(MealBolusUiState())
     val uiState: StateFlow<MealBolusUiState> = _uiState.asStateFlow()
 
-    private val therapyManager = systemRegistry.therapyManager
-    private val glucoseRepository = systemRegistry.glucoseRepository
-    private val treatmentRepository = systemRegistry.treatmentRepository
-    private val calculationModel = systemRegistry.carbsInsulinCalculationModel
+    private val therapyManager = registry.therapyManager
+    private val glucoseRepository = registry.glucoseRepository
+    private val treatmentRepository = registry.treatmentRepository
+    private val calculationModel = registry.carbsInsulinCalculationModel
 
     private var treatmentLock: TreatmentLock? = null
 
