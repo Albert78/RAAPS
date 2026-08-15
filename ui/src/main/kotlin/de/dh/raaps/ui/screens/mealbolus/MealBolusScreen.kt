@@ -425,7 +425,7 @@ fun CalculationDetailsSelector(
                         color = MaterialTheme.colorScheme.error,
                         fontWeight = FontWeight.Bold
                     )
-                } else if (uiState.currentBg <= uiState.lowThreshold) {
+                } else if (uiState.currentBg.mgdl <= uiState.lowThreshold) {
                     Text(
                         text = stringResource(
                             R.string.meal_bolus_calc_low_bg_warning,
@@ -480,83 +480,6 @@ fun CalculationDetailsSelector(
     }
 }
 
-@Preview(showBackground = true, name = "0 KE Mode")
-@Composable
-fun MealBolusZeroKePreview() {
-    AppTheme {
-        CompositionLocalProvider(LocalGlucoseUnit provides GlucoseUnit.MG_DL) {
-            MealBolusContent(
-                uiState = MealBolusUiState(
-                    isLoading = false,
-                    carbsKe = 0.0,
-                    mealTypes = emptyList(),
-                    selectedMealType = null,
-                    currentBg = 140,
-                    projectedBg = null,
-                    targetBg = 100,
-                    isf = 50,
-                    cr = 10.0,
-                    proposedBolus = InsulinAmount(0.8),
-                    manualBolus = InsulinAmount(0.8)
-                ),
-                onNavigateUp = {},
-                onCarbsChange = {},
-                onMealTimeChange = {},
-                onMealTypeChange = {},
-                onManualBolusChange = {},
-                onPlannedInsulinTimeChange = { _, _ -> },
-                onToggleInsulinPlan = {},
-                onSubmit = {}
-            )
-        }
-    }
-}
-
-@Preview(showBackground = true, name = "Default Mode")
-@Preview(showBackground = true, name = "Default Mode - Dark", uiMode = Configuration.UI_MODE_NIGHT_YES)
-@Composable
-fun MealBolusDefaultPreview() {
-    val sampleMealTypes = listOf(
-        MealType(name = "Schnelle KE", components = listOf(CarbCurveComponentData(100, Minutes(60))), cat = Minutes(180)),
-        MealType(name = "Standard-Essen", components = listOf(CarbCurveComponentData(100, Minutes(60))), cat = Minutes(180)),
-        MealType(name = "Fettreiches Essen", components = listOf(CarbCurveComponentData(100, Minutes(60))), cat = Minutes(180)),
-        MealType(name = "Langsames Essen", components = listOf(CarbCurveComponentData(100, Minutes(60))), cat = Minutes(180)),
-    )
-    AppTheme {
-        CompositionLocalProvider(LocalGlucoseUnit provides GlucoseUnit.MG_DL) {
-            MealBolusContent(
-                uiState = MealBolusUiState(
-                    isLoading = false,
-                    carbsKe = 4.5,
-                    mealTypes = sampleMealTypes,
-                    selectedMealType = sampleMealTypes[0],
-                    currentBg = 140,
-                    projectedBg = 145,
-                    targetBg = 100,
-                    isf = 50,
-                    cr = 10.0,
-                    iob = InsulinAmount(1.2),
-                    cob = 25.0,
-                    projectedIob = InsulinAmount(1.1),
-                    projectedCob = 20.0,
-                    mealPart = InsulinAmount(4.5),
-                    correctionPart = InsulinAmount(0.8),
-                    proposedBolus = InsulinAmount(5.3),
-                    manualBolus = InsulinAmount(5.3)
-                ),
-                onNavigateUp = {},
-                onCarbsChange = {},
-                onMealTimeChange = {},
-                onMealTypeChange = {},
-                onManualBolusChange = {},
-                onPlannedInsulinTimeChange = { _, _ -> },
-                onToggleInsulinPlan = {},
-                onSubmit = {}
-            )
-        }
-    }
-}
-
 @Composable
 fun MealBolusHeader(
     uiState: MealBolusUiState
@@ -573,8 +496,7 @@ fun MealBolusHeader(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(4.dp)
             ) {
-                val isFuture = uiState.referenceTimestamp.ms > Timestamp.now().ms
-                if (isFuture) {
+                if (uiState.isProjected) {
                     Text(
                         text = stringResource(R.string.approx_prefix),
                         style = MaterialTheme.typography.bodySmall,
@@ -583,12 +505,7 @@ fun MealBolusHeader(
                     )
                 }
 
-                val displayBgValue = if (uiState.carbsKe > 0.0 || isFuture) {
-                    uiState.projectedBg?.let { BgValue(it.toShort()) } ?: uiState.currentBg?.let { BgValue(it.toShort()) }
-                } else {
-                    uiState.currentBg?.let { BgValue(it.toShort()) }
-                }
-
+                val displayBgValue = uiState.bgValue
                 val bgText = glucoseValue(displayBgValue, default = "?")
                 val textColor = if (displayBgValue == null || displayBgValue.isInvalid()) {
                     Color.Gray
@@ -613,7 +530,7 @@ fun MealBolusHeader(
             }
 
             Text(
-                text = "um ${time(uiState.referenceTimestamp)}",
+                text = "um ${time(uiState.bgTimestamp)}",
                 style = MaterialTheme.typography.bodySmall,
                 color = Color.Gray
             )
@@ -825,9 +742,83 @@ fun TimeStepper(
     }
 }
 
-private fun time(timestamp: Timestamp): String {
-    val localTime = java.time.Instant.ofEpochMilli(timestamp.ms)
-        .atZone(java.time.ZoneId.systemDefault())
-        .toLocalTime()
-    return time(localTime)
+@Preview(showBackground = true, name = "0 KE Mode")
+@Composable
+fun MealBolusZeroKePreview() {
+    AppTheme {
+        CompositionLocalProvider(LocalGlucoseUnit provides GlucoseUnit.MG_DL) {
+            MealBolusContent(
+                uiState = MealBolusUiState(
+                    isLoading = false,
+                    carbsKe = 0.0,
+                    mealTypes = emptyList(),
+                    selectedMealType = null,
+                    currentBg = BgValue(140),
+                    bgValue = BgValue(140),
+                    bgTimestamp = Timestamp.now(),
+                    isProjected = false,
+                    targetBg = 100,
+                    isf = 50,
+                    cr = 10.0,
+                    proposedBolus = InsulinAmount(0.8),
+                    manualBolus = InsulinAmount(0.8)
+                ),
+                onNavigateUp = {},
+                onCarbsChange = {},
+                onMealTimeChange = {},
+                onMealTypeChange = {},
+                onManualBolusChange = {},
+                onPlannedInsulinTimeChange = { _, _ -> },
+                onToggleInsulinPlan = {},
+                onSubmit = {}
+            )
+        }
+    }
+}
+
+@Preview(showBackground = true, name = "Default Mode")
+@Preview(showBackground = true, name = "Default Mode - Dark", uiMode = Configuration.UI_MODE_NIGHT_YES)
+@Composable
+fun MealBolusDefaultPreview() {
+    val sampleMealTypes = listOf(
+        MealType(name = "Schnelle KE", components = listOf(CarbCurveComponentData(100, Minutes(60))), cat = Minutes(180)),
+        MealType(name = "Standard-Essen", components = listOf(CarbCurveComponentData(100, Minutes(60))), cat = Minutes(180)),
+        MealType(name = "Fettreiches Essen", components = listOf(CarbCurveComponentData(100, Minutes(60))), cat = Minutes(180)),
+        MealType(name = "Langsames Essen", components = listOf(CarbCurveComponentData(100, Minutes(60))), cat = Minutes(180)),
+    )
+    AppTheme {
+        CompositionLocalProvider(LocalGlucoseUnit provides GlucoseUnit.MG_DL) {
+            MealBolusContent(
+                uiState = MealBolusUiState(
+                    isLoading = false,
+                    carbsKe = 4.5,
+                    mealTypes = sampleMealTypes,
+                    selectedMealType = sampleMealTypes[0],
+                    currentBg = BgValue(140),
+                    bgValue = BgValue(145),
+                    bgTimestamp = Timestamp.now().plusMinutes(15),
+                    isProjected = true,
+                    targetBg = 100,
+                    isf = 50,
+                    cr = 10.0,
+                    iob = InsulinAmount(1.2),
+                    cob = 25.0,
+                    projectedIob = InsulinAmount(1.1),
+                    projectedCob = 20.0,
+                    mealPart = InsulinAmount(4.5),
+                    correctionPart = InsulinAmount(0.8),
+                    proposedBolus = InsulinAmount(5.3),
+                    manualBolus = InsulinAmount(5.3)
+                ),
+                onNavigateUp = {},
+                onCarbsChange = {},
+                onMealTimeChange = {},
+                onMealTypeChange = {},
+                onManualBolusChange = {},
+                onPlannedInsulinTimeChange = { _, _ -> },
+                onToggleInsulinPlan = {},
+                onSubmit = {}
+            )
+        }
+    }
 }

@@ -53,6 +53,13 @@ fun rememberAppFormatters(): AppFormatters {
 
 /////////////////////////////////////////////// Time ///////////////////////////////////////////////
 
+fun time(timestamp: Timestamp): String {
+    val localTime = java.time.Instant.ofEpochMilli(timestamp.ms)
+        .atZone(java.time.ZoneId.systemDefault())
+        .toLocalTime()
+    return time(localTime)
+}
+
 fun time(time: LocalTime): String {
     return String.format(Locale.getDefault(), "%02d:%02d", time.hour, time.minute)
 }

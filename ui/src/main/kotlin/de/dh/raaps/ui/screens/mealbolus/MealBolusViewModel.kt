@@ -12,6 +12,7 @@ import de.dh.raaps.common.model.MealEntry
 import de.dh.raaps.common.model.MealType
 import de.dh.raaps.common.model.PlannedInsulin
 import de.dh.raaps.common.model.calculation.BolusCalculator
+import de.dh.raaps.common.model.data.BgValue
 import de.dh.raaps.common.model.data.Minutes
 import de.dh.raaps.common.model.data.Timestamp
 import de.dh.raaps.core.SystemRegistry
@@ -34,14 +35,15 @@ data class MealBolusUiState(
     val originalMealTimestamp: Timestamp? = null,
     val originalMealId: Long = ID_UNDEFINED,
     val mealTimestamp: Timestamp = Timestamp.now(),
-    val referenceTimestamp: Timestamp = Timestamp.now(),
+    val bgValue: BgValue? = null,
+    val bgTimestamp: Timestamp = Timestamp.now(),
+    val isProjected: Boolean = false,
     val seaMinutes: Int = 0,
     val carbsKe: Double = 0.0,
     val mealTypes: List<MealType> = emptyList(),
     val selectedMealType: MealType? = null,
-    val currentBg: Int? = null,
+    val currentBg: BgValue? = null,
     val currentBgTimestamp: Timestamp? = null,
-    val projectedBg: Int? = null,
     val targetBg: Int = 100,
     val lowThreshold: Int = 70,
     val isf: Int = 50,
@@ -114,7 +116,10 @@ class MealBolusViewModel(
                     carbsKe = existingMeal?.let { meal -> meal.carbGrams / 10.0 } ?: 0.0,
                     mealTypes = mealTypes,
                     selectedMealType = existingMeal?.mealType,
-                    currentBg = currentBg,
+                    currentBg = currentBg?.let { bg -> BgValue(bg.toShort()) },
+                    bgValue = currentBg?.let { bg -> BgValue(bg.toShort()) },
+                    bgTimestamp = now,
+                    isProjected = false,
                     targetBg = bgSettings.first.mgdl.toInt(),
                     lowThreshold = bgSettings.second.mgdl.toInt(),
                     isf = if (isf == 0) DEFAULT_ISF_MGDL_PER_UNIT.toInt() else isf,
@@ -220,7 +225,7 @@ class MealBolusViewModel(
             val therapySettings = therapyManager.getCurrentTherapySettings()
 
             val projectedBgValue = registry.systemManager.getPredictedBg(referenceTimestamp)
-            val projectedBg = if (projectedBgValue.isValid()) projectedBgValue.mgdl.toInt() else state.currentBg
+            val projectedBg = if (projectedBgValue.isValid()) projectedBgValue.mgdl.toInt() else state.currentBg?.mgdl?.toInt()
 
             val projectedIob = carbsInsulinCalculator.iob(
                 insulinHistory,
@@ -243,8 +248,9 @@ class MealBolusViewModel(
 
             _uiState.update {
                 it.copy(
-                    referenceTimestamp = referenceTimestamp,
-                    projectedBg = projectedBg,
+                    bgValue = projectedBg?.let { BgValue(it.toShort()) },
+                    bgTimestamp = referenceTimestamp,
+                    isProjected = referenceTimestamp.ms > now.ms,
                     projectedIob = projectedIob,
                     projectedCob = projectedCob,
                     mealPart = result.mealPart,
@@ -270,7 +276,7 @@ class MealBolusViewModel(
             manualBolus = state.manualBolus,
             correctionPart = state.correctionPart,
             mealType = state.selectedMealType,
-            currentBg = state.currentBg,
+            currentBg = state.currentBg?.mgdl?.toInt(),
             lowThreshold = state.lowThreshold,
             now = Timestamp.now(),
             existingPlan = state.insulinPlan
