@@ -2,6 +2,8 @@ package de.dh.raaps.core.aps
 
 import android.util.Log
 import de.dh.raaps.common.model.InsulinAmount
+import de.dh.raaps.common.model.MealType
+import de.dh.raaps.common.model.PlannedInsulin
 import de.dh.raaps.common.model.calculation.CarbsInsulinCalculator
 import de.dh.raaps.common.model.convertToBgDeltaFromUnits
 import de.dh.raaps.common.model.convertToCarbsFromBgDelta
@@ -16,7 +18,10 @@ import de.dh.raaps.common.model.data.Timestamp
 import de.dh.raaps.core.repository.TreatmentRepository
 import java.text.SimpleDateFormat
 import java.util.Locale
+import kotlin.math.abs
 import kotlin.math.ceil
+import kotlin.math.max
+import kotlin.math.round
 
 class ApsAlgorithmImpl(
     val timeline: Timeline,
@@ -88,6 +93,168 @@ class ApsAlgorithmImpl(
     override suspend fun getPredictedBg(timestamp: Timestamp): BgValue {
         val tick = timeline.tick(timestamp)
         return predictionModel.withTickState(tick) { it.predictedBg } ?: BgValue.INVALID
+    }
+
+    override fun getBolusCalculator(): BolusCalculator {
+        return BolusCalculatorImpl()
+    }
+
+    private inner class BolusCalculatorImpl : BolusCalculator {
+        override suspend fun calculateSuggestedSea(overrideBg: BgValue?): Int {
+            val bgSettings = therapyManager.getBgSettings()
+            val targetBg = bgSettings.first
+            val lowThreshold = bgSettings.second
+
+            val currentBg = overrideBg ?: run {
+                val nowTick = timeline.getNowTick()
+                predictionModel.withTickState(nowTick) { it.predictedBg }
+            }
+
+            if ((currentBg == null) || currentBg.isInvalid()) return 0
+
+            if (currentBg.mgdl <= lowThreshold.mgdl) {
+                return -15 // Suggest 15 min delay for bolus if low
+            }
+
+            val diff = currentBg.mgdl - targetBg.mgdl
+            if (diff <= 0) return 0
+
+            // Simple rule: 5 minutes per 20 mg/dL above target, max 45 min
+            val suggested = (diff / 20) * 5
+            return suggested.coerceIn(0, 45)
+        }
+
+        override suspend fun calculateBolusParts(carbsKe: Double, mealTimestamp: Timestamp): BolusParts {
+            val now = Timestamp.now()
+            val settings = therapyManager.getCurrentTherapySettings()
+            val dia = settings.insulinProfile.dia
+            val peak = settings.insulinProfile.peak
+
+            val cr = therapyManager.getCrFactor(now)
+            val isf = therapyManager.getIsfFactor(now).mgdl.toInt()
+            val bgSettings = therapyManager.getBgSettings()
+            val targetBg = bgSettings.first
+            val lowThreshold = bgSettings.second
+
+            val historyLimit = now.minusHours(25)
+            val insulinHistory = treatmentRepository.getInsulinApplications(from = historyLimit)
+            val mealsHistory = treatmentRepository.getMeals(from = historyLimit)
+
+            val projectedIob = carbsInsulinCalculator.iob(insulinHistory, mealTimestamp, dia, peak)
+            val projectedCob = carbsInsulinCalculator.cob(mealsHistory, mealTimestamp)
+
+            val bgValue = run {
+                val tick = timeline.tick(mealTimestamp)
+                predictionModel.withTickState(tick) { it.predictedBg } ?: BgValue.INVALID
+            }
+
+            val carbsGrams = carbsKe * 10.0
+            val mealPart = convertToInsulinAmountFromCarbs(carbsGrams, cr)
+
+            val currentBgMgdl = if (bgValue.isValid()) bgValue.mgdl else targetBg.mgdl
+            val bgDiff = currentBgMgdl - targetBg.mgdl
+
+            val correctionPart = convertToInsulinAmountFromBgDelta(BgDelta(bgDiff.toShort()), BgDelta(isf.toShort()))
+            val cobPart = convertToInsulinAmountFromCarbs(projectedCob, cr)
+
+            val total = (mealPart + correctionPart - projectedIob + cobPart).coerceAtLeast(InsulinAmount.ZERO)
+            val roundedTotal = round(total.iu * 100.0) / 100.0
+            var bolusAmount = InsulinAmount(roundedTotal)
+
+            if (!bgValue.isValid() || bgValue.mgdl <= lowThreshold.mgdl) {
+                bolusAmount = InsulinAmount.ZERO
+            }
+
+            return BolusParts(
+                mealPart = mealPart,
+                correctionPart = correctionPart,
+                iobPart = projectedIob,
+                cobPart = cobPart,
+                totalProposed = bolusAmount,
+                cobGrams = projectedCob
+            )
+        }
+
+        override suspend fun distributeInsulinPlan(
+            manualBolus: InsulinAmount,
+            correctionPart: InsulinAmount,
+            mealType: MealType?,
+            mealTimestamp: Timestamp,
+            existingPlan: List<PlannedInsulin>
+        ): List<PlannedInsulin> {
+            if (manualBolus <= InsulinAmount.ZERO) {
+                return emptyList()
+            }
+
+            val sea = calculateSuggestedSea()
+            val suggestedOffset = if (sea < 0) abs(sea) else 0
+
+            if (mealType == null) {
+                val existing = existingPlan.getOrNull(0)
+                val offsetToUse = if (existing?.isUserModified == true) existing.offsetMinutes else suggestedOffset
+                return listOf(
+                    PlannedInsulin(
+                        amount = manualBolus,
+                        timestamp = mealTimestamp + Minutes(offsetToUse.toShort()),
+                        offsetMinutes = offsetToUse,
+                        description = "Bolus",
+                        isUserModified = existing?.isUserModified ?: false
+                    )
+                )
+            }
+
+            val totalAmount = manualBolus.iu
+            val correction = correctionPart.iu
+            val restToDistribute = totalAmount - correction
+
+            val rawAmounts = DoubleArray(mealType.components.size) { i ->
+                val weight = mealType.components[i].weight / 100.0
+                val share = restToDistribute * weight
+                if (i == 0) share + correction else share
+            }
+
+            for (i in 0 until rawAmounts.size - 1) {
+                if (rawAmounts[i] < 0) {
+                    rawAmounts[i + 1] += rawAmounts[i]
+                    rawAmounts[i] = 0.0
+                }
+            }
+            for (i in rawAmounts.size - 1 downTo 1) {
+                if (rawAmounts[i] < 0) {
+                    rawAmounts[i - 1] += rawAmounts[i]
+                    rawAmounts[i] = 0.0
+                }
+            }
+
+            val roundedAmounts = rawAmounts.map { round(max(0.0, it) * 100.0) / 100.0 }.toDoubleArray()
+
+            val currentSum = roundedAmounts.sum()
+            val targetSum = round(totalAmount * 100.0) / 100.0
+            val diff = round((targetSum - currentSum) * 100.0) / 100.0
+
+            if (abs(diff) >= 0.01) {
+                val indexToAdjust = roundedAmounts.indices.maxByOrNull { roundedAmounts[it] } ?: 0
+                roundedAmounts[indexToAdjust] = round((roundedAmounts[indexToAdjust] + diff) * 100.0) / 100.0
+            }
+
+            return mealType.components.mapIndexed { index, component ->
+                val amount = InsulinAmount(roundedAmounts[index])
+                val delayFromBase = if (index == 0) 0 else component.peakMinutes.value.toInt()
+                val finalOffset = suggestedOffset + delayFromBase
+
+                val existing = existingPlan.getOrNull(index)
+                val offsetToUse = if (existing?.isUserModified == true) existing.offsetMinutes else finalOffset
+                val finalTimestamp = mealTimestamp + Minutes(offsetToUse.toShort())
+
+                PlannedInsulin(
+                    amount = amount,
+                    timestamp = finalTimestamp,
+                    offsetMinutes = offsetToUse,
+                    description = if (mealType.components.size > 1) "Teil ${index + 1} (${component.weight}%)" else "Bolus",
+                    isUserModified = existing?.isUserModified ?: false
+                )
+            }.filter { it.amount > InsulinAmount.ZERO }
+        }
     }
 
     override suspend fun recalculate(): CalculationResult = try {

@@ -94,6 +94,11 @@ interface SystemManager {
      * Returns the predicted blood glucose value for the given timestamp.
      */
     suspend fun getPredictedBg(timestamp: Timestamp): BgValue
+
+    /**
+     * Returns the bolus calculator.
+     */
+    fun getBolusCalculator(): BolusCalculator
 }
 
 /**
@@ -293,6 +298,14 @@ class SystemManagerImpl(
             core.getPredictedBg(timestamp)
         } else {
             BgValue.INVALID
+        }
+    }
+
+    override fun getBolusCalculator(): BolusCalculator {
+        return if (::core.isInitialized) {
+            core.getBolusCalculator()
+        } else {
+            NoopAlgorithm().getBolusCalculator()
         }
     }
 

@@ -319,6 +319,10 @@ class Core(
         return calculationAlgorithm.getPredictedBg(timestamp)
     }
 
+    fun getBolusCalculator(): BolusCalculator {
+        return calculationAlgorithm.getBolusCalculator()
+    }
+
     companion object {
         val TAG = Core::class.simpleName
 

@@ -13,7 +13,6 @@ import de.dh.raaps.common.model.InsulinAmount
 import de.dh.raaps.common.model.MealEntry
 import de.dh.raaps.common.model.MealType
 import de.dh.raaps.common.model.PlannedInsulin
-import de.dh.raaps.common.model.calculation.BolusCalculator
 import de.dh.raaps.common.model.data.BgValue
 import de.dh.raaps.common.model.data.Minutes
 import de.dh.raaps.common.model.data.Timestamp
@@ -79,7 +78,6 @@ class MealBolusViewModel(
     private val therapyManager = registry.therapyManager
     private val glucoseRepository = registry.glucoseRepository
     private val treatmentRepository = registry.treatmentRepository
-    private val carbsInsulinCalculator = registry.carbsInsulinCalculator
 
     private var treatmentLock: TreatmentLock? = null
 
@@ -87,7 +85,6 @@ class MealBolusViewModel(
         acquireLock()
         viewModelScope.launch {
             val now = Timestamp.now()
-            val therapySettings = therapyManager.getCurrentTherapySettings()
             val isf = therapyManager.getIsfFactor(now).mgdl.toInt()
             val cr = therapyManager.getCrFactor(now)
             val bgSettings = therapyManager.getBgSettings()
@@ -96,16 +93,9 @@ class MealBolusViewModel(
             val lastReading = glucoseRepository.loadBgReadings(now - Minutes(30)).lastOrNull()
             val currentBg = lastReading?.value?.mgdl?.toInt()
 
-            val historyLimit = now.minusHours(25)
-            val insulinHistory = treatmentRepository.getInsulinApplications(from = historyLimit)
-            val mealsHistory = treatmentRepository.getMeals(from = historyLimit)
-
-            val iob = carbsInsulinCalculator.iob(insulinHistory, now, therapySettings.insulinProfile.dia, therapySettings.insulinProfile.peak)
-            val cob = carbsInsulinCalculator.cob(mealsHistory, now)
-
             val existingMeal = mealId?.let { treatmentRepository.getMeal(it) }
-            val initialMealTimestamp = existingMeal?.timestamp ?: now
-            val suggestedSea = BolusCalculator.calculateSuggestedSea(currentBg?.let { BgValue(it.toShort()) }, bgSettings.first)
+            val currentBgValue = currentBg?.let { bg -> BgValue(bg.toShort()) }
+            val suggestedSea = registry.systemManager.getBolusCalculator().calculateSuggestedSea(currentBgValue)
 
             _uiState.update {
                 it.copy(
@@ -113,21 +103,25 @@ class MealBolusViewModel(
                     isEditMode = existingMeal != null,
                     originalMealTimestamp = existingMeal?.timestamp,
                     originalMealId = existingMeal?.id ?: ID_UNDEFINED,
-                    mealTimestamp = if (existingMeal == null) now + Minutes(suggestedSea.toShort()) else initialMealTimestamp,
-                    seaMinutes = if (existingMeal == null) suggestedSea else 0,
+                    mealTimestamp = if (existingMeal != null) {
+                        existingMeal.timestamp
+                    } else if (suggestedSea > 0) {
+                        now + Minutes(suggestedSea.toShort())
+                    } else {
+                        now
+                    },
+                    seaMinutes = if (existingMeal == null && suggestedSea > 0) suggestedSea else 0,
                     carbsKe = existingMeal?.let { meal -> meal.carbGrams / 10.0 } ?: 0.0,
                     mealTypes = mealTypes,
                     selectedMealType = existingMeal?.mealType,
-                    currentBg = currentBg?.let { bg -> BgValue(bg.toShort()) },
-                    bgValue = currentBg?.let { bg -> BgValue(bg.toShort()) },
+                    currentBg = currentBgValue,
+                    bgValue = currentBgValue,
                     bgTimestamp = now,
                     isProjected = false,
                     targetBg = bgSettings.first,
                     lowThreshold = bgSettings.second,
                     isf = if (isf == 0) DEFAULT_ISF_MGDL_PER_UNIT.toInt() else isf,
                     cr = if (cr == 0.0) DEFAULT_CR_GRAM_PER_UNIT else cr,
-                    iob = iob,
-                    cob = cob
                 )
             }
             calculateBolus()
@@ -214,48 +208,20 @@ class MealBolusViewModel(
             val state = _uiState.value
             val now = Timestamp.now()
 
-            val futureTimestamp = state.mealTimestamp.plusMinutes(15)
-            val futureBg = registry.systemManager.getPredictedBg(futureTimestamp)
-
-            val (bgTimestamp, bgValue) = if (state.carbsKe > 0.0 && futureBg.isValid()) {
-                futureTimestamp to futureBg
-            } else {
-                val currentBg = registry.systemManager.getPredictedBg(now)
-                now to (if (currentBg.isValid()) currentBg else state.currentBg)
-            }
-
-            // Fetch history data for projected IOB/COB
-            val historyLimit = now.minusHours(25)
-            val insulinHistory = treatmentRepository.getInsulinApplications(from = historyLimit)
-            val mealsHistory = treatmentRepository.getMeals(from = historyLimit)
-            val therapySettings = therapyManager.getCurrentTherapySettings()
-
-            val projectedIob = carbsInsulinCalculator.iob(
-                insulinHistory,
-                bgTimestamp,
-                therapySettings.insulinProfile.dia,
-                therapySettings.insulinProfile.peak
-            )
-            val projectedCob = carbsInsulinCalculator.cob(mealsHistory, bgTimestamp)
-
-            val result = BolusCalculator.calculateBolusParts(
+            val result = registry.systemManager.getBolusCalculator().calculateBolusParts(
                 carbsKe = state.carbsKe,
-                cr = state.cr,
-                isf = state.isf,
-                currentBg = bgValue,
-                targetBg = state.targetBg,
-                lowThreshold = state.lowThreshold,
-                iob = projectedIob,
-                cob = projectedCob
+                mealTimestamp = state.mealTimestamp
             )
 
             _uiState.update {
                 it.copy(
-                    bgValue = bgValue,
-                    bgTimestamp = bgTimestamp,
-                    isProjected = bgTimestamp.ms > now.ms,
-                    projectedIob = projectedIob,
-                    projectedCob = projectedCob,
+                    bgValue = if (state.carbsKe > 0.0) it.bgValue else state.currentBg,
+                    bgTimestamp = if (state.carbsKe > 0.0) state.mealTimestamp else now,
+                    isProjected = state.mealTimestamp.ms > now.ms,
+                    iob = result.iobPart,
+                    cob = result.cobGrams,
+                    projectedIob = result.iobPart,
+                    projectedCob = result.cobGrams,
                     mealPart = result.mealPart,
                     correctionPart = result.correctionPart,
                     iobPart = result.iobPart,
@@ -269,22 +235,22 @@ class MealBolusViewModel(
     }
 
     private fun updateInsulinPlanTimes() {
-        val state = _uiState.value
-        if (state.isEditMode) {
-            _uiState.update { it.copy(insulinPlan = emptyList()) }
-            return
-        }
+        viewModelScope.launch {
+            val state = _uiState.value
+            if (state.isEditMode) {
+                _uiState.update { it.copy(insulinPlan = emptyList()) }
+                return@launch
+            }
 
-        val newPlan = BolusCalculator.distributeInsulinPlan(
-            manualBolus = state.manualBolus,
-            correctionPart = state.correctionPart,
-            mealType = state.selectedMealType,
-            currentBg = state.currentBg,
-            lowThreshold = state.lowThreshold,
-            now = Timestamp.now(),
-            existingPlan = state.insulinPlan
-        )
-        _uiState.update { it.copy(insulinPlan = newPlan) }
+            val newPlan = registry.systemManager.getBolusCalculator().distributeInsulinPlan(
+                manualBolus = state.manualBolus,
+                correctionPart = state.correctionPart,
+                mealType = state.selectedMealType,
+                mealTimestamp = state.mealTimestamp,
+                existingPlan = state.insulinPlan
+            )
+            _uiState.update { it.copy(insulinPlan = newPlan) }
+        }
     }
 
     fun submit(onSuccess: () -> Unit) {
@@ -297,7 +263,7 @@ class MealBolusViewModel(
                 val lock = treatmentLock ?: throw IllegalStateException("Action attempted without holding the lock")
 
                 // 1. Record/Update Meal
-                if (state.carbsKe > 0 && state.selectedMealType != null) {
+                if ((state.carbsKe > 0) && (state.selectedMealType != null)) {
                     val mealEntry = MealEntry(
                         id = if (state.isEditMode) state.originalMealId else ID_UNDEFINED,
                         timestamp = state.mealTimestamp,

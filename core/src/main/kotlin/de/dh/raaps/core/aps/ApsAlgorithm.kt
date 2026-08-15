@@ -1,6 +1,8 @@
 package de.dh.raaps.core.aps
 
 import de.dh.raaps.common.model.InsulinAmount
+import de.dh.raaps.common.model.MealType
+import de.dh.raaps.common.model.PlannedInsulin
 import de.dh.raaps.common.model.data.BgDelta
 import de.dh.raaps.common.model.data.BgValue
 import de.dh.raaps.common.model.data.Timestamp
@@ -168,6 +170,7 @@ interface ApsAlgorithm {
     suspend fun updateInsulin()
     suspend fun recalculate(): CalculationResult
     suspend fun getPredictedBg(timestamp: Timestamp): BgValue
+    fun getBolusCalculator(): BolusCalculator
 }
 
 class NoopAlgorithm: ApsAlgorithm {
@@ -189,5 +192,20 @@ class NoopAlgorithm: ApsAlgorithm {
 
     override suspend fun getPredictedBg(timestamp: Timestamp): BgValue {
         return BgValue.INVALID
+    }
+
+    override fun getBolusCalculator(): BolusCalculator {
+        return object : BolusCalculator {
+            override suspend fun calculateSuggestedSea(overrideBg: BgValue?): Int = 0
+            override suspend fun calculateBolusParts(carbsKe: Double, mealTimestamp: Timestamp): BolusParts =
+                BolusParts(InsulinAmount.ZERO, InsulinAmount.ZERO, InsulinAmount.ZERO, InsulinAmount.ZERO, InsulinAmount.ZERO, 0.0)
+            override suspend fun distributeInsulinPlan(
+                manualBolus: InsulinAmount,
+                correctionPart: InsulinAmount,
+                mealType: MealType?,
+                mealTimestamp: Timestamp,
+                existingPlan: List<PlannedInsulin>
+            ): List<PlannedInsulin> = emptyList()
+        }
     }
 }
