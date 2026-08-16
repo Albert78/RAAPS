@@ -171,14 +171,14 @@ fun shortRelativeTimeUntil(timestamp: Timestamp): String {
 
 @Composable
 fun withinTimeDescription(minutes: Int): String {
-    if (minutes <= 0) return "sofort"
+    if (minutes <= 0) return stringResource(R.string.within_time_just_now)
     val hours = minutes / 60
     val mins = minutes % 60
 
     val timeStr = when {
-        hours == 0 -> stringResource(de.dh.raaps.ui.R.string.duration_minutes_format, mins)
-        mins == 0 -> stringResource(de.dh.raaps.ui.R.string.duration_hours_format, hours)
-        else -> stringResource(de.dh.raaps.ui.R.string.duration_hours_and_minutes_format, hours, mins)
+        hours == 0 -> stringResource(R.string.duration_minutes_format, mins)
+        mins == 0 -> stringResource(R.string.duration_hours_format, hours)
+        else -> stringResource(R.string.duration_hours_and_minutes_format, hours, mins)
     }
 
     return "innerhalb von $timeStr"
@@ -189,16 +189,16 @@ fun withinTimeDescription(minutes: Int): String {
 @Composable
 fun glucoseUnitLabel(unit: GlucoseUnit = LocalGlucoseUnit.current): String {
     return when (unit) {
-        GlucoseUnit.MG_DL -> stringResource(de.dh.raaps.ui.R.string.glucose_unit_mgdl)
-        GlucoseUnit.MMOL -> stringResource(de.dh.raaps.ui.R.string.glucose_unit_mmol)
+        GlucoseUnit.MG_DL -> stringResource(R.string.glucose_unit_mgdl)
+        GlucoseUnit.MMOL -> stringResource(R.string.glucose_unit_mmol)
     }
 }
 
 @Composable
 fun isfUnitLabel(unit: GlucoseUnit = LocalGlucoseUnit.current): String {
     return when (unit) {
-        GlucoseUnit.MG_DL -> stringResource(de.dh.raaps.ui.R.string.unit_mgdl_per_u)
-        GlucoseUnit.MMOL -> stringResource(de.dh.raaps.ui.R.string.unit_mmol_per_u)
+        GlucoseUnit.MG_DL -> stringResource(R.string.unit_mgdl_per_u)
+        GlucoseUnit.MMOL -> stringResource(R.string.unit_mmol_per_u)
     }
 }
 
@@ -226,8 +226,8 @@ fun isfValue(
     val valStr = value?.toString(unit) ?: return default
     return if (withUnit) {
         val unitStr = when (unit) {
-            GlucoseUnit.MG_DL -> stringResource(de.dh.raaps.ui.R.string.unit_mgdl_per_u)
-            GlucoseUnit.MMOL -> stringResource(de.dh.raaps.ui.R.string.unit_mmol_per_u)
+            GlucoseUnit.MG_DL -> stringResource(R.string.unit_mgdl_per_u)
+            GlucoseUnit.MMOL -> stringResource(R.string.unit_mmol_per_u)
         }
         "$valStr $unitStr"
     } else valStr
@@ -243,8 +243,8 @@ fun deltaValue(
     val valStr = value?.toDiff(unit) ?: return default
     return if (withUnit) {
         val unitStr = when (unit) {
-            GlucoseUnit.MG_DL -> stringResource(de.dh.raaps.ui.R.string.glucose_unit_mgdl)
-            GlucoseUnit.MMOL -> stringResource(de.dh.raaps.ui.R.string.glucose_unit_mmol)
+            GlucoseUnit.MG_DL -> stringResource(R.string.glucose_unit_mgdl)
+            GlucoseUnit.MMOL -> stringResource(R.string.glucose_unit_mmol)
         }
         "$valStr $unitStr"
     } else valStr
@@ -254,7 +254,7 @@ fun deltaValue(
 fun crValue(value: Double?, default: String = "-", withUnit: Boolean = true): String {
     return value?.let {
         val valStr = String.format(Locale.getDefault(), "%.1f", it)
-        if (withUnit) "$valStr " + stringResource(de.dh.raaps.ui.R.string.unit_g_per_u)
+        if (withUnit) "$valStr " + stringResource(R.string.unit_g_per_u)
         else valStr
     } ?: default
 }

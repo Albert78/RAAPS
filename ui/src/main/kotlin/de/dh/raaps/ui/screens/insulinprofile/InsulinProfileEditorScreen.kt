@@ -381,7 +381,7 @@ fun InsulinProfileDetailEditor(
                     )
                     1 -> TherapyBlockListEditor(
                         title = stringResource(id = R.string.insulin_profile_editor_basal_title),
-                        description = stringResource(id = R.string.insulin_profile_editor_basal_desc) + " " + stringResource(R.string.insulin_profile_editor_unit_info_format, stringResource(R.string.unit_u_per_h)),
+                        description = stringResource(id = R.string.insulin_profile_editor_basal_desc) + " " + stringResource(R.string.insulin_profile_editor_unit_info_format, stringResource(de.dh.raaps.common.R.string.unit_u_per_h)),
                         blocks = basalBlocks,
                         onBlocksChanged = { basalBlocks = it },
                         step = 0.05,
@@ -419,7 +419,7 @@ fun InsulinProfileDetailEditor(
                     }
                     3 -> TherapyBlockListEditor(
                         title = stringResource(id = R.string.insulin_profile_editor_cr_title),
-                        description = stringResource(id = R.string.insulin_profile_editor_cr_desc) + " " + stringResource(R.string.insulin_profile_editor_unit_info_format, stringResource(R.string.unit_g_per_u)),
+                        description = stringResource(id = R.string.insulin_profile_editor_cr_desc) + " " + stringResource(R.string.insulin_profile_editor_unit_info_format, stringResource(de.dh.raaps.common.R.string.unit_g_per_u)),
                         blocks = crBlocks,
                         onBlocksChanged = { crBlocks = it },
                         step = 0.1,

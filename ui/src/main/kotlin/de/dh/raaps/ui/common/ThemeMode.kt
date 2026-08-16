@@ -1,7 +1,6 @@
 package de.dh.raaps.ui.common
 
 import androidx.annotation.StringRes
-import de.dh.raaps.common.R
 
 /**
  * Defines the available themes for the application.
@@ -10,9 +9,9 @@ import de.dh.raaps.common.R
  * @property labelResId The resource ID for the human-readable label in the UI.
  */
 enum class ThemeMode(val value: String, @StringRes val labelResId: Int) {
-    SYSTEM("system", R.string.theme_system),
-    LIGHT("light", R.string.theme_light),
-    DARK("dark", R.string.theme_dark);
+    SYSTEM("system", de.dh.raaps.ui.R.string.theme_system),
+    LIGHT("light", de.dh.raaps.ui.R.string.theme_light),
+    DARK("dark", de.dh.raaps.ui.R.string.theme_dark);
 
     companion object {
         /**

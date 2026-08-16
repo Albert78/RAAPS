@@ -13,6 +13,11 @@
     <string name="time_until_minutes">in %1$d Min</string>
     <string name="time_until_hours">in %1$d Std</string>
 
+    <string name="duration_minutes_format">%1$d Min.</string>
+    <string name="duration_hours_format">%1$d Std.</string>
+    <string name="duration_hours_and_minutes_format">%1$d Std. %2$d Min.</string>
+    <string name="within_time_just_now">sofort</string>
+
     <!-- Content descriptions -->
     <string name="cd_cancel">Abbrechen</string>
     <string name="cd_navigate_up">Zurück</string>
@@ -31,10 +36,6 @@
 
     <string name="selection_mode_num_items_selected">%d ausgewählt</string>
 
-    <string name="theme_system">Systemstandard</string>
-    <string name="theme_light">Hell</string>
-    <string name="theme_dark">Dunkel</string>
-
     <string name="insulin_type_aspart_name">Aspart</string>
     <string name="insulin_type_fiasp_name">Fiasp</string>
     <string name="meal_type_fast_carbs_name">Schnelle Kohlenhydrate</string>
@@ -49,4 +50,11 @@
     <string name="therapy_basal_label">Basalrate</string>
     <string name="therapy_isf_label">ISF</string>
     <string name="therapy_cr_label">CR</string>
+
+    <string name="glucose_unit_mgdl">mg/dl</string>
+    <string name="glucose_unit_mmol">mmol/l</string>
+    <string name="unit_u_per_h">E/h</string>
+    <string name="unit_g_per_u">g/E</string>
+    <string name="unit_mgdl_per_u">mg/dL/E</string>
+    <string name="unit_mmol_per_u">mmol/l/E</string>
 </resources>

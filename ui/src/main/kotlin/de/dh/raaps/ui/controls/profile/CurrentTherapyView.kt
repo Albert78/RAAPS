@@ -75,7 +75,7 @@ fun CurrentTherapyView(
             InfoRow(
                 label = stringResource(id = de.dh.raaps.common.R.string.therapy_basal_label),
                 value = activeProfile.basalRange,
-                unit = stringResource(id = R.string.unit_u_per_h),
+                unit = stringResource(id = de.dh.raaps.common.R.string.unit_u_per_h),
                 modifier = Modifier.padding(bottom = 2.dp)
             )
             InfoRow(
@@ -87,7 +87,7 @@ fun CurrentTherapyView(
             InfoRow(
                 label = stringResource(id = de.dh.raaps.common.R.string.therapy_cr_label),
                 value = activeProfile.crRange, // Same here.
-                unit = stringResource(id = R.string.unit_g_per_u)
+                unit = stringResource(id = de.dh.raaps.common.R.string.unit_g_per_u)
             )
         }
     }

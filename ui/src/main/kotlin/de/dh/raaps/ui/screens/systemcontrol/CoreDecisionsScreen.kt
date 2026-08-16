@@ -111,8 +111,8 @@ fun InsightCard(insight: CoreInsight) {
     val dateTimeFormat = remember { SimpleDateFormat("HH:mm:ss", Locale.getDefault()) }
     val glucoseUnit = LocalGlucoseUnit.current
     val unitStr = when (glucoseUnit) {
-        de.dh.raaps.common.model.data.GlucoseUnit.MG_DL -> stringResource(R.string.glucose_unit_mgdl)
-        de.dh.raaps.common.model.data.GlucoseUnit.MMOL -> stringResource(R.string.glucose_unit_mmol)
+        de.dh.raaps.common.model.data.GlucoseUnit.MG_DL -> stringResource(de.dh.raaps.common.R.string.glucose_unit_mgdl)
+        de.dh.raaps.common.model.data.GlucoseUnit.MMOL -> stringResource(de.dh.raaps.common.R.string.glucose_unit_mmol)
     }
 
     Card(

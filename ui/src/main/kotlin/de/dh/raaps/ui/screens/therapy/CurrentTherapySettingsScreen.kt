@@ -358,7 +358,7 @@ private fun ActiveInsulinProfileCard(
                         text = stringResource(
                             id = R.string.current_therapy_basal_label_format,
                             profile.basalRange,
-                            stringResource(id = R.string.unit_u_per_h)
+                            stringResource(id = de.dh.raaps.common.R.string.unit_u_per_h)
                         ),
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
@@ -371,7 +371,7 @@ private fun ActiveInsulinProfileCard(
                             text = stringResource(
                                 id = R.string.current_therapy_cr_label_format,
                                 profile.crRange,
-                                stringResource(id = R.string.unit_g_per_u)
+                                stringResource(id = de.dh.raaps.common.R.string.unit_g_per_u)
                             ),
                             style = MaterialTheme.typography.bodyMedium,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
@@ -385,7 +385,7 @@ private fun ActiveInsulinProfileCard(
                             text = stringResource(
                                 id = R.string.current_therapy_isf_label_format,
                                 profile.isfRange,
-                                stringResource(id = R.string.unit_mgdl_per_u)
+                                stringResource(id = de.dh.raaps.common.R.string.unit_mgdl_per_u)
                             ),
                             style = MaterialTheme.typography.bodyMedium,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
@@ -470,7 +470,7 @@ private fun BgTargetCard(
         "-"
     }
 
-    val unit = stringResource(id = R.string.glucose_unit_mgdl)
+    val unit = stringResource(id = de.dh.raaps.common.R.string.glucose_unit_mgdl)
 
     ElevatedCard(
         modifier = modifier
@@ -681,7 +681,7 @@ private fun TemporaryAdjustmentCard(
                         insulinProfile.targetBgOverride.mgdl.toString()
                     else
                         stringResource(R.string.aps_control_adjustment_standard),
-                    unit = if (insulinProfile.targetBgOverride != null) stringResource(R.string.glucose_unit_mgdl) else null,
+                    unit = if (insulinProfile.targetBgOverride != null) stringResource(de.dh.raaps.common.R.string.glucose_unit_mgdl) else null,
                     valueColor = if (insulinProfile.targetBgOverride != null)
                         MaterialTheme.colorScheme.primary
                     else
@@ -703,7 +703,7 @@ private fun TemporaryAdjustmentCard(
                         insulinProfile.lowThresholdOverride.mgdl.toString()
                     else
                         stringResource(R.string.aps_control_adjustment_standard),
-                    unit = if (insulinProfile.lowThresholdOverride != null) stringResource(R.string.glucose_unit_mgdl) else null,
+                    unit = if (insulinProfile.lowThresholdOverride != null) stringResource(de.dh.raaps.common.R.string.glucose_unit_mgdl) else null,
                     valueColor = if (insulinProfile.lowThresholdOverride != null)
                         MaterialTheme.colorScheme.error
                     else
@@ -793,13 +793,13 @@ private fun AdjustmentItem(
 @Composable
 private fun formatMinutes(minutes: Minutes): String {
     val total = minutes.value.toInt()
-    if (total <= 0) return stringResource(id = R.string.duration_minutes_format, 0)
+    if (total <= 0) return stringResource(id = de.dh.raaps.common.R.string.duration_minutes_format, 0)
     val hours = total / 60
     val mins = total % 60
     return when {
-        hours > 0 && mins > 0 -> stringResource(id = R.string.duration_hours_and_minutes_format, hours, mins)
-        hours > 0 -> stringResource(id = R.string.duration_hours_format, hours)
-        else -> stringResource(id = R.string.duration_minutes_format, mins)
+        hours > 0 && mins > 0 -> stringResource(id = de.dh.raaps.common.R.string.duration_hours_and_minutes_format, hours, mins)
+        hours > 0 -> stringResource(id = de.dh.raaps.common.R.string.duration_hours_format, hours)
+        else -> stringResource(id = de.dh.raaps.common.R.string.duration_minutes_format, mins)
     }
 }
 

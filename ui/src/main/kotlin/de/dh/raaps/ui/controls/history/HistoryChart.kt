@@ -300,8 +300,8 @@ fun BgHistoryChart(
         }
     }
 
-    val mgdlStr = stringResource(R.string.glucose_unit_mgdl)
-    val mmolStr = stringResource(R.string.glucose_unit_mmol)
+    val mgdlStr = stringResource(de.dh.raaps.common.R.string.glucose_unit_mgdl)
+    val mmolStr = stringResource(de.dh.raaps.common.R.string.glucose_unit_mmol)
 
     val marker = if (showMarkers) rememberDefaultCartesianMarker(
         label = rememberAxisLabelComponent(style = TextStyle(color = ExtendedTheme.semanticColors.highContrast)),

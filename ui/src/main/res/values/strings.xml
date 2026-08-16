@@ -6,6 +6,10 @@
     <string name="menu_item_preferences_label">Einstellungen</string>
     <string name="menu_item_profile_editor_label">Insulin-Profile</string>
 
+    <string name="theme_system">Systemstandard</string>
+    <string name="theme_light">Hell</string>
+    <string name="theme_dark">Dunkel</string>
+
     <string name="insulin_profile_editor_screen_title">Insulin-Profile verwalten</string>
     <string name="insulin_profile_editor_new_profile">Neues Insulin-Profil</string>
     <string name="insulin_profile_editor_edit_profile">Insulin-Profil bearbeiten</string>
@@ -118,13 +122,6 @@
     <string name="current_therapy_basal_label_format">Basal: %1$s %2$s</string>
     <string name="current_therapy_cr_label_format">CR: %1$s %2$s</string>
     <string name="current_therapy_isf_label_format">ISF: %1$s %2$s</string>
-    <string name="duration_minutes_format">%1$d Min.</string>
-    <string name="duration_hours_format">%1$d Std.</string>
-    <string name="duration_hours_and_minutes_format">%1$d Std. %2$d Min.</string>
-    <string name="unit_u_per_h">E/h</string>
-    <string name="unit_g_per_u">g/E</string>
-    <string name="unit_mgdl_per_u">mg/dL/E</string>
-    <string name="unit_mmol_per_u">mmol/l/E</string>
 
     <string name="recommendation_notification_channel_name">Behandlungsempfehlungen</string>
     <string name="recommendation_title_carbs">Essensempfehlung</string>
@@ -180,8 +177,6 @@
     <string name="aps_control_therapy_adjustment_dialog_bg_adjustment_description">Überschreibt Zielwert und Niedrig-&#173;Schwelle für einen begrenzten Zeitraum.</string>
     <string name="aps_control_therapy_adjustment_dialog_presets_title">Schnellauswahl</string>
 
-    <string name="glucose_unit_mgdl">mg/dl</string>
-    <string name="glucose_unit_mmol">mmol/l</string>
     <string name="approx_prefix">ca.</string>
     <string name="active_carbs_label">Aktive KH</string>
     <string name="active_insulin_label">Akt. Insulin</string>
