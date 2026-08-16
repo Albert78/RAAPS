@@ -132,6 +132,11 @@
     <string name="recommendation_text_carbs">Nimm %1$dg Kohlenhydrate zu dir, um eine Hypoglykämie zu vermeiden.</string>
     <string name="recommendation_text_bolus">Verabreiche dir %1$.2f E Insulin, um einen hohen Blutzucker zu korrigieren.</string>
 
+    <string name="recommendation_carbs_info_title">Iss %1$dg Kohlehydrate</string>
+    <string name="recommendation_bolus_info_title">Spritze %1$.2f E Insulin</string>
+    <string name="recommendation_carbs_info_text">Nimm %1$dg Kohlenhydrate zu dir, um eine Hypoglykämie zu vermeiden.</string>
+    <string name="recommendation_bolus_info_text">Verabreiche dir %1$.2f E Insulin, um einen hohen Blutzucker zu korrigieren.</string>
+
     <string name="algorithm_issue_notification_channel_name">Algorithmus-Warnungen</string>
     <string name="core_issue_title">Berechnungen blockiert</string>
     <string name="core_issue_no_recent_values">Keine aktuellen Glukosewerte seit %1$d Minuten.</string>

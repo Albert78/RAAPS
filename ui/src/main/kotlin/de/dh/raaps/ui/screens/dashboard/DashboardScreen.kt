@@ -219,19 +219,19 @@ fun DashboardContent(
                 Spacer(modifier = Modifier.height(8.dp))
                 val (infoText, detailText) = when (recommendation) {
                     is ApsRecommendation.Carbs -> {
-                        stringResource(R.string.recommendation_title_carbs) to
-                                stringResource(R.string.recommendation_text_carbs, recommendation.amountInGram)
+                        stringResource(R.string.recommendation_carbs_info_title, recommendation.amountInGram) to
+                                stringResource(R.string.recommendation_carbs_info_text, recommendation.amountInGram)
                     }
 
                     is ApsRecommendation.Bolus -> {
-                        stringResource(R.string.recommendation_title_bolus) to
-                                stringResource(R.string.recommendation_text_bolus, recommendation.amount.iu)
+                        stringResource(R.string.recommendation_bolus_info_title, recommendation.amount.iu) to
+                                stringResource(R.string.recommendation_bolus_info_text, recommendation.amount.iu)
                     }
                 }
                 ExpandableInfoCard(
                     infoText = infoText,
                     detailText = detailText,
-                    initiallyExpanded = true,
+                    initiallyExpanded = false,
                     expandable = true
                 )
             }
