@@ -10,18 +10,17 @@ import android.util.Log
 import androidx.core.app.NotificationCompat
 import androidx.core.content.getSystemService
 import de.dh.raaps.R
-import de.dh.raaps.common.model.ToDo
+import de.dh.raaps.common.R as CommonR
 import de.dh.raaps.common.model.data.BgDelta
 import de.dh.raaps.common.model.data.BgValue
 import de.dh.raaps.common.model.data.GlucoseUnit
-import de.dh.raaps.core.aps.CoreIssue
 import de.dh.raaps.core.aps.ApsRecommendation
+import de.dh.raaps.core.aps.CoreIssue
 import de.dh.raaps.core.aps.GlucoseSourceManager
 import de.dh.raaps.core.system.AndroidNotifications
 import de.dh.raaps.core.system.RegistryProvider
 import de.dh.raaps.ui.activities.MainActivity
 import de.dh.raaps.ui.screens.permissions.canPostNotifications
-import java.util.Locale
 import de.dh.raaps.ui.R as UiR
 
 /**
@@ -68,8 +67,8 @@ class AndroidNotificationsImpl(
         if (sample == null) return null
         val valStr = sample.toString(unit)
         val unitStr = when (unit) {
-            GlucoseUnit.MG_DL -> context.getString(UiR.string.glucose_unit_mgdl)
-            GlucoseUnit.MMOL -> context.getString(UiR.string.glucose_unit_mmol)
+            GlucoseUnit.MG_DL -> context.getString(CommonR.string.glucose_unit_mgdl)
+            GlucoseUnit.MMOL -> context.getString(CommonR.string.glucose_unit_mmol)
         }
         return if (forceSign) {
             val sign = if (sample.mgdl > 0) "+" else ""
@@ -84,8 +83,8 @@ class AndroidNotificationsImpl(
         val deltaValue = BgDelta.fromMgDl(delta.mgdl)
         val valStr = deltaValue.toDiff(unit)
         val unitStr = when (unit) {
-            GlucoseUnit.MG_DL -> context.getString(UiR.string.glucose_unit_mgdl)
-            GlucoseUnit.MMOL -> context.getString(UiR.string.glucose_unit_mmol)
+            GlucoseUnit.MG_DL -> context.getString(CommonR.string.glucose_unit_mgdl)
+            GlucoseUnit.MMOL -> context.getString(CommonR.string.glucose_unit_mmol)
         }
         return "Delta: $valStr $unitStr"
     }

@@ -35,6 +35,7 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import de.dh.raaps.common.R as CommonR
 import de.dh.raaps.common.model.ApsMode
 import de.dh.raaps.common.model.InsulinAmount
 import de.dh.raaps.common.model.data.BgDelta
@@ -152,7 +153,7 @@ fun DashboardContent(
                 actions = {
                     Box {
                         IconButton(onClick = { menuExpanded = true }) {
-                            Icon(imageVector = Icons.Default.MoreVert, contentDescription = stringResource(id = de.dh.raaps.common.R.string.cd_more_options))
+                            Icon(imageVector = Icons.Default.MoreVert, contentDescription = stringResource(id = CommonR.string.cd_more_options))
                         }
                         DropdownMenu(
                             expanded = menuExpanded,

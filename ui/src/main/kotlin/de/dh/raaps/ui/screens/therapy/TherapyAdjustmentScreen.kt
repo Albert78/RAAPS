@@ -62,6 +62,7 @@ import de.dh.raaps.common.model.LOW_THRESHOLD_MIN
 import de.dh.raaps.common.model.TARGET_MAX
 import de.dh.raaps.common.model.TARGET_MIN
 import de.dh.raaps.common.model.data.BgValue
+import de.dh.raaps.common.R as CommonR
 import de.dh.raaps.ui.R
 import de.dh.raaps.ui.common.glucoseValue
 import de.dh.raaps.ui.common.glucoseUnitLabel
@@ -129,7 +130,7 @@ fun TherapyAdjustmentContent(
                     IconButton(onClick = onNavigateUp) {
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = stringResource(id = de.dh.raaps.common.R.string.cd_navigate_up)
+                            contentDescription = stringResource(id = CommonR.string.cd_navigate_up)
                         )
                     }
                 },

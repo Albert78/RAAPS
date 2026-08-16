@@ -1,7 +1,7 @@
 package de.dh.raaps.core.repository
 
 import android.content.Context
-import de.dh.raaps.common.R
+import de.dh.raaps.common.R as CommonR
 import de.dh.raaps.common.model.CarbCurveComponentData
 import de.dh.raaps.common.model.DEFAULT_BASAL_UNITS_PER_HOUR
 import de.dh.raaps.common.model.DEFAULT_BG_LOW_THRESHOLD_MGDL
@@ -46,7 +46,7 @@ object DatabaseInitializer {
         repository.insertInsulinType(
             InsulinType(
                 id = ID_INSULIN_ASPART,
-                name = context.getString(R.string.insulin_type_aspart_name),
+                name = context.getString(CommonR.string.insulin_type_aspart_name),
                 dia = Minutes.ofHours(5),
                 peak = Minutes(75),
                 defaultConcentration = InsulinConcentration.U100
@@ -55,7 +55,7 @@ object DatabaseInitializer {
         repository.insertInsulinType(
             InsulinType(
                 id = ID_INSULIN_FIASP,
-                name = context.getString(R.string.insulin_type_fiasp_name),
+                name = context.getString(CommonR.string.insulin_type_fiasp_name),
                 dia = Minutes.ofHours(4),
                 peak = Minutes(55),
                 defaultConcentration = InsulinConcentration.U100
@@ -70,7 +70,7 @@ object DatabaseInitializer {
         repository.insertMealType(
             MealType(
                 id = ID_MEAL_FAST,
-                name = context.getString(R.string.meal_type_fast_carbs_name),
+                name = context.getString(CommonR.string.meal_type_fast_carbs_name),
                 components = listOf(
                     CarbCurveComponentData(weight = 100, peakMinutes = FAST_KE_DEFAULT_PEAK
                     )
@@ -81,7 +81,7 @@ object DatabaseInitializer {
         repository.insertMealType(
             MealType(
                 id = ID_MEAL_STANDARD,
-                name = context.getString(R.string.meal_type_standard_meal_name),
+                name = context.getString(CommonR.string.meal_type_standard_meal_name),
                 components = listOf(
                     CarbCurveComponentData(weight = 70, peakMinutes = Minutes(75)),
                     CarbCurveComponentData(weight = 30, peakMinutes = Minutes(150))
@@ -92,7 +92,7 @@ object DatabaseInitializer {
         repository.insertMealType(
             MealType(
                 id = ID_MEAL_HIGH_FAT,
-                name = context.getString(R.string.meal_type_high_fat_meal_name),
+                name = context.getString(CommonR.string.meal_type_high_fat_meal_name),
                 components = listOf(
                     CarbCurveComponentData(weight = 35, peakMinutes = Minutes(60)),
                     CarbCurveComponentData(weight = 65, peakMinutes = Minutes(240))
@@ -103,7 +103,7 @@ object DatabaseInitializer {
         repository.insertMealType(
             MealType(
                 id = ID_MEAL_SLOW,
-                name = context.getString(R.string.meal_type_slow_meal_name),
+                name = context.getString(CommonR.string.meal_type_slow_meal_name),
                 components = listOf(
                     CarbCurveComponentData(weight = 40, peakMinutes = Minutes(120)),
                     CarbCurveComponentData(weight = 60, peakMinutes = Minutes(300))
@@ -122,7 +122,7 @@ object DatabaseInitializer {
         var profiles = repository.getAllInsulinProfiles()
         if (profiles.isEmpty()) {
             val normalProfile = InsulinProfile(
-                name = context.getString(R.string.profile_default_normal_name),
+                name = context.getString(CommonR.string.profile_default_normal_name),
                 basalBlocks = listOf(Block(
                     Minutes.ofHours(24),
                     DEFAULT_BASAL_UNITS_PER_HOUR

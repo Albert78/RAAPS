@@ -34,6 +34,7 @@ import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import de.dh.raaps.common.R as CommonR
 import de.dh.raaps.ui.R
 import de.dh.raaps.ui.common.composables.contentScrollIndicator
 import de.dh.raaps.ui.common.composables.screenTitle
@@ -88,7 +89,7 @@ fun PermissionsScreenContent(
                     IconButton(onClick = onNavigateUp) {
                         Icon(
                             imageVector = Icon_Screen_Back,
-                            contentDescription = stringResource(de.dh.raaps.common.R.string.cd_navigate_up)
+                            contentDescription = stringResource(CommonR.string.cd_navigate_up)
                         )
                     }
                 },
@@ -118,14 +119,14 @@ fun PermissionsScreenContent(
                     Text(
                         text = uiModel.permissionsMissingText,
                         style = MaterialTheme.typography.bodyLarge,
-                        color = colorResource(id = de.dh.raaps.common.R.color.permission_granted_color),
+                        color = colorResource(id = CommonR.color.permission_granted_color),
                         modifier = Modifier.padding(16.dp)
                     )
                 } else {
                     Text(
                         text = uiModel.permissionsMissingText,
                         style = MaterialTheme.typography.bodyLarge,
-                        color = colorResource(id = de.dh.raaps.common.R.color.permission_not_granted_color),
+                        color = colorResource(id = CommonR.color.permission_not_granted_color),
                         modifier = Modifier.padding(16.dp)
                     )
                 }
@@ -212,7 +213,7 @@ fun PermissionItem(
             is PermissionStatus.Granted -> {
                 Icon(
                     imageVector = Icon_Check_Yes,
-                    tint = colorResource(de.dh.raaps.common.R.color.permission_granted_color),
+                    tint = colorResource(CommonR.color.permission_granted_color),
                     contentDescription = stringResource(R.string.cd_permission_granted),
                     modifier = Modifier
                         .size(50.dp)
@@ -224,14 +225,14 @@ fun PermissionItem(
                     Text(
                         text = grantedText,
                         style = MaterialTheme.typography.bodyMedium,
-                        color = colorResource(de.dh.raaps.common.R.color.permission_granted_color)
+                        color = colorResource(CommonR.color.permission_granted_color)
                     )
                 }
             }
             is PermissionStatus.Denied -> {
                 Icon(
                     imageVector = Icon_Check_No,
-                    tint = colorResource(de.dh.raaps.common.R.color.permission_not_granted_color),
+                    tint = colorResource(CommonR.color.permission_not_granted_color),
                     contentDescription = stringResource(R.string.cd_permission_not_granted),
                     modifier = Modifier
                         .size(50.dp)
@@ -243,7 +244,7 @@ fun PermissionItem(
                     Text(
                         text = notGrantedText,
                         style = MaterialTheme.typography.bodyMedium,
-                        color = colorResource(de.dh.raaps.common.R.color.permission_not_granted_color)
+                        color = colorResource(CommonR.color.permission_not_granted_color)
                     )
                 }
             }

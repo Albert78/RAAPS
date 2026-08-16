@@ -61,6 +61,7 @@ import de.dh.raaps.common.model.data.BgValue
 import de.dh.raaps.common.model.data.Block
 import de.dh.raaps.common.model.data.InsulinProfile
 import de.dh.raaps.common.model.data.Minutes
+import de.dh.raaps.common.R as CommonR
 import de.dh.raaps.ui.R
 import de.dh.raaps.ui.common.ConfigurableDisplayStrategy
 import de.dh.raaps.ui.common.composables.InsulinProfileSelectionDialog
@@ -120,7 +121,7 @@ fun CurrentTherapySettingsContent(
                     IconButton(onClick = onNavigateUp) {
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = stringResource(id = de.dh.raaps.common.R.string.cd_navigate_up)
+                            contentDescription = stringResource(id = CommonR.string.cd_navigate_up)
                         )
                     }
                 },
@@ -358,7 +359,7 @@ private fun ActiveInsulinProfileCard(
                         text = stringResource(
                             id = R.string.current_therapy_basal_label_format,
                             profile.basalRange,
-                            stringResource(id = de.dh.raaps.common.R.string.unit_u_per_h)
+                            stringResource(id = CommonR.string.unit_u_per_h)
                         ),
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
@@ -371,7 +372,7 @@ private fun ActiveInsulinProfileCard(
                             text = stringResource(
                                 id = R.string.current_therapy_cr_label_format,
                                 profile.crRange,
-                                stringResource(id = de.dh.raaps.common.R.string.unit_g_per_u)
+                                stringResource(id = CommonR.string.unit_g_per_u)
                             ),
                             style = MaterialTheme.typography.bodyMedium,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
@@ -385,7 +386,7 @@ private fun ActiveInsulinProfileCard(
                             text = stringResource(
                                 id = R.string.current_therapy_isf_label_format,
                                 profile.isfRange,
-                                stringResource(id = de.dh.raaps.common.R.string.unit_mgdl_per_u)
+                                stringResource(id = CommonR.string.unit_mgdl_per_u)
                             ),
                             style = MaterialTheme.typography.bodyMedium,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
@@ -470,7 +471,7 @@ private fun BgTargetCard(
         "-"
     }
 
-    val unit = stringResource(id = de.dh.raaps.common.R.string.glucose_unit_mgdl)
+    val unit = stringResource(id = CommonR.string.glucose_unit_mgdl)
 
     ElevatedCard(
         modifier = modifier
@@ -681,7 +682,7 @@ private fun TemporaryAdjustmentCard(
                         insulinProfile.targetBgOverride.mgdl.toString()
                     else
                         stringResource(R.string.aps_control_adjustment_standard),
-                    unit = if (insulinProfile.targetBgOverride != null) stringResource(de.dh.raaps.common.R.string.glucose_unit_mgdl) else null,
+                    unit = if (insulinProfile.targetBgOverride != null) stringResource(CommonR.string.glucose_unit_mgdl) else null,
                     valueColor = if (insulinProfile.targetBgOverride != null)
                         MaterialTheme.colorScheme.primary
                     else
@@ -703,7 +704,7 @@ private fun TemporaryAdjustmentCard(
                         insulinProfile.lowThresholdOverride.mgdl.toString()
                     else
                         stringResource(R.string.aps_control_adjustment_standard),
-                    unit = if (insulinProfile.lowThresholdOverride != null) stringResource(de.dh.raaps.common.R.string.glucose_unit_mgdl) else null,
+                    unit = if (insulinProfile.lowThresholdOverride != null) stringResource(CommonR.string.glucose_unit_mgdl) else null,
                     valueColor = if (insulinProfile.lowThresholdOverride != null)
                         MaterialTheme.colorScheme.error
                     else
@@ -793,13 +794,13 @@ private fun AdjustmentItem(
 @Composable
 private fun formatMinutes(minutes: Minutes): String {
     val total = minutes.value.toInt()
-    if (total <= 0) return stringResource(id = de.dh.raaps.common.R.string.duration_minutes_format, 0)
+    if (total <= 0) return stringResource(id = CommonR.string.duration_minutes_format, 0)
     val hours = total / 60
     val mins = total % 60
     return when {
-        hours > 0 && mins > 0 -> stringResource(id = de.dh.raaps.common.R.string.duration_hours_and_minutes_format, hours, mins)
-        hours > 0 -> stringResource(id = de.dh.raaps.common.R.string.duration_hours_format, hours)
-        else -> stringResource(id = de.dh.raaps.common.R.string.duration_minutes_format, mins)
+        hours > 0 && mins > 0 -> stringResource(id = CommonR.string.duration_hours_and_minutes_format, hours, mins)
+        hours > 0 -> stringResource(id = CommonR.string.duration_hours_format, hours)
+        else -> stringResource(id = CommonR.string.duration_minutes_format, mins)
     }
 }
 

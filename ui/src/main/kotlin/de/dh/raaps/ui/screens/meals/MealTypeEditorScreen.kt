@@ -37,6 +37,7 @@ import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import de.dh.raaps.common.R as CommonR
 import de.dh.raaps.common.model.CarbCurveComponentData
 import de.dh.raaps.common.model.data.Minutes
 import de.dh.raaps.ui.R
@@ -64,7 +65,7 @@ fun MealTypeEditorScreen(
                     IconButton(onClick = onNavigateUp) {
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = stringResource(id = de.dh.raaps.common.R.string.cd_navigate_up)
+                            contentDescription = stringResource(id = CommonR.string.cd_navigate_up)
                         )
                     }
                 },

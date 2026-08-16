@@ -14,7 +14,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
-import de.dh.raaps.common.R
+import de.dh.raaps.common.R as CommonR
 import de.dh.raaps.common.model.data.InsulinProfile
 
 @Composable
@@ -32,7 +32,7 @@ fun InsulinProfileSelectionDialog(
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Text(stringResource(id = R.string.therapy_insulin_profile_selection_title))
+                Text(stringResource(id = CommonR.string.therapy_insulin_profile_selection_title))
             }
         },
         text = {
@@ -53,7 +53,7 @@ fun InsulinProfileSelectionDialog(
         },
         confirmButton = {
             NormalTextButton(onClick = onDismiss) {
-                Text(stringResource(id = R.string.action_close))
+                Text(stringResource(id = CommonR.string.action_close))
             }
         }
     )

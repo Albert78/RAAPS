@@ -39,6 +39,7 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
+import de.dh.raaps.common.R as CommonR
 import de.dh.raaps.common.model.data.GlucoseUnit
 import de.dh.raaps.ui.R
 import de.dh.raaps.ui.common.ThemeMode
@@ -92,7 +93,7 @@ fun PreferencesContent(
                     IconButton(onClick = onNavigateUp) {
                         Icon(
                             imageVector = Icon_Screen_Back,
-                            contentDescription = stringResource(de.dh.raaps.common.R.string.cd_navigate_up)
+                            contentDescription = stringResource(CommonR.string.cd_navigate_up)
                         )
                     }
                 },

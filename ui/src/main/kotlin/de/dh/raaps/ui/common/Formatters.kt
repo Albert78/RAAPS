@@ -5,7 +5,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.platform.LocalLocale
 import androidx.compose.ui.res.stringResource
-import de.dh.raaps.common.R
+import de.dh.raaps.common.R as CommonR
 import de.dh.raaps.common.model.data.BgDelta
 import de.dh.raaps.common.model.data.BgValue
 import de.dh.raaps.common.model.data.GlucoseUnit
@@ -36,10 +36,10 @@ val LocalGlucoseUnit = staticCompositionLocalOf<GlucoseUnit> {
 fun rememberAppFormatters(): AppFormatters {
     val locale = LocalLocale.current.platformLocale
 
-    val shortDateTimePattern = stringResource(R.string.short_date_time_format)
-    val shortDatePattern = stringResource(R.string.short_date_format)
-    val longDateTimePattern = stringResource(R.string.long_date_time_format)
-    val longDatePattern = stringResource(R.string.long_date_format)
+    val shortDateTimePattern = stringResource(CommonR.string.short_date_time_format)
+    val shortDatePattern = stringResource(CommonR.string.short_date_format)
+    val longDateTimePattern = stringResource(CommonR.string.long_date_time_format)
+    val longDatePattern = stringResource(CommonR.string.long_date_format)
 
     return remember(locale, shortDateTimePattern, shortDatePattern, longDateTimePattern, longDatePattern) {
         AppFormatters(
@@ -132,12 +132,12 @@ fun shortRelativeTimeAgo(diffMs: Long): String {
     val diffSec = diffMs / 1000
     val diffMin = diffMs / 60000
     return when {
-        diffSec < 5 -> stringResource(R.string.time_ago_just_now)
-        diffSec < 61 -> stringResource(R.string.time_ago_seconds_ago, diffSec)
-        diffMin < 1 -> stringResource(R.string.time_ago_just_now)
-        diffMin < 91 -> stringResource(R.string.time_ago_minutes_ago, diffMin)
+        diffSec < 5 -> stringResource(CommonR.string.time_ago_just_now)
+        diffSec < 61 -> stringResource(CommonR.string.time_ago_seconds_ago, diffSec)
+        diffMin < 1 -> stringResource(CommonR.string.time_ago_just_now)
+        diffMin < 91 -> stringResource(CommonR.string.time_ago_minutes_ago, diffMin)
         else -> {
-            stringResource(R.string.time_ago_hours_ago, diffMin / 60)
+            stringResource(CommonR.string.time_ago_hours_ago, diffMin / 60)
         }
     }
 }
@@ -153,12 +153,12 @@ fun shortRelativeTimeUntil(diffMs: Long): String {
     val diffSec = diffMs / 1000
     val diffMin = diffMs / 60000
     return when {
-        diffSec < 5 -> stringResource(R.string.time_ago_just_now)
-        diffSec < 61 -> stringResource(R.string.time_until_seconds, diffSec)
-        diffMin < 1 -> stringResource(R.string.time_ago_just_now)
-        diffMin < 91 -> stringResource(R.string.time_until_minutes, diffMin)
+        diffSec < 5 -> stringResource(CommonR.string.time_ago_just_now)
+        diffSec < 61 -> stringResource(CommonR.string.time_until_seconds, diffSec)
+        diffMin < 1 -> stringResource(CommonR.string.time_ago_just_now)
+        diffMin < 91 -> stringResource(CommonR.string.time_until_minutes, diffMin)
         else -> {
-            stringResource(R.string.time_until_hours, diffMin / 60)
+            stringResource(CommonR.string.time_until_hours, diffMin / 60)
         }
     }
 }
@@ -170,18 +170,27 @@ fun shortRelativeTimeUntil(timestamp: Timestamp): String {
 }
 
 @Composable
+fun relativeTimeMinutes(minutes: Int): String {
+    return when {
+        minutes == 0 -> stringResource(de.dh.raaps.ui.R.string.relative_time_now)
+        minutes > 0 -> stringResource(de.dh.raaps.ui.R.string.relative_time_minutes_positive, minutes)
+        else -> stringResource(de.dh.raaps.ui.R.string.relative_time_minutes_negative, minutes)
+    }
+}
+
+@Composable
 fun withinTimeDescription(minutes: Int): String {
-    if (minutes <= 0) return stringResource(R.string.within_time_just_now)
+    if (minutes <= 0) return stringResource(CommonR.string.within_time_just_now)
     val hours = minutes / 60
     val mins = minutes % 60
 
     val timeStr = when {
-        hours == 0 -> stringResource(R.string.duration_minutes_format, mins)
-        mins == 0 -> stringResource(R.string.duration_hours_format, hours)
-        else -> stringResource(R.string.duration_hours_and_minutes_format, hours, mins)
+        hours == 0 -> stringResource(CommonR.string.duration_minutes_format, mins)
+        mins == 0 -> stringResource(CommonR.string.duration_hours_format, hours)
+        else -> stringResource(CommonR.string.duration_hours_and_minutes_format, hours, mins)
     }
 
-    return "innerhalb von $timeStr"
+    return stringResource(de.dh.raaps.ui.R.string.within_time_format, timeStr)
 }
 
 /////////////////////////////////////////////// Glucose & Therapy //////////////////////////////////////
@@ -189,16 +198,16 @@ fun withinTimeDescription(minutes: Int): String {
 @Composable
 fun glucoseUnitLabel(unit: GlucoseUnit = LocalGlucoseUnit.current): String {
     return when (unit) {
-        GlucoseUnit.MG_DL -> stringResource(R.string.glucose_unit_mgdl)
-        GlucoseUnit.MMOL -> stringResource(R.string.glucose_unit_mmol)
+        GlucoseUnit.MG_DL -> stringResource(CommonR.string.glucose_unit_mgdl)
+        GlucoseUnit.MMOL -> stringResource(CommonR.string.glucose_unit_mmol)
     }
 }
 
 @Composable
 fun isfUnitLabel(unit: GlucoseUnit = LocalGlucoseUnit.current): String {
     return when (unit) {
-        GlucoseUnit.MG_DL -> stringResource(R.string.unit_mgdl_per_u)
-        GlucoseUnit.MMOL -> stringResource(R.string.unit_mmol_per_u)
+        GlucoseUnit.MG_DL -> stringResource(CommonR.string.unit_mgdl_per_u)
+        GlucoseUnit.MMOL -> stringResource(CommonR.string.unit_mmol_per_u)
     }
 }
 
@@ -226,8 +235,8 @@ fun isfValue(
     val valStr = value?.toString(unit) ?: return default
     return if (withUnit) {
         val unitStr = when (unit) {
-            GlucoseUnit.MG_DL -> stringResource(R.string.unit_mgdl_per_u)
-            GlucoseUnit.MMOL -> stringResource(R.string.unit_mmol_per_u)
+            GlucoseUnit.MG_DL -> stringResource(CommonR.string.unit_mgdl_per_u)
+            GlucoseUnit.MMOL -> stringResource(CommonR.string.unit_mmol_per_u)
         }
         "$valStr $unitStr"
     } else valStr
@@ -243,8 +252,8 @@ fun deltaValue(
     val valStr = value?.toDiff(unit) ?: return default
     return if (withUnit) {
         val unitStr = when (unit) {
-            GlucoseUnit.MG_DL -> stringResource(R.string.glucose_unit_mgdl)
-            GlucoseUnit.MMOL -> stringResource(R.string.glucose_unit_mmol)
+            GlucoseUnit.MG_DL -> stringResource(CommonR.string.glucose_unit_mgdl)
+            GlucoseUnit.MMOL -> stringResource(CommonR.string.glucose_unit_mmol)
         }
         "$valStr $unitStr"
     } else valStr
@@ -254,7 +263,7 @@ fun deltaValue(
 fun crValue(value: Double?, default: String = "-", withUnit: Boolean = true): String {
     return value?.let {
         val valStr = String.format(Locale.getDefault(), "%.1f", it)
-        if (withUnit) "$valStr " + stringResource(R.string.unit_g_per_u)
+        if (withUnit) "$valStr " + stringResource(CommonR.string.unit_g_per_u)
         else valStr
     } ?: default
 }

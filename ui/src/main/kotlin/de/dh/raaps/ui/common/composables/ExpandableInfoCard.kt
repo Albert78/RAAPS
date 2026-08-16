@@ -30,7 +30,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import de.dh.raaps.common.R
+import de.dh.raaps.common.R as CommonR
 import de.dh.raaps.ui.common.icons.Icon_Clear
 import de.dh.raaps.ui.common.icons.Icon_Info
 import de.dh.raaps.ui.common.theme.AppTheme
@@ -98,7 +98,7 @@ fun ExpandableInfoCard(
                                 if (collapsible) {
                                     Icon(
                                         imageVector = Icon_Clear,
-                                        contentDescription = stringResource(R.string.cd_close),
+                                        contentDescription = stringResource(CommonR.string.cd_close),
                                         tint = MaterialTheme.colorScheme.onSurface,
                                         modifier = Modifier
                                             .clickable { expanded = false }

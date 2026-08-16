@@ -31,6 +31,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import de.dh.raaps.common.R as CommonR
 import de.dh.raaps.common.model.ID_MEAL_STANDARD
 import de.dh.raaps.common.model.MealType
 import de.dh.raaps.ui.R
@@ -107,7 +108,7 @@ fun FoodTypeSelector(
                     IconButton(onClick = { expanded = true }) {
                         Icon(
                             imageVector = Icons.Default.KeyboardArrowDown,
-                            contentDescription = stringResource(de.dh.raaps.common.R.string.cd_expand),
+                            contentDescription = stringResource(CommonR.string.cd_expand),
                             tint = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }
@@ -128,7 +129,7 @@ fun FoodTypeSelector(
                     IconButton(onClick = { expanded = false }) {
                         Icon(
                             imageVector = Icons.Default.KeyboardArrowUp,
-                            contentDescription = stringResource(de.dh.raaps.common.R.string.cd_collapse),
+                            contentDescription = stringResource(CommonR.string.cd_collapse),
                             tint = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }

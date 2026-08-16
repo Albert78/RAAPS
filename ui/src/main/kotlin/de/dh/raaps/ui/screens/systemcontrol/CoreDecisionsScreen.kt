@@ -31,6 +31,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import de.dh.raaps.common.R as CommonR
 import de.dh.raaps.common.model.InsulinAmount
 import de.dh.raaps.core.aps.CoreInsight
 import de.dh.raaps.core.aps.CoreReasoning
@@ -72,7 +73,7 @@ fun CoreDecisionsContent(
                     IconButton(onClick = onNavigateUp) {
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = stringResource(id = de.dh.raaps.common.R.string.cd_navigate_up)
+                            contentDescription = stringResource(id = CommonR.string.cd_navigate_up)
                         )
                     }
                 }
@@ -111,8 +112,8 @@ fun InsightCard(insight: CoreInsight) {
     val dateTimeFormat = remember { SimpleDateFormat("HH:mm:ss", Locale.getDefault()) }
     val glucoseUnit = LocalGlucoseUnit.current
     val unitStr = when (glucoseUnit) {
-        de.dh.raaps.common.model.data.GlucoseUnit.MG_DL -> stringResource(de.dh.raaps.common.R.string.glucose_unit_mgdl)
-        de.dh.raaps.common.model.data.GlucoseUnit.MMOL -> stringResource(de.dh.raaps.common.R.string.glucose_unit_mmol)
+        de.dh.raaps.common.model.data.GlucoseUnit.MG_DL -> stringResource(CommonR.string.glucose_unit_mgdl)
+        de.dh.raaps.common.model.data.GlucoseUnit.MMOL -> stringResource(CommonR.string.glucose_unit_mmol)
     }
 
     Card(

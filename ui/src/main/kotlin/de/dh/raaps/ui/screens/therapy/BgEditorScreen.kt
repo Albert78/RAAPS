@@ -49,6 +49,7 @@ import de.dh.raaps.common.model.TARGET_MIN
 import de.dh.raaps.common.model.data.BgBlock
 import de.dh.raaps.common.model.data.BgValue
 import de.dh.raaps.common.model.data.Minutes
+import de.dh.raaps.common.R as CommonR
 import de.dh.raaps.ui.R
 import de.dh.raaps.ui.common.DefaultSteppingStrategy
 import de.dh.raaps.ui.common.composables.EditableValueStepper
@@ -118,8 +119,8 @@ fun BgEditorContent(
                         Icon(
                             imageVector = if (hasChanges) Icons.Default.Close else Icons.AutoMirrored.Filled.ArrowBack,
                             contentDescription = stringResource(
-                                id = if (hasChanges) de.dh.raaps.common.R.string.cd_cancel
-                                else de.dh.raaps.common.R.string.cd_navigate_up
+                                id = if (hasChanges) CommonR.string.cd_cancel
+                                else CommonR.string.cd_navigate_up
                             )
                         )
                     }
@@ -128,7 +129,7 @@ fun BgEditorContent(
                     IconButton(onClick = onSave) {
                         Icon(
                             imageVector = Icons.Default.Save,
-                            contentDescription = stringResource(id = de.dh.raaps.common.R.string.action_save)
+                            contentDescription = stringResource(id = CommonR.string.action_save)
                         )
                     }
                 },
@@ -182,7 +183,7 @@ fun BgEditorContent(
                     showDiscardConfirmation = false
                     onSave()
                 }) {
-                    Text(stringResource(id = de.dh.raaps.common.R.string.action_save))
+                    Text(stringResource(id = CommonR.string.action_save))
                 }
             },
             dismissButton = {
@@ -313,7 +314,7 @@ private fun BgBlockList(
                                 IconButton(onClick = { removeBlock(index) }) {
                                     Icon(
                                         imageVector = Icons.Default.Delete,
-                                        contentDescription = stringResource(id = de.dh.raaps.common.R.string.action_delete)
+                                        contentDescription = stringResource(id = CommonR.string.action_delete)
                                     )
                                 }
                             }

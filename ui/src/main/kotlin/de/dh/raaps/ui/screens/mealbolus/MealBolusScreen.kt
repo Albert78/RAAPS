@@ -49,6 +49,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
+import de.dh.raaps.common.R as CommonR
 import de.dh.raaps.common.model.BOLUS_MAX
 import de.dh.raaps.common.model.BOLUS_MIN
 import de.dh.raaps.common.model.CARBS_KE_MAX
@@ -362,7 +363,7 @@ fun CalculationDetailsSelector(
 
                     Icon(
                         imageVector = Icons.Default.KeyboardArrowDown,
-                        contentDescription = stringResource(de.dh.raaps.common.R.string.cd_expand),
+                        contentDescription = stringResource(CommonR.string.cd_expand),
                         tint = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
@@ -380,7 +381,7 @@ fun CalculationDetailsSelector(
                     )
                     Icon(
                         imageVector = Icons.Default.KeyboardArrowUp,
-                        contentDescription = stringResource(de.dh.raaps.common.R.string.cd_collapse),
+                        contentDescription = stringResource(CommonR.string.cd_collapse),
                         tint = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
@@ -553,7 +554,7 @@ fun LockErrorCard(owner: String?, onNavigateUp: () -> Unit) {
             )
             Spacer(Modifier.height(16.dp))
             PrimaryButton(onClick = onNavigateUp) {
-                Text(stringResource(id = de.dh.raaps.common.R.string.cd_navigate_up))
+                Text(stringResource(id = CommonR.string.cd_navigate_up))
             }
         }
     }

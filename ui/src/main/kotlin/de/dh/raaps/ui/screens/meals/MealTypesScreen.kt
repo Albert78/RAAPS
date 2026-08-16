@@ -30,6 +30,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import de.dh.raaps.common.R as CommonR
 import de.dh.raaps.common.model.MealType
 import de.dh.raaps.ui.R
 import de.dh.raaps.ui.common.composables.screenTitle
@@ -69,7 +70,7 @@ fun MealTypesContent(
                     IconButton(onClick = onNavigateUp) {
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = stringResource(id = de.dh.raaps.common.R.string.cd_navigate_up)
+                            contentDescription = stringResource(id = CommonR.string.cd_navigate_up)
                         )
                     }
                 }

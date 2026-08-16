@@ -27,7 +27,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import de.dh.raaps.common.R
+import de.dh.raaps.common.R as CommonR
 import de.dh.raaps.ui.common.icons.Icon_Screen_Back
 import de.dh.raaps.ui.common.theme.AppTheme
 
@@ -82,7 +82,7 @@ fun ScreenTitlePreview() {
                         IconButton(onClick = {}) {
                             Icon(
                                 imageVector = Icon_Screen_Back,
-                                contentDescription = stringResource(R.string.cd_navigate_up)
+                                contentDescription = stringResource(CommonR.string.cd_navigate_up)
                             )
                         }
                     },

@@ -65,6 +65,7 @@ import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import de.dh.raaps.common.R as CommonR
 import de.dh.raaps.common.model.BASAL_MAX
 import de.dh.raaps.common.model.BASAL_MIN
 import de.dh.raaps.common.model.CR_MAX
@@ -181,7 +182,7 @@ fun InsulinProfileList(
                     IconButton(onClick = onNavigateUp) {
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = stringResource(id = de.dh.raaps.common.R.string.cd_navigate_up)
+                            contentDescription = stringResource(id = CommonR.string.cd_navigate_up)
                         )
                     }
                 }
@@ -314,8 +315,8 @@ fun InsulinProfileDetailEditor(
                         Icon(
                             imageVector = if (hasChanges) Icons.Default.Close else Icons.AutoMirrored.Filled.ArrowBack,
                             contentDescription = stringResource(
-                                id = if (hasChanges) de.dh.raaps.common.R.string.cd_cancel
-                                else de.dh.raaps.common.R.string.cd_navigate_up
+                                id = if (hasChanges) CommonR.string.cd_cancel
+                                else CommonR.string.cd_navigate_up
                             )
                         )
                     }
@@ -381,7 +382,7 @@ fun InsulinProfileDetailEditor(
                     )
                     1 -> TherapyBlockListEditor(
                         title = stringResource(id = R.string.insulin_profile_editor_basal_title),
-                        description = stringResource(id = R.string.insulin_profile_editor_basal_desc) + " " + stringResource(R.string.insulin_profile_editor_unit_info_format, stringResource(de.dh.raaps.common.R.string.unit_u_per_h)),
+                        description = stringResource(id = R.string.insulin_profile_editor_basal_desc) + " " + stringResource(R.string.insulin_profile_editor_unit_info_format, stringResource(CommonR.string.unit_u_per_h)),
                         blocks = basalBlocks,
                         onBlocksChanged = { basalBlocks = it },
                         step = 0.05,
@@ -419,7 +420,7 @@ fun InsulinProfileDetailEditor(
                     }
                     3 -> TherapyBlockListEditor(
                         title = stringResource(id = R.string.insulin_profile_editor_cr_title),
-                        description = stringResource(id = R.string.insulin_profile_editor_cr_desc) + " " + stringResource(R.string.insulin_profile_editor_unit_info_format, stringResource(de.dh.raaps.common.R.string.unit_g_per_u)),
+                        description = stringResource(id = R.string.insulin_profile_editor_cr_desc) + " " + stringResource(R.string.insulin_profile_editor_unit_info_format, stringResource(CommonR.string.unit_g_per_u)),
                         blocks = crBlocks,
                         onBlocksChanged = { crBlocks = it },
                         step = 0.1,
@@ -445,7 +446,7 @@ fun InsulinProfileDetailEditor(
                     },
                     enabled = isNameValid && diaValue > 0 && peakValue > 0
                 ) {
-                    Text(stringResource(id = de.dh.raaps.common.R.string.action_save))
+                    Text(stringResource(id = CommonR.string.action_save))
                 }
             },
             dismissButton = {
@@ -767,7 +768,7 @@ fun BlockRow(
 
             if (onDelete != null) {
                 IconButton(onClick = onDelete) {
-                    Icon(Icons.Default.Delete, contentDescription = stringResource(id = de.dh.raaps.common.R.string.action_delete))
+                    Icon(Icons.Default.Delete, contentDescription = stringResource(id = CommonR.string.action_delete))
                 }
             } else {
                 Box(modifier = Modifier.size(48.dp))

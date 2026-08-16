@@ -31,6 +31,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import de.dh.raaps.common.R as CommonR
 import com.patrykandpatrick.vico.compose.cartesian.CartesianChartHost
 import com.patrykandpatrick.vico.compose.cartesian.CartesianDrawingContext
 import com.patrykandpatrick.vico.compose.cartesian.CartesianMeasuringContext
@@ -300,8 +301,8 @@ fun BgHistoryChart(
         }
     }
 
-    val mgdlStr = stringResource(de.dh.raaps.common.R.string.glucose_unit_mgdl)
-    val mmolStr = stringResource(de.dh.raaps.common.R.string.glucose_unit_mmol)
+    val mgdlStr = stringResource(CommonR.string.glucose_unit_mgdl)
+    val mmolStr = stringResource(CommonR.string.glucose_unit_mmol)
 
     val marker = if (showMarkers) rememberDefaultCartesianMarker(
         label = rememberAxisLabelComponent(style = TextStyle(color = ExtendedTheme.semanticColors.highContrast)),
