@@ -19,6 +19,8 @@
     <string name="cd_close">Schließen</string>
     <string name="cd_expand">Aufklappen</string>
     <string name="cd_collapse">Zuklappen</string>
+    <string name="cd_edit">Bearbeiten</string>
+    <string name="cd_delete">Löschen</string>
     <string name="cd_more_options">Überlaufmenü - mehr Optionen anzeigen</string>
     <string name="cd_clear_selection">Selektion aufheben</string>
     <string name="cd_delete_selected_items">Selektierte Einträge löschen</string>

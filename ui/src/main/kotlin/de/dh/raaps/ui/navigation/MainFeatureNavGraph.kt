@@ -21,6 +21,7 @@ import de.dh.raaps.common.navigation.CurrentTherapySettingsRoute
 import de.dh.raaps.common.navigation.DashboardRoute
 import de.dh.raaps.common.navigation.FeatureNavGraph
 import de.dh.raaps.common.navigation.FoodDatabaseRoute
+import de.dh.raaps.common.navigation.HistoricalMealRoute
 import de.dh.raaps.common.navigation.HistoryRoute
 import de.dh.raaps.common.navigation.InsulinProfileEditorRoute
 import de.dh.raaps.common.navigation.MealBolusRoute
@@ -48,6 +49,8 @@ import de.dh.raaps.ui.screens.history.HistoryScreen
 import de.dh.raaps.ui.screens.insulinprofile.InsulinProfileEditorScreen
 import de.dh.raaps.ui.screens.mealbolus.MealBolusScreen
 import de.dh.raaps.ui.screens.mealbolus.MealBolusViewModel
+import de.dh.raaps.ui.screens.meals.EditHistoricalMealScreen
+import de.dh.raaps.ui.screens.meals.EditHistoricalMealViewModel
 import de.dh.raaps.ui.screens.meals.MealTypeEditorScreen
 import de.dh.raaps.ui.screens.meals.MealTypeEditorViewModel
 import de.dh.raaps.ui.screens.meals.MealTypesScreen
@@ -105,7 +108,7 @@ class MainFeatureNavGraph(
                     onNavigateToPreferences = { navViewModel.push(PreferencesMainRoute) },
                     onNavigateToAlarms = { navViewModel.push(AlarmsRoute) },
                     onNavigateToTherapySettings = { navViewModel.push(CurrentTherapySettingsRoute) },
-                    onNavigateToMealBolus = { navViewModel.push(MealBolusRoute()) },
+                    onNavigateToMealBolus = { navViewModel.push(MealBolusRoute) },
                     onAdjustmentClick = { navViewModel.push(TherapyAdjustmentRoute) },
                     onHistoryChartClick = { navViewModel.push(HistoryRoute) },
                     extraContent = extraDashboardContent
@@ -167,7 +170,7 @@ class MainFeatureNavGraph(
 
             is MealBolusRoute -> NavEntry(key) {
                 val vm: MealBolusViewModel = viewModel(
-                    factory = MealBolusViewModel.Companion.Factory(registry, key.mealId)
+                    factory = MealBolusViewModel.Companion.Factory(registry)
                 )
 
                 // Leave MealBolus screen to release the therapy manager lock when the user
@@ -177,6 +180,16 @@ class MainFeatureNavGraph(
                 }
 
                 MealBolusScreen(
+                    viewModel = vm,
+                    onNavigateUp = { navViewModel.pop() }
+                )
+            }
+
+            is HistoricalMealRoute -> NavEntry(key) {
+                val vm: EditHistoricalMealViewModel = viewModel(
+                    factory = EditHistoricalMealViewModel.Companion.Factory(registry, key.mealId)
+                )
+                EditHistoricalMealScreen(
                     viewModel = vm,
                     onNavigateUp = { navViewModel.pop() }
                 )
@@ -249,8 +262,8 @@ class MainFeatureNavGraph(
                 MealsScreen(
                     viewModel = vm,
                     onNavigateToMealTypes = { navViewModel.push(MealTypesRoute) },
-                    onNavigateToMealBolus = { navViewModel.push(MealBolusRoute()) },
-                    onEditMeal = { meal -> navViewModel.push(MealBolusRoute(mealId = meal.id)) },
+                    onNavigateToMealBolus = { navViewModel.push(MealBolusRoute) },
+                    onEditMeal = { meal -> navViewModel.push(HistoricalMealRoute(mealId = meal.id)) },
                     onDeleteMeal = { vm.deleteMeal(it) },
                     onNavigateUp = { navViewModel.pop() }
                 )

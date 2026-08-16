@@ -1,5 +1,6 @@
 package de.dh.raaps.core.repository
 
+import de.dh.raaps.common.model.ID_UNDEFINED
 import de.dh.raaps.common.model.InsulinAmount
 import de.dh.raaps.common.model.InsulinApplication
 import de.dh.raaps.common.model.InsulinHistory
@@ -149,23 +150,32 @@ class TreatmentRepository(
     }
 
     /**
-     * Adds a new meal entry to the cache and database.
-     * Overwrites if timestamp is the same.
+     * Adds a new meal entry or updates an existing one in the cache and database.
      */
     suspend fun addMealEntry(mealEntry: MealEntry) {
         val historyStart = historyStart()
         mutex.withLock {
             if (mealEntry.timestamp >= historyStart) {
+                // If it's an update, remove the old one by ID
+                if (mealEntry.id != ID_UNDEFINED) {
+                    mealsHistory.removeIf { it.id == mealEntry.id }
+                }
+                // Also maintain the "unique per timestamp" rule for safety
                 mealsHistory.removeIf { it.timestamp == mealEntry.timestamp }
+
                 mealsHistory.add(mealEntry)
                 mealsHistory.sortBy { it.timestamp }
             }
         }
 
-        metabolicEventsDao.deleteMealsInRange(mealEntry.timestamp.ms, mealEntry.timestamp.ms)
-        val id = metabolicEventsDao.insertMeal(mealEntry.toEntity())
-        if (id != -1L) {
-            mealEntry.id = id
+        if (mealEntry.id != ID_UNDEFINED) {
+            metabolicEventsDao.updateMeal(mealEntry.toEntity())
+        } else {
+            metabolicEventsDao.deleteMealsInRange(mealEntry.timestamp.ms, mealEntry.timestamp.ms)
+            val id = metabolicEventsDao.insertMeal(mealEntry.toEntity())
+            if (id != -1L) {
+                mealEntry.id = id
+            }
         }
     }
 
@@ -195,25 +205,33 @@ class TreatmentRepository(
     }
 
     /**
-     * Adds a new insulin application to the cache and database.
+     * Adds a new insulin application or updates an existing one in the cache and database.
      */
     suspend fun addInsulinApplication(insulinApplication: InsulinApplication) {
         val historyStart = historyStart()
         mutex.withLock {
             if (insulinApplication.timestamp >= historyStart) {
+                if (insulinApplication.id != 0L) {
+                    insulinHistory.removeIf { it.id == insulinApplication.id }
+                }
                 insulinHistory.removeIf { it.timestamp == insulinApplication.timestamp && it.origin == insulinApplication.origin }
                 insulinHistory.add(insulinApplication)
                 insulinHistory.sortBy { it.timestamp }
             }
         }
-        metabolicEventsDao.deleteInsulinApplicationsInRange(
-            insulinApplication.timestamp.ms,
-            insulinApplication.timestamp.ms,
-            insulinApplication.origin
-        )
-        val id = metabolicEventsDao.insertInsulinApplication(insulinApplication.toEntity())
-        if (id != -1L) {
-            insulinApplication.id = id
+
+        if (insulinApplication.id != 0L) {
+            metabolicEventsDao.updateInsulinApplication(insulinApplication.toEntity())
+        } else {
+            metabolicEventsDao.deleteInsulinApplicationsInRange(
+                insulinApplication.timestamp.ms,
+                insulinApplication.timestamp.ms,
+                insulinApplication.origin
+            )
+            val id = metabolicEventsDao.insertInsulinApplication(insulinApplication.toEntity())
+            if (id != -1L) {
+                insulinApplication.id = id
+            }
         }
     }
 

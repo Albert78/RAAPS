@@ -154,10 +154,7 @@ fun MealBolusContent(
         topBar = {
             TopAppBar(
                 title = {
-                    Text(
-                        if (uiState.isEditMode) stringResource(R.string.meal_edit_screen_title)
-                        else stringResource(R.string.meal_add_screen_title)
-                    )
+                    Text(stringResource(R.string.meal_add_screen_title))
                 },
                 navigationIcon = {
                     IconButton(onClick = onNavigateUp) {
@@ -188,10 +185,6 @@ fun MealBolusContent(
                 if (uiState.lockError) {
                     LockErrorCard(uiState.lockBusyOwner, onNavigateUp)
                 } else {
-                    if (uiState.isEditMode) {
-                        EditWarningCard()
-                    }
-
                     // Mahlzeit Card (Carbs + Food Type + Meal Time)
                     Card(
                         modifier = Modifier.fillMaxWidth(),
@@ -262,57 +255,55 @@ fun MealBolusContent(
                     }
 
                     // Insulin Card (Final Insulin Stepper)
-                    if (!uiState.isEditMode) {
-                        Card(
-                            modifier = Modifier.fillMaxWidth(),
-                            shape = RoundedCornerShape(12.dp),
-                            border = BorderStroke(2.dp, AppColorBlue.copy(alpha = 0.3f)),
-                            colors = CardDefaults.cardColors(
-                                containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
-                            )
+                    Card(
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(12.dp),
+                        border = BorderStroke(2.dp, AppColorBlue.copy(alpha = 0.3f)),
+                        colors = CardDefaults.cardColors(
+                            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
+                        )
+                    ) {
+                        Column(
+                            modifier = Modifier
+                                .padding(16.dp)
+                                .fillMaxWidth(),
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            verticalArrangement = Arrangement.spacedBy(16.dp)
                         ) {
-                            Column(
-                                modifier = Modifier
-                                    .padding(16.dp)
-                                    .fillMaxWidth(),
-                                horizontalAlignment = Alignment.CenterHorizontally,
-                                verticalArrangement = Arrangement.spacedBy(16.dp)
-                            ) {
-                                Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                                    Text(
-                                        text = stringResource(R.string.meal_bolus_insulin_label),
-                                        style = MaterialTheme.typography.titleMedium
-                                    )
-                                    Spacer(Modifier.height(8.dp))
+                            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                Text(
+                                    text = stringResource(R.string.meal_bolus_insulin_label),
+                                    style = MaterialTheme.typography.titleMedium
+                                )
+                                Spacer(Modifier.height(8.dp))
 
-                                    CalculationDetailsSelector(uiState = uiState)
-                                    EditableValueStepper(
-                                        currentValue = uiState.manualBolus.iu,
-                                        onValueChange = onManualBolusChange,
-                                        minValue = BOLUS_MIN,
-                                        maxValue = BOLUS_MAX,
-                                        steppingStrategy = DefaultSteppingStrategy(0.1), // 0.1 U steps
-                                        displayStrategy = object : ValueDisplayStrategy {
-                                            override fun format(value: Double): String =
-                                                String.format(Locale.getDefault(), "%.2f", value)
+                                CalculationDetailsSelector(uiState = uiState)
+                                EditableValueStepper(
+                                    currentValue = uiState.manualBolus.iu,
+                                    onValueChange = onManualBolusChange,
+                                    minValue = BOLUS_MIN,
+                                    maxValue = BOLUS_MAX,
+                                    steppingStrategy = DefaultSteppingStrategy(0.1), // 0.1 U steps
+                                    displayStrategy = object : ValueDisplayStrategy {
+                                        override fun format(value: Double): String =
+                                            String.format(Locale.getDefault(), "%.2f", value)
 
-                                            override fun color(value: Double): Color = Color.Unspecified
-                                        },
-                                        suffix = " ${insulinUnitLabel()}"
-                                    )
-                                }
+                                        override fun color(value: Double): Color = Color.Unspecified
+                                    },
+                                    suffix = " ${insulinUnitLabel()}"
+                                )
                             }
                         }
+                    }
 
-                        // Insulin Plan Card
-                        if (uiState.insulinPlan.isNotEmpty()) {
-                            InsulinPlanCard(
-                                plan = uiState.insulinPlan,
-                                isExpanded = uiState.isInsulinPlanExpanded,
-                                onToggleExpanded = onToggleInsulinPlan,
-                                onTimeChange = onPlannedInsulinTimeChange
-                            )
-                        }
+                    // Insulin Plan Card
+                    if (uiState.insulinPlan.isNotEmpty()) {
+                        InsulinPlanCard(
+                            plan = uiState.insulinPlan,
+                            isExpanded = uiState.isInsulinPlanExpanded,
+                            onToggleExpanded = onToggleInsulinPlan,
+                            onTimeChange = onPlannedInsulinTimeChange
+                        )
                     }
 
                     // Bottom Button
@@ -327,13 +318,7 @@ fun MealBolusContent(
                         modifier = Modifier.fillMaxWidth(),
                         enabled = !uiState.isSubmitting && isInputValid
                     ) {
-                        Text(
-                            if (uiState.manualBolus > InsulinAmount.ZERO) {
-                                stringResource(R.string.meal_bolus_administer_button)
-                            } else {
-                                stringResource(R.string.meal_edit_save_button)
-                            }
-                        )
+                        Text(stringResource(R.string.meal_bolus_administer_button))
                     }
                 }
             }
@@ -574,24 +559,6 @@ fun LockErrorCard(owner: String?, onNavigateUp: () -> Unit) {
     }
 }
 
-@Composable
-fun EditWarningCard() {
-    Card(
-        modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(12.dp),
-        border = BorderStroke(2.dp, Red.copy(alpha = 0.5f)),
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.5f)
-        )
-    ) {
-        Text(
-            text = stringResource(R.string.meal_edit_warning_bolus),
-            modifier = Modifier.padding(16.dp),
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onErrorContainer
-        )
-    }
-}
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable

@@ -276,7 +276,7 @@ fun BolusItem(
                         IconButton(onClick = onEditClick, modifier = Modifier.size(24.dp)) {
                             Icon(
                                 imageVector = Icons.Default.Edit,
-                                contentDescription = stringResource(id = R.string.cd_edit),
+                                contentDescription = stringResource(id = CommonR.string.cd_edit),
                                 tint = MaterialTheme.colorScheme.primary,
                                 modifier = Modifier.size(16.dp)
                             )

@@ -195,9 +195,6 @@
     <string name="meal_add_screen_title">Mahlzeit/Korrekturbolus</string>
     <string name="meal_bolus_busy_system">System belegt…</string>
     <string name="meal_bolus_lock_error_message">Das System ist aktuell belegt (%1$s). Bitte versuche es später noch einmal.</string>
-    <string name="meal_edit_screen_title">Mahlzeit bearbeiten</string>
-    <string name="meal_edit_save_button">Speichern</string>
-    <string name="meal_edit_warning_bolus">Bereits verabreichtes Insulin kann hier nicht bearbeitet werden.</string>
     <string name="meal_bolus_carbs_label">Mahlzeit</string>
     <string name="meal_bolus_food_type_label">Nahrungstyp</string>
     <string name="meal_bolus_calculation_title">Berechnung</string>
@@ -213,6 +210,8 @@
     <string name="meal_bolus_meal_time_label">Zeit der Mahlzeit</string>
     <string name="meal_bolus_insulin_plan_title">Insulin-Planung</string>
     <string name="meal_bolus_administer_button">Bestätigen</string>
+    <string name="meal_edit_screen_title">Mahlzeit bearbeiten</string>
+    <string name="meal_edit_save_button">Speichern</string>
 
     <string name="drawer_header_title">RAAPS</string>
     <string name="menu_meals_label">Mahlzeiten</string>
@@ -224,9 +223,12 @@
     <string name="cd_close">Schließen</string>
 
     <string name="meals_screen_title">Mahlzeiten</string>
+    <string name="meal_history_detail_title">Mahlzeit Details</string>
     <string name="meals_empty_list">Keine Mahlzeiten eingetragen</string>
+    <string name="meal_not_found">Mahlzeit nicht gefunden</string>
     <string name="menu_meal_types_label">Mahlzeitentypen</string>
     <string name="meal_types_screen_title">Mahlzeitentypen</string>
+    <string name="meal_type_label">Mahlzeit-Typ</string>
     <string name="meal_type_editor_title_new">Neuer Mahlzeitentyp</string>
     <string name="meal_type_editor_title_edit">Mahlzeitentyp bearbeiten</string>
     <string name="meal_type_name_label">Bezeichnung</string>
@@ -247,7 +249,6 @@
     <string name="bolus_history_add_manual_desc">Gib hier einen Bolus ein, den du dir manuell (Pen, Spritze) und nicht mit der Pumpe verabreicht hast.</string>
     <string name="bolus_origin_pump">Pumpe</string>
     <string name="bolus_origin_manual">Manuell</string>
-    <string name="cd_edit">Bearbeiten</string>
     <string name="system_control_screen_title">Systemsteuerung</string>
     <string name="system_control_tab_cgm">CGM</string>
     <string name="system_control_cgm_source_label">Quelle:</string>

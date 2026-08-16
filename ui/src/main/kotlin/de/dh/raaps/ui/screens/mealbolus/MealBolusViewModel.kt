@@ -32,9 +32,6 @@ import kotlin.time.Duration.Companion.seconds
 
 data class MealBolusUiState(
     val isLoading: Boolean = true,
-    val isEditMode: Boolean = false,
-    val originalMealTimestamp: Timestamp? = null,
-    val originalMealId: Long = ID_UNDEFINED,
     val mealTimestamp: Timestamp = Timestamp.now(),
     val referenceBg: BgValue? = null,
     val referenceTimestamp: Timestamp = Timestamp.now(),
@@ -67,8 +64,7 @@ data class MealBolusUiState(
 )
 
 class MealBolusViewModel(
-    private val registry: SystemRegistry,
-    private val mealId: Long? = null
+    private val registry: SystemRegistry
 ) : ViewModel() {
     private val _uiState = MutableStateFlow(MealBolusUiState())
     val uiState: StateFlow<MealBolusUiState> = _uiState.asStateFlow()
@@ -87,24 +83,15 @@ class MealBolusViewModel(
             val bgSettings = therapyManager.getBgSettings()
             val mealTypes = treatmentRepository.getAllMealTypes()
 
-            val existingMeal = mealId?.let { treatmentRepository.getMeal(it) }
             val baseData = registry.systemManager.getBolusCorrectionCalculator().calculateBaseData()
 
             _uiState.update {
                 it.copy(
                     isLoading = false,
-                    isEditMode = existingMeal != null,
-                    originalMealTimestamp = existingMeal?.timestamp,
-                    originalMealId = existingMeal?.id ?: ID_UNDEFINED,
-                    mealTimestamp = if (existingMeal != null) {
-                        existingMeal.timestamp
-                    } else {
-                        now + Minutes(max(0, baseData.suggestedSea).toShort())
-                    },
-                    seaMinutes = if (existingMeal == null) baseData.suggestedSea else 0,
-                    carbsKe = existingMeal?.let { meal -> meal.carbGrams / 10.0 } ?: baseData.suggestedCarbsKe,
+                    mealTimestamp = now + Minutes(max(0, baseData.suggestedSea).toShort()),
+                    seaMinutes = baseData.suggestedSea,
+                    carbsKe = baseData.suggestedCarbsKe,
                     mealTypes = mealTypes,
-                    selectedMealType = existingMeal?.mealType,
                     referenceBg = baseData.referenceBg,
                     referenceTimestamp = baseData.referenceTimestamp,
                     isProjected = baseData.referenceTimestamp.ms > now.ms,
@@ -168,7 +155,6 @@ class MealBolusViewModel(
     }
 
     fun onManualBolusChange(amount: Double) {
-        if (_uiState.value.isEditMode) return // Prevent bolus change in edit mode
         _uiState.update { it.copy(manualBolus = InsulinAmount(amount).coerceAtLeast(InsulinAmount.ZERO)) }
         updateInsulinPlanTimes() // Re-calculate distribution if manual amount changes
     }
@@ -218,7 +204,7 @@ class MealBolusViewModel(
                     iobPart = result.iobPart,
                     cobPart = result.cobPart,
                     proposedBolus = result.totalProposed,
-                    manualBolus = if (state.isEditMode) InsulinAmount.ZERO else result.totalProposed
+                    manualBolus = result.totalProposed
                 )
             }
             updateInsulinPlanTimes()
@@ -228,11 +214,6 @@ class MealBolusViewModel(
     private fun updateInsulinPlanTimes() {
         viewModelScope.launch {
             val state = _uiState.value
-            if (state.isEditMode) {
-                _uiState.update { it.copy(insulinPlan = emptyList()) }
-                return@launch
-            }
-
             val bolusBaseTime = state.mealTimestamp - Minutes(state.seaMinutes.toShort())
 
             val newPlan = registry.systemManager.getBolusCorrectionCalculator().distributeInsulinPlan(
@@ -255,10 +236,9 @@ class MealBolusViewModel(
             try {
                 val lock = treatmentLock ?: throw IllegalStateException("Action attempted without holding the lock")
 
-                // 1. Record/Update Meal
+                // 1. Record Meal
                 if ((state.carbsKe > 0) && (state.selectedMealType != null)) {
                     val mealEntry = MealEntry(
-                        id = if (state.isEditMode) state.originalMealId else ID_UNDEFINED,
                         timestamp = state.mealTimestamp,
                         carbGrams = state.carbsKe * 10.0,
                         mealType = state.selectedMealType
@@ -266,13 +246,11 @@ class MealBolusViewModel(
                     treatmentRepository.addMealEntry(mealEntry)
 
                     // Schedule reminder
-                    if (!state.isEditMode) {
-                        therapyManager.scheduleMealReminder(lock, state.mealTimestamp)
-                    }
+                    therapyManager.scheduleMealReminder(lock, state.mealTimestamp)
                 }
 
-                // 2. Deliver Insulin Plan (only if NOT editing)
-                if (!state.isEditMode && state.insulinPlan.isNotEmpty()) {
+                // 2. Deliver Insulin Plan
+                if (state.insulinPlan.isNotEmpty()) {
                     val now = Timestamp.now()
                     val immediateBolus = state.insulinPlan.filter { it.timestamp <= now + Minutes(1) }
                         .fold(InsulinAmount.ZERO) { acc, next -> acc + next.amount }
@@ -304,7 +282,7 @@ class MealBolusViewModel(
                 delay(5.seconds)
                 val now = Timestamp.now()
                 _uiState.update { state ->
-                    if (state.isEditMode || state.isSubmitting) return@update state
+                    if (state.isSubmitting) return@update state
 
                     val updatedMealTime = now + Minutes(state.seaMinutes.toShort())
                     val updatedPlan = state.insulinPlan.map { planItem ->
@@ -321,10 +299,10 @@ class MealBolusViewModel(
     }
 
     companion object {
-        class Factory(private val registry: SystemRegistry, private val mealId: Long? = null) : ViewModelProvider.Factory {
+        class Factory(private val registry: SystemRegistry) : ViewModelProvider.Factory {
             @Suppress("UNCHECKED_CAST")
             override fun <T : ViewModel> create(modelClass: Class<T>, extras: CreationExtras): T {
-                return MealBolusViewModel(registry, mealId) as T
+                return MealBolusViewModel(registry) as T
             }
         }
     }
