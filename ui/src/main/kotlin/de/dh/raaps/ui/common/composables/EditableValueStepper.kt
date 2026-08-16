@@ -260,9 +260,10 @@ object StepperDefaults {
     fun smallStyle() = StepperStyle(
         buttonSize = 40.dp,
         spacing = 4.dp,
-        valueWidth = 80.dp,
+        valueWidth = 110.dp,
         textStyle = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
-        suffixStyle = MaterialTheme.typography.bodySmall
+        suffixStyle = MaterialTheme.typography.bodySmall,
+        suffixBelowValue = true
     )
 }
 

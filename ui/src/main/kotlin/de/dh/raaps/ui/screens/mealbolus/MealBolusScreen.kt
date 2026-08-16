@@ -73,7 +73,9 @@ import de.dh.raaps.ui.common.composables.LightGreenA700
 import de.dh.raaps.ui.common.composables.PrimaryButton
 import de.dh.raaps.ui.common.composables.Red
 import de.dh.raaps.ui.common.composables.StepperDefaults
+import de.dh.raaps.ui.common.composables.StepperStyle
 import de.dh.raaps.ui.common.composables.TimeStepper
+import de.dh.raaps.ui.common.composables.TimeStepperDefaults
 import de.dh.raaps.ui.common.composables.Yellow
 import de.dh.raaps.ui.common.composables.contentScrollIndicator
 import de.dh.raaps.ui.common.crValue
@@ -218,7 +220,7 @@ fun MealBolusContent(
                                         override fun color(value: Double): Color = Color.Unspecified
                                     },
                                     suffix = " ${carbsKeUnitLabel()}",
-                                    style = StepperDefaults.smallStyle()
+                                    style = StepperDefaults.defaultStyle()
                                 )
                             }
 
@@ -234,7 +236,7 @@ fun MealBolusContent(
                                         currentTime = uiState.mealTimestamp,
                                         onTimeChange = onMealTimeChange,
                                         modifier = Modifier.fillMaxWidth(),
-                                        style = StepperDefaults.smallStyle()
+                                        style = TimeStepperDefaults.defaultStyle()
                                     )
                                     Spacer(Modifier.height(4.dp))
                                     Text(
@@ -291,7 +293,7 @@ fun MealBolusContent(
                                         override fun color(value: Double): Color = Color.Unspecified
                                     },
                                     suffix = " ${insulinUnitLabel()}",
-                                    style = StepperDefaults.smallStyle()
+                                    style = StepperDefaults.defaultStyle()
                                 )
                             }
                         }
@@ -646,7 +648,7 @@ fun InsulinPlanCard(
                             TimeStepper(
                                 currentTime = item.timestamp,
                                 onTimeChange = { onTimeChange(index, it) },
-                                style = StepperDefaults.compactStyle().copy(valueWidth = 70.dp)
+                                style = TimeStepperDefaults.compactStyle()
                             )
                         }
                         if (index < plan.size - 1) {
