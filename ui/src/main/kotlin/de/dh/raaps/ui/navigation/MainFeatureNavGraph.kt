@@ -170,6 +170,12 @@ class MainFeatureNavGraph(
                     factory = MealBolusViewModel.Companion.Factory(registry, key.mealId)
                 )
 
+                // Leave MealBolus screen to release the therapy manager lock when the user
+                // leaves the screen open.
+                LifecycleEventEffect(Lifecycle.Event.ON_STOP) {
+                    navViewModel.pop()
+                }
+
                 MealBolusScreen(
                     viewModel = vm,
                     onNavigateUp = { navViewModel.pop() }
