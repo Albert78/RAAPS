@@ -137,7 +137,6 @@ class ApsAlgorithmImpl(
             val isf = therapyManager.getIsfFactor(now).mgdl.toInt()
             val bgSettings = therapyManager.getBgSettings()
             val targetBg = bgSettings.first
-            val lowThreshold = bgSettings.second
 
             val historyLimit = now.minusHours(25)
             val insulinHistory = treatmentRepository.getInsulinApplications(from = historyLimit)
@@ -162,11 +161,7 @@ class ApsAlgorithmImpl(
 
             val total = (mealPart + correctionPart - projectedIob + cobPart).coerceAtLeast(InsulinAmount.ZERO)
             val roundedTotal = round(total.iu * 100.0) / 100.0
-            var bolusAmount = InsulinAmount(roundedTotal)
-
-            if (!bgValue.isValid() || bgValue.mgdl <= lowThreshold.mgdl) {
-                bolusAmount = InsulinAmount.ZERO
-            }
+            val bolusAmount = InsulinAmount(roundedTotal)
 
             return BolusParts(
                 mealPart = mealPart,
