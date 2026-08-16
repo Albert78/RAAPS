@@ -5,7 +5,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.platform.LocalLocale
 import androidx.compose.ui.res.stringResource
-import de.dh.raaps.common.R as CommonR
 import de.dh.raaps.common.model.data.BgDelta
 import de.dh.raaps.common.model.data.BgValue
 import de.dh.raaps.common.model.data.GlucoseUnit
@@ -15,6 +14,8 @@ import java.time.LocalDateTime
 import java.time.LocalTime
 import java.time.format.DateTimeFormatter
 import java.util.Locale
+import kotlin.math.abs
+import de.dh.raaps.common.R as CommonR
 
 data class AppFormatters(
     val shortDateTime: DateTimeFormatter,
@@ -174,7 +175,7 @@ fun relativeTimeMinutes(minutes: Int): String {
     return when {
         minutes == 0 -> stringResource(de.dh.raaps.ui.R.string.relative_time_now)
         minutes > 0 -> stringResource(de.dh.raaps.ui.R.string.relative_time_minutes_positive, minutes)
-        else -> stringResource(de.dh.raaps.ui.R.string.relative_time_minutes_negative, minutes)
+        else -> stringResource(de.dh.raaps.ui.R.string.relative_time_minutes_negative, abs(minutes))
     }
 }
 

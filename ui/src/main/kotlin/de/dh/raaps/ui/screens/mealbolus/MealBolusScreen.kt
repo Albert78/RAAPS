@@ -11,7 +11,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
@@ -49,7 +48,6 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
-import de.dh.raaps.common.R as CommonR
 import de.dh.raaps.common.model.BOLUS_MAX
 import de.dh.raaps.common.model.BOLUS_MIN
 import de.dh.raaps.common.model.CARBS_KE_MAX
@@ -75,23 +73,21 @@ import de.dh.raaps.ui.common.composables.LightGreenA700
 import de.dh.raaps.ui.common.composables.PrimaryButton
 import de.dh.raaps.ui.common.composables.Red
 import de.dh.raaps.ui.common.composables.StepperDefaults
-import de.dh.raaps.ui.common.composables.StepperStyle
+import de.dh.raaps.ui.common.composables.TimeStepper
 import de.dh.raaps.ui.common.composables.Yellow
 import de.dh.raaps.ui.common.composables.contentScrollIndicator
 import de.dh.raaps.ui.common.crValue
 import de.dh.raaps.ui.common.glucoseUnitLabel
 import de.dh.raaps.ui.common.glucoseValue
-import de.dh.raaps.ui.common.icons.Icon_Minus
-import de.dh.raaps.ui.common.icons.Icon_Plus
 import de.dh.raaps.ui.common.insulinUnitLabel
 import de.dh.raaps.ui.common.insulinValue
 import de.dh.raaps.ui.common.isfValue
-import de.dh.raaps.ui.common.relativeTimeMinutes
 import de.dh.raaps.ui.common.theme.AppTheme
 import de.dh.raaps.ui.common.time
 import de.dh.raaps.ui.common.withinTimeDescription
 import de.dh.raaps.ui.controls.meal.FoodTypeSelector
 import java.util.Locale
+import de.dh.raaps.common.R as CommonR
 
 @Composable
 fun MealBolusScreen(
@@ -221,7 +217,8 @@ fun MealBolusContent(
 
                                         override fun color(value: Double): Color = Color.Unspecified
                                     },
-                                    suffix = " ${carbsKeUnitLabel()}"
+                                    suffix = " ${carbsKeUnitLabel()}",
+                                    style = StepperDefaults.smallStyle()
                                 )
                             }
 
@@ -236,7 +233,8 @@ fun MealBolusContent(
                                     TimeStepper(
                                         currentTime = uiState.mealTimestamp,
                                         onTimeChange = onMealTimeChange,
-                                        modifier = Modifier.fillMaxWidth()
+                                        modifier = Modifier.fillMaxWidth(),
+                                        style = StepperDefaults.smallStyle()
                                     )
                                     Spacer(Modifier.height(4.dp))
                                     Text(
@@ -292,7 +290,8 @@ fun MealBolusContent(
 
                                         override fun color(value: Double): Color = Color.Unspecified
                                     },
-                                    suffix = " ${insulinUnitLabel()}"
+                                    suffix = " ${insulinUnitLabel()}",
+                                    style = StepperDefaults.smallStyle()
                                 )
                             }
                         }
@@ -663,49 +662,6 @@ fun InsulinPlanCard(
     }
 }
 
-@Composable
-fun TimeStepper(
-    currentTime: Timestamp,
-    onTimeChange: (Timestamp) -> Unit,
-    modifier: Modifier = Modifier,
-    stepMinutes: Int = 5,
-    style: StepperStyle = StepperDefaults.defaultStyle()
-) {
-    val now = Timestamp.now()
-    val diffMin = kotlin.math.round((currentTime.ms - now.ms) / 60000.0).toInt()
-    val relativeText = relativeTimeMinutes(diffMin)
-
-    Row(
-        modifier = modifier,
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.Center
-    ) {
-        IconButton(
-            onClick = { onTimeChange(currentTime - Minutes(stepMinutes.toShort())) },
-            modifier = Modifier.size(style.buttonSize)
-        ) {
-            Icon(Icon_Minus, contentDescription = null, modifier = Modifier.size(style.buttonSize * 0.5f))
-        }
-
-        Spacer(Modifier.width(style.spacing))
-
-        Text(
-            text = relativeText,
-            style = style.textStyle,
-            textAlign = TextAlign.Center,
-            modifier = Modifier.width(style.valueWidth)
-        )
-
-        Spacer(Modifier.width(style.spacing))
-
-        IconButton(
-            onClick = { onTimeChange(currentTime + Minutes(stepMinutes.toShort())) },
-            modifier = Modifier.size(style.buttonSize)
-        ) {
-            Icon(Icon_Plus, contentDescription = null, modifier = Modifier.size(style.buttonSize * 0.5f))
-        }
-    }
-}
 
 @Preview(showBackground = true, name = "0 KE Mode")
 @Composable
