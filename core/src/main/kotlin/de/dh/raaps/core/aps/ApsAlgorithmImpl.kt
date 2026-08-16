@@ -59,37 +59,6 @@ class ApsAlgorithmImpl(
         predictionModel.invalidateInsulinCache()
     }
 
-    /**
-     * Calculate the deviation between previous forecasts and the blood glucose values actually received.
-     * This is done by comparing recent blood glucose slopes to the predicted BGI (Blood Glucose Impact) values.
-     * Deviations typically occur due to unannounced meals or variations in insulin/carb sensitivity
-     * compared to the prediction model.
-     */
-    private suspend fun calcAvgDeviationPerTick(pastTime: Minutes): BgDelta {
-        val endTick = timeline.getNowTick()
-        val startTick = endTick.minus(pastTime)
-
-        val bgStart = sampledBgReadings.getAt(startTick)
-        if (!bgStart.isValid()) return BgDelta(0)
-
-        val bgEnd = sampledBgReadings.getAt(endTick)
-        if (!bgEnd.isValid()) return BgDelta(0)
-
-        val actualChange = bgEnd.mgdl - bgStart.mgdl
-
-        var sumPredictedBgi = 0.0
-        val numTicks = endTick.value - startTick.value
-
-        if (numTicks <= 0) return BgDelta(0)
-
-        predictionModel.forEach(from = startTick + 1, to = endTick) { _, state ->
-            sumPredictedBgi += state.bgi.mgdl
-        }
-
-        val totalDeviation = actualChange - sumPredictedBgi
-        return BgDelta.fromMgDl((totalDeviation / numTicks).toInt())
-    }
-
     override suspend fun getPredictedBg(timestamp: Timestamp): BgValue {
         val tick = timeline.tick(timestamp)
         return predictionModel.withTickState(tick) { it.predictedBg } ?: BgValue.INVALID
@@ -291,6 +260,37 @@ class ApsAlgorithmImpl(
                 )
             }.filter { it.amount > InsulinAmount.ZERO }
         }
+    }
+
+    /**
+     * Calculate the deviation between previous forecasts and the blood glucose values actually received.
+     * This is done by comparing recent blood glucose slopes to the predicted BGI (Blood Glucose Impact) values.
+     * Deviations typically occur due to unannounced meals or variations in insulin/carb sensitivity
+     * compared to the prediction model.
+     */
+    private suspend fun calcAvgDeviationPerTick(pastTime: Minutes): BgDelta {
+        val endTick = timeline.getNowTick()
+        val startTick = endTick.minus(pastTime)
+
+        val bgStart = sampledBgReadings.getAt(startTick)
+        if (!bgStart.isValid()) return BgDelta(0)
+
+        val bgEnd = sampledBgReadings.getAt(endTick)
+        if (!bgEnd.isValid()) return BgDelta(0)
+
+        val actualChange = bgEnd.mgdl - bgStart.mgdl
+
+        var sumPredictedBgi = 0.0
+        val numTicks = endTick.value - startTick.value
+
+        if (numTicks <= 0) return BgDelta(0)
+
+        predictionModel.forEach(from = startTick + 1, to = endTick) { _, state ->
+            sumPredictedBgi += state.bgi.mgdl
+        }
+
+        val totalDeviation = actualChange - sumPredictedBgi
+        return BgDelta.fromMgDl((totalDeviation / numTicks).toInt())
     }
 
     override suspend fun recalculate(): CalculationResult = try {

@@ -178,6 +178,14 @@
     <string name="aps_control_therapy_adjustment_dialog_presets_title">Schnellauswahl</string>
 
     <string name="approx_prefix">ca.</string>
+    <string name="unknown_label">Unbekannt</string>
+    <string name="bg_delta_format">Delta: %1$s %2$s</string>
+    <string name="bg_raw_format">(raw: %1$s)</string>
+    <string name="at_time_format">um %1$s</string>
+    <string name="relative_time_now">Jetzt</string>
+    <string name="relative_time_minutes_positive">+%1$d Min</string>
+    <string name="relative_time_minutes_negative">%1$d Min</string>
+    <string name="within_time_format">innerhalb von %1$s</string>
     <string name="active_carbs_label">Aktive KH</string>
     <string name="active_insulin_label">Akt. Insulin</string>
     <string name="meal_bolus_active_carbs_format">Aktive Kohlenhydrate: %1$s</string>

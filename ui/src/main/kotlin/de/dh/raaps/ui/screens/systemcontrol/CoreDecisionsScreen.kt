@@ -137,7 +137,7 @@ fun InsightCard(insight: CoreInsight) {
             }
             Spacer(modifier = Modifier.height(8.dp))
             Row(modifier = Modifier.fillMaxWidth()) {
-                MetricItem(stringResource(id = R.string.core_insight_label_bg), "${glucoseValue(insight.bgFiltered, glucoseUnit)} (raw: ${glucoseValue(insight.bgOriginal, glucoseUnit)})")
+                MetricItem(stringResource(id = R.string.core_insight_label_bg), "${glucoseValue(insight.bgFiltered, glucoseUnit)} ${stringResource(R.string.bg_raw_format, glucoseValue(insight.bgOriginal, glucoseUnit))}")
                 Spacer(modifier = Modifier.width(16.dp))
                 MetricItem(stringResource(id = R.string.core_insight_label_iob), insulinValue(insight.iobAtPeak.iu))
                 Spacer(modifier = Modifier.width(16.dp))

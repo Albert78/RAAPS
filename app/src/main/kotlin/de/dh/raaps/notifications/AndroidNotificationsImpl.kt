@@ -86,7 +86,7 @@ class AndroidNotificationsImpl(
             GlucoseUnit.MG_DL -> context.getString(CommonR.string.glucose_unit_mgdl)
             GlucoseUnit.MMOL -> context.getString(CommonR.string.glucose_unit_mmol)
         }
-        return "Delta: $valStr $unitStr"
+        return context.getString(UiR.string.bg_delta_format, valStr, unitStr)
     }
 
     override fun createMainAppNotification(glucoseSourceManager: GlucoseSourceManager): Notification {
@@ -171,7 +171,7 @@ class AndroidNotificationsImpl(
             is CoreIssue.NoisyValues -> context.getString(UiR.string.core_issue_noisy_values)
             is CoreIssue.InternalError -> context.getString(
                 UiR.string.core_issue_internal_error,
-                issue.message ?: "Unknown"
+                issue.message ?: context.getString(UiR.string.unknown_label)
             )
             CoreIssue.TherapyLockBusy -> context.getString(UiR.string.core_issue_therapy_lock_busy)
         }

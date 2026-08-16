@@ -86,6 +86,7 @@ import de.dh.raaps.ui.common.icons.Icon_Plus
 import de.dh.raaps.ui.common.insulinUnitLabel
 import de.dh.raaps.ui.common.insulinValue
 import de.dh.raaps.ui.common.isfValue
+import de.dh.raaps.ui.common.relativeTimeMinutes
 import de.dh.raaps.ui.common.theme.AppTheme
 import de.dh.raaps.ui.common.time
 import de.dh.raaps.ui.common.withinTimeDescription
@@ -239,7 +240,7 @@ fun MealBolusContent(
                                     )
                                     Spacer(Modifier.height(4.dp))
                                     Text(
-                                        text = time(uiState.mealTimestamp),
+                                        text = stringResource(R.string.at_time_format, time(uiState.mealTimestamp)),
                                         style = MaterialTheme.typography.bodyMedium,
                                         color = MaterialTheme.colorScheme.primary
                                     )
@@ -511,11 +512,11 @@ fun MealBolusHeader(
                 )
             }
 
-            Text(
-                text = "um ${time(uiState.referenceTimestamp)}",
-                style = MaterialTheme.typography.bodySmall,
-                color = Color.Gray
-            )
+                Text(
+                    text = stringResource(R.string.at_time_format, time(uiState.referenceTimestamp)),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = Color.Gray
+                )
 
             Spacer(Modifier.height(8.dp))
             Text(
@@ -638,7 +639,7 @@ fun InsulinPlanCard(
                                     fontWeight = FontWeight.Bold
                                 )
                                 Text(
-                                    text = time(item.timestamp),
+                                    text = stringResource(R.string.at_time_format, time(item.timestamp)),
                                     style = MaterialTheme.typography.bodySmall,
                                     color = MaterialTheme.colorScheme.primary
                                 )
@@ -672,7 +673,7 @@ fun TimeStepper(
 ) {
     val now = Timestamp.now()
     val diffMin = kotlin.math.round((currentTime.ms - now.ms) / 60000.0).toInt()
-    val relativeText = if (diffMin > 0) "+$diffMin Min" else if (diffMin < 0) "$diffMin Min" else "Sofort"
+    val relativeText = relativeTimeMinutes(diffMin)
 
     Row(
         modifier = modifier,
