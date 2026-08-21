@@ -37,7 +37,7 @@ data class BolusScreenBaseData(
 )
 
 /**
- * Smart bolus calculator that has access to the internal state of the APS algorithm.
+ * Bolus calculator to support the user with carbs, SEA and bolus suggestions.
  */
 interface BolusCorrectionCalculator {
     /**
@@ -72,27 +72,22 @@ interface BolusCorrectionCalculator {
 }
 
 /**
- * A simple bolus correction calculator that does not rely on APS predictions.
- * It uses current blood glucose readings and historical IOB/COB data.
+ * Shared calculation logic for bolus correction.
  */
-class SimpleBolusCorrectionCalculator(
-    private val therapyManager: TherapyManager,
-    private val treatmentRepository: TreatmentRepository,
-    private val carbsInsulinCalculator: CarbsInsulinCalculator,
-    private val glucoseSourceManager: GlucoseSourceManager
-) : BolusCorrectionCalculator {
-    override suspend fun calculateBaseData(): BolusScreenBaseData {
-        val now = Timestamp.now()
-        val currentBg = glucoseSourceManager.currentBg.value?.value ?: BgValue.INVALID
-
+object BolusCalculationMath {
+    suspend fun calculateBaseData(
+        referenceTimestamp: Timestamp,
+        referenceBg: BgValue,
+        therapyManager: TherapyManager
+    ): BolusScreenBaseData {
         val bgSettings = therapyManager.getBgSettings()
         val targetBg = bgSettings.first
-        val isf = therapyManager.getIsfFactor(now)
-        val cr = therapyManager.getCrFactor(now)
+        val isf = therapyManager.getIsfFactor(referenceTimestamp)
+        val cr = therapyManager.getCrFactor(referenceTimestamp)
 
         var suggestedCarbsKe = 0.0
-        if (currentBg.isValid() && currentBg < targetBg) {
-            val bgDiff = targetBg - currentBg
+        if (referenceBg.isValid() && referenceBg < targetBg) {
+            val bgDiff = targetBg - referenceBg
             val carbsGrams = convertToCarbsFromBgDelta(bgDiff, isf, cr)
             // Round up to whole 5g
             val roundedCarbsGrams = ceil(carbsGrams / 5.0) * 5.0
@@ -100,62 +95,56 @@ class SimpleBolusCorrectionCalculator(
         }
 
         return BolusScreenBaseData(
-            referenceTimestamp = now,
-            referenceBg = currentBg,
+            referenceTimestamp = referenceTimestamp,
+            referenceBg = referenceBg,
             suggestedCarbsKe = suggestedCarbsKe,
-            suggestedSea = calculateSuggestedSea()
+            suggestedSea = calculateSuggestedSea(referenceBg, therapyManager)
         )
     }
 
-    override suspend fun calculateSuggestedSea(): Int {
+    suspend fun calculateSuggestedSea(currentBg: BgValue, therapyManager: TherapyManager): Int {
+        if (currentBg.isInvalid()) return 0
+
         val bgSettings = therapyManager.getBgSettings()
         val targetBg = bgSettings.first
         val lowThreshold = bgSettings.second
 
-        val currentBg = glucoseSourceManager.currentBg.value?.value ?: BgValue.INVALID
-
-        if (currentBg.isInvalid()) return 0
-
-        if (currentBg.mgdl <= lowThreshold.mgdl) {
-            return -15
-        }
+        if (currentBg.mgdl <= lowThreshold.mgdl) return -15 // Suggest 15 min delay for bolus if low
 
         val diff = currentBg.mgdl - targetBg.mgdl
         if (diff <= 0) return 0
 
         // Simple rule: 5 minutes per 20 mg/dL above target, max 45 min
-        val suggested = (diff / 20) * 5
-        return suggested.coerceIn(0, 45)
+        return ((diff / 20) * 5).coerceIn(0, 45)
     }
 
-    override suspend fun calculateBolusParts(
+    suspend fun calculateBolusParts(
         carbsKe: Double,
-        mealTimestamp: Timestamp,
-        referenceTimestamp: Timestamp
+        referenceBg: BgValue,
+        referenceTimestamp: Timestamp,
+        therapyManager: TherapyManager,
+        treatmentRepository: TreatmentRepository,
+        carbsInsulinCalculator: CarbsInsulinCalculator
     ): BolusParts {
-        val now = Timestamp.now()
         val settings = therapyManager.getCurrentTherapySettings()
         val dia = settings.insulinProfile.dia
         val peak = settings.insulinProfile.peak
 
-        val cr = therapyManager.getCrFactor(now)
-        val isf = therapyManager.getIsfFactor(now).mgdl.toInt()
-        val bgSettings = therapyManager.getBgSettings()
-        val targetBg = bgSettings.first
+        val cr = therapyManager.getCrFactor(referenceTimestamp)
+        val isf = therapyManager.getIsfFactor(referenceTimestamp).mgdl.toInt()
+        val targetBg = therapyManager.getBgSettings().first
 
-        val historyLimit = now.minusHours(METABOLIC_EVENTS_HISTORY_HOURS)
+        val historyLimit = referenceTimestamp.minusHours(METABOLIC_EVENTS_HISTORY_HOURS)
         val insulinHistory = treatmentRepository.getInsulinApplications(from = historyLimit)
         val mealsHistory = treatmentRepository.getMeals(from = historyLimit)
 
         val projectedIob = carbsInsulinCalculator.iob(insulinHistory, referenceTimestamp, dia, peak)
         val projectedCob = carbsInsulinCalculator.cob(mealsHistory, referenceTimestamp)
 
-        val currentBg = glucoseSourceManager.currentBg.value?.value ?: BgValue.INVALID
-
         val carbsGrams = carbsKe * 10.0
         val mealPart = convertToInsulinAmountFromCarbs(carbsGrams, cr)
 
-        val bgMgdl = if (currentBg.isValid()) currentBg.mgdl else targetBg.mgdl
+        val bgMgdl = if (referenceBg.isValid()) referenceBg.mgdl else targetBg.mgdl
         val bgDiff = bgMgdl - targetBg.mgdl
 
         val correctionPart = convertToInsulinAmountFromBgDelta(BgDelta(bgDiff.toShort()), BgDelta(isf.toShort()))
@@ -172,89 +161,58 @@ class SimpleBolusCorrectionCalculator(
             cobPart = cobPart,
             totalProposed = bolusAmount,
             cobGrams = projectedCob,
-            calculationBg = currentBg,
+            calculationBg = referenceBg,
             calculationTimestamp = referenceTimestamp
         )
     }
 
-    override suspend fun distributeInsulinPlan(
+    fun distributeInsulinPlan(
         manualBolus: InsulinAmount,
         correctionPart: InsulinAmount,
         mealType: MealType?,
         mealTimestamp: Timestamp,
+        suggestedOffset: Int,
         existingPlan: List<PlannedInsulin>
     ): List<PlannedInsulin> {
-        if (manualBolus <= InsulinAmount.ZERO) {
-            return emptyList()
-        }
+        if (manualBolus <= InsulinAmount.ZERO) return emptyList()
 
-        val sea = calculateSuggestedSea()
-        val suggestedOffset = if (sea < 0) abs(sea) else 0
+        val actualOffset = if (suggestedOffset < 0) abs(suggestedOffset) else 0
 
         if (mealType == null) {
-            return distributeSingleBolus(manualBolus, mealTimestamp, suggestedOffset, existingPlan)
+            val existing = existingPlan.getOrNull(0)
+            val isUserModified = existing?.isUserModified == true
+
+            // If user modified the offset, keep their offset but apply it to the base time
+            val offset = if (isUserModified) existing.offsetMinutes else actualOffset
+            return listOf(
+                PlannedInsulin(manualBolus, mealTimestamp + Minutes(offset.toShort()), offset, "Bolus", isUserModified)
+            )
         }
 
-        val totalAmount = manualBolus.iu
-        val correction = correctionPart.iu
-
-        val roundedAmounts = calculateComponentAmounts(totalAmount, correction, mealType)
+        val roundedAmounts = calculateComponentAmounts(manualBolus.iu, correctionPart.iu, mealType)
 
         return mealType.components.mapIndexed { index, component ->
             val amount = InsulinAmount(roundedAmounts[index])
             val delayFromBase = if (index == 0) 0 else component.peakMinutes.value.toInt()
-            val finalOffset = suggestedOffset + delayFromBase
+            val finalOffset = actualOffset + delayFromBase
 
             val existing = existingPlan.getOrNull(index)
             val isUserModified = existing?.isUserModified == true
 
-            val newTimestamp = if (isUserModified) {
-                mealTimestamp + Minutes(existing.offsetMinutes.toShort())
-            } else {
-                mealTimestamp + Minutes(finalOffset.toShort())
-            }
+            // If user modified the offset, apply their offset to the new base time
+            val offset = if (isUserModified) existing.offsetMinutes else finalOffset
 
             PlannedInsulin(
                 amount = amount,
-                timestamp = newTimestamp,
-                offsetMinutes = if (isUserModified) existing.offsetMinutes else finalOffset,
+                timestamp = mealTimestamp + Minutes(offset.toShort()),
+                offsetMinutes = offset,
                 description = if (mealType.components.size > 1) "Teil ${index + 1} (${component.weight}%)" else "Bolus",
                 isUserModified = isUserModified
             )
         }.filter { it.amount > InsulinAmount.ZERO }
     }
 
-    private fun distributeSingleBolus(
-        manualBolus: InsulinAmount,
-        mealTimestamp: Timestamp,
-        suggestedOffset: Int,
-        existingPlan: List<PlannedInsulin>
-    ): List<PlannedInsulin> {
-        val existing = existingPlan.getOrNull(0)
-        val isUserModified = existing?.isUserModified == true
-
-        val newTimestamp = if (isUserModified) {
-            mealTimestamp + Minutes(existing.offsetMinutes.toShort())
-        } else {
-            mealTimestamp + Minutes(suggestedOffset.toShort())
-        }
-
-        return listOf(
-            PlannedInsulin(
-                amount = manualBolus,
-                timestamp = newTimestamp,
-                offsetMinutes = if (isUserModified) existing.offsetMinutes else suggestedOffset,
-                description = "Bolus",
-                isUserModified = isUserModified
-            )
-        )
-    }
-
-    private fun calculateComponentAmounts(
-        totalAmount: Double,
-        correction: Double,
-        mealType: MealType
-    ): DoubleArray {
+    private fun calculateComponentAmounts(totalAmount: Double, correction: Double, mealType: MealType): DoubleArray {
         val restToDistribute = totalAmount - correction
         val rawAmounts = DoubleArray(mealType.components.size) { i ->
             val weight = mealType.components[i].weight / 100.0
@@ -262,32 +220,59 @@ class SimpleBolusCorrectionCalculator(
             if (i == 0) part + correction else part
         }
 
-        // Balance negative amounts across components
+        // Balance negative amounts across components (e.g. if a negative correction
+        // outweighs a meal part). Shifting the "debt" ensures the total sum is preserved.
         for (i in 0 until rawAmounts.size - 1) {
             if (rawAmounts[i] < 0) {
-                rawAmounts[i + 1] += rawAmounts[i]
-                rawAmounts[i] = 0.0
-            }
-        }
-        for (i in rawAmounts.size - 1 downTo 1) {
-            if (rawAmounts[i] < 0) {
-                rawAmounts[i - 1] += rawAmounts[i]
+                rawAmounts[i + 1] += rawAmounts[i] // Carry the negative amount to the next part
                 rawAmounts[i] = 0.0
             }
         }
 
+        // Secondary pass from back to front to clean up any remaining negative values.
+        // This should never if meal types are configured correctly.
+        for (i in rawAmounts.size - 1 downTo 1) {
+            if (rawAmounts[i] < 0) {
+                rawAmounts[i - 1] += rawAmounts[i] // Carry the negative amount to the previous part
+                rawAmounts[i] = 0.0
+            }
+        }
         val roundedAmounts = rawAmounts.map { round(max(0.0, it) * 100.0) / 100.0 }.toDoubleArray()
 
         // Adjust sum to match totalAmount due to rounding
-        val currentSum = roundedAmounts.sum()
         val targetSum = round(totalAmount * 100.0) / 100.0
-        val diff = round((targetSum - currentSum) * 100.0) / 100.0
-
+        val diff = round((targetSum - roundedAmounts.sum()) * 100.0) / 100.0
         if (abs(diff) >= 0.01) {
-            val indexToAdjust = roundedAmounts.indices.maxByOrNull { roundedAmounts[it] } ?: 0
-            roundedAmounts[indexToAdjust] = round((roundedAmounts[indexToAdjust] + diff) * 100.0) / 100.0
+            val idx = roundedAmounts.indices.maxByOrNull { roundedAmounts[it] } ?: 0
+            roundedAmounts[idx] = round((roundedAmounts[idx] + diff) * 100.0) / 100.0
         }
-
         return roundedAmounts
     }
+}
+
+/**
+ * A simple bolus correction calculator that does not rely on APS predictions.
+ */
+class SimpleBolusCorrectionCalculator(
+    private val therapyManager: TherapyManager,
+    private val treatmentRepository: TreatmentRepository,
+    private val carbsInsulinCalculator: CarbsInsulinCalculator,
+    private val glucoseSourceManager: GlucoseSourceManager
+) : BolusCorrectionCalculator {
+
+    private fun getCurrentBg() = glucoseSourceManager.currentBg.value?.value ?: BgValue.INVALID
+
+    override suspend fun calculateBaseData() = BolusCalculationMath.calculateBaseData(
+        Timestamp.now(), getCurrentBg(), therapyManager
+    )
+
+    override suspend fun calculateSuggestedSea() = BolusCalculationMath.calculateSuggestedSea(
+        getCurrentBg(), therapyManager
+    )
+
+    override suspend fun calculateBolusParts(carbsKe: Double, mealTimestamp: Timestamp, referenceTimestamp: Timestamp) =
+        BolusCalculationMath.calculateBolusParts(carbsKe, getCurrentBg(), Timestamp.now(), therapyManager, treatmentRepository, carbsInsulinCalculator)
+
+    override suspend fun distributeInsulinPlan(manualBolus: InsulinAmount, correctionPart: InsulinAmount, mealType: MealType?, mealTimestamp: Timestamp, existingPlan: List<PlannedInsulin>) =
+        BolusCalculationMath.distributeInsulinPlan(manualBolus, correctionPart, mealType, mealTimestamp, calculateSuggestedSea(), existingPlan)
 }
