@@ -207,14 +207,14 @@ fun CurrentStateView(
                             Text(
                                 text = stringResource(R.string.current_state_carbs_label_short),
                                 style = MaterialTheme.typography.labelSmall,
-                                color = if (carbsVisible) Color.Gray else Color.Gray.copy(alpha = 0.4f)
+                                color = Color.Gray
                             )
                         }
                         Text(
                             text = cobText,
                             style = MaterialTheme.typography.bodyMedium,
                             fontWeight = FontWeight.Bold,
-                            color = if (carbsVisible) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.4f)
+                            color = MaterialTheme.colorScheme.onSurface
                         )
                         if (carbsVisible) {
                             HorizontalDivider(
@@ -224,12 +224,6 @@ fun CurrentStateView(
                             )
                         }
                     }
-
-                    VerticalDivider(
-                        modifier = Modifier.padding(vertical = 4.dp),
-                        thickness = 1.dp,
-                        color = Color.Gray.copy(alpha = 0.3f)
-                    )
 
                     // Insulin Column
                     Column(
@@ -250,14 +244,14 @@ fun CurrentStateView(
                             Text(
                                 text = stringResource(R.string.current_state_insulin_label_short),
                                 style = MaterialTheme.typography.labelSmall,
-                                color = if (insulinVisible) Color.Gray else Color.Gray.copy(alpha = 0.4f)
+                                color = Color.Gray
                             )
                         }
                         Text(
                             text = iobText,
                             style = MaterialTheme.typography.bodyMedium,
                             fontWeight = FontWeight.Bold,
-                            color = if (insulinVisible) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.4f)
+                            color = MaterialTheme.colorScheme.onSurface
                         )
                         if (insulinVisible) {
                             HorizontalDivider(
@@ -267,12 +261,6 @@ fun CurrentStateView(
                             )
                         }
                     }
-
-                    VerticalDivider(
-                        modifier = Modifier.padding(vertical = 4.dp),
-                        thickness = 1.dp,
-                        color = Color.Gray.copy(alpha = 0.3f)
-                    )
 
                     // Algorithm Column
                     val coreState = currentBgUiState.coreState
