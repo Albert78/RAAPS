@@ -94,12 +94,6 @@ class ApsAlgorithmImpl(
             } ?: BolusProjections()
         }
 
-        override suspend fun calculateSuggestedImi(): Minutes {
-            val nowTick = timeline.getNowTick()
-            val currentBg = predictionModel.withTickState(nowTick) { it.predictedBg } ?: BgValue.INVALID
-            return BolusCalculationMath.calculateSuggestedImi(currentBg, therapyManager)
-        }
-
         override suspend fun calculateBolusParts(
             carbsKe: Double,
             mealTimestamp: Timestamp,
@@ -179,6 +173,7 @@ class ApsAlgorithmImpl(
 
         // ------------------------------- BG Filtering & Validation -------------------------------
 
+        // Use Short value directly to make clear that it's a valid BG value
         val currentBgMgDl = run {
             // Filter BG values to avoid big jumps caused by measurement errors.
             // If we have enough input values, we can use the better SavitzkyGolay filter, else fallback to PTWMA

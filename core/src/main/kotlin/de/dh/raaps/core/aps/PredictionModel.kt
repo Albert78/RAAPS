@@ -81,6 +81,7 @@ class PredictionModel(
      * calculated. Else `false`.
      */
     suspend fun calculate(
+        // Intentionally use Short data type to rule out invalid BG values
         currentBGMgDl: Short,
         avgCurrentDeviationPerTick: BgDelta,
         meals: List<MealEntry>,

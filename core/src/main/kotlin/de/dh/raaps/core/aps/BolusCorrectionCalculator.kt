@@ -61,11 +61,6 @@ interface BolusCorrectionCalculator {
     suspend fun calculateBolusProjections(mealTimestamp: Timestamp = Timestamp.now()): BolusProjections
 
     /**
-     * Calculates the suggested IMI (Injection-Meal Interval) in minutes.
-     */
-    suspend fun calculateSuggestedImi(): Minutes
-
-    /**
      * Calculates the bolus parts for a given carb intake at a specific time.
      */
     suspend fun calculateBolusParts(
@@ -243,11 +238,6 @@ class SimpleBolusCorrectionCalculator(
         bg = getCurrentBg(),
         iob = InsulinAmount.ZERO,
         cob = 0.0
-    )
-
-    override suspend fun calculateSuggestedImi() = BolusCalculationMath.calculateSuggestedImi(
-        currentBg = getCurrentBg(),
-        therapyManager = therapyManager
     )
 
     override suspend fun calculateBolusParts(
