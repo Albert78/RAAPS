@@ -45,6 +45,10 @@ import de.dh.raaps.common.model.data.BgDelta
 import de.dh.raaps.common.model.data.BgValue
 import de.dh.raaps.common.model.data.Timestamp
 import de.dh.raaps.ui.R
+import androidx.compose.material.icons.filled.Warning
+import de.dh.raaps.core.aps.CoreState
+import de.dh.raaps.ui.common.icons.CarbsBlood
+import de.dh.raaps.ui.common.icons.InsulinBlood
 import de.dh.raaps.ui.common.composables.AppColorBlue
 import de.dh.raaps.ui.common.composables.LightGreenA700
 import de.dh.raaps.ui.common.composables.Red
@@ -60,6 +64,7 @@ import de.dh.raaps.ui.controls.history.BgTrend
 import de.dh.raaps.ui.controls.history.CurrentBgData
 import de.dh.raaps.ui.controls.history.CurrentBgUiState
 import kotlinx.coroutines.delay
+import kotlin.time.Duration.Companion.milliseconds
 
 @Composable
 fun CurrentStateView(
@@ -85,7 +90,7 @@ fun CurrentStateView(
                 val currentDiff = now - ts.ms
                 diffMs = currentDiff
                 val next10sBoundary = ((currentDiff / 10000) + 1) * 10000
-                delay(next10sBoundary - currentDiff)
+                delay((next10sBoundary - currentDiff).milliseconds)
             }
         }
     }
@@ -181,38 +186,43 @@ fun CurrentStateView(
 
                 Row(
                     modifier = Modifier.fillMaxWidth().height(IntrinsicSize.Min),
-                    verticalAlignment = Alignment.CenterVertically
+                    verticalAlignment = Alignment.Top
                 ) {
-                    Row(
-                        modifier = Modifier.weight(1f),
-                        horizontalArrangement = Arrangement.Center,
-                        verticalAlignment = Alignment.CenterVertically
+                    // Carbs Column
+                    Column(
+                        modifier = Modifier
+                            .weight(1f)
+                            .clickable { onCarbsToggle(!carbsVisible) }
+                            .padding(vertical = 4.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally
                     ) {
-                        Text(
-                            text = stringResource(R.string.approx_prefix),
-                            style = MaterialTheme.typography.bodySmall,
-                            color = Color.Gray
-                        )
-                        Spacer(Modifier.width(4.dp))
-                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                            Text(
-                                text = cobText,
-                                style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
-                                color = MaterialTheme.colorScheme.onSurface
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Icon(
+                                imageVector = Icons.Filled.CarbsBlood,
+                                contentDescription = null,
+                                modifier = Modifier.size(14.dp),
+                                tint = if (carbsVisible) Color(0xFFFFC107) else Color.Gray.copy(alpha = 0.4f)
                             )
+                            Spacer(Modifier.width(4.dp))
                             Text(
-                                text = stringResource(R.string.active_carbs_label),
+                                text = stringResource(R.string.current_state_carbs_label_short),
                                 style = MaterialTheme.typography.labelSmall,
-                                color = Color.Gray
+                                color = if (carbsVisible) Color.Gray else Color.Gray.copy(alpha = 0.4f)
                             )
                         }
-                        Spacer(Modifier.width(16.dp))
-                        Surface(
-                            modifier = Modifier.size(18.dp).clickable { onCarbsToggle(!carbsVisible) },
-                            shape = RoundedCornerShape(4.dp),
-                            color = if (carbsVisible) Color(0xFFFFC107) else Color.Gray.copy(alpha = 0.3f),
-                            border = BorderStroke(1.dp, Color.Gray.copy(alpha = 0.5f))
-                        ) {}
+                        Text(
+                            text = cobText,
+                            style = MaterialTheme.typography.bodyMedium,
+                            fontWeight = FontWeight.Bold,
+                            color = if (carbsVisible) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.4f)
+                        )
+                        if (carbsVisible) {
+                            HorizontalDivider(
+                                modifier = Modifier.width(16.dp).padding(top = 2.dp),
+                                thickness = 2.dp,
+                                color = Color(0xFFFFC107)
+                            )
+                        }
                     }
 
                     VerticalDivider(
@@ -221,36 +231,99 @@ fun CurrentStateView(
                         color = Color.Gray.copy(alpha = 0.3f)
                     )
 
-                    Row(
-                        modifier = Modifier.weight(1f),
-                        horizontalArrangement = Arrangement.Center,
-                        verticalAlignment = Alignment.CenterVertically
+                    // Insulin Column
+                    Column(
+                        modifier = Modifier
+                            .weight(1f)
+                            .clickable { onInsulinToggle(!insulinVisible) }
+                            .padding(vertical = 4.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally
                     ) {
-                        Text(
-                            text = stringResource(R.string.approx_prefix),
-                            style = MaterialTheme.typography.bodySmall,
-                            color = Color.Gray
-                        )
-                        Spacer(Modifier.width(4.dp))
-                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                            Text(
-                                text = iobText,
-                                style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
-                                color = MaterialTheme.colorScheme.onSurface
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Icon(
+                                imageVector = Icons.Filled.InsulinBlood,
+                                contentDescription = null,
+                                modifier = Modifier.size(14.dp),
+                                tint = if (insulinVisible) Color(0xFFF44336) else Color.Gray.copy(alpha = 0.4f)
                             )
+                            Spacer(Modifier.width(4.dp))
                             Text(
-                                text = stringResource(R.string.active_insulin_label),
+                                text = stringResource(R.string.current_state_insulin_label_short),
+                                style = MaterialTheme.typography.labelSmall,
+                                color = if (insulinVisible) Color.Gray else Color.Gray.copy(alpha = 0.4f)
+                            )
+                        }
+                        Text(
+                            text = iobText,
+                            style = MaterialTheme.typography.bodyMedium,
+                            fontWeight = FontWeight.Bold,
+                            color = if (insulinVisible) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.4f)
+                        )
+                        if (insulinVisible) {
+                            HorizontalDivider(
+                                modifier = Modifier.width(16.dp).padding(top = 2.dp),
+                                thickness = 2.dp,
+                                color = Color(0xFFF44336)
+                            )
+                        }
+                    }
+
+                    VerticalDivider(
+                        modifier = Modifier.padding(vertical = 4.dp),
+                        thickness = 1.dp,
+                        color = Color.Gray.copy(alpha = 0.3f)
+                    )
+
+                    // Algorithm Column
+                    val coreState = currentBgUiState.coreState
+                    val (statusColor, hasIssues) = when (coreState) {
+                        is CoreState.Active -> {
+                            if (coreState.issues.isEmpty()) {
+                                LightGreenA700 to false
+                            } else {
+                                Red to true
+                            }
+                        }
+                        else -> Color.Gray to false
+                    }
+
+                    Column(
+                        modifier = Modifier
+                            .weight(1f)
+                            .padding(vertical = 4.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Box(modifier = Modifier.size(14.dp), contentAlignment = Alignment.Center) {
+                                Surface(
+                                    modifier = Modifier.size(8.dp),
+                                    shape = RoundedCornerShape(4.dp),
+                                    color = statusColor
+                                ) {}
+                            }
+                            Spacer(Modifier.width(4.dp))
+                            Text(
+                                text = stringResource(R.string.current_state_algorithm_label_short),
                                 style = MaterialTheme.typography.labelSmall,
                                 color = Color.Gray
                             )
                         }
-                        Spacer(Modifier.width(16.dp))
-                        Surface(
-                            modifier = Modifier.size(18.dp).clickable { onInsulinToggle(!insulinVisible) },
-                            shape = RoundedCornerShape(4.dp),
-                            color = if (insulinVisible) Color(0xFFF44336) else Color.Gray.copy(alpha = 0.3f),
-                            border = BorderStroke(1.dp, Color.Gray.copy(alpha = 0.5f))
-                        ) {}
+                        val labelRes = if (coreState is CoreState.Active) R.string.label_active else R.string.label_inactive
+                        if (hasIssues) {
+                            Icon(
+                                imageVector = Icons.Default.Warning,
+                                contentDescription = null,
+                                modifier = Modifier.size(20.dp).padding(vertical = 2.dp),
+                                tint = Red
+                            )
+                        } else {
+                            Text(
+                                text = stringResource(labelRes),
+                                style = MaterialTheme.typography.bodyMedium,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.onSurface
+                            )
+                        }
                     }
                 }
             }
@@ -317,7 +390,8 @@ fun CurrentStateViewPreview() {
             delta = BgDelta(+15),
             trend = BgTrend.FortyFiveUp,
             timestamp = Timestamp.now(),
-        )
+        ),
+        coreState = CoreState.Active(issues = emptySet())
     )
     AppTheme {
         Surface {

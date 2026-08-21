@@ -188,8 +188,9 @@
     <string name="relative_time_minutes_positive">in %1$d Min</string>
     <string name="relative_time_minutes_negative">vor %1$d Min</string>
     <string name="within_time_format">innerhalb von %1$s</string>
-    <string name="active_carbs_label">Aktive KH</string>
-    <string name="active_insulin_label">Akt. Insulin</string>
+    <string name="current_state_carbs_label_short">KH</string>
+    <string name="current_state_insulin_label_short">INSULIN</string>
+    <string name="current_state_algorithm_label_short">ALG.</string>
     <string name="meal_bolus_active_carbs_format">Aktive Kohlenhydrate: %1$s</string>
     <string name="meal_bolus_active_insulin_format">Aktives Insulin: %1$s</string>
 
@@ -199,6 +200,7 @@
     <string name="label_increased">erhöht</string>
     <string name="label_decreased">reduziert</string>
     <string name="label_active">Aktiv</string>
+    <string name="label_inactive">Inaktiv</string>
     <string name="label_adjusted">(angepasst)</string>
 
     <string name="treatment_lock_busy_system">Warten auf %s…</string>
