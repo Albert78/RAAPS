@@ -182,6 +182,7 @@
     <string name="bg_delta_format">Delta: %1$s %2$s</string>
     <string name="bg_raw_format">(raw: %1$s)</string>
     <string name="at_time_format">um %1$s</string>
+    <string name="approx_time_format">ca. %1$s</string>
     <string name="relative_time_now">Jetzt</string>
     <string name="relative_time_minutes_positive">in %1$d Min</string>
     <string name="relative_time_minutes_negative">vor %1$d Min</string>

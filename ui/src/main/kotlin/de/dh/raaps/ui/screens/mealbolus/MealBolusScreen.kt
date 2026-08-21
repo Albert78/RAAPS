@@ -205,7 +205,7 @@ fun MealBolusContent(
                         )
                         Spacer(Modifier.height(4.dp))
                         Text(
-                            text = stringResource(R.string.at_time_format, time(uiState.mealTimestamp)),
+                            text = stringResource(R.string.approx_time_format, time(uiState.mealTimestamp)),
                             style = MaterialTheme.typography.bodyMedium,
                             color = MaterialTheme.colorScheme.primary
                         )
@@ -628,7 +628,7 @@ fun InsulinPlanCard(
                                     fontWeight = FontWeight.Bold
                                 )
                                 Text(
-                                    text = stringResource(R.string.at_time_format, time(item.timestamp)),
+                                    text = stringResource(R.string.approx_time_format, time(item.timestamp)),
                                     style = MaterialTheme.typography.bodySmall,
                                     color = MaterialTheme.colorScheme.primary
                                 )
