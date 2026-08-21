@@ -204,6 +204,8 @@
     <string name="meal_bolus_busy_system">Warten auf %s…</string>
     <string name="meal_bolus_lock_error_message">Das System ist aktuell belegt (%1$s). Bitte versuche es später noch einmal.</string>
     <string name="meal_bolus_carbs_label">Mahlzeit</string>
+    <string name="add_past_meal_screen_title">Mahlzeit nachtragen</string>
+    <string name="add_past_meal_carbs_label">Vergangene Mahlzeit</string>
     <string name="meal_bolus_food_type_label">Nahrungstyp</string>
     <string name="meal_bolus_calculation_title">Berechnung</string>
     <string name="meal_bolus_calc_factors_label">ISF: %1$s, CR: %2$s</string>
@@ -216,10 +218,12 @@
     <string name="meal_bolus_calc_no_bg_warning">Kein Blutzuckerwert</string>
     <string name="meal_bolus_insulin_label">Insulinmenge</string>
     <string name="meal_bolus_meal_time_label">Zeit der Mahlzeit</string>
+    <string name="meal_past_time_validation_error">Muss mindestens 25 Min. in der Vergangenheit liegen</string>
     <string name="meal_bolus_insulin_plan_title">Insulin-Planung</string>
     <string name="meal_bolus_administer_button">Bestätigen</string>
     <string name="meal_edit_screen_title">Mahlzeit bearbeiten</string>
     <string name="meal_edit_save_button">Speichern</string>
+    <string name="add_past_meal_save_button">Speichern</string>
 
     <string name="drawer_header_title">RAAPS</string>
     <string name="menu_meals_label">Mahlzeiten</string>

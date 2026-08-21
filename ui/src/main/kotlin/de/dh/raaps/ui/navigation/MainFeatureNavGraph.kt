@@ -15,6 +15,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation3.runtime.NavEntry
 import androidx.navigation3.runtime.NavKey
 import de.dh.raaps.common.navigation.AlarmsRoute
+import de.dh.raaps.common.navigation.AddPastMealRoute
 import de.dh.raaps.common.navigation.BgEditorRoute
 import de.dh.raaps.common.navigation.BolusHistoryRoute
 import de.dh.raaps.common.navigation.CoreDecisionsRoute
@@ -50,6 +51,8 @@ import de.dh.raaps.ui.screens.history.HistoryScreen
 import de.dh.raaps.ui.screens.insulinprofile.InsulinProfileEditorScreen
 import de.dh.raaps.ui.screens.mealbolus.MealBolusScreen
 import de.dh.raaps.ui.screens.mealbolus.MealBolusViewModel
+import de.dh.raaps.ui.screens.meals.AddPastMealScreen
+import de.dh.raaps.ui.screens.meals.AddPastMealViewModel
 import de.dh.raaps.ui.screens.meals.EditHistoricalMealScreen
 import de.dh.raaps.ui.screens.meals.EditHistoricalMealViewModel
 import de.dh.raaps.ui.screens.meals.MealTypeEditorScreen
@@ -196,6 +199,16 @@ class MainFeatureNavGraph(
                         onNavigateUp = { navViewModel.pop() }
                     )
                 }
+            }
+
+            is AddPastMealRoute -> NavEntry(key) {
+                val vm: AddPastMealViewModel = viewModel(
+                    factory = AddPastMealViewModel.Companion.Factory(registry)
+                )
+                AddPastMealScreen(
+                    viewModel = vm,
+                    onNavigateUp = { navViewModel.pop() }
+                )
             }
 
             is HistoricalMealRoute -> NavEntry(key) {
