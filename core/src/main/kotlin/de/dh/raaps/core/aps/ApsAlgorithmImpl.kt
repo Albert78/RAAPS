@@ -57,9 +57,9 @@ class ApsAlgorithmImpl(
         predictionModel.invalidateInsulinCache()
     }
 
-    override suspend fun getPredictedBg(timestamp: Timestamp): BgValue {
+    override suspend fun getAssumedBg(timestamp: Timestamp): BgValue {
         val tick = timeline.tick(timestamp)
-        return predictionModel.withTickState(tick) { it.predictedBg } ?: BgValue.INVALID
+        return predictionModel.withTickState(tick) { it.assumedBg } ?: BgValue.INVALID
     }
 
     override fun getBolusCorrectionCalculator(): BolusCorrectionCalculator {
@@ -87,7 +87,7 @@ class ApsAlgorithmImpl(
                 BolusProjections(
                     timestamp = mealTimestamp,
                     isProjected = mealTimestamp > Timestamp.now(),
-                    bg = state.predictedBg,
+                    bg = state.assumedBg,
                     iob = projectedIob,
                     cob = projectedCob
                 )
@@ -102,7 +102,7 @@ class ApsAlgorithmImpl(
         ): BolusParts {
             val bgValueAtReferenceTime = run {
                 val tick = timeline.tick(mealTimestamp)
-                predictionModel.withTickState(tick) { it.predictedBg } ?: BgValue.INVALID
+                predictionModel.withTickState(tick) { it.assumedBg } ?: BgValue.INVALID
             }
 
             return BolusCalculationMath.calculateBolusParts(
@@ -170,6 +170,15 @@ class ApsAlgorithmImpl(
         // Move the prediction window forward. It always covers roughly our BG readings history cache
         // to be able to calculate deviations between the static predictions and the actual readings.
         predictionModel.advanceToTick(nowTick.minus(PRESERVE_PREDICTIONS_PAST_TIME))
+
+        // Fill the "past" part of our tick states with real BG values from out input.
+        // This is necessary at cold start and for each state when the algorithm didn't recalculate for some reason.
+        predictionModel.rollingHistory.forEachS(to = nowTick) { tick, state ->
+            val bg = sampledBgReadings.getAt(tick)
+            if (bg.isValid()) {
+                state.assumedBg = bg
+            }
+        }
 
         // ------------------------------- BG Filtering & Validation -------------------------------
 
@@ -263,7 +272,7 @@ class ApsAlgorithmImpl(
             val recoveryStartTick = predictionModel.findNext(
                 startAt = nowTick,
                 until = nowTick.plusMinutes(30),
-                predicate = { it.predictedBg.isValid() && it.predictedBg >= lowThreshold },
+                predicate = { it.assumedBg.isValid() && it.assumedBg >= lowThreshold },
                 block = { it.tick }
             )
 
@@ -272,7 +281,7 @@ class ApsAlgorithmImpl(
                 val relapseFound = predictionModel.findNext(
                     startAt = recoveryStartTick,
                     until = recoveryStartTick.plusMinutes(30),
-                    predicate = { it.predictedBg.isValid() && it.predictedBg < lowThreshold },
+                    predicate = { it.assumedBg.isValid() && it.assumedBg < lowThreshold },
                     block = { true }
                 ) ?: false
 
@@ -291,7 +300,7 @@ class ApsAlgorithmImpl(
         val impendingLow = predictionModel.findNext(
             startAt = nowTick,
             until = nowTick.plusMinutes(LOW_WARNING_THRESHOLD.value.toInt()),
-            predicate = { it.predictedBg.isValid() && it.predictedBg < lowThreshold + LOW_BG_SAFETY_MARGIN },
+            predicate = { it.assumedBg.isValid() && it.assumedBg < lowThreshold + LOW_BG_SAFETY_MARGIN },
             block = { true }
         ) ?: false
 
@@ -302,7 +311,7 @@ class ApsAlgorithmImpl(
             val bgMin = predictionModel.findBgMin(
                 startAt = nowTick,
                 until = nowTick.plusMinutes(FAST_KE_DEFAULT_PEAK.value.toInt()),
-                block = { it.predictedBg }
+                block = { it.assumedBg }
             )
             if (bgMin != null && bgMin.isValid()) {
                 val bgErrorAtMin = targetBg - bgMin
@@ -351,7 +360,7 @@ class ApsAlgorithmImpl(
         )
 
         val tickStateAtPeakValues = predictionModel.withTickState(nowTick + insulinPeakTicks) {
-            it.predictedBg to it.cumulatedBasalInsulin
+            it.assumedBg to it.cumulatedBasalInsulin
         } ?: return CalculationResult.safetyBasal().withMetrics(insightTemplate)
 
         val predictedBgAtPeak = tickStateAtPeakValues.first.takeIf { it.isValid() }

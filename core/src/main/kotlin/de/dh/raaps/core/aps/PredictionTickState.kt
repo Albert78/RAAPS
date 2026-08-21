@@ -18,7 +18,17 @@ interface ReadOnlyPredictionTickState {
     val basalRateUph: InsulinAmount?
     val bgi: BgDelta
     val cumulatedBasalInsulin: InsulinAmount
+
+    /**
+     * Prediction for the future.
+     */
     val predictedBg: BgValue
+
+    /**
+     * Best Bg value we have: For the past, this is the glucose value, if present, else past prediction.
+     * For the future, this is the predicted value for this tick.
+     */
+    val assumedBg: BgValue
 }
 
 /**
@@ -44,11 +54,12 @@ class PredictionTickState : ReadOnlyPredictionTickState {
     // This means BGI is 0 if we deliver exactly the standard basal rate and have no active carbs.
     override var bgi: BgDelta = BgDelta(0)
 
-    // The cumulated activity of basal insulin from now to the time of this tick.
+    // The cumulated activity of basal insulin from "now" to the time of this tick.
     override var cumulatedBasalInsulin: InsulinAmount = InsulinAmount.ZERO
 
     // Predicted BG depends on block 3 and current BG.
     override var predictedBg: BgValue = BgValue.INVALID // Calculated from a starting BG, applying BGIs of previous ticks
+    override var assumedBg: BgValue = BgValue.INVALID
 
     fun initializeToTick(tick: Tick) {
         this.tick = tick

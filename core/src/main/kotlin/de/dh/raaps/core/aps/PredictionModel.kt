@@ -33,7 +33,7 @@ class PredictionModel(
 ) {
     private val mutex = Mutex()
 
-    private var rollingHistory = RollingPredictionWindow(
+    internal var rollingHistory = RollingPredictionWindow(
         predictionWindowHours = predictionWindowHours,
         timeline = timeline,
         timeline.tick(Timestamp.now())
@@ -93,7 +93,10 @@ class PredictionModel(
     ) = mutex.withLock {
         var bg = BgValue.fromMgDl(currentBGMgDl)
         val nowTick = timeline.getNowTick()
-        rollingHistory.tryGetTickState(nowTick)?.predictedBg = bg
+        rollingHistory.tryGetTickState(nowTick)?.let { state ->
+            state.predictedBg = bg
+            state.assumedBg = bg
+        }
 
         var deviationPerTick = avgCurrentDeviationPerTick
         var runningCumulatedBasal = InsulinAmount.ZERO
@@ -153,10 +156,16 @@ class PredictionModel(
 
                 bg = bg + state.bgi + deviationPerTick
                 state.predictedBg = bg
+                state.assumedBg = bg
             } else {
                 // Clear values that are only meaningful for future predictions
                 state.cumulatedBasalInsulin = InsulinAmount.ZERO
                 if (tick < nowTick) {
+                    if (state.assumedBg.isInvalid() && state.predictedBg.isValid()) {
+                        // This can happen if we didn't get a valid BG value input. In this case,
+                        // we use our past prediction.
+                        state.assumedBg = state.predictedBg
+                    }
                     state.predictedBg = BgValue.INVALID
                 }
             }
@@ -181,7 +190,7 @@ class PredictionModel(
         var min: BgValue = BgValue.INVALID
         var minState: PredictionTickState? = null
         rollingHistory.forEachS(from = startAt, to = until) { _, state ->
-            val currentBg = state.predictedBg
+            val currentBg = state.assumedBg
             if (min.isInvalid() || (currentBg.isValid() && currentBg.mgdl < min.mgdl)) {
                 min = currentBg
                 minState = state

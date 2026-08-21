@@ -93,7 +93,7 @@ interface SystemManager {
     /**
      * Returns the predicted blood glucose value for the given timestamp.
      */
-    suspend fun getPredictedBg(timestamp: Timestamp): BgValue
+    suspend fun getAssumedBg(timestamp: Timestamp): BgValue
 
     /**
      * Returns the bolus correction calculator.
@@ -304,9 +304,9 @@ class SystemManagerImpl(
         coreDispatcher.close()
     }
 
-    override suspend fun getPredictedBg(timestamp: Timestamp): BgValue {
+    override suspend fun getAssumedBg(timestamp: Timestamp): BgValue {
         return if (::core.isInitialized) {
-            core.getPredictedBg(timestamp)
+            core.getAssumedBg(timestamp)
         } else {
             BgValue.INVALID
         }

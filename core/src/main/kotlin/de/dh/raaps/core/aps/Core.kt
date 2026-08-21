@@ -315,8 +315,8 @@ class Core(
         }
     }
 
-    suspend fun getPredictedBg(timestamp: Timestamp): BgValue {
-        return calculationAlgorithm.getPredictedBg(timestamp)
+    suspend fun getAssumedBg(timestamp: Timestamp): BgValue {
+        return calculationAlgorithm.getAssumedBg(timestamp)
     }
 
     fun getBolusCorrectionCalculator(): BolusCorrectionCalculator {
