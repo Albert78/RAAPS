@@ -191,37 +191,77 @@ class ApsAlgorithmImpl(
             val suggestedOffset = if (sea < 0) abs(sea) else 0
 
             if (mealType == null) {
-                val existing = existingPlan.getOrNull(0)
-                val isUserModified = existing?.isUserModified == true
-
-                // If user modified the offset, keep their offset but apply it to the base time
-                val newTimestamp = if (isUserModified) {
-                    mealTimestamp + Minutes(existing.offsetMinutes.toShort())
-                } else {
-                    mealTimestamp + Minutes(suggestedOffset.toShort())
-                }
-
-                return listOf(
-                    PlannedInsulin(
-                        amount = manualBolus,
-                        timestamp = newTimestamp,
-                        offsetMinutes = if (isUserModified) existing.offsetMinutes else suggestedOffset,
-                        description = "Bolus",
-                        isUserModified = isUserModified
-                    )
-                )
+                return distributeSingleBolus(manualBolus, mealTimestamp, suggestedOffset, existingPlan)
             }
 
             val totalAmount = manualBolus.iu
             val correction = correctionPart.iu
-            val restToDistribute = totalAmount - correction
 
-            val rawAmounts = DoubleArray(mealType.components.size) { i ->
-                val weight = mealType.components[i].weight / 100.0
-                val share = restToDistribute * weight
-                if (i == 0) share + correction else share
+            val roundedAmounts = calculateComponentAmounts(totalAmount, correction, mealType)
+
+            return mealType.components.mapIndexed { index, component ->
+                val amount = InsulinAmount(roundedAmounts[index])
+                val delayFromBase = if (index == 0) 0 else component.peakMinutes.value.toInt()
+                val finalOffset = suggestedOffset + delayFromBase
+
+                val existing = existingPlan.getOrNull(index)
+                val isUserModified = existing?.isUserModified == true
+
+                val newTimestamp = if (isUserModified) {
+                    mealTimestamp + Minutes(existing.offsetMinutes.toShort())
+                } else {
+                    mealTimestamp + Minutes(finalOffset.toShort())
+                }
+
+                PlannedInsulin(
+                    amount = amount,
+                    timestamp = newTimestamp,
+                    offsetMinutes = if (isUserModified) existing.offsetMinutes else finalOffset,
+                    description = if (mealType.components.size > 1) "Teil ${index + 1} (${component.weight}%)" else "Bolus",
+                    isUserModified = isUserModified
+                )
+            }.filter { it.amount > InsulinAmount.ZERO }
+        }
+
+        private fun distributeSingleBolus(
+            manualBolus: InsulinAmount,
+            mealTimestamp: Timestamp,
+            suggestedOffset: Int,
+            existingPlan: List<PlannedInsulin>
+        ): List<PlannedInsulin> {
+            val existing = existingPlan.getOrNull(0)
+            val isUserModified = existing?.isUserModified == true
+
+            val newTimestamp = if (isUserModified) {
+                mealTimestamp + Minutes(existing.offsetMinutes.toShort())
+            } else {
+                mealTimestamp + Minutes(suggestedOffset.toShort())
             }
 
+            return listOf(
+                PlannedInsulin(
+                    amount = manualBolus,
+                    timestamp = newTimestamp,
+                    offsetMinutes = if (isUserModified) existing.offsetMinutes else suggestedOffset,
+                    description = "Bolus",
+                    isUserModified = isUserModified
+                )
+            )
+        }
+
+        private fun calculateComponentAmounts(
+            totalAmount: Double,
+            correction: Double,
+            mealType: MealType
+        ): DoubleArray {
+            val restToDistribute = totalAmount - correction
+            val rawAmounts = DoubleArray(mealType.components.size) { i ->
+                val weight = mealType.components[i].weight / 100.0
+                val part = restToDistribute * weight
+                if (i == 0) part + correction else part
+            }
+
+            // Balance negative amounts across components
             for (i in 0 until rawAmounts.size - 1) {
                 if (rawAmounts[i] < 0) {
                     rawAmounts[i + 1] += rawAmounts[i]
@@ -237,6 +277,7 @@ class ApsAlgorithmImpl(
 
             val roundedAmounts = rawAmounts.map { round(max(0.0, it) * 100.0) / 100.0 }.toDoubleArray()
 
+            // Adjust sum to match totalAmount due to rounding
             val currentSum = roundedAmounts.sum()
             val targetSum = round(totalAmount * 100.0) / 100.0
             val diff = round((targetSum - currentSum) * 100.0) / 100.0
@@ -246,29 +287,7 @@ class ApsAlgorithmImpl(
                 roundedAmounts[indexToAdjust] = round((roundedAmounts[indexToAdjust] + diff) * 100.0) / 100.0
             }
 
-            return mealType.components.mapIndexed { index, component ->
-                val amount = InsulinAmount(roundedAmounts[index])
-                val delayFromBase = if (index == 0) 0 else component.peakMinutes.value.toInt()
-                val finalOffset = suggestedOffset + delayFromBase
-
-                val existing = existingPlan.getOrNull(index)
-                val isUserModified = existing?.isUserModified == true
-
-                // If user modified the offset, apply their offset to the new base time
-                val newTimestamp = if (isUserModified) {
-                    mealTimestamp + Minutes(existing.offsetMinutes.toShort())
-                } else {
-                    mealTimestamp + Minutes(finalOffset.toShort())
-                }
-
-                PlannedInsulin(
-                    amount = amount,
-                    timestamp = newTimestamp,
-                    offsetMinutes = if (isUserModified) existing.offsetMinutes else finalOffset,
-                    description = if (mealType.components.size > 1) "Teil ${index + 1} (${component.weight}%)" else "Bolus",
-                    isUserModified = isUserModified
-                )
-            }.filter { it.amount > InsulinAmount.ZERO }
+            return roundedAmounts
         }
     }
 
