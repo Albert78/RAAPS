@@ -201,7 +201,7 @@
 
     <string name="dashboard_meal_bolus_button">Mahlzeit/Korrektur</string>
     <string name="meal_add_screen_title">Mahlzeit/Korrekturbolus</string>
-    <string name="meal_bolus_busy_system">System belegt…</string>
+    <string name="meal_bolus_busy_system">Warten auf %s…</string>
     <string name="meal_bolus_lock_error_message">Das System ist aktuell belegt (%1$s). Bitte versuche es später noch einmal.</string>
     <string name="meal_bolus_carbs_label">Mahlzeit</string>
     <string name="meal_bolus_food_type_label">Nahrungstyp</string>
