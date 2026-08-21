@@ -18,9 +18,7 @@ import de.dh.raaps.common.model.data.Minutes
 import de.dh.raaps.common.model.data.Timestamp
 import de.dh.raaps.core.SystemRegistry
 import de.dh.raaps.core.aps.DeferredBolus
-import de.dh.raaps.core.aps.LockResult
 import de.dh.raaps.core.aps.TreatmentLock
-import kotlinx.coroutines.awaitCancellation
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -56,11 +54,7 @@ data class MealBolusUiState(
     val manualBolus: InsulinAmount = InsulinAmount.ZERO,
     val insulinPlan: List<PlannedInsulin> = emptyList(),
     val isInsulinPlanExpanded: Boolean = false,
-    val isSubmitting: Boolean = false,
-    val isLockAcquired: Boolean = false,
-    val isBusy: Boolean = false,
-    val lockBusyOwner: String? = null,
-    val lockError: Boolean = false,
+    val isSubmitting: Boolean = false
 )
 
 class MealBolusViewModel(
@@ -72,10 +66,7 @@ class MealBolusViewModel(
     private val therapyManager = registry.therapyManager
     private val treatmentRepository = registry.treatmentRepository
 
-    private var treatmentLock: TreatmentLock? = null
-
     init {
-        acquireLock()
         viewModelScope.launch {
             val now = Timestamp.now()
             val isf = therapyManager.getIsfFactor(now).mgdl.toInt()
@@ -103,36 +94,6 @@ class MealBolusViewModel(
             }
             calculateBolus()
             startTicker()
-        }
-    }
-
-    private fun acquireLock() {
-        viewModelScope.launch {
-            var retryAttempt = 0
-            while (retryAttempt < 2) {
-                val result = therapyManager.tryAcquire("MealBolusScreen") { treatmentLock ->
-                    this@MealBolusViewModel.treatmentLock = treatmentLock
-                    _uiState.update { it.copy(isLockAcquired = true, isBusy = false) }
-                    try {
-                        awaitCancellation()
-                    } finally {
-                        this@MealBolusViewModel.treatmentLock = null
-                    }
-                }
-
-                if (result is LockResult.Busy) {
-                    if (retryAttempt == 0) {
-                        _uiState.update { it.copy(isBusy = true, lockBusyOwner = result.owner) }
-                        delay(3.seconds)
-                        retryAttempt++
-                    } else {
-                        _uiState.update { it.copy(isBusy = false, lockError = true) }
-                        break
-                    }
-                } else {
-                    break
-                }
-            }
         }
     }
 
@@ -227,15 +188,13 @@ class MealBolusViewModel(
         }
     }
 
-    fun submit(onSuccess: () -> Unit) {
+    fun submit(lock: TreatmentLock, onSuccess: () -> Unit) {
         val state = _uiState.value
         if (state.isSubmitting) return
 
         viewModelScope.launch {
             _uiState.update { it.copy(isSubmitting = true) }
             try {
-                val lock = treatmentLock ?: throw IllegalStateException("Action attempted without holding the lock")
-
                 // 1. Record Meal
                 if ((state.carbsKe > 0) && (state.selectedMealType != null)) {
                     val mealEntry = MealEntry(
@@ -284,15 +243,12 @@ class MealBolusViewModel(
                 _uiState.update { state ->
                     if (state.isSubmitting) return@update state
 
-                    val updatedMealTime = now + Minutes(state.seaMinutes.toShort())
-                    val updatedPlan = state.insulinPlan.map { planItem ->
-                        planItem.copy(timestamp = now + Minutes(planItem.offsetMinutes.toShort()))
-                    }
-
-                    state.copy(
-                        mealTimestamp = updatedMealTime,
-                        insulinPlan = updatedPlan
-                    )
+                    // We shouldn't continuously reset mealTimestamp to now + seaMinutes,
+                    // as that undoes the user's manual changes.
+                    // If we want the time to "roll forward" if the user hasn't touched it,
+                    // we would need an `isMealTimeUserModified` flag.
+                    // For now, let's just let the time stay as is once calculated.
+                    state
                 }
             }
         }

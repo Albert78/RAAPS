@@ -7,6 +7,7 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.ui.res.stringResource
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.lifecycle.lifecycleScope
@@ -53,6 +54,8 @@ import de.dh.raaps.ui.screens.meals.EditHistoricalMealScreen
 import de.dh.raaps.ui.screens.meals.EditHistoricalMealViewModel
 import de.dh.raaps.ui.screens.meals.MealTypeEditorScreen
 import de.dh.raaps.ui.screens.meals.MealTypeEditorViewModel
+import de.dh.raaps.ui.common.treatmentlock.TreatmentLockScreen
+import de.dh.raaps.ui.common.treatmentlock.TreatmentLockViewModel
 import de.dh.raaps.ui.screens.meals.MealTypesScreen
 import de.dh.raaps.ui.screens.meals.MealTypesViewModel
 import de.dh.raaps.ui.screens.meals.MealsScreen
@@ -172,6 +175,9 @@ class MainFeatureNavGraph(
                 val vm: MealBolusViewModel = viewModel(
                     factory = MealBolusViewModel.Companion.Factory(registry)
                 )
+                val lockViewModel: TreatmentLockViewModel = viewModel(
+                    factory = TreatmentLockViewModel.Companion.Factory("MealBolusScreen", registry)
+                )
 
                 // Leave MealBolus screen to release the therapy manager lock when the user
                 // leaves the screen open.
@@ -179,10 +185,17 @@ class MainFeatureNavGraph(
                     navViewModel.pop()
                 }
 
-                MealBolusScreen(
-                    viewModel = vm,
+                TreatmentLockScreen(
+                    viewModel = lockViewModel,
+                    title = stringResource(id = de.dh.raaps.ui.R.string.meal_add_screen_title),
                     onNavigateUp = { navViewModel.pop() }
-                )
+                ) { treatmentLock ->
+                    MealBolusScreen(
+                        viewModel = vm,
+                        treatmentLock = treatmentLock,
+                        onNavigateUp = { navViewModel.pop() }
+                    )
+                }
             }
 
             is HistoricalMealRoute -> NavEntry(key) {
