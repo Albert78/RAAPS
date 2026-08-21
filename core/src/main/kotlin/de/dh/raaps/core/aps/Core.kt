@@ -326,8 +326,6 @@ class Core(
     companion object {
         val TAG = Core::class.simpleName
 
-        const val METABOLIC_EVENTS_HISTORY_HOURS = 10
-
         fun createProductiveCore(
             therapyManager: TherapyManager,
             treatmentRepository: TreatmentRepository,

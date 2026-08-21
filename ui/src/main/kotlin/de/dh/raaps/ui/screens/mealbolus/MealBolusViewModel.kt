@@ -10,6 +10,7 @@ import de.dh.raaps.common.model.DEFAULT_CR_GRAM_PER_UNIT
 import de.dh.raaps.common.model.DEFAULT_ISF_MGDL_PER_UNIT
 import de.dh.raaps.common.model.ID_UNDEFINED
 import de.dh.raaps.common.model.InsulinAmount
+import de.dh.raaps.common.model.MS_PER_MINUTE
 import de.dh.raaps.common.model.MealEntry
 import de.dh.raaps.common.model.MealType
 import de.dh.raaps.common.model.PlannedInsulin
@@ -28,6 +29,12 @@ import kotlinx.coroutines.launch
 import kotlin.math.max
 import kotlin.time.Duration.Companion.minutes
 import kotlin.time.Duration.Companion.seconds
+
+sealed interface SubmissionStatus {
+    object NotSubmitted : SubmissionStatus
+    object Submitting : SubmissionStatus
+    object Success : SubmissionStatus
+}
 
 data class MealBolusUiState(
     val isLoading: Boolean = true,
@@ -57,7 +64,7 @@ data class MealBolusUiState(
     val isInsulinPlanExpanded: Boolean = false,
     val isMealReminderEnabled: Boolean = true,
     val showCloseBanner: Boolean = false,
-    val isSubmitting: Boolean = false
+    val submissionStatus: SubmissionStatus = SubmissionStatus.NotSubmitted
 )
 
 class MealBolusViewModel(
@@ -163,7 +170,7 @@ class MealBolusViewModel(
                 it.copy(
                     referenceBg = result.calculationBg,
                     referenceTimestamp = result.calculationTimestamp,
-                    isProjected = result.calculationTimestamp.ms > now.ms,
+                    isProjected = result.calculationTimestamp.ms > now.ms + 4 * MS_PER_MINUTE,
                     iob = result.iobPart,
                     cob = result.cobGrams,
                     projectedIob = result.iobPart,
@@ -198,10 +205,10 @@ class MealBolusViewModel(
 
     fun submit(lock: TreatmentLock, onSuccess: () -> Unit) {
         val state = _uiState.value
-        if (state.isSubmitting) return
+        if (state.submissionStatus != SubmissionStatus.NotSubmitted) return
 
         viewModelScope.launch {
-            _uiState.update { it.copy(isSubmitting = true) }
+            _uiState.update { it.copy(submissionStatus = SubmissionStatus.Submitting) }
             try {
                 // 1. Record Meal
                 if ((state.carbsKe > 0) && (state.selectedMealType != null)) {
@@ -236,11 +243,11 @@ class MealBolusViewModel(
                     }
                 }
 
-                _uiState.update { it.copy(isSubmitting = false) }
+                _uiState.update { it.copy(submissionStatus = SubmissionStatus.Success) }
                 onSuccess()
             } catch (_: Exception) {
                 // TODO: Error handling
-                _uiState.update { it.copy(isSubmitting = false) }
+                _uiState.update { it.copy(submissionStatus = SubmissionStatus.NotSubmitted) }
             }
         }
     }
@@ -251,7 +258,7 @@ class MealBolusViewModel(
                 delay(5.seconds)
                 val now = Timestamp.now()
                 _uiState.update { state ->
-                    if (state.isSubmitting) return@update state
+                    if (state.submissionStatus != SubmissionStatus.NotSubmitted) return@update state
 
                     // We shouldn't continuously reset mealTimestamp to now + seaMinutes,
                     // as that undoes the user's manual changes.

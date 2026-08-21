@@ -4,11 +4,11 @@ import android.app.Application
 import android.app.Service
 import android.content.Context
 import de.dh.raaps.AppPreferencesRepository
+import de.dh.raaps.common.model.METABOLIC_EVENTS_HISTORY_HOURS
 import de.dh.raaps.common.model.PluginManager
 import de.dh.raaps.common.model.calculation.CarbsInsulinCalculator
 import de.dh.raaps.common.model.data.Minutes
 import de.dh.raaps.common.model.data.TimeService
-import de.dh.raaps.core.aps.Core
 import de.dh.raaps.core.aps.GlucoseSourceManager
 import de.dh.raaps.core.aps.SystemManager
 import de.dh.raaps.core.aps.SystemManagerImpl
@@ -76,7 +76,7 @@ class SystemRegistryImpl(
             val glucoseRepository = GlucoseRepository(appDatabase)
             val therapyRepository = TherapyRepository(appDatabase)
             val treatmentRepository = TreatmentRepository(
-                historySize = Minutes.ofHours(Core.METABOLIC_EVENTS_HISTORY_HOURS),
+                historySize = Minutes.ofHours(METABOLIC_EVENTS_HISTORY_HOURS),
                 appDatabase = appDatabase
             )
             val foodRepository = FoodRepository(appDatabase)

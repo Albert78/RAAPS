@@ -2,6 +2,7 @@ package de.dh.raaps.core.aps
 
 import android.util.Log
 import de.dh.raaps.common.model.InsulinAmount
+import de.dh.raaps.common.model.METABOLIC_EVENTS_HISTORY_HOURS
 import de.dh.raaps.common.model.MealType
 import de.dh.raaps.common.model.PlannedInsulin
 import de.dh.raaps.common.model.calculation.CarbsInsulinCalculator
@@ -138,14 +139,14 @@ class ApsAlgorithmImpl(
             val bgSettings = therapyManager.getBgSettings()
             val targetBg = bgSettings.first
 
-            val historyLimit = now.minusHours(25)
+            val historyLimit = now.minusHours(METABOLIC_EVENTS_HISTORY_HOURS)
             val insulinHistory = treatmentRepository.getInsulinApplications(from = historyLimit)
             val mealsHistory = treatmentRepository.getMeals(from = historyLimit)
 
             val projectedIob = carbsInsulinCalculator.iob(insulinHistory, referenceTimestamp, dia, peak)
             val projectedCob = carbsInsulinCalculator.cob(mealsHistory, referenceTimestamp)
 
-            val bgValue = run {
+            val bgValueAtReferenceTime = run {
                 val tick = timeline.tick(referenceTimestamp)
                 predictionModel.withTickState(tick) { it.predictedBg } ?: BgValue.INVALID
             }
@@ -153,10 +154,10 @@ class ApsAlgorithmImpl(
             val carbsGrams = carbsKe * 10.0
             val mealPart = convertToInsulinAmountFromCarbs(carbsGrams, cr)
 
-            val currentBgMgdl = if (bgValue.isValid()) bgValue.mgdl else targetBg.mgdl
-            val bgDiff = currentBgMgdl - targetBg.mgdl
+            val bgAtReferenceTimeMgdl = if (bgValueAtReferenceTime.isValid()) bgValueAtReferenceTime.mgdl else targetBg.mgdl
+            val bgDiffAtReferenceTime = bgAtReferenceTimeMgdl - targetBg.mgdl
 
-            val correctionPart = convertToInsulinAmountFromBgDelta(BgDelta(bgDiff.toShort()), BgDelta(isf.toShort()))
+            val correctionPart = convertToInsulinAmountFromBgDelta(BgDelta(bgDiffAtReferenceTime.toShort()), BgDelta(isf.toShort()))
             val cobPart = convertToInsulinAmountFromCarbs(projectedCob, cr)
 
             val total = (mealPart + correctionPart - projectedIob + cobPart).coerceAtLeast(InsulinAmount.ZERO)
@@ -170,8 +171,8 @@ class ApsAlgorithmImpl(
                 cobPart = cobPart,
                 totalProposed = bolusAmount,
                 cobGrams = projectedCob,
-                calculationBg = bgValue,
-                calculationTimestamp = mealTimestamp
+                calculationBg = bgValueAtReferenceTime,
+                calculationTimestamp = referenceTimestamp
             )
         }
 
@@ -192,14 +193,14 @@ class ApsAlgorithmImpl(
             if (mealType == null) {
                 val existing = existingPlan.getOrNull(0)
                 val isUserModified = existing?.isUserModified == true
-                
+
                 // If user modified the offset, keep their offset but apply it to the base time
                 val newTimestamp = if (isUserModified) {
                     mealTimestamp + Minutes(existing.offsetMinutes.toShort())
                 } else {
                     mealTimestamp + Minutes(suggestedOffset.toShort())
                 }
-                
+
                 return listOf(
                     PlannedInsulin(
                         amount = manualBolus,
@@ -252,7 +253,7 @@ class ApsAlgorithmImpl(
 
                 val existing = existingPlan.getOrNull(index)
                 val isUserModified = existing?.isUserModified == true
-                
+
                 // If user modified the offset, apply their offset to the new base time
                 val newTimestamp = if (isUserModified) {
                     mealTimestamp + Minutes(existing.offsetMinutes.toShort())

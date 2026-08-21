@@ -285,9 +285,12 @@ fun MealBolusContent(
         PrimaryButton(
             onClick = onSubmit,
             modifier = Modifier.fillMaxWidth(),
-            enabled = !uiState.isSubmitting && isInputValid
+            enabled = uiState.submissionStatus == SubmissionStatus.NotSubmitted && isInputValid
         ) {
-            Text(stringResource(R.string.meal_bolus_administer_button))
+            Text(
+                if (uiState.submissionStatus == SubmissionStatus.Success) stringResource(R.string.meal_bolus_administer_button_submitted)
+                else stringResource(R.string.meal_bolus_administer_button)
+            )
         }
     }
 }
@@ -669,7 +672,8 @@ fun MealBolusZeroKePreview() {
                         isf = 50,
                         cr = 10.0,
                         proposedBolus = InsulinAmount(0.8),
-                        manualBolus = InsulinAmount(0.8)
+                        manualBolus = InsulinAmount(0.8),
+                        submissionStatus = SubmissionStatus.NotSubmitted
                     ),
                     onCarbsChange = {},
                     onMealTimeChange = {},
@@ -718,7 +722,8 @@ fun MealBolusDefaultPreview() {
                         mealPart = InsulinAmount(4.5),
                         correctionPart = InsulinAmount(0.8),
                         proposedBolus = InsulinAmount(5.3),
-                        manualBolus = InsulinAmount(5.3)
+                        manualBolus = InsulinAmount(5.3),
+                        submissionStatus = SubmissionStatus.NotSubmitted
                     ),
                     onCarbsChange = {},
                     onMealTimeChange = {},
