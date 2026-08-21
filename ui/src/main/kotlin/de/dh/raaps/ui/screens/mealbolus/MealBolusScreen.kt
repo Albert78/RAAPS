@@ -2,6 +2,7 @@ package de.dh.raaps.ui.screens.mealbolus
 
 import android.content.res.Configuration
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -249,7 +250,10 @@ fun MealBolusContent(
                     )
                     Spacer(Modifier.height(8.dp))
 
-                    CalculationDetailsSelector(uiState = uiState)
+                    CalculationDetailsSelector(
+                        uiState = uiState,
+                        onResultClick = { onManualBolusChange(uiState.calculation.proposedTotal.iu) }
+                    )
                     EditableValueStepper(
                         currentValue = uiState.input.manualBolus.iu,
                         onValueChange = onManualBolusChange,
@@ -353,13 +357,13 @@ fun CloseScreenBanner(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CalculationDetailsSelector(
-    uiState: MealBolusUiState
+    uiState: MealBolusUiState,
+    onResultClick: () -> Unit
 ) {
     var expanded by remember { mutableStateOf(false) }
 
     Card(
         modifier = Modifier.fillMaxWidth(),
-        onClick = { expanded = !expanded },
         shape = RoundedCornerShape(12.dp),
         border = BorderStroke(2.dp, AppColorBlue.copy(alpha = 0.3f)),
         colors = CardDefaults.cardColors(
@@ -375,13 +379,18 @@ fun CalculationDetailsSelector(
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.SpaceBetween,
-                    modifier = Modifier.fillMaxWidth()
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable { expanded = true }
                 ) {
                     Text(
                         text = stringResource(R.string.meal_bolus_calc_result_label, insulinValue(uiState.calculation.proposedTotal.iu)),
                         style = MaterialTheme.typography.bodyMedium,
                         fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.primary
+                        color = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier
+                            .weight(1f)
+                            .clickable { onResultClick() }
                     )
 
                     Icon(
@@ -392,7 +401,9 @@ fun CalculationDetailsSelector(
                 }
             } else {
                 Row(
-                    modifier = Modifier.fillMaxWidth(),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable { expanded = false },
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
@@ -478,7 +489,9 @@ fun CalculationDetailsSelector(
                     style = MaterialTheme.typography.bodyMedium,
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.primary,
-                    modifier = Modifier.fillMaxWidth()
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable { onResultClick() }
                 )
             }
         }
