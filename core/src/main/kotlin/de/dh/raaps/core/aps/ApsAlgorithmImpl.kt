@@ -81,7 +81,7 @@ class ApsAlgorithmImpl(
                 val dia = settings.insulinProfile.dia
                 val peak = settings.insulinProfile.peak
 
-                val projectedIob = carbsInsulinCalculator.iob(insulinHistory, mealTimestamp, dia, peak)
+                val projectedIob = carbsInsulinCalculator.iob(insulinHistory, mealTimestamp, dia, peak, excludeBasal = true)
                 val projectedCob = carbsInsulinCalculator.cob(mealsHistory, mealTimestamp)
 
                 BolusProjections(

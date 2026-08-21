@@ -2,6 +2,7 @@ package de.dh.raaps.common.model.calculation
 
 import de.dh.raaps.common.model.InsulinAmount
 import de.dh.raaps.common.model.InsulinApplication
+import de.dh.raaps.common.model.InsulinCategory
 import de.dh.raaps.common.model.MealEntry
 import de.dh.raaps.common.model.convertToBgDeltaFromUnits
 import de.dh.raaps.common.model.data.BgDelta
@@ -99,10 +100,14 @@ class CarbsInsulinCalculator(
         insulinApplications: List<InsulinApplication>,
         timestamp: Timestamp,
         dia: Minutes,
-        peak: Minutes
+        peak: Minutes,
+        excludeBasal: Boolean = false
     ): InsulinAmount {
         var total = InsulinAmount.ZERO
         insulinApplications.forEach { entry ->
+            if (excludeBasal && entry.category == InsulinCategory.Basal) {
+                return@forEach
+            }
             val intervalsSinceApplication =
                 Minutes.timeDifference(entry.timestamp, timestamp).value / intervalSize.value
 
