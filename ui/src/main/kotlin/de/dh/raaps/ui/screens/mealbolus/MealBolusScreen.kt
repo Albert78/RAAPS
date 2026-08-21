@@ -570,7 +570,7 @@ fun MealBolusContextInfo(
                 )
             }
 
-            if (uiState.projections.isStale) {
+            if (uiState.isProjectionsStale) {
                 IconButton(
                     onClick = onRefresh,
                     modifier = Modifier
@@ -715,8 +715,6 @@ fun MealBolusZeroKePreview() {
                         mealTypes = emptyList(),
                         projections = BolusProjections(
                             bg = BgValue(140),
-                            timestamp = Timestamp.now(),
-                            isProjected = false,
                         ),
                         targetBg = BgValue(100),
                         isf = 50,
@@ -766,9 +764,9 @@ fun MealBolusDefaultPreview() {
                         ),
                         mealTypes = sampleMealTypes,
                         projections = BolusProjections(
-                            bg = BgValue(145),
                             timestamp = Timestamp.now().plusMinutes(15),
                             isProjected = true,
+                            bg = BgValue(145),
                             iob = InsulinAmount(1.2),
                             cob = 25.0,
                         ),

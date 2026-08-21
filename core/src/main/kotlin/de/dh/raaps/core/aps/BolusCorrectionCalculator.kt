@@ -85,14 +85,7 @@ object BolusCalculationMath {
         val isf = therapyManager.getIsfFactor(referenceTimestamp)
         val cr = therapyManager.getCrFactor(referenceTimestamp)
 
-        var suggestedCarbsKe = 0.0
-        if (referenceBg.isValid() && referenceBg < targetBg) {
-            val bgDiff = targetBg - referenceBg
-            val carbsGrams = convertToCarbsFromBgDelta(bgDiff, isf, cr)
-            // Round up to whole 5g
-            val roundedCarbsGrams = ceil(carbsGrams / 5.0) * 5.0
-            suggestedCarbsKe = roundedCarbsGrams / 10.0
-        }
+        val suggestedCarbsKe = calculateSuggestedCarbsKe(referenceBg, targetBg, isf, cr)
 
         return BolusScreenBaseData(
             referenceTimestamp = referenceTimestamp,
@@ -100,6 +93,18 @@ object BolusCalculationMath {
             suggestedCarbsKe = suggestedCarbsKe,
             suggestedImi = calculateSuggestedImi(referenceBg, therapyManager)
         )
+    }
+
+    fun calculateSuggestedCarbsKe(bg: BgValue, targetBg: BgValue, isf: BgDelta, cr: Double): Double {
+        var suggestedCarbsKe = 0.0
+        if (bg.isValid() && bg < targetBg) {
+            val bgDiff = targetBg - bg
+            val carbsGrams = convertToCarbsFromBgDelta(bgDiff, isf, cr)
+            // Round up to whole 5g
+            val roundedCarbsGrams = ceil(carbsGrams / 5.0) * 5.0
+            suggestedCarbsKe = roundedCarbsGrams / 10.0
+        }
+        return suggestedCarbsKe
     }
 
     suspend fun calculateSuggestedImi(currentBg: BgValue, therapyManager: TherapyManager): Minutes {

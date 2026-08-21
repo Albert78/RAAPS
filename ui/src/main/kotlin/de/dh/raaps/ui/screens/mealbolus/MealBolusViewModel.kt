@@ -86,12 +86,11 @@ data class MealInput(
  * System projections for the reference timestamp (Stage 2).
  */
 data class BolusProjections(
-    val bg: BgValue? = null,
     val timestamp: Timestamp = Timestamp.now(),
-    val iob: InsulinAmount = InsulinAmount.ZERO,
-    val cob: Double = 0.0,
     val isProjected: Boolean = false,
-    val isStale: Boolean = false
+    val bg: BgValue? = null,
+    val iob: InsulinAmount = InsulinAmount.ZERO,
+    val cob: Double = 0.0
 )
 
 /**
@@ -109,6 +108,7 @@ data class MealBolusUiState(
     val isLoading: Boolean = true,
     val input: MealInput = MealInput(),
     val projections: BolusProjections = BolusProjections(),
+    val isProjectionsStale: Boolean = false,
     val calculation: BolusCalculationDetails = BolusCalculationDetails(),
     val insulinPlan: List<PlannedInsulinUiModel> = emptyList(),
     val mealTypes: List<MealType> = emptyList(),
@@ -154,9 +154,9 @@ class MealBolusViewModel(
                     ),
                     mealTypes = mealTypes,
                     projections = BolusProjections(
-                        bg = baseData.referenceBg,
                         timestamp = baseData.referenceTimestamp,
                         isProjected = baseData.referenceTimestamp.ms > now.ms,
+                        bg = baseData.referenceBg,
                     ),
                     targetBg = bgSettings.first,
                     lowThreshold = bgSettings.second,
@@ -190,9 +190,9 @@ class MealBolusViewModel(
                         imi = Minutes(offsetMinutes.toShort())
                     ),
                     projections = BolusProjections(
-                        bg = baseData.referenceBg,
                         timestamp = baseData.referenceTimestamp,
                         isProjected = baseData.referenceTimestamp.ms > now.ms,
+                        bg = baseData.referenceBg,
                     ),
                 )
             }
@@ -208,9 +208,9 @@ class MealBolusViewModel(
             _uiState.update {
                 it.copy(
                     projections = BolusProjections(
-                        bg = baseData.referenceBg,
                         timestamp = baseData.referenceTimestamp,
                         isProjected = baseData.referenceTimestamp.ms > now.ms,
+                        bg = baseData.referenceBg,
                     ),
                 )
             }
@@ -402,8 +402,8 @@ class MealBolusViewModel(
 
                     state.copy(
                         input = state.input.copy(mealTimestamp = newMealTimestamp),
-                        projections = state.projections.copy(isStale = isStale),
-                        insulinPlan = updatedPlan
+                        insulinPlan = updatedPlan,
+                        isProjectionsStale = isStale
                     )
                 }
             }
