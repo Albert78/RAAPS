@@ -50,8 +50,9 @@ class PredictionModel(
      * Executes a block with access to a specific [ReadOnlyPredictionTickState].
      * Returns the result of the block, or null if the tick is not in the window.
      */
-    suspend fun <T> withTickState(tick: Tick, block: (ReadOnlyPredictionTickState) -> T): T? = mutex.withLock {
-        rollingHistory.tryGetTickState(tick)?.let(block)
+    suspend fun <T> withTickState(tick: Tick, block: suspend (ReadOnlyPredictionTickState) -> T): T? = mutex.withLock {
+        val state = rollingHistory.tryGetTickState(tick) ?: return null
+        return block(state)
     }
 
     suspend fun invalidateCarbsCache() = mutex.withLock {

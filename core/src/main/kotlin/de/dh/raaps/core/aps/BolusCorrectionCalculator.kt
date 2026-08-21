@@ -1,10 +1,8 @@
 package de.dh.raaps.core.aps
 
 import de.dh.raaps.common.model.InsulinAmount
-import de.dh.raaps.common.model.METABOLIC_EVENTS_HISTORY_HOURS
 import de.dh.raaps.common.model.MealType
 import de.dh.raaps.common.model.PlannedInsulin
-import de.dh.raaps.common.model.calculation.CarbsInsulinCalculator
 import de.dh.raaps.common.model.convertToCarbsFromBgDelta
 import de.dh.raaps.common.model.convertToInsulinAmountFromBgDelta
 import de.dh.raaps.common.model.convertToInsulinAmountFromCarbs
@@ -12,7 +10,6 @@ import de.dh.raaps.common.model.data.BgDelta
 import de.dh.raaps.common.model.data.BgValue
 import de.dh.raaps.common.model.data.Minutes
 import de.dh.raaps.common.model.data.Timestamp
-import de.dh.raaps.core.repository.TreatmentRepository
 import kotlin.math.abs
 import kotlin.math.ceil
 import kotlin.math.max
@@ -27,13 +24,30 @@ data class BolusParts(
     val cobGrams: Double,
     val calculationBg: BgValue,
     val calculationTimestamp: Timestamp
-)
+) {
+    companion object {
+        fun empty(): BolusParts = BolusParts(
+            mealPart = InsulinAmount.ZERO,
+            correctionPart = InsulinAmount.ZERO,
+            iobPart = InsulinAmount.ZERO,
+            cobPart = InsulinAmount.ZERO,
+            totalProposed = InsulinAmount.ZERO,
+            cobGrams = 0.0,
+            calculationBg = BgValue.INVALID,
+            calculationTimestamp = Timestamp.now()
+        )
+    }
+}
 
-data class BolusScreenBaseData(
-    val referenceTimestamp: Timestamp,
-    val referenceBg: BgValue,
-    val suggestedCarbsKe: Double,
-    val suggestedImi: Minutes
+/**
+ * System projections for a reference timestamp.
+ */
+data class BolusProjections(
+    val timestamp: Timestamp = Timestamp.now(),
+    val isProjected: Boolean = false,
+    val bg: BgValue? = null,
+    val iob: InsulinAmount = InsulinAmount.ZERO,
+    val cob: Double = 0.0
 )
 
 /**
@@ -43,7 +57,7 @@ interface BolusCorrectionCalculator {
     /**
      * Calculates the base data for the meal bolus screen.
      */
-    suspend fun calculateBaseData(mealTime: Timestamp = Timestamp.now()): BolusScreenBaseData
+    suspend fun calculateBolusProjections(mealTimestamp: Timestamp = Timestamp.now()): BolusProjections
 
     /**
      * Calculates the suggested IMI (Injection-Meal Interval) in minutes.
@@ -56,7 +70,8 @@ interface BolusCorrectionCalculator {
     suspend fun calculateBolusParts(
         carbsKe: Double,
         mealTimestamp: Timestamp,
-        referenceTimestamp: Timestamp
+        projectedIob: InsulinAmount,
+        projectedCob: Double
     ): BolusParts
 
     /**
@@ -75,26 +90,6 @@ interface BolusCorrectionCalculator {
  * Shared calculation logic for bolus correction.
  */
 object BolusCalculationMath {
-    suspend fun calculateBaseData(
-        referenceTimestamp: Timestamp,
-        referenceBg: BgValue,
-        therapyManager: TherapyManager
-    ): BolusScreenBaseData {
-        val bgSettings = therapyManager.getBgSettings()
-        val targetBg = bgSettings.first
-        val isf = therapyManager.getIsfFactor(referenceTimestamp)
-        val cr = therapyManager.getCrFactor(referenceTimestamp)
-
-        val suggestedCarbsKe = calculateSuggestedCarbsKe(referenceBg, targetBg, isf, cr)
-
-        return BolusScreenBaseData(
-            referenceTimestamp = referenceTimestamp,
-            referenceBg = referenceBg,
-            suggestedCarbsKe = suggestedCarbsKe,
-            suggestedImi = calculateSuggestedImi(referenceBg, therapyManager)
-        )
-    }
-
     fun calculateSuggestedCarbsKe(bg: BgValue, targetBg: BgValue, isf: BgDelta, cr: Double): Double {
         var suggestedCarbsKe = 0.0
         if (bg.isValid() && bg < targetBg) {
@@ -128,23 +123,12 @@ object BolusCalculationMath {
         referenceBg: BgValue,
         referenceTimestamp: Timestamp,
         therapyManager: TherapyManager,
-        treatmentRepository: TreatmentRepository,
-        carbsInsulinCalculator: CarbsInsulinCalculator
+        iob: InsulinAmount,
+        cob: Double
     ): BolusParts {
-        val settings = therapyManager.getCurrentTherapySettings()
-        val dia = settings.insulinProfile.dia
-        val peak = settings.insulinProfile.peak
-
         val cr = therapyManager.getCrFactor(referenceTimestamp)
         val isf = therapyManager.getIsfFactor(referenceTimestamp).mgdl.toInt()
         val targetBg = therapyManager.getBgSettings().first
-
-        val historyLimit = referenceTimestamp.minusHours(METABOLIC_EVENTS_HISTORY_HOURS)
-        val insulinHistory = treatmentRepository.getInsulinApplications(from = historyLimit)
-        val mealsHistory = treatmentRepository.getMeals(from = historyLimit)
-
-        val projectedIob = carbsInsulinCalculator.iob(insulinHistory, referenceTimestamp, dia, peak)
-        val projectedCob = carbsInsulinCalculator.cob(mealsHistory, referenceTimestamp)
 
         val carbsGrams = carbsKe * 10.0
         val mealPart = convertToInsulinAmountFromCarbs(carbsGrams, cr)
@@ -153,19 +137,19 @@ object BolusCalculationMath {
         val bgDiff = bgMgdl - targetBg.mgdl
 
         val correctionPart = convertToInsulinAmountFromBgDelta(BgDelta(bgDiff.toShort()), BgDelta(isf.toShort()))
-        val cobPart = convertToInsulinAmountFromCarbs(projectedCob, cr)
+        val cobPart = convertToInsulinAmountFromCarbs(cob, cr)
 
-        val total = (mealPart + correctionPart - projectedIob + cobPart).coerceAtLeast(InsulinAmount.ZERO)
+        val total = (mealPart + correctionPart - iob + cobPart).coerceAtLeast(InsulinAmount.ZERO)
         val roundedTotal = round(total.iu * 100.0) / 100.0
         val bolusAmount = InsulinAmount(roundedTotal)
 
         return BolusParts(
             mealPart = mealPart,
             correctionPart = correctionPart,
-            iobPart = projectedIob,
+            iobPart = iob,
             cobPart = cobPart,
             totalProposed = bolusAmount,
-            cobGrams = projectedCob,
+            cobGrams = cob,
             calculationBg = referenceBg,
             calculationTimestamp = referenceTimestamp
         )
@@ -247,15 +231,17 @@ object BolusCalculationMath {
  */
 class SimpleBolusCorrectionCalculator(
     private val therapyManager: TherapyManager,
-    private val treatmentRepository: TreatmentRepository,
-    private val carbsInsulinCalculator: CarbsInsulinCalculator,
     private val glucoseSourceManager: GlucoseSourceManager
 ) : BolusCorrectionCalculator {
 
     private fun getCurrentBg() = glucoseSourceManager.currentBg.value?.value ?: BgValue.INVALID
 
-    override suspend fun calculateBaseData(mealTime: Timestamp) = BolusCalculationMath.calculateBaseData(
-        Timestamp.now(), getCurrentBg(), therapyManager
+    override suspend fun calculateBolusProjections(mealTimestamp: Timestamp) = BolusProjections(
+        timestamp = Timestamp.now(),
+        isProjected = false,
+        bg = getCurrentBg(),
+        iob = InsulinAmount.ZERO,
+        cob = 0.0
     )
 
     override suspend fun calculateSuggestedImi() = BolusCalculationMath.calculateSuggestedImi(
@@ -263,15 +249,20 @@ class SimpleBolusCorrectionCalculator(
         therapyManager = therapyManager
     )
 
-    override suspend fun calculateBolusParts(carbsKe: Double, mealTimestamp: Timestamp, referenceTimestamp: Timestamp) =
-        BolusCalculationMath.calculateBolusParts(
+    override suspend fun calculateBolusParts(
+        carbsKe: Double,
+        mealTimestamp: Timestamp,
+        projectedIob: InsulinAmount,
+        projectedCob: Double
+    ) = BolusCalculationMath.calculateBolusParts(
             carbsKe = carbsKe,
             referenceBg = getCurrentBg(),
             // In this simple calculator, just use the current BG at timestamp NOW.
             referenceTimestamp = Timestamp.now(),
             therapyManager = therapyManager,
-            treatmentRepository = treatmentRepository,
-            carbsInsulinCalculator = carbsInsulinCalculator)
+            iob = projectedIob,
+            cob = projectedCob
+        )
 
     override suspend fun distributeInsulinPlan(
         manualBolus: InsulinAmount,

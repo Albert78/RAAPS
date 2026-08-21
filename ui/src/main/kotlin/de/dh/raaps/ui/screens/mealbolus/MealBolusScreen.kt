@@ -63,6 +63,7 @@ import de.dh.raaps.common.model.data.BgValue
 import de.dh.raaps.common.model.data.GlucoseUnit
 import de.dh.raaps.common.model.data.Minutes
 import de.dh.raaps.common.model.data.Timestamp
+import de.dh.raaps.core.aps.BolusProjections
 import de.dh.raaps.core.aps.TreatmentLock
 import de.dh.raaps.ui.R
 import de.dh.raaps.ui.common.DefaultSteppingStrategy
@@ -428,20 +429,21 @@ fun CalculationDetailsSelector(
                 Text(
                     stringResource(
                         R.string.meal_bolus_calc_factors_label,
-                        isfValue(BgDelta(uiState.isf.toShort())),
+                        isfValue(uiState.isf),
                         crValue(uiState.cr, withUnit = false)
                     ),
                     style = MaterialTheme.typography.bodySmall
                 )
 
-                if (uiState.projections.bg == null) {
+                val bgProjection = uiState.projections.bg
+                if (bgProjection == null) {
                     Text(
                         text = stringResource(R.string.meal_bolus_calc_no_bg_warning),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.error,
                         fontWeight = FontWeight.Bold
                     )
-                } else if (uiState.projections.bg.mgdl <= uiState.lowThreshold.mgdl) {
+                } else if (bgProjection.mgdl <= uiState.lowThreshold.mgdl) {
                     Text(
                         text = stringResource(
                             R.string.meal_bolus_calc_low_bg_warning,
@@ -717,7 +719,7 @@ fun MealBolusZeroKePreview() {
                             bg = BgValue(140),
                         ),
                         targetBg = BgValue(100),
-                        isf = 50,
+                        isf = BgDelta.fromMgDl(50),
                         cr = 10.0,
                         calculation = BolusCalculationDetails(
                             proposedTotal = InsulinAmount(0.8)
@@ -771,7 +773,7 @@ fun MealBolusDefaultPreview() {
                             cob = 25.0,
                         ),
                         targetBg = BgValue(100),
-                        isf = 50,
+                        isf = BgDelta.fromMgDl(50),
                         cr = 10.0,
                         calculation = BolusCalculationDetails(
                             mealPart = InsulinAmount(4.5),

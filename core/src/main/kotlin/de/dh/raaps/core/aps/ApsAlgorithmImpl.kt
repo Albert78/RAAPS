@@ -2,6 +2,7 @@ package de.dh.raaps.core.aps
 
 import android.util.Log
 import de.dh.raaps.common.model.InsulinAmount
+import de.dh.raaps.common.model.METABOLIC_EVENTS_HISTORY_HOURS
 import de.dh.raaps.common.model.MealType
 import de.dh.raaps.common.model.PlannedInsulin
 import de.dh.raaps.common.model.calculation.CarbsInsulinCalculator
@@ -69,13 +70,28 @@ class ApsAlgorithmImpl(
      * Smart bolus calculator that has access to the internal state of the APS algorithm.
      */
     private inner class BolusCorrectionCalculatorImpl : BolusCorrectionCalculator {
-        override suspend fun calculateBaseData(mealTime: Timestamp): BolusScreenBaseData {
-            val now = Timestamp.now()
+        override suspend fun calculateBolusProjections(mealTimestamp: Timestamp): BolusProjections {
+            val mealTimeTick = timeline.tick(mealTimestamp)
+            return predictionModel.withTickState(mealTimeTick) { state ->
+                val historyLimit = mealTimestamp.minusHours(METABOLIC_EVENTS_HISTORY_HOURS)
+                val insulinHistory = treatmentRepository.getInsulinApplications(from = historyLimit)
+                val mealsHistory = treatmentRepository.getMeals(from = historyLimit)
 
-            val nowTick = timeline.getNowTick()
-            val referenceBg = (predictionModel.withTickState(nowTick) { it.predictedBg } ?: BgValue.INVALID)
+                val settings = therapyManager.getCurrentTherapySettings()
+                val dia = settings.insulinProfile.dia
+                val peak = settings.insulinProfile.peak
 
-            return BolusCalculationMath.calculateBaseData(now, referenceBg, therapyManager)
+                val projectedIob = carbsInsulinCalculator.iob(insulinHistory, mealTimestamp, dia, peak)
+                val projectedCob = carbsInsulinCalculator.cob(mealsHistory, mealTimestamp)
+
+                BolusProjections(
+                    timestamp = mealTimestamp,
+                    isProjected = mealTimestamp > Timestamp.now(),
+                    bg = state.predictedBg,
+                    iob = projectedIob,
+                    cob = projectedCob
+                )
+            } ?: BolusProjections()
         }
 
         override suspend fun calculateSuggestedImi(): Minutes {
@@ -84,19 +100,24 @@ class ApsAlgorithmImpl(
             return BolusCalculationMath.calculateSuggestedImi(currentBg, therapyManager)
         }
 
-        override suspend fun calculateBolusParts(carbsKe: Double, mealTimestamp: Timestamp, referenceTimestamp: Timestamp): BolusParts {
+        override suspend fun calculateBolusParts(
+            carbsKe: Double,
+            mealTimestamp: Timestamp,
+            projectedIob: InsulinAmount,
+            projectedCob: Double
+        ): BolusParts {
             val bgValueAtReferenceTime = run {
-                val tick = timeline.tick(referenceTimestamp)
+                val tick = timeline.tick(mealTimestamp)
                 predictionModel.withTickState(tick) { it.predictedBg } ?: BgValue.INVALID
             }
 
             return BolusCalculationMath.calculateBolusParts(
                 carbsKe,
                 bgValueAtReferenceTime,
-                referenceTimestamp,
+                mealTimestamp,
                 therapyManager,
-                treatmentRepository,
-                carbsInsulinCalculator
+                projectedIob,
+                projectedCob
             )
         }
 

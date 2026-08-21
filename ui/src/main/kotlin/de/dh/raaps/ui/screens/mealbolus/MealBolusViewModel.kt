@@ -7,16 +7,20 @@ import androidx.lifecycle.viewmodel.CreationExtras
 import de.dh.raaps.common.model.DEFAULT_BG_LOW_THRESHOLD_MGDL
 import de.dh.raaps.common.model.DEFAULT_BG_TARGET_MGDL
 import de.dh.raaps.common.model.DEFAULT_CR_GRAM_PER_UNIT
+import de.dh.raaps.common.model.DEFAULT_IMI_MINUTES
 import de.dh.raaps.common.model.DEFAULT_ISF_MGDL_PER_UNIT
 import de.dh.raaps.common.model.ID_UNDEFINED
 import de.dh.raaps.common.model.InsulinAmount
 import de.dh.raaps.common.model.MS_PER_MINUTE
 import de.dh.raaps.common.model.MealEntry
 import de.dh.raaps.common.model.MealType
+import de.dh.raaps.common.model.data.BgDelta
 import de.dh.raaps.common.model.data.BgValue
 import de.dh.raaps.common.model.data.Minutes
 import de.dh.raaps.common.model.data.Timestamp
 import de.dh.raaps.core.SystemRegistry
+import de.dh.raaps.core.aps.BolusCalculationMath
+import de.dh.raaps.core.aps.BolusProjections
 import de.dh.raaps.core.aps.DeferredBolus
 import de.dh.raaps.core.aps.TreatmentLock
 import kotlinx.coroutines.delay
@@ -83,17 +87,6 @@ data class MealInput(
 )
 
 /**
- * System projections for the reference timestamp (Stage 2).
- */
-data class BolusProjections(
-    val timestamp: Timestamp = Timestamp.now(),
-    val isProjected: Boolean = false,
-    val bg: BgValue? = null,
-    val iob: InsulinAmount = InsulinAmount.ZERO,
-    val cob: Double = 0.0
-)
-
-/**
  * Detailed bolus calculation breakdown (Stage 3).
  */
 data class BolusCalculationDetails(
@@ -114,7 +107,7 @@ data class MealBolusUiState(
     val mealTypes: List<MealType> = emptyList(),
     val targetBg: BgValue = BgValue(DEFAULT_BG_TARGET_MGDL),
     val lowThreshold: BgValue = BgValue(DEFAULT_BG_LOW_THRESHOLD_MGDL),
-    val isf: Int = DEFAULT_ISF_MGDL_PER_UNIT.toInt(),
+    val isf: BgDelta = BgDelta.fromMgDl(DEFAULT_ISF_MGDL_PER_UNIT.toInt()),
     val cr: Double = DEFAULT_CR_GRAM_PER_UNIT,
     val isInsulinPlanExpanded: Boolean = false,
     val isMealReminderEnabled: Boolean = true,
@@ -137,30 +130,36 @@ class MealBolusViewModel(
     init {
         viewModelScope.launch {
             val now = Timestamp.now()
-            val isf = therapyManager.getIsfFactor(now).mgdl.toInt()
+            val isf = therapyManager.getIsfFactor(now)
             val cr = therapyManager.getCrFactor(now)
             val bgSettings = therapyManager.getBgSettings()
+            val targetBg = bgSettings.first
             val mealTypes = treatmentRepository.getAllMealTypes()
 
-            val baseData = bolusCorrectionCalculator.calculateBaseData()
+            val projections = bolusCorrectionCalculator.calculateBolusProjections(now)
+            val projectedBg = projections.bg
+            val suggestedImi = if (projectedBg != null)
+                BolusCalculationMath.calculateSuggestedImi(projectedBg, therapyManager)
+            else
+                Minutes(DEFAULT_IMI_MINUTES)
+            val suggestedCarbsKe = if (projectedBg != null)
+                BolusCalculationMath.calculateSuggestedCarbsKe(projectedBg, targetBg, isf, cr)
+            else
+                0.0
 
             _uiState.update {
                 it.copy(
                     isLoading = false,
                     input = MealInput(
-                        mealTimestamp = now + Minutes(max(0, baseData.suggestedImi.value.toInt()).toShort()),
-                        imi = baseData.suggestedImi,
-                        carbsKe = baseData.suggestedCarbsKe,
+                        mealTimestamp = now + Minutes(max(0, suggestedImi.value.toInt()).toShort()),
+                        imi = suggestedImi,
+                        carbsKe = suggestedCarbsKe,
                     ),
                     mealTypes = mealTypes,
-                    projections = BolusProjections(
-                        timestamp = baseData.referenceTimestamp,
-                        isProjected = baseData.referenceTimestamp.ms > now.ms,
-                        bg = baseData.referenceBg,
-                    ),
-                    targetBg = bgSettings.first,
+                    projections = projections,
+                    targetBg = targetBg,
                     lowThreshold = bgSettings.second,
-                    isf = if (isf == 0) DEFAULT_ISF_MGDL_PER_UNIT.toInt() else isf,
+                    isf = isf,
                     cr = if (cr == 0.0) DEFAULT_CR_GRAM_PER_UNIT else cr,
                 )
             }
@@ -181,7 +180,7 @@ class MealBolusViewModel(
         val newMealTimestamp = now + Minutes(offsetMinutes.toShort())
 
         viewModelScope.launch {
-            val baseData = bolusCorrectionCalculator.calculateBaseData(newMealTimestamp)
+            val projections = bolusCorrectionCalculator.calculateBolusProjections(newMealTimestamp)
 
             _uiState.update { state ->
                 state.copy(
@@ -189,11 +188,7 @@ class MealBolusViewModel(
                         mealTimestamp = newMealTimestamp,
                         imi = Minutes(offsetMinutes.toShort())
                     ),
-                    projections = BolusProjections(
-                        timestamp = baseData.referenceTimestamp,
-                        isProjected = baseData.referenceTimestamp.ms > now.ms,
-                        bg = baseData.referenceBg,
-                    ),
+                    projections = projections,
                 )
             }
             calculateBolus()
@@ -202,16 +197,12 @@ class MealBolusViewModel(
 
     fun onRefreshProjections() {
         viewModelScope.launch {
-            val now = Timestamp.now()
-            val baseData = bolusCorrectionCalculator.calculateBaseData()
+            val state = _uiState.value
+            val projections = bolusCorrectionCalculator.calculateBolusProjections(state.input.mealTimestamp)
 
             _uiState.update {
                 it.copy(
-                    projections = BolusProjections(
-                        timestamp = baseData.referenceTimestamp,
-                        isProjected = baseData.referenceTimestamp.ms > now.ms,
-                        bg = baseData.referenceBg,
-                    ),
+                    projections = projections,
                 )
             }
             calculateBolus()
@@ -264,7 +255,8 @@ class MealBolusViewModel(
             val result = bolusCorrectionCalculator.calculateBolusParts(
                 carbsKe = state.input.carbsKe,
                 mealTimestamp = state.input.mealTimestamp,
-                referenceTimestamp = state.projections.timestamp
+                projectedIob = state.projections.iob,
+                projectedCob = state.projections.cob
             )
 
             _uiState.update {

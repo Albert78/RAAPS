@@ -127,7 +127,7 @@ class SystemManagerImpl(
 
     // Computation Core: Pure logic and state, completely thread-agnostic
     private lateinit var core: Core
-    
+
     private var therapyManager: TherapyManager? = null
     private var treatmentRepository: TreatmentRepository? = null
     private var carbsInsulinCalculator: CarbsInsulinCalculator? = null
@@ -168,7 +168,7 @@ class SystemManagerImpl(
         this.therapyManager = therapyManager
         this.treatmentRepository = treatmentRepository
         this.carbsInsulinCalculator = carbsInsulinCalculator
-        
+
         wakeService.registerHandler(WAKE_TAG, this)
 
         scope.launch {
@@ -320,7 +320,7 @@ class SystemManagerImpl(
         return if (::core.isInitialized) {
             core.getBolusCorrectionCalculator()
         } else if (tm != null && tr != null && cic != null) {
-            SimpleBolusCorrectionCalculator(tm, tr, cic, glucoseSourceManager)
+            SimpleBolusCorrectionCalculator(tm, glucoseSourceManager)
         } else {
             NoopAlgorithm().getBolusCorrectionCalculator()
         }
