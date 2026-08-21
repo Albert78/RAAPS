@@ -279,7 +279,6 @@ fun MealBolusContent(
         if (uiState.insulinPlan.isNotEmpty()) {
             InsulinPlanCard(
                 plan = uiState.insulinPlan,
-                mealTimestamp = uiState.input.mealTimestamp,
                 isExpanded = uiState.isInsulinPlanExpanded,
                 onToggleExpanded = onToggleInsulinPlan,
                 onTimeChange = onPlannedInsulinTimeChange
@@ -594,7 +593,6 @@ fun MealBolusContextInfo(
 @Composable
 fun InsulinPlanCard(
     plan: List<PlannedInsulinUiModel>,
-    mealTimestamp: Timestamp,
     isExpanded: Boolean,
     onToggleExpanded: () -> Unit,
     onTimeChange: (Int, Timestamp) -> Unit
@@ -628,7 +626,7 @@ fun InsulinPlanCard(
                                 if (index < plan.size - 1) append(" + ")
                             }
 
-                            val lastOffset = plan.lastOrNull()?.timeFromMeal ?: Minutes(0)
+                            val lastOffset = plan.lastOrNull()?.timeOffset ?: Minutes(0)
                             append(" (")
                             append(withinTimeDescription(lastOffset))
                             append(")")
@@ -675,9 +673,8 @@ fun InsulinPlanCard(
                                 TimeStepper(
                                     currentTime = item.timestamp,
                                     onTimeChange = { onTimeChange(index, it) },
-                                    baseTime = mealTimestamp,
-                                    showPreposition = false,
-                                    forceSign = true,
+                                    showPreposition = true,
+                                    forceSign = false,
                                     style = TimeStepperDefaults.smallStyle()
                                 )
                                 Text(

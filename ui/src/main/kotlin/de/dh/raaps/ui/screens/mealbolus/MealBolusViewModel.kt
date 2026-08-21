@@ -47,9 +47,58 @@ data class PlannedInsulinUiModel(
     val amount: InsulinAmount,
     val timestamp: Timestamp,
     val timeFromMeal: Minutes,
-    val coercedTimeFromMeal: Minutes,
+    val timeOffset: Minutes,
     val partWeight: Int?
-)
+) {
+    /**
+     * Updates the absolute timestamp and UI offset based on a (potentially moved) meal time.
+     * Maintains the anchor to the meal but ensures the dose is not in the past.
+     */
+    fun updateForMealTime(newMealTimestamp: Timestamp, now: Timestamp): PlannedInsulinUiModel {
+        val target = newMealTimestamp + timeFromMeal
+        val coerced = if (target < now) now else target
+        return copy(
+            timestamp = coerced,
+            timeOffset = Minutes.timeDifference(now, coerced)
+        )
+    }
+
+    /**
+     * Updates the UI model based on a manual change of the absolute administration time.
+     * Recalculates the anchor to the meal and the UI offset.
+     */
+    fun updateAbsoluteTime(newTimestamp: Timestamp, mealTimestamp: Timestamp, now: Timestamp): PlannedInsulinUiModel {
+        val coerced = if (newTimestamp < now) now else newTimestamp
+        return copy(
+            timestamp = coerced,
+            timeFromMeal = Minutes.timeDifference(mealTimestamp, coerced),
+            timeOffset = Minutes.timeDifference(now, coerced)
+        )
+    }
+
+    companion object {
+        /**
+         * Creates a new UI model from a core planned insulin definition.
+         */
+        fun create(
+            amount: InsulinAmount,
+            timeFromMeal: Minutes,
+            mealTimestamp: Timestamp,
+            now: Timestamp,
+            partWeight: Int? = null
+        ): PlannedInsulinUiModel {
+            val target = mealTimestamp + timeFromMeal
+            val coerced = if (target < now) now else target
+            return PlannedInsulinUiModel(
+                amount = amount,
+                timestamp = coerced,
+                timeFromMeal = timeFromMeal,
+                timeOffset = Minutes.timeDifference(now, coerced),
+                partWeight = partWeight
+            )
+        }
+    }
+}
 
 /**
  * ViewModel for the Meal Bolus screen, managing the calculation cascade and temporal dependencies.
@@ -220,19 +269,12 @@ class MealBolusViewModel(
     }
 
     fun onPlannedInsulinTimeChange(index: Int, newTimestamp: Timestamp) {
-        val state = _uiState.value
         val now = Timestamp.now()
-        val (coercedTimestamp, coercedOffset) = coerceInsulinTime(newTimestamp, state.input.mealTimestamp, now)
-        val offset = Minutes.timeDifference(state.input.mealTimestamp, newTimestamp)
 
         _uiState.update { s ->
             val newPlan = s.insulinPlan.toMutableList()
             if (index in newPlan.indices) {
-                newPlan[index] = newPlan[index].copy(
-                    timestamp = coercedTimestamp,
-                    timeFromMeal = offset,
-                    coercedTimeFromMeal = coercedOffset
-                )
+                newPlan[index] = newPlan[index].updateAbsoluteTime(newTimestamp, s.input.mealTimestamp, now)
             }
             s.copy(insulinPlan = newPlan)
         }
@@ -280,44 +322,37 @@ class MealBolusViewModel(
                     )
                 )
             }
-            recalculateInsulinPlanTimes()
+            recalculateInsulinPlanTimesS()
         }
-    }
-
-    private fun coerceInsulinTime(
-        targetTimestamp: Timestamp,
-        mealTimestamp: Timestamp,
-        now: Timestamp = Timestamp.now()
-    ): Pair<Timestamp, Minutes> {
-        val coercedTimestamp = if (targetTimestamp < now) now else targetTimestamp
-        return coercedTimestamp to Minutes.timeDifference(mealTimestamp, coercedTimestamp)
     }
 
     private fun recalculateInsulinPlanTimes() {
         viewModelScope.launch {
-            val state = _uiState.value
-            val now = Timestamp.now()
-
-            val newPlan = bolusCorrectionCalculator.distributeInsulinPlan(
-                manualBolus = state.input.manualBolus,
-                correctionPart = state.calculation.correctionPart,
-                mealType = state.input.selectedMealType,
-                suggestedImi = state.input.imi
-            )
-
-            val uiPlan = newPlan.map { core ->
-                val (coercedTime, coercedOffset) = coerceInsulinTime(state.input.mealTimestamp + core.timeFromMeal, state.input.mealTimestamp, now)
-
-                PlannedInsulinUiModel(
-                    amount = core.amount,
-                    timestamp = coercedTime,
-                    timeFromMeal = core.timeFromMeal,
-                    coercedTimeFromMeal = coercedOffset,
-                    partWeight = core.partWeight
-                )
-            }
-            _uiState.update { it.copy(insulinPlan = uiPlan) }
+            recalculateInsulinPlanTimesS()
         }
+    }
+
+    private suspend fun recalculateInsulinPlanTimesS() {
+        val state = _uiState.value
+        val now = Timestamp.now()
+
+        val newPlan = bolusCorrectionCalculator.distributeInsulinPlan(
+            manualBolus = state.input.manualBolus,
+            correctionPart = state.calculation.correctionPart,
+            mealType = state.input.selectedMealType,
+            suggestedImi = state.input.imi
+        )
+
+        val uiPlan = newPlan.map { core ->
+            PlannedInsulinUiModel.create(
+                amount = core.amount,
+                timeFromMeal = core.timeFromMeal,
+                mealTimestamp = state.input.mealTimestamp,
+                now = now,
+                partWeight = core.partWeight
+            )
+        }
+        _uiState.update { it.copy(insulinPlan = uiPlan) }
     }
 
     fun submit(lock: TreatmentLock, onSuccess: () -> Unit) {
@@ -385,11 +420,7 @@ class MealBolusViewModel(
 
                     // 3. Update absolute times in insulin plan (based on sliding meal time)
                     val updatedPlan = state.insulinPlan.map { item ->
-                        val (coercedTime, coercedOffset) = coerceInsulinTime(newMealTimestamp + item.timeFromMeal, newMealTimestamp, now)
-                        item.copy(
-                            timestamp = coercedTime,
-                            coercedTimeFromMeal = coercedOffset
-                        )
+                        item.updateForMealTime(newMealTimestamp, now)
                     }
 
                     state.copy(
