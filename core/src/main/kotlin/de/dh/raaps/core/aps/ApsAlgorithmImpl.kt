@@ -84,10 +84,10 @@ class ApsAlgorithmImpl(
             return BolusCalculationMath.calculateBaseData(referenceTimestamp, referenceBg, therapyManager)
         }
 
-        override suspend fun calculateSuggestedSea(): Minutes {
+        override suspend fun calculateSuggestedImi(): Minutes {
             val nowTick = timeline.getNowTick()
             val currentBg = predictionModel.withTickState(nowTick) { it.predictedBg } ?: BgValue.INVALID
-            return BolusCalculationMath.calculateSuggestedSea(currentBg, therapyManager)
+            return BolusCalculationMath.calculateSuggestedImi(currentBg, therapyManager)
         }
 
         override suspend fun calculateBolusParts(carbsKe: Double, mealTimestamp: Timestamp, referenceTimestamp: Timestamp): BolusParts {
@@ -110,14 +110,14 @@ class ApsAlgorithmImpl(
             manualBolus: InsulinAmount,
             correctionPart: InsulinAmount,
             mealType: MealType?,
-            suggestedSea: Minutes,
+            suggestedImi: Minutes,
             existingPlan: List<PlannedInsulin>
         ): List<PlannedInsulin> {
             return BolusCalculationMath.distributeInsulinPlan(
                 manualBolus,
                 correctionPart,
                 mealType,
-                suggestedSea,
+                suggestedImi,
                 existingPlan
             )
         }

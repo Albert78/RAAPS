@@ -33,11 +33,11 @@ data class BolusScreenBaseData(
     val referenceTimestamp: Timestamp,
     val referenceBg: BgValue,
     val suggestedCarbsKe: Double,
-    val suggestedSea: Minutes
+    val suggestedImi: Minutes
 )
 
 /**
- * Bolus calculator to support the user with carbs, SEA and bolus suggestions.
+ * Bolus calculator to support the user with carbs, IMI and bolus suggestions.
  */
 interface BolusCorrectionCalculator {
     /**
@@ -46,9 +46,9 @@ interface BolusCorrectionCalculator {
     suspend fun calculateBaseData(): BolusScreenBaseData
 
     /**
-     * Calculates the suggested SEA (Schätzwert der Essens-Anpassung) in minutes.
+     * Calculates the suggested IMI (Injection-Meal Interval) in minutes.
      */
-    suspend fun calculateSuggestedSea(): Minutes
+    suspend fun calculateSuggestedImi(): Minutes
 
     /**
      * Calculates the bolus parts for a given carb intake at a specific time.
@@ -67,7 +67,7 @@ interface BolusCorrectionCalculator {
         manualBolus: InsulinAmount,
         correctionPart: InsulinAmount,
         mealType: MealType?,
-        suggestedSea: Minutes,
+        suggestedImi: Minutes,
         existingPlan: List<PlannedInsulin> = emptyList()
     ): List<PlannedInsulin>
 }
@@ -99,11 +99,11 @@ object BolusCalculationMath {
             referenceTimestamp = referenceTimestamp,
             referenceBg = referenceBg,
             suggestedCarbsKe = suggestedCarbsKe,
-            suggestedSea = calculateSuggestedSea(referenceBg, therapyManager)
+            suggestedImi = calculateSuggestedImi(referenceBg, therapyManager)
         )
     }
 
-    suspend fun calculateSuggestedSea(currentBg: BgValue, therapyManager: TherapyManager): Minutes {
+    suspend fun calculateSuggestedImi(currentBg: BgValue, therapyManager: TherapyManager): Minutes {
         if (currentBg.isInvalid()) return Minutes(0)
 
         val bgSettings = therapyManager.getBgSettings()
@@ -171,14 +171,14 @@ object BolusCalculationMath {
         manualBolus: InsulinAmount,
         correctionPart: InsulinAmount,
         mealType: MealType?,
-        suggestedSea: Minutes,
+        suggestedImi: Minutes,
         existingPlan: List<PlannedInsulin>
     ): List<PlannedInsulin> {
         if (manualBolus <= InsulinAmount.ZERO) return emptyList()
 
-        // SEA (Spritz-Ess-Abstand) > 0 means wait time between bolus and meal -> Bolus before meal.
-        // SEA < 0 means a negative wait time (delay) -> Bolus after meal.
-        val defaultTimeFromMeal = if (suggestedSea.value >= 0) Minutes((-suggestedSea.value).toShort()) else Minutes(abs(suggestedSea.value.toInt()).toShort())
+        // IMI (Injection-Meal Interval) > 0 means wait time between bolus and meal -> Bolus before meal.
+        // IMI < 0 means a negative wait time (delay) -> Bolus after meal.
+        val defaultTimeFromMeal = if (suggestedImi.value >= 0) Minutes((-suggestedImi.value).toShort()) else Minutes(abs(suggestedImi.value.toInt()).toShort())
 
         if (mealType == null) {
             val existing = existingPlan.getOrNull(0)
@@ -267,13 +267,31 @@ class SimpleBolusCorrectionCalculator(
         Timestamp.now(), getCurrentBg(), therapyManager
     )
 
-    override suspend fun calculateSuggestedSea() = BolusCalculationMath.calculateSuggestedSea(
-        getCurrentBg(), therapyManager
+    override suspend fun calculateSuggestedImi() = BolusCalculationMath.calculateSuggestedImi(
+        currentBg = getCurrentBg(),
+        therapyManager = therapyManager
     )
 
     override suspend fun calculateBolusParts(carbsKe: Double, mealTimestamp: Timestamp, referenceTimestamp: Timestamp) =
-        BolusCalculationMath.calculateBolusParts(carbsKe, getCurrentBg(), Timestamp.now(), therapyManager, treatmentRepository, carbsInsulinCalculator)
+        BolusCalculationMath.calculateBolusParts(
+            carbsKe = carbsKe,
+            referenceBg = getCurrentBg(),
+            referenceTimestamp = Timestamp.now(),
+            therapyManager = therapyManager,
+            treatmentRepository = treatmentRepository,
+            carbsInsulinCalculator = carbsInsulinCalculator)
 
-    override suspend fun distributeInsulinPlan(manualBolus: InsulinAmount, correctionPart: InsulinAmount, mealType: MealType?, suggestedSea: Minutes, existingPlan: List<PlannedInsulin>) =
-        BolusCalculationMath.distributeInsulinPlan(manualBolus, correctionPart, mealType, suggestedSea, existingPlan)
+    override suspend fun distributeInsulinPlan(
+        manualBolus: InsulinAmount,
+        correctionPart: InsulinAmount,
+        mealType: MealType?,
+        suggestedImi: Minutes,
+        existingPlan: List<PlannedInsulin>
+    ) = BolusCalculationMath.distributeInsulinPlan(
+        manualBolus = manualBolus,
+        correctionPart = correctionPart,
+        mealType = mealType,
+        suggestedImi = suggestedImi,
+        existingPlan = existingPlan
+    )
 }

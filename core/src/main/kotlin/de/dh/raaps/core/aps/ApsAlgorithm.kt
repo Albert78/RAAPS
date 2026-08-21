@@ -198,25 +198,29 @@ class NoopAlgorithm: ApsAlgorithm {
     override fun getBolusCorrectionCalculator(): BolusCorrectionCalculator {
         return object : BolusCorrectionCalculator {
             override suspend fun calculateBaseData(): BolusScreenBaseData =
-                BolusScreenBaseData(Timestamp.now(), BgValue.INVALID, 0.0, 0)
+                BolusScreenBaseData(
+                    referenceTimestamp = Timestamp.now(),
+                    referenceBg = BgValue.INVALID,
+                    suggestedCarbsKe = 0.0,
+                    suggestedImi = Minutes(0))
 
-            override suspend fun calculateSuggestedSea(): Minutes = Minutes(0)
+            override suspend fun calculateSuggestedImi(): Minutes = Minutes(0)
             override suspend fun calculateBolusParts(carbsKe: Double, mealTimestamp: Timestamp, referenceTimestamp: Timestamp): BolusParts =
                 BolusParts(
-                    InsulinAmount.ZERO,
-                    InsulinAmount.ZERO,
-                    InsulinAmount.ZERO,
-                    InsulinAmount.ZERO,
-                    InsulinAmount.ZERO,
-                    0.0,
-                    BgValue.INVALID,
-                    Timestamp.now()
+                    mealPart = InsulinAmount.ZERO,
+                    correctionPart = InsulinAmount.ZERO,
+                    iobPart = InsulinAmount.ZERO,
+                    cobPart = InsulinAmount.ZERO,
+                    totalProposed = InsulinAmount.ZERO,
+                    cobGrams = 0.0,
+                    calculationBg = BgValue.INVALID,
+                    calculationTimestamp = Timestamp.now()
                 )
             override suspend fun distributeInsulinPlan(
                 manualBolus: InsulinAmount,
                 correctionPart: InsulinAmount,
                 mealType: MealType?,
-                suggestedSea: Minutes,
+                suggestedImi: Minutes,
                 existingPlan: List<PlannedInsulin>
             ): List<PlannedInsulin> = emptyList()
         }

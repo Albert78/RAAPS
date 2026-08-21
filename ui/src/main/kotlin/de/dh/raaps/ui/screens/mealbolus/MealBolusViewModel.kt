@@ -60,7 +60,7 @@ data class MealBolusUiState(
     val referenceBg: BgValue? = null,
     val referenceTimestamp: Timestamp = Timestamp.now(),
     val isProjected: Boolean = false,
-    val seaMinutes: Minutes = Minutes(0),
+    val imi: Minutes = Minutes(0),
     val carbsKe: Double = 0.0,
     val mealTypes: List<MealType> = emptyList(),
     val selectedMealType: MealType? = null,
@@ -107,8 +107,8 @@ class MealBolusViewModel(
             _uiState.update {
                 it.copy(
                     isLoading = false,
-                    mealTimestamp = now + Minutes(max(0, baseData.suggestedSea.value.toInt()).toShort()),
-                    seaMinutes = baseData.suggestedSea,
+                    mealTimestamp = now + Minutes(max(0, baseData.suggestedImi.value.toInt()).toShort()),
+                    imi = baseData.suggestedImi,
                     carbsKe = baseData.suggestedCarbsKe,
                     mealTypes = mealTypes,
                     referenceBg = baseData.referenceBg,
@@ -213,7 +213,7 @@ class MealBolusViewModel(
                 manualBolus = state.manualBolus,
                 correctionPart = state.correctionPart,
                 mealType = state.selectedMealType,
-                suggestedSea = state.seaMinutes,
+                suggestedImi = state.imi,
                 existingPlan = state.insulinPlan.map { it.toCoreModel() }
             )
 
@@ -287,7 +287,7 @@ class MealBolusViewModel(
                 _uiState.update { state ->
                     if (state.submissionStatus != SubmissionStatus.NotSubmitted) return@update state
 
-                    // We shouldn't continuously reset mealTimestamp to now + seaMinutes,
+                    // We shouldn't continuously reset mealTimestamp to now + imi,
                     // as that undoes the user's manual changes.
                     // If we want the time to "roll forward" if the user hasn't touched it,
                     // we would need an `isMealTimeUserModified` flag.
