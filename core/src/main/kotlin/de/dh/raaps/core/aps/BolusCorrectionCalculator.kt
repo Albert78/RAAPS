@@ -67,8 +67,7 @@ interface BolusCorrectionCalculator {
         manualBolus: InsulinAmount,
         correctionPart: InsulinAmount,
         mealType: MealType?,
-        suggestedImi: Minutes,
-        existingPlan: List<PlannedInsulin> = emptyList()
+        suggestedImi: Minutes
     ): List<PlannedInsulin>
 }
 
@@ -171,8 +170,7 @@ object BolusCalculationMath {
         manualBolus: InsulinAmount,
         correctionPart: InsulinAmount,
         mealType: MealType?,
-        suggestedImi: Minutes,
-        existingPlan: List<PlannedInsulin>
+        suggestedImi: Minutes
     ): List<PlannedInsulin> {
         if (manualBolus <= InsulinAmount.ZERO) return emptyList()
 
@@ -181,13 +179,8 @@ object BolusCalculationMath {
         val defaultTimeFromMeal = if (suggestedImi.value >= 0) Minutes((-suggestedImi.value).toShort()) else Minutes(abs(suggestedImi.value.toInt()).toShort())
 
         if (mealType == null) {
-            val existing = existingPlan.getOrNull(0)
-            val isUserModified = existing?.isUserModified == true
-
-            // If user modified the offset, keep their offset
-            val timeFromMeal = if (isUserModified) existing.timeFromMeal else defaultTimeFromMeal
             return listOf(
-                PlannedInsulin(manualBolus, timeFromMeal, "Bolus", isUserModified)
+                PlannedInsulin(manualBolus, defaultTimeFromMeal, "Bolus")
             )
         }
 
@@ -198,17 +191,10 @@ object BolusCalculationMath {
             val delayFromBase = if (index == 0) 0 else component.peakMinutes.value.toInt()
             val finalDefaultTime = defaultTimeFromMeal + Minutes(delayFromBase.toShort())
 
-            val existing = existingPlan.getOrNull(index)
-            val isUserModified = existing?.isUserModified == true
-
-            // If user modified the offset, apply their offset
-            val time = if (isUserModified) existing.timeFromMeal else finalDefaultTime
-
             PlannedInsulin(
                 amount = amount,
-                timeFromMeal = time,
-                description = if (mealType.components.size > 1) "Teil ${index + 1} (${component.weight}%)" else "Bolus",
-                isUserModified = isUserModified
+                timeFromMeal = finalDefaultTime,
+                description = if (mealType.components.size > 1) "Teil ${index + 1} (${component.weight}%)" else "Bolus"
             )
         }.filter { it.amount > InsulinAmount.ZERO }
     }
@@ -286,13 +272,11 @@ class SimpleBolusCorrectionCalculator(
         manualBolus: InsulinAmount,
         correctionPart: InsulinAmount,
         mealType: MealType?,
-        suggestedImi: Minutes,
-        existingPlan: List<PlannedInsulin>
+        suggestedImi: Minutes
     ) = BolusCalculationMath.distributeInsulinPlan(
         manualBolus = manualBolus,
         correctionPart = correctionPart,
         mealType = mealType,
-        suggestedImi = suggestedImi,
-        existingPlan = existingPlan
+        suggestedImi = suggestedImi
     )
 }

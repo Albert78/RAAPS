@@ -127,8 +127,7 @@ data class PlannedInsulin(
      * Can be negative (bolus before meal) or positive (bolus after meal).
      */
     val timeFromMeal: Minutes = Minutes(0),
-    val description: String = "",
-    val isUserModified: Boolean = false
+    val description: String = ""
 )
 
 /**

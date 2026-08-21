@@ -13,7 +13,6 @@ import de.dh.raaps.common.model.InsulinAmount
 import de.dh.raaps.common.model.MS_PER_MINUTE
 import de.dh.raaps.common.model.MealEntry
 import de.dh.raaps.common.model.MealType
-import de.dh.raaps.common.model.PlannedInsulin
 import de.dh.raaps.common.model.data.BgValue
 import de.dh.raaps.common.model.data.Minutes
 import de.dh.raaps.common.model.data.Timestamp
@@ -44,16 +43,8 @@ data class PlannedInsulinUiModel(
     val timestamp: Timestamp,
     val timeFromMeal: Minutes,
     val coercedTimeFromMeal: Minutes,
-    val description: String,
-    val isUserModified: Boolean
-) {
-    fun toCoreModel() = PlannedInsulin(
-        amount = amount,
-        timeFromMeal = timeFromMeal,
-        description = description,
-        isUserModified = isUserModified
-    )
-}
+    val description: String
+)
 
 /**
  * ViewModel for the Meal Bolus screen, managing the calculation cascade and temporal dependencies.
@@ -269,8 +260,7 @@ class MealBolusViewModel(
                 newPlan[index] = newPlan[index].copy(
                     timestamp = coercedTimestamp,
                     timeFromMeal = offset,
-                    coercedTimeFromMeal = coercedOffset,
-                    isUserModified = true
+                    coercedTimeFromMeal = coercedOffset
                 )
             }
             s.copy(insulinPlan = newPlan)
@@ -342,8 +332,7 @@ class MealBolusViewModel(
                 manualBolus = state.input.manualBolus,
                 correctionPart = state.calculation.correctionPart,
                 mealType = state.input.selectedMealType,
-                suggestedImi = state.input.imi,
-                existingPlan = state.insulinPlan.map { it.toCoreModel() }
+                suggestedImi = state.input.imi
             )
 
             val uiPlan = newPlan.map { core ->
@@ -354,8 +343,7 @@ class MealBolusViewModel(
                     timestamp = coercedTime,
                     timeFromMeal = core.timeFromMeal,
                     coercedTimeFromMeal = coercedOffset,
-                    description = core.description,
-                    isUserModified = core.isUserModified
+                    description = core.description
                 )
             }
             _uiState.update { it.copy(insulinPlan = uiPlan) }
