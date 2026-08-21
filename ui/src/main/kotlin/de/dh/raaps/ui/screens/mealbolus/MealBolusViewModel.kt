@@ -52,22 +52,24 @@ data class PlannedInsulinUiModel(
  *
  * ## Calculation Cascade & Dependencies (Stages):
  * 1. **Initial Proposal:** Current BG -> Suggested IMI -> Suggested Meal Time (T_meal).
- * 2. **Meal Context:** T_meal -> Reference Timestamp (T_ref) for projections (IOB, COB, projected BG).
- * 3. **Bolus Suggestion:** (Carbs + Meal Type) AND (Projections @ T_ref) -> Proposed Bolus Amount.
+ * 2. **Meal Context:** T_meal -> Projections at T_meal (IOB, COB, projected BG).
+ * 3. **Bolus Suggestion:** (Carbs + Meal Type) AND (Projections @ T_meal) -> Proposed Bolus Amount.
  * 4. **Insulin Plan:** Bolus Amount + Meal Type -> Insulin Distribution Plan (Relative Offsets to T_meal).
  * 5. **Execution:** T_meal + Relative Offsets -> Absolute execution timestamps.
  *
  * ## Rules for Manual Changes:
  * - **T_meal:** Changing the meal time manually updates the IMI (offset). T_meal remains relative and slides
- *   with system time via the ticker to maintain this offset until submission. A change of T_meal also changes
- *   T_ref.
+ *   with system time via the ticker to maintain this offset until submission. A change of T_meal
+ *   conceptually also changes the projections and so all calculated boluses but for UI stability,
+ *   the user must trigger the projections refresh manually.
  * - **Carbs/Meal Type:** Triggers Stage 3 & 4 (recalculates bolus and plan distribution).
  * - **Bolus Amount:** Triggers Stage 4 (recalculates plan distribution based on the new amount).
  * - **Plan Offsets:** Manually changing a plan time fixes its relative offset to T_meal.
  *
  * ## Temporal Stability:
  * - Projection data (IOB, COB, BG) is kept stable until an explicit refresh is triggered (Refresh Button).
- * - The UI indicates "stale" data if the reference timestamp is more than 4 minutes old.
+ * - The UI indicates "stale" data if the reference timestamp differs more than 4 minutes from the
+ *   new meal time.
  */
 /**
  * User inputs for the meal bolus.
@@ -387,8 +389,7 @@ class MealBolusViewModel(
                     val newMealTimestamp = now + state.input.imi
 
                     // 2. Check for stale projections (> 4 mins old)
-                    val newProjectionTimestamp = bolusCorrectionCalculator.getProjectionTime(newMealTimestamp)
-                    val isStale = (newProjectionTimestamp - state.projections.timestamp) > Minutes(4).inMs()
+                    val isStale = (newMealTimestamp - state.projections.timestamp) > Minutes(4).inMs()
 
                     // 3. Update absolute times in insulin plan (based on sliding meal time)
                     val updatedPlan = state.insulinPlan.map { item ->
