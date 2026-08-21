@@ -258,6 +258,9 @@ class SystemManagerImpl(
                         ApsMode.BasalOnly -> core.activate(isReadOnly = true)
                         ApsMode.Suspend -> core.suspend()
                     }
+                    if (mode != ApsMode.Suspend) {
+                        core.processCalculation()
+                    }
                 }
             }
             launch {

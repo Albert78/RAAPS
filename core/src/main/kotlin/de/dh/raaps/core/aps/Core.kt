@@ -164,7 +164,7 @@ class Core(
         processCalculation()
     }
 
-    private suspend fun processCalculation() {
+    internal suspend fun processCalculation() {
         if (coreState !is CoreState.Active) return
 
         busyWork {
