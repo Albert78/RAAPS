@@ -44,6 +44,10 @@ import de.dh.raaps.common.model.BOLUS_MIN
 import de.dh.raaps.common.model.CARBS_KE_MAX
 import de.dh.raaps.common.model.CARBS_KE_MIN
 import de.dh.raaps.common.model.CarbCurveComponentData
+import de.dh.raaps.common.model.ID_MEAL_FAST
+import de.dh.raaps.common.model.ID_MEAL_HIGH_FAT
+import de.dh.raaps.common.model.ID_MEAL_SLOW
+import de.dh.raaps.common.model.ID_MEAL_STANDARD
 import de.dh.raaps.common.model.InsulinAmount
 import de.dh.raaps.common.model.MealType
 import de.dh.raaps.common.model.PlannedInsulin
@@ -614,10 +618,10 @@ fun MealBolusZeroKePreview() {
 @Composable
 fun MealBolusDefaultPreview() {
     val sampleMealTypes = listOf(
-        MealType(name = "Schnelle KE", components = listOf(CarbCurveComponentData(100, Minutes(60))), cat = Minutes(180)),
-        MealType(name = "Standard-Essen", components = listOf(CarbCurveComponentData(100, Minutes(60))), cat = Minutes(180)),
-        MealType(name = "Fettreiches Essen", components = listOf(CarbCurveComponentData(100, Minutes(60))), cat = Minutes(180)),
-        MealType(name = "Langsames Essen", components = listOf(CarbCurveComponentData(100, Minutes(60))), cat = Minutes(180)),
+        MealType(id = ID_MEAL_FAST, name = "Schnell", components = listOf(CarbCurveComponentData(100, Minutes(30))), cat = Minutes(120)),
+        MealType(id = ID_MEAL_STANDARD, name = "Standard", components = listOf(CarbCurveComponentData(100, Minutes(60))), cat = Minutes(180)),
+        MealType(id = ID_MEAL_HIGH_FAT, name = "Fettreiches Essen", components = listOf(CarbCurveComponentData(100, Minutes(60))), cat = Minutes(180)),
+        MealType(id = ID_MEAL_SLOW, name = "Langsam", components = listOf(CarbCurveComponentData(100, Minutes(90))), cat = Minutes(240)),
     )
     AppTheme {
         CompositionLocalProvider(LocalGlucoseUnit provides GlucoseUnit.MG_DL) {

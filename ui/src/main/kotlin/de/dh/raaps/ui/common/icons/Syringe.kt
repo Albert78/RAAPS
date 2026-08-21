@@ -1,16 +1,12 @@
 package de.dh.raaps.ui.common.icons
 
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.materialIcon
 import androidx.compose.material.icons.materialPath
 import androidx.compose.material3.Icon
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.graphics.vector.group
@@ -84,22 +80,14 @@ private var _syringe: ImageVector? = null
 
 @Preview(showBackground = true)
 @Composable
-fun SyringePreview() {
+private fun SyringeIconPreview() {
     AppTheme {
         Surface {
-            Box(
-                modifier = Modifier
-                    .padding(16.dp)
-                    .size(100.dp),
-                contentAlignment = Alignment.Center
-            ) {
-                Icon(
-                    imageVector = Icons.Outlined.Syringe,
-                    contentDescription = null,
-                    modifier = Modifier.size(64.dp),
-                    tint = MaterialTheme.colorScheme.primary
-                )
-            }
+            Icon(
+                imageVector = Icons.Outlined.Syringe,
+                contentDescription = "Syringe Icon Preview",
+                modifier = Modifier.padding(16.dp)
+            )
         }
     }
 }

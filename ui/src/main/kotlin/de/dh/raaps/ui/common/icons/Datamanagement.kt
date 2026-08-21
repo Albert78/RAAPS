@@ -1,9 +1,17 @@
 package de.dh.raaps.ui.common.icons
 
+import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.materialIcon
 import androidx.compose.material.icons.materialPath
+import androidx.compose.material3.Icon
+import androidx.compose.material3.Surface
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.dp
+import de.dh.raaps.ui.common.theme.AppTheme
 
 /**
  * Standard-Icon für Backup (Datei-Export).
@@ -73,3 +81,31 @@ public val Icons.Outlined.Restore: ImageVector
 
 private var _backup: ImageVector? = null
 private var _restore: ImageVector? = null
+
+@Preview(showBackground = true)
+@Composable
+private fun BackupIconPreview() {
+    AppTheme {
+        Surface {
+            Icon(
+                imageVector = Icons.Outlined.Backup,
+                contentDescription = "Backup Icon Preview",
+                modifier = Modifier.padding(16.dp)
+            )
+        }
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+private fun RestoreIconPreview() {
+    AppTheme {
+        Surface {
+            Icon(
+                imageVector = Icons.Outlined.Restore,
+                contentDescription = "Restore Icon Preview",
+                modifier = Modifier.padding(16.dp)
+            )
+        }
+    }
+}

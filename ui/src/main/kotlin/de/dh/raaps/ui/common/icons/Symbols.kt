@@ -81,6 +81,10 @@ val Icon_Scrollview_Arrow_Down = Icons.Outlined.KeyboardArrowDown
 val Icon_Ui = Icons.Outlined.Palette
 val Icon_Backup = Icons.Outlined.Backup
 val Icon_Restore = Icons.Outlined.Restore
+val Icon_Carbs = Icons.Filled.Carbs
+val Icon_Insulin = Icons.Filled.Insulin
+val Icon_Carbs_Blood = Icons.Filled.CarbsBlood
+val Icon_Insulin_Blood = Icons.Filled.InsulinBlood
 
 // Menu Navigation Icons
 val Icon_Menu_Meals = Icons.Outlined.Restaurant
@@ -140,6 +144,10 @@ private val iconsForPreview = listOf(
     IconPreview("Ui", Icon_Ui),
     IconPreview("Backup", Icon_Backup),
     IconPreview("Restore", Icon_Restore),
+    IconPreview("Carbs", Icon_Carbs),
+    IconPreview("Insulin", Icon_Insulin),
+    IconPreview("Carbs_Blood", Icon_Carbs_Blood),
+    IconPreview("Insulin_Blood", Icon_Insulin_Blood),
     IconPreview("Next", Icon_Next),
     IconPreview("Previous", Icon_Previous),
     IconPreview("Plus", Icon_Plus),
