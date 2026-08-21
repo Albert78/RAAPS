@@ -226,8 +226,8 @@
     <string name="meal_bolus_administer_button">Bestätigen</string>
     <string name="meal_bolus_administer_button_submitted">Gespeichert</string>
     <string name="meal_bolus_reminder_label">Mahlzeit-Erinnerung</string>
-    <string name="meal_bolus_close_banner_title">Vorgang abbrechen</string>
-    <string name="meal_bolus_close_banner_message">Schließe diesen Bildschirm, sonst blockiert er den Algorithmus.</string>
+    <string name="meal_bolus_close_banner_title">Vorgang beenden</string>
+    <string name="meal_bolus_close_banner_message">Der Berechnungs-Algorithmus ist blockiert, solange dieser Bildschirm angezeigt wird.</string>
     <string name="meal_bolus_close_banner_button">Schließen</string>
     <string name="meal_edit_screen_title">Mahlzeit bearbeiten</string>
     <string name="meal_edit_save_button">Speichern</string>

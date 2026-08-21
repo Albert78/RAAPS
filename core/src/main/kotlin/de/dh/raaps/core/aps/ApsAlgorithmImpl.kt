@@ -69,9 +69,11 @@ class ApsAlgorithmImpl(
      * Smart bolus calculator that has access to the internal state of the APS algorithm.
      */
     private inner class BolusCorrectionCalculatorImpl : BolusCorrectionCalculator {
+        override fun getProjectionTime(mealTime: Timestamp): Timestamp = (mealTime + Minutes(15)).coerceAtLeast(Timestamp.now())
+
         override suspend fun calculateBaseData(): BolusScreenBaseData {
             val now = Timestamp.now()
-            val futureTime = now + Minutes(15)
+            val futureTime = getProjectionTime(now)
             val futureBg = getPredictedBg(futureTime)
 
             val (referenceTimestamp, referenceBg) = if (futureBg.isValid()) {

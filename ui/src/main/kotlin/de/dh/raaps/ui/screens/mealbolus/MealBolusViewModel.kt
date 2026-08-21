@@ -26,6 +26,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlin.math.max
+import kotlin.math.round
 import kotlin.time.Duration.Companion.minutes
 import kotlin.time.Duration.Companion.seconds
 
@@ -58,8 +59,8 @@ data class PlannedInsulinUiModel(
  *
  * ## Rules for Manual Changes:
  * - **T_meal:** Changing the meal time manually updates the IMI (offset). T_meal remains relative and slides
- *   with system time via the ticker to maintain this offset until submission. Although a change of T_meal also changes
- *   T_ref conceptually, projections are NOT automatically refreshed to ensure UI stability.
+ *   with system time via the ticker to maintain this offset until submission. A change of T_meal also changes
+ *   T_ref.
  * - **Carbs/Meal Type:** Triggers Stage 3 & 4 (recalculates bolus and plan distribution).
  * - **Bolus Amount:** Triggers Stage 4 (recalculates plan distribution based on the new amount).
  * - **Plan Offsets:** Manually changing a plan time fixes its relative offset to T_meal.
@@ -127,6 +128,7 @@ class MealBolusViewModel(
 
     private val therapyManager = registry.therapyManager
     private val treatmentRepository = registry.treatmentRepository
+    private val bolusCorrectionCalculator = registry.systemManager.getBolusCorrectionCalculator()
 
     private var calculationJob: kotlinx.coroutines.Job? = null
 
@@ -138,7 +140,7 @@ class MealBolusViewModel(
             val bgSettings = therapyManager.getBgSettings()
             val mealTypes = treatmentRepository.getAllMealTypes()
 
-            val baseData = registry.systemManager.getBolusCorrectionCalculator().calculateBaseData()
+            val baseData = bolusCorrectionCalculator.calculateBaseData()
 
             _uiState.update {
                 it.copy(
@@ -173,68 +175,44 @@ class MealBolusViewModel(
 
     fun onMealTimeChange(timestamp: Timestamp) {
         val now = Timestamp.now()
-        val offsetMinutes = kotlin.math.round((timestamp.ms - now.ms) / 60000.0).toInt().coerceIn(-120, 60)
+        val offsetMinutes = round((timestamp.ms - now.ms) / 60000.0).toInt().coerceIn(-120, 60)
         val newMealTimestamp = now + Minutes(offsetMinutes.toShort())
 
-        _uiState.update { state ->
-            val updatedInsulinPlan = state.insulinPlan.map { insulin ->
-                // When the meal slides, we keep the relative 'timeFromMeal' and shift the absolute timestamp.
-                val (coercedTime, coercedOffset) = coerceInsulinTime(newMealTimestamp + insulin.timeFromMeal, newMealTimestamp, now)
-                insulin.copy(
-                    timestamp = coercedTime,
-                    coercedTimeFromMeal = coercedOffset
+        viewModelScope.launch {
+            val baseData = bolusCorrectionCalculator.calculateBaseData(newMealTimestamp)
+
+            _uiState.update { state ->
+                state.copy(
+                    input = state.input.copy(
+                        mealTimestamp = newMealTimestamp,
+                        imi = Minutes(offsetMinutes.toShort())
+                    ),
+                    projections = BolusProjections(
+                        bg = baseData.referenceBg,
+                        timestamp = baseData.referenceTimestamp,
+                        isProjected = baseData.referenceTimestamp.ms > now.ms,
+                    ),
                 )
             }
-
-            state.copy(
-                input = state.input.copy(
-                    mealTimestamp = newMealTimestamp,
-                    imi = Minutes(offsetMinutes.toShort())
-                ),
-                insulinPlan = updatedInsulinPlan
-            )
+            calculateBolus()
         }
-        // Recalculate bolus projections for the new meal time, but avoid re-distributing if only the time shifted
-        calculateBolus(redistributePlan = false)
     }
 
     fun onRefreshProjections() {
         viewModelScope.launch {
-            val state = _uiState.value
             val now = Timestamp.now()
-
-            // Re-calculate the reference timestamp: use current meal timestamp for projection if future, else now.
-            val newRefTime = if (state.input.mealTimestamp > now) state.input.mealTimestamp else now
-
-            val result = registry.systemManager.getBolusCorrectionCalculator().calculateBolusParts(
-                carbsKe = state.input.carbsKe,
-                mealTimestamp = state.input.mealTimestamp,
-                referenceTimestamp = newRefTime
-            )
+            val baseData = bolusCorrectionCalculator.calculateBaseData()
 
             _uiState.update {
                 it.copy(
                     projections = BolusProjections(
-                        bg = result.calculationBg,
-                        timestamp = result.calculationTimestamp,
-                        isStale = false,
-                        isProjected = result.calculationTimestamp.ms > now.ms + 4 * MS_PER_MINUTE,
-                        iob = result.iobPart,
-                        cob = result.cobGrams,
+                        bg = baseData.referenceBg,
+                        timestamp = baseData.referenceTimestamp,
+                        isProjected = baseData.referenceTimestamp.ms > now.ms,
                     ),
-                    calculation = BolusCalculationDetails(
-                        mealPart = result.mealPart,
-                        correctionPart = result.correctionPart,
-                        iobPart = result.iobPart,
-                        cobPart = result.cobPart,
-                        proposedTotal = result.totalProposed,
-                    ),
-                    input = it.input.copy(
-                        manualBolus = result.totalProposed
-                    )
                 )
             }
-            recalculateInsulinPlanTimes()
+            calculateBolus()
         }
     }
 
@@ -275,13 +253,13 @@ class MealBolusViewModel(
         _uiState.update { it.copy(isMealReminderEnabled = !it.isMealReminderEnabled) }
     }
 
-    private fun calculateBolus(redistributePlan: Boolean = true) {
+    private fun calculateBolus() {
         calculationJob?.cancel()
         calculationJob = viewModelScope.launch {
             val state = _uiState.value
             val now = Timestamp.now()
 
-            val result = registry.systemManager.getBolusCorrectionCalculator().calculateBolusParts(
+            val result = bolusCorrectionCalculator.calculateBolusParts(
                 carbsKe = state.input.carbsKe,
                 mealTimestamp = state.input.mealTimestamp,
                 referenceTimestamp = state.projections.timestamp
@@ -308,9 +286,7 @@ class MealBolusViewModel(
                     )
                 )
             }
-            if (redistributePlan) {
-                recalculateInsulinPlanTimes()
-            }
+            recalculateInsulinPlanTimes()
         }
     }
 
@@ -328,7 +304,7 @@ class MealBolusViewModel(
             val state = _uiState.value
             val now = Timestamp.now()
 
-            val newPlan = registry.systemManager.getBolusCorrectionCalculator().distributeInsulinPlan(
+            val newPlan = bolusCorrectionCalculator.distributeInsulinPlan(
                 manualBolus = state.input.manualBolus,
                 correctionPart = state.calculation.correctionPart,
                 mealType = state.input.selectedMealType,
@@ -411,7 +387,8 @@ class MealBolusViewModel(
                     val newMealTimestamp = now + state.input.imi
 
                     // 2. Check for stale projections (> 4 mins old)
-                    val isStale = (now.ms - state.projections.timestamp.ms) > 4 * MS_PER_MINUTE
+                    val newProjectionTimestamp = bolusCorrectionCalculator.getProjectionTime(newMealTimestamp)
+                    val isStale = (newProjectionTimestamp - state.projections.timestamp) > Minutes(4).inMs()
 
                     // 3. Update absolute times in insulin plan (based on sliding meal time)
                     val updatedPlan = state.insulinPlan.map { item ->

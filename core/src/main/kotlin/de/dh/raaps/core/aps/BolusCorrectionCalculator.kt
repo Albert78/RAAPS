@@ -40,6 +40,8 @@ data class BolusScreenBaseData(
  * Bolus calculator to support the user with carbs, IMI and bolus suggestions.
  */
 interface BolusCorrectionCalculator {
+    fun getProjectionTime(mealTime: Timestamp): Timestamp
+
     /**
      * Calculates the base data for the meal bolus screen.
      */
@@ -248,6 +250,8 @@ class SimpleBolusCorrectionCalculator(
 ) : BolusCorrectionCalculator {
 
     private fun getCurrentBg() = glucoseSourceManager.currentBg.value?.value ?: BgValue.INVALID
+
+    override fun getProjectionTime(mealTime: Timestamp): Timestamp = mealTime
 
     override suspend fun calculateBaseData() = BolusCalculationMath.calculateBaseData(
         Timestamp.now(), getCurrentBg(), therapyManager

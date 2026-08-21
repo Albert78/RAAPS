@@ -20,6 +20,7 @@ value class Minutes(val value: Short) : Comparable<Minutes> {
     }
 
     companion object {
+        val ZERO = Minutes(0)
         val ONE_HOUR = Minutes(MINUTES_PER_HOUR.toShort())
         val ONE_DAY = Minutes(MINUTES_PER_DAY.toShort())
 
