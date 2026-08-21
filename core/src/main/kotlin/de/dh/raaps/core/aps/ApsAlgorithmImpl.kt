@@ -191,14 +191,22 @@ class ApsAlgorithmImpl(
 
             if (mealType == null) {
                 val existing = existingPlan.getOrNull(0)
-                val offsetToUse = if (existing?.isUserModified == true) existing.offsetMinutes else suggestedOffset
+                val isUserModified = existing?.isUserModified == true
+                
+                // If user modified the offset, keep their offset but apply it to the base time
+                val newTimestamp = if (isUserModified) {
+                    mealTimestamp + Minutes(existing.offsetMinutes.toShort())
+                } else {
+                    mealTimestamp + Minutes(suggestedOffset.toShort())
+                }
+                
                 return listOf(
                     PlannedInsulin(
                         amount = manualBolus,
-                        timestamp = mealTimestamp + Minutes(offsetToUse.toShort()),
-                        offsetMinutes = offsetToUse,
+                        timestamp = newTimestamp,
+                        offsetMinutes = if (isUserModified) existing.offsetMinutes else suggestedOffset,
                         description = "Bolus",
-                        isUserModified = existing?.isUserModified ?: false
+                        isUserModified = isUserModified
                     )
                 )
             }
@@ -243,15 +251,21 @@ class ApsAlgorithmImpl(
                 val finalOffset = suggestedOffset + delayFromBase
 
                 val existing = existingPlan.getOrNull(index)
-                val offsetToUse = if (existing?.isUserModified == true) existing.offsetMinutes else finalOffset
-                val finalTimestamp = mealTimestamp + Minutes(offsetToUse.toShort())
+                val isUserModified = existing?.isUserModified == true
+                
+                // If user modified the offset, apply their offset to the new base time
+                val newTimestamp = if (isUserModified) {
+                    mealTimestamp + Minutes(existing.offsetMinutes.toShort())
+                } else {
+                    mealTimestamp + Minutes(finalOffset.toShort())
+                }
 
                 PlannedInsulin(
                     amount = amount,
-                    timestamp = finalTimestamp,
-                    offsetMinutes = offsetToUse,
+                    timestamp = newTimestamp,
+                    offsetMinutes = if (isUserModified) existing.offsetMinutes else finalOffset,
                     description = if (mealType.components.size > 1) "Teil ${index + 1} (${component.weight}%)" else "Bolus",
-                    isUserModified = existing?.isUserModified ?: false
+                    isUserModified = isUserModified
                 )
             }.filter { it.amount > InsulinAmount.ZERO }
         }

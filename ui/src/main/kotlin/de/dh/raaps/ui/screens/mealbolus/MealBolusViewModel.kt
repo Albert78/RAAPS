@@ -145,7 +145,7 @@ class MealBolusViewModel(
         val now = Timestamp.now()
         val offset = kotlin.math.round((timestamp.ms - now.ms) / 60000.0).toInt().coerceIn(-120, 60)
         val cappedTimestamp = now + Minutes(offset.toShort())
-        _uiState.update { it.copy(mealTimestamp = cappedTimestamp, seaMinutes = offset) }
+        _uiState.update { it.copy(mealTimestamp = cappedTimestamp) }
         calculateBolus()
     }
 
