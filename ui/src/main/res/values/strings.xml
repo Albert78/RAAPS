@@ -201,10 +201,11 @@
     <string name="label_active">Aktiv</string>
     <string name="label_adjusted">(angepasst)</string>
 
+    <string name="treatment_lock_busy_system">Warten auf %s…</string>
+    <string name="treatment_lock_error_message">Das System ist aktuell belegt (%1$s). Bitte versuche es später noch einmal.</string>
+
     <string name="dashboard_meal_bolus_button">Mahlzeit/Korrektur</string>
     <string name="meal_add_screen_title">Mahlzeit/Korrekturbolus</string>
-    <string name="meal_bolus_busy_system">Warten auf %s…</string>
-    <string name="meal_bolus_lock_error_message">Das System ist aktuell belegt (%1$s). Bitte versuche es später noch einmal.</string>
     <string name="meal_bolus_carbs_label">Mahlzeit</string>
     <string name="add_past_meal_screen_title">Mahlzeit nachtragen</string>
     <string name="add_past_meal_carbs_label">Vergangene Mahlzeit</string>
@@ -331,4 +332,6 @@
     <string name="core_insight_action_temp_basal">Aktion: Temp-Basal %1$d%% für %2$d h</string>
 
     <string name="alarms_screen_title">Warnungen und Alarme</string>
+    <string name="insulin_part_none">Bolus</string>
+    <string name="insulin_part_n">Teil %1$d (%2$d%%)</string>
 </resources>

@@ -43,7 +43,7 @@ data class PlannedInsulinUiModel(
     val timestamp: Timestamp,
     val timeFromMeal: Minutes,
     val coercedTimeFromMeal: Minutes,
-    val description: String
+    val partWeight: Int?
 )
 
 /**
@@ -343,7 +343,7 @@ class MealBolusViewModel(
                     timestamp = coercedTime,
                     timeFromMeal = core.timeFromMeal,
                     coercedTimeFromMeal = coercedOffset,
-                    description = core.description
+                    partWeight = core.partWeight
                 )
             }
             _uiState.update { it.copy(insulinPlan = uiPlan) }

@@ -127,7 +127,10 @@ data class PlannedInsulin(
      * Can be negative (bolus before meal) or positive (bolus after meal).
      */
     val timeFromMeal: Minutes = Minutes(0),
-    val description: String = ""
+    /**
+     * Weight of this bolus in combination with other boluses, in percent.
+     */
+    val partWeight: Int? = null
 )
 
 /**

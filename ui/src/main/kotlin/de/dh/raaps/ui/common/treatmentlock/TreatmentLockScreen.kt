@@ -38,7 +38,7 @@ fun TreatmentLockScreen(
     content: @Composable (TreatmentLock) -> Unit
 ) {
     val uiState by viewModel.uiState.collectAsState()
-    
+
     TreatmentLockScreenContent(
         uiState = uiState,
         onNavigateUp = onNavigateUp,
@@ -71,7 +71,7 @@ fun TreatmentLockScreenContent(
                 CircularProgressIndicator()
                 Spacer(Modifier.height(16.dp))
                 Text(
-                    text = stringResource(R.string.meal_bolus_busy_system, uiState.busyOwner ?: "System"),
+                    text = stringResource(R.string.treatment_lock_busy_system, uiState.busyOwner ?: "System"),
                     style = MaterialTheme.typography.bodyMedium
                 )
             }
@@ -122,7 +122,7 @@ private fun LockErrorCard(owner: String?, onNavigateUp: () -> Unit) {
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Text(
-                text = stringResource(R.string.meal_bolus_lock_error_message, owner ?: ""),
+                text = stringResource(R.string.treatment_lock_error_message, owner ?: ""),
                 style = MaterialTheme.typography.bodyLarge,
                 textAlign = TextAlign.Center,
                 color = MaterialTheme.colorScheme.onErrorContainer

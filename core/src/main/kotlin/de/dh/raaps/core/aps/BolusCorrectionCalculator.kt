@@ -180,7 +180,7 @@ object BolusCalculationMath {
 
         if (mealType == null) {
             return listOf(
-                PlannedInsulin(manualBolus, defaultTimeFromMeal, "Bolus")
+                PlannedInsulin(amount = manualBolus, timeFromMeal = defaultTimeFromMeal)
             )
         }
 
@@ -194,7 +194,7 @@ object BolusCalculationMath {
             PlannedInsulin(
                 amount = amount,
                 timeFromMeal = finalDefaultTime,
-                description = if (mealType.components.size > 1) "Teil ${index + 1} (${component.weight}%)" else "Bolus"
+                partWeight = if (mealType.components.size > 1) component.weight else null
             )
         }.filter { it.amount > InsulinAmount.ZERO }
     }

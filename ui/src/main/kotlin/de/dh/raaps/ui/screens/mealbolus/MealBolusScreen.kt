@@ -67,6 +67,7 @@ import de.dh.raaps.core.aps.TreatmentLock
 import de.dh.raaps.ui.R
 import de.dh.raaps.ui.common.DefaultSteppingStrategy
 import de.dh.raaps.ui.common.LocalGlucoseUnit
+import de.dh.raaps.ui.common.ModuloSteppingStrategy
 import de.dh.raaps.ui.common.ValueDisplayStrategy
 import de.dh.raaps.ui.common.carbsGramsValue
 import de.dh.raaps.ui.common.carbsKeUnitLabel
@@ -259,7 +260,7 @@ fun MealBolusContent(
                         onValueChange = onManualBolusChange,
                         minValue = BOLUS_MIN,
                         maxValue = BOLUS_MAX,
-                        steppingStrategy = DefaultSteppingStrategy(0.1), // 0.1 U steps
+                        steppingStrategy = ModuloSteppingStrategy(0.1), // 0.1 U steps
                         displayStrategy = object : ValueDisplayStrategy {
                             override fun format(value: Double): String =
                                 String.format(Locale.getDefault(), "%.2f", value)
@@ -655,7 +656,10 @@ fun InsulinPlanCard(
                         ) {
                             Column(modifier = Modifier.weight(1f)) {
                                 Text(
-                                    text = item.description,
+                                    text = if (item.partWeight == null)
+                                        stringResource(R.string.insulin_part_none)
+                                    else
+                                        stringResource(R.string.insulin_part_n, index + 1, item.partWeight),
                                     style = MaterialTheme.typography.labelMedium,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
@@ -672,7 +676,7 @@ fun InsulinPlanCard(
                                     baseTime = mealTimestamp,
                                     showPreposition = false,
                                     forceSign = true,
-                                    style = TimeStepperDefaults.compactStyle()
+                                    style = TimeStepperDefaults.smallStyle()
                                 )
                                 Text(
                                     text = time(item.timestamp),
