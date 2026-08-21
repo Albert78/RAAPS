@@ -54,12 +54,35 @@ data class PlannedInsulinUiModel(
     )
 }
 
+/**
+ * ViewModel for the Meal Bolus screen, managing the calculation cascade and temporal dependencies.
+ *
+ * ## Calculation Cascade & Dependencies (Stages):
+ * 1. **Initial Proposal:** Current BG -> Suggested IMI -> Suggested Meal Time (T_meal).
+ * 2. **Meal Context:** T_meal -> Reference Timestamp (T_ref) for projections (IOB, COB, projected BG).
+ * 3. **Bolus Suggestion:** (Carbs + Meal Type) AND (Projections @ T_ref) -> Proposed Bolus Amount.
+ * 4. **Insulin Plan:** Bolus Amount + Meal Type -> Insulin Distribution Plan (Relative Offsets to T_meal).
+ * 5. **Execution:** T_meal + Relative Offsets -> Absolute execution timestamps.
+ *
+ * ## Rules for Manual Changes:
+ * - **T_meal:** Changing the meal time manually updates the IMI (offset). T_meal remains relative and slides
+ *   with system time via the ticker to maintain this offset until submission. Although a change of T_meal also changes
+ *   T_ref conceptually, projections are NOT automatically refreshed to ensure UI stability.
+ * - **Carbs/Meal Type:** Triggers Stage 3 & 4 (recalculates bolus and plan distribution).
+ * - **Bolus Amount:** Triggers Stage 4 (recalculates plan distribution based on the new amount).
+ * - **Plan Offsets:** Manually changing a plan time fixes its relative offset to T_meal.
+ *
+ * ## Temporal Stability:
+ * - Projection data (IOB, COB, BG) is kept stable until an explicit refresh is triggered (Refresh Button).
+ * - The UI indicates "stale" data if the reference timestamp is more than 4 minutes old.
+ */
 data class MealBolusUiState(
     val isLoading: Boolean = true,
     val mealTimestamp: Timestamp = Timestamp.now(),
     val referenceBg: BgValue? = null,
     val referenceTimestamp: Timestamp = Timestamp.now(),
     val isProjected: Boolean = false,
+    val isProjectionsStale: Boolean = false,
     val imi: Minutes = Minutes(0),
     val carbsKe: Double = 0.0,
     val mealTypes: List<MealType> = emptyList(),
@@ -133,10 +156,48 @@ class MealBolusViewModel(
 
     fun onMealTimeChange(timestamp: Timestamp) {
         val now = Timestamp.now()
-        val offset = kotlin.math.round((timestamp.ms - now.ms) / 60000.0).toInt().coerceIn(-120, 60)
-        val cappedTimestamp = now + Minutes(offset.toShort())
-        _uiState.update { it.copy(mealTimestamp = cappedTimestamp) }
+        val offsetMinutes = kotlin.math.round((timestamp.ms - now.ms) / 60000.0).toInt().coerceIn(-120, 60)
+        _uiState.update { it.copy(
+            mealTimestamp = now + Minutes(offsetMinutes.toShort()),
+            imi = Minutes(offsetMinutes.toShort())
+        ) }
         calculateBolus()
+    }
+
+    fun onRefreshProjections() {
+        viewModelScope.launch {
+            val state = _uiState.value
+            val now = Timestamp.now()
+
+            // Re-calculate the reference timestamp: use current meal timestamp for projection if future, else now.
+            val newRefTime = if (state.mealTimestamp > now) state.mealTimestamp else now
+
+            val result = registry.systemManager.getBolusCorrectionCalculator().calculateBolusParts(
+                carbsKe = state.carbsKe,
+                mealTimestamp = state.mealTimestamp,
+                referenceTimestamp = newRefTime
+            )
+
+            _uiState.update {
+                it.copy(
+                    referenceBg = result.calculationBg,
+                    referenceTimestamp = result.calculationTimestamp,
+                    isProjectionsStale = false,
+                    isProjected = result.calculationTimestamp.ms > now.ms + 4 * MS_PER_MINUTE,
+                    iob = result.iobPart,
+                    cob = result.cobGrams,
+                    projectedIob = result.iobPart,
+                    projectedCob = result.cobGrams,
+                    mealPart = result.mealPart,
+                    correctionPart = result.correctionPart,
+                    iobPart = result.iobPart,
+                    cobPart = result.cobPart,
+                    proposedBolus = result.totalProposed,
+                    manualBolus = result.totalProposed
+                )
+            }
+            updateInsulinPlanTimes()
+        }
     }
 
     fun onMealTypeChange(mealType: MealType) {
@@ -287,12 +348,22 @@ class MealBolusViewModel(
                 _uiState.update { state ->
                     if (state.submissionStatus != SubmissionStatus.NotSubmitted) return@update state
 
-                    // We shouldn't continuously reset mealTimestamp to now + imi,
-                    // as that undoes the user's manual changes.
-                    // If we want the time to "roll forward" if the user hasn't touched it,
-                    // we would need an `isMealTimeUserModified` flag.
-                    // For now, let's just let the time stay as is once calculated.
-                    state
+                    // 1. Let meal time "slide" with now (keeping IMI constant)
+                    val newMealTimestamp = now + state.imi
+
+                    // 2. Check for stale projections (> 4 mins old)
+                    val isStale = (now.ms - state.referenceTimestamp.ms) > 4 * MS_PER_MINUTE
+
+                    // 3. Update absolute times in insulin plan (based on sliding meal time)
+                    val updatedPlan = state.insulinPlan.map { item ->
+                        item.copy(timestamp = newMealTimestamp + item.minutesFromMeal)
+                    }
+
+                    state.copy(
+                        mealTimestamp = newMealTimestamp,
+                        isProjectionsStale = isStale,
+                        insulinPlan = updatedPlan
+                    )
                 }
             }
         }

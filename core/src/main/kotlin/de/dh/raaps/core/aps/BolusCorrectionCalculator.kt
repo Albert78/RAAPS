@@ -276,6 +276,7 @@ class SimpleBolusCorrectionCalculator(
         BolusCalculationMath.calculateBolusParts(
             carbsKe = carbsKe,
             referenceBg = getCurrentBg(),
+            // In this simple calculator, just use the current BG at timestamp NOW.
             referenceTimestamp = Timestamp.now(),
             therapyManager = therapyManager,
             treatmentRepository = treatmentRepository,

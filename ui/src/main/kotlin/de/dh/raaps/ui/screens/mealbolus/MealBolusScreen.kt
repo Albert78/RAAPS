@@ -3,6 +3,7 @@ package de.dh.raaps.ui.screens.mealbolus
 import android.content.res.Configuration
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -17,6 +18,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material.icons.filled.Notifications
+import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -25,6 +27,7 @@ import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
@@ -107,6 +110,7 @@ fun MealBolusScreen(
         onPlannedInsulinTimeChange = { index, time -> viewModel.onPlannedInsulinTimeChange(index, time) },
         onToggleInsulinPlan = { viewModel.toggleInsulinPlanExpanded() },
         onToggleMealReminder = { viewModel.onToggleMealReminder() },
+        onRefreshProjections = { viewModel.onRefreshProjections() },
         onClose = onNavigateUp,
         onSubmit = { viewModel.submit(treatmentLock, onNavigateUp) }
     )
@@ -122,6 +126,7 @@ fun MealBolusContent(
     onPlannedInsulinTimeChange: (Int, Timestamp) -> Unit,
     onToggleInsulinPlan: () -> Unit,
     onToggleMealReminder: () -> Unit,
+    onRefreshProjections: () -> Unit,
     onClose: () -> Unit,
     onSubmit: () -> Unit
 ) {
@@ -135,7 +140,7 @@ fun MealBolusContent(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
-        MealBolusContextInfo(uiState)
+        MealBolusContextInfo(uiState = uiState, onRefresh = onRefreshProjections)
 
         if (uiState.showCloseBanner) {
             CloseScreenBanner(onClose = onClose)
@@ -481,53 +486,55 @@ fun CalculationDetailsSelector(
 
 @Composable
 fun MealBolusContextInfo(
-    uiState: MealBolusUiState
+    uiState: MealBolusUiState,
+    onRefresh: () -> Unit
 ) {
     Surface(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(12.dp),
         color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
     ) {
-        Column(
-            modifier = Modifier.padding(16.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(4.dp)
+        Box(modifier = Modifier.fillMaxWidth()) {
+            Column(
+                modifier = Modifier.padding(16.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                if (uiState.isProjected) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(4.dp)
+                ) {
+                    if (uiState.isProjected) {
+                        Text(
+                            text = stringResource(R.string.approx_prefix),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = Color.Gray,
+                            modifier = Modifier.align(Alignment.CenterVertically)
+                        )
+                    }
+
+                    val displayBgValue = uiState.referenceBg
+                    val bgText = glucoseValue(displayBgValue, default = "??")
+                    val textColor = if (displayBgValue == null || displayBgValue.isInvalid()) {
+                        Color.Gray
+                    } else when {
+                        displayBgValue.mgdl < 70 -> Red
+                        displayBgValue.mgdl < 180 -> LightGreenA700
+                        else -> Yellow
+                    }
                     Text(
-                        text = stringResource(R.string.approx_prefix),
-                        style = MaterialTheme.typography.bodySmall,
+                        text = bgText,
+                        style = MaterialTheme.typography.displayMedium.copy(fontWeight = FontWeight.Bold),
+                        color = textColor
+                    )
+                    Text(
+                        text = glucoseUnitLabel(),
+                        style = MaterialTheme.typography.titleMedium,
                         color = Color.Gray,
-                        modifier = Modifier.align(Alignment.CenterVertically)
+                        modifier = Modifier
+                            .align(Alignment.Bottom)
+                            .padding(bottom = 12.dp)
                     )
                 }
-
-                val displayBgValue = uiState.referenceBg
-                val bgText = glucoseValue(displayBgValue, default = "??")
-                val textColor = if (displayBgValue == null || displayBgValue.isInvalid()) {
-                    Color.Gray
-                } else when {
-                    displayBgValue.mgdl < 70 -> Red
-                    displayBgValue.mgdl < 180 -> LightGreenA700
-                    else -> Yellow
-                }
-                Text(
-                    text = bgText,
-                    style = MaterialTheme.typography.displayMedium.copy(fontWeight = FontWeight.Bold),
-                    color = textColor
-                )
-                Text(
-                    text = glucoseUnitLabel(),
-                    style = MaterialTheme.typography.titleMedium,
-                    color = Color.Gray,
-                    modifier = Modifier
-                        .align(Alignment.Bottom)
-                        .padding(bottom = 12.dp)
-                )
-            }
 
                 Text(
                     text = stringResource(R.string.at_time_format, time(uiState.referenceTimestamp)),
@@ -535,17 +542,33 @@ fun MealBolusContextInfo(
                     color = Color.Gray
                 )
 
-            Spacer(Modifier.height(8.dp))
-            Text(
-                text = stringResource(R.string.meal_bolus_active_carbs_format, carbsGramsValue(uiState.projectedCob)),
-                style = MaterialTheme.typography.bodyLarge,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-            Text(
-                text = stringResource(R.string.meal_bolus_active_insulin_format, insulinValue(uiState.projectedIob.iu)),
-                style = MaterialTheme.typography.bodyLarge,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
+                Spacer(Modifier.height(8.dp))
+                Text(
+                    text = stringResource(R.string.meal_bolus_active_carbs_format, carbsGramsValue(uiState.projectedCob)),
+                    style = MaterialTheme.typography.bodyLarge,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                Text(
+                    text = stringResource(R.string.meal_bolus_active_insulin_format, insulinValue(uiState.projectedIob.iu)),
+                    style = MaterialTheme.typography.bodyLarge,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+
+            if (uiState.isProjectionsStale) {
+                IconButton(
+                    onClick = onRefresh,
+                    modifier = Modifier
+                        .align(Alignment.TopEnd)
+                        .padding(4.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Refresh,
+                        contentDescription = stringResource(R.string.cd_refresh_calculations),
+                        tint = MaterialTheme.colorScheme.primary
+                    )
+                }
+            }
         }
     }
 }
@@ -681,6 +704,7 @@ fun MealBolusZeroKePreview() {
                     onPlannedInsulinTimeChange = { _, _ -> },
                     onToggleInsulinPlan = {},
                     onToggleMealReminder = {},
+                    onRefreshProjections = {},
                     onClose = {},
                     onSubmit = {}
                 )
@@ -731,6 +755,7 @@ fun MealBolusDefaultPreview() {
                     onPlannedInsulinTimeChange = { _, _ -> },
                     onToggleInsulinPlan = {},
                     onToggleMealReminder = {},
+                    onRefreshProjections = {},
                     onClose = {},
                     onSubmit = {}
                 )

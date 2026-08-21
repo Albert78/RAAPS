@@ -55,6 +55,7 @@
     <string name="cd_decrease_value">Weniger</string>
     <string name="cd_increase_value">Mehr</string>
     <string name="cd_help">Hilfe anzeigen</string>
+    <string name="cd_refresh_calculations">Berechnungen aktualisieren</string>
 
     <string name="delete_profile_title">Profil löschen</string>
     <string name="delete_profile_message">Möchtest du das Profil \"%1$s\" wirklich löschen?</string>
