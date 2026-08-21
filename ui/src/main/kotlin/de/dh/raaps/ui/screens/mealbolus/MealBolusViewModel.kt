@@ -7,11 +7,9 @@ import androidx.lifecycle.viewmodel.CreationExtras
 import de.dh.raaps.common.model.DEFAULT_BG_LOW_THRESHOLD_MGDL
 import de.dh.raaps.common.model.DEFAULT_BG_TARGET_MGDL
 import de.dh.raaps.common.model.DEFAULT_CR_GRAM_PER_UNIT
-import de.dh.raaps.common.model.DEFAULT_IMI_MINUTES
 import de.dh.raaps.common.model.DEFAULT_ISF_MGDL_PER_UNIT
 import de.dh.raaps.common.model.ID_UNDEFINED
 import de.dh.raaps.common.model.InsulinAmount
-import de.dh.raaps.common.model.MS_PER_MINUTE
 import de.dh.raaps.common.model.MealEntry
 import de.dh.raaps.common.model.MealType
 import de.dh.raaps.common.model.data.BgDelta
@@ -47,7 +45,7 @@ data class PlannedInsulinUiModel(
     val amount: InsulinAmount,
     val timestamp: Timestamp,
     val timeFromMeal: Minutes,
-    val timeOffset: Minutes,
+    val timeFromNow: Minutes,
     val partWeight: Int?
 ) {
     /**
@@ -59,7 +57,7 @@ data class PlannedInsulinUiModel(
         val coerced = if (target < now) now else target
         return copy(
             timestamp = coerced,
-            timeOffset = Minutes.timeDifference(now, coerced)
+            timeFromNow = Minutes.timeDifference(now, coerced)
         )
     }
 
@@ -72,7 +70,7 @@ data class PlannedInsulinUiModel(
         return copy(
             timestamp = coerced,
             timeFromMeal = Minutes.timeDifference(mealTimestamp, coerced),
-            timeOffset = Minutes.timeDifference(now, coerced)
+            timeFromNow = Minutes.timeDifference(now, coerced)
         )
     }
 
@@ -93,7 +91,7 @@ data class PlannedInsulinUiModel(
                 amount = amount,
                 timestamp = coerced,
                 timeFromMeal = timeFromMeal,
-                timeOffset = Minutes.timeDifference(now, coerced),
+                timeFromNow = Minutes.timeDifference(now, coerced),
                 partWeight = partWeight
             )
         }
@@ -132,7 +130,7 @@ data class MealInput(
     val selectedMealType: MealType? = null,
     val manualBolus: InsulinAmount = InsulinAmount.ZERO,
     val mealTimestamp: Timestamp = Timestamp.now(),
-    val imi: Minutes = Minutes(0)
+    val mealTimeFromNow: Minutes = Minutes(0)
 )
 
 /**
@@ -187,21 +185,15 @@ class MealBolusViewModel(
 
             val projections = bolusCorrectionCalculator.calculateBolusProjections(now)
             val projectedBg = projections.bg
-            val suggestedImi = if (projectedBg != null)
-                BolusCalculationMath.calculateSuggestedImi(projectedBg, therapyManager)
-            else
-                Minutes(DEFAULT_IMI_MINUTES)
-            val suggestedCarbsKe = if (projectedBg != null)
-                BolusCalculationMath.calculateSuggestedCarbsKe(projectedBg, targetBg, isf, cr)
-            else
-                0.0
+            val suggestedImi = BolusCalculationMath.calculateSuggestedImi(projectedBg, therapyManager)
+            val suggestedCarbsKe = BolusCalculationMath.calculateSuggestedCarbsKe(projectedBg, targetBg, isf, cr)
 
             _uiState.update {
                 it.copy(
                     isLoading = false,
                     input = MealInput(
                         mealTimestamp = now + Minutes(max(0, suggestedImi.value.toInt()).toShort()),
-                        imi = suggestedImi,
+                        mealTimeFromNow = suggestedImi,
                         carbsKe = suggestedCarbsKe,
                     ),
                     mealTypes = mealTypes,
@@ -225,7 +217,7 @@ class MealBolusViewModel(
 
     fun onMealTimeChange(timestamp: Timestamp) {
         val now = Timestamp.now()
-        val offsetMinutes = round((timestamp.ms - now.ms) / 60000.0).toInt().coerceIn(-120, 60)
+        val offsetMinutes = round((timestamp.ms - now.ms) / 60000.0).toInt().coerceIn(-30, 60)
         val newMealTimestamp = now + Minutes(offsetMinutes.toShort())
 
         viewModelScope.launch {
@@ -235,7 +227,7 @@ class MealBolusViewModel(
                 state.copy(
                     input = state.input.copy(
                         mealTimestamp = newMealTimestamp,
-                        imi = Minutes(offsetMinutes.toShort())
+                        mealTimeFromNow = Minutes(offsetMinutes.toShort())
                     ),
                     projections = projections,
                 )
@@ -292,7 +284,6 @@ class MealBolusViewModel(
         calculationJob?.cancel()
         calculationJob = viewModelScope.launch {
             val state = _uiState.value
-            val now = Timestamp.now()
 
             val result = bolusCorrectionCalculator.calculateBolusParts(
                 carbsKe = state.input.carbsKe,
@@ -303,13 +294,6 @@ class MealBolusViewModel(
 
             _uiState.update {
                 it.copy(
-                    projections = it.projections.copy(
-                        bg = result.calculationBg,
-                        timestamp = result.calculationTimestamp,
-                        isProjected = result.calculationTimestamp.ms > now.ms + 4 * MS_PER_MINUTE,
-                        iob = result.iobPart,
-                        cob = result.cobGrams,
-                    ),
                     calculation = BolusCalculationDetails(
                         mealPart = result.mealPart,
                         correctionPart = result.correctionPart,
@@ -336,11 +320,14 @@ class MealBolusViewModel(
         val state = _uiState.value
         val now = Timestamp.now()
 
+        val projectedBg = state.projections.bg
+        val suggestedImi = BolusCalculationMath.calculateSuggestedImi(projectedBg, therapyManager)
+
         val newPlan = bolusCorrectionCalculator.distributeInsulinPlan(
             manualBolus = state.input.manualBolus,
             correctionPart = state.calculation.correctionPart,
             mealType = state.input.selectedMealType,
-            suggestedImi = state.input.imi
+            suggestedImi = suggestedImi
         )
 
         val uiPlan = newPlan.map { core ->
@@ -413,7 +400,7 @@ class MealBolusViewModel(
                     if (state.submissionStatus != SubmissionStatus.NotSubmitted) return@update state
 
                     // 1. Let meal time "slide" with now (keeping IMI constant)
-                    val newMealTimestamp = now + state.input.imi
+                    val newMealTimestamp = now + state.input.mealTimeFromNow
 
                     // 2. Check for stale projections (> 4 mins old)
                     val isStale = (newMealTimestamp - state.projections.timestamp) > Minutes(4).inMs()

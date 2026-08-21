@@ -435,14 +435,14 @@ fun CalculationDetailsSelector(
                 )
 
                 val bgProjection = uiState.projections.bg
-                if (bgProjection == null) {
+                if (bgProjection.isInvalid()) {
                     Text(
                         text = stringResource(R.string.meal_bolus_calc_no_bg_warning),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.error,
                         fontWeight = FontWeight.Bold
                     )
-                } else if (bgProjection.mgdl <= uiState.lowThreshold.mgdl) {
+                } else if (bgProjection <= uiState.lowThreshold) {
                     Text(
                         text = stringResource(
                             R.string.meal_bolus_calc_low_bg_warning,
@@ -530,7 +530,7 @@ fun MealBolusContextInfo(
 
                     val displayBgValue = uiState.projections.bg
                     val bgText = glucoseValue(displayBgValue, default = "??")
-                    val textColor = if (displayBgValue == null || displayBgValue.isInvalid()) {
+                    val textColor = if (displayBgValue.isInvalid()) {
                         Color.Gray
                     } else when {
                         displayBgValue.mgdl < 70 -> Red
@@ -626,7 +626,7 @@ fun InsulinPlanCard(
                                 if (index < plan.size - 1) append(" + ")
                             }
 
-                            val lastOffset = plan.lastOrNull()?.timeOffset ?: Minutes(0)
+                            val lastOffset = plan.lastOrNull()?.timeFromNow ?: Minutes(0)
                             append(" (")
                             append(withinTimeDescription(lastOffset))
                             append(")")

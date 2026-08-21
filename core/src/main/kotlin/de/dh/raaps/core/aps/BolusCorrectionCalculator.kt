@@ -1,5 +1,6 @@
 package de.dh.raaps.core.aps
 
+import de.dh.raaps.common.model.DEFAULT_IMI_MINUTES
 import de.dh.raaps.common.model.InsulinAmount
 import de.dh.raaps.common.model.MealType
 import de.dh.raaps.common.model.PlannedInsulin
@@ -45,7 +46,7 @@ data class BolusParts(
 data class BolusProjections(
     val timestamp: Timestamp = Timestamp.now(),
     val isProjected: Boolean = false,
-    val bg: BgValue? = null,
+    val bg: BgValue = BgValue.INVALID,
     val iob: InsulinAmount = InsulinAmount.ZERO,
     val cob: Double = 0.0
 )
@@ -103,7 +104,7 @@ object BolusCalculationMath {
     }
 
     suspend fun calculateSuggestedImi(currentBg: BgValue, therapyManager: TherapyManager): Minutes {
-        if (currentBg.isInvalid()) return Minutes(0)
+        if (currentBg.isInvalid()) return Minutes(DEFAULT_IMI_MINUTES)
 
         val bgSettings = therapyManager.getBgSettings()
         val targetBg = bgSettings.first
