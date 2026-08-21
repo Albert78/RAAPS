@@ -127,6 +127,10 @@ class SystemManagerImpl(
 
     // Computation Core: Pure logic and state, completely thread-agnostic
     private lateinit var core: Core
+    
+    private var therapyManager: TherapyManager? = null
+    private var treatmentRepository: TreatmentRepository? = null
+    private var carbsInsulinCalculator: CarbsInsulinCalculator? = null
 
     private inner class NotificationTickHandler : TickHandler {
         override suspend fun onTick(tick: Tick) {
@@ -161,6 +165,10 @@ class SystemManagerImpl(
         coreInsightRepository: CoreInsightRepository,
         context: Context
     ) {
+        this.therapyManager = therapyManager
+        this.treatmentRepository = treatmentRepository
+        this.carbsInsulinCalculator = carbsInsulinCalculator
+        
         wakeService.registerHandler(WAKE_TAG, this)
 
         scope.launch {
@@ -302,8 +310,14 @@ class SystemManagerImpl(
     }
 
     override fun getBolusCorrectionCalculator(): BolusCorrectionCalculator {
+        val tm = therapyManager
+        val tr = treatmentRepository
+        val cic = carbsInsulinCalculator
+
         return if (::core.isInitialized) {
             core.getBolusCorrectionCalculator()
+        } else if (tm != null && tr != null && cic != null) {
+            SimpleBolusCorrectionCalculator(tm, tr, cic, glucoseSourceManager)
         } else {
             NoopAlgorithm().getBolusCorrectionCalculator()
         }
