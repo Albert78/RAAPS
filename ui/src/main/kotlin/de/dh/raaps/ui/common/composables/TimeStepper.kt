@@ -49,9 +49,9 @@ fun TimeStepper(
         relativeTimeMinutes(diffMin)
     } else {
         if (diffMin == 0) {
-            stringResource(de.dh.raaps.ui.R.string.duration_minutes_zero_format)
+            stringResource(CommonR.string.duration_minutes_zero_format)
         } else if (forceSign) {
-            stringResource(de.dh.raaps.ui.R.string.duration_minutes_signed_format, diffMin)
+            stringResource(CommonR.string.duration_minutes_signed_format, diffMin)
         } else {
             stringResource(CommonR.string.duration_minutes_format, diffMin)
         }

@@ -14,6 +14,8 @@
     <string name="time_until_hours">in %1$d Std</string>
 
     <string name="duration_minutes_format">%1$d Min.</string>
+    <string name="duration_minutes_signed_format">%1$+d Min.</string>
+    <string name="duration_minutes_zero_format">0 Min.</string>
     <string name="duration_hours_format">%1$d Std.</string>
     <string name="duration_hours_and_minutes_format">%1$d Std. %2$d Min.</string>
     <string name="within_time_just_now">sofort</string>
