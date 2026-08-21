@@ -19,6 +19,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -28,8 +29,8 @@ import de.dh.raaps.ui.common.icons.Icon_Minus
 import de.dh.raaps.ui.common.icons.Icon_Plus
 import de.dh.raaps.ui.common.relativeTimeMinutes
 import de.dh.raaps.ui.common.theme.AppTheme
-import java.time.Instant
-import java.time.temporal.ChronoUnit
+import kotlin.math.round
+import de.dh.raaps.common.R as CommonR
 
 @Composable
 fun TimeStepper(
@@ -37,11 +38,24 @@ fun TimeStepper(
     onTimeChange: (Timestamp) -> Unit,
     modifier: Modifier = Modifier,
     stepMinutes: Int = 5,
+    baseTime: Timestamp = Timestamp.now(),
+    showPreposition: Boolean = true,
+    forceSign: Boolean = false,
     style: StepperStyle = TimeStepperDefaults.defaultStyle()
 ) {
-    val now = Timestamp.now()
-    val diffMin = kotlin.math.round((currentTime.ms - now.ms) / 60000.0).toInt()
-    val relativeText = relativeTimeMinutes(diffMin)
+    val diffMin = round((currentTime.ms - baseTime.ms) / 60000.0).toInt()
+
+    val displayText = if (showPreposition) {
+        relativeTimeMinutes(diffMin)
+    } else {
+        if (diffMin == 0) {
+            stringResource(de.dh.raaps.ui.R.string.duration_minutes_zero_format)
+        } else if (forceSign) {
+            stringResource(de.dh.raaps.ui.R.string.duration_minutes_signed_format, diffMin)
+        } else {
+            stringResource(CommonR.string.duration_minutes_format, diffMin)
+        }
+    }
 
     Row(
         modifier = modifier,
@@ -58,7 +72,7 @@ fun TimeStepper(
         Spacer(Modifier.width(style.spacing))
 
         Text(
-            text = relativeText,
+            text = displayText,
             style = style.textStyle,
             textAlign = TextAlign.Center,
             modifier = Modifier.width(style.valueWidth)

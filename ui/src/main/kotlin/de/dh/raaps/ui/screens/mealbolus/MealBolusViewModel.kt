@@ -42,13 +42,13 @@ sealed interface SubmissionStatus {
 data class PlannedInsulinUiModel(
     val amount: InsulinAmount,
     val timestamp: Timestamp,
-    val minutesFromMeal: Minutes,
+    val timeFromMeal: Minutes,
     val description: String,
     val isUserModified: Boolean
 ) {
     fun toCoreModel() = PlannedInsulin(
         amount = amount,
-        timeFromMeal = minutesFromMeal,
+        timeFromMeal = timeFromMeal,
         description = description,
         isUserModified = isUserModified
     )
@@ -247,7 +247,7 @@ class MealBolusViewModel(
             if (index in newPlan.indices) {
                 newPlan[index] = newPlan[index].copy(
                     timestamp = newTimestamp,
-                    minutesFromMeal = offset,
+                    timeFromMeal = offset,
                     isUserModified = true
                 )
             }
@@ -315,7 +315,7 @@ class MealBolusViewModel(
                 PlannedInsulinUiModel(
                     amount = core.amount,
                     timestamp = state.input.mealTimestamp + core.timeFromMeal,
-                    minutesFromMeal = core.timeFromMeal,
+                    timeFromMeal = core.timeFromMeal,
                     description = core.description,
                     isUserModified = core.isUserModified
                 )
@@ -389,7 +389,7 @@ class MealBolusViewModel(
 
                     // 3. Update absolute times in insulin plan (based on sliding meal time)
                     val updatedPlan = state.insulinPlan.map { item ->
-                        item.copy(timestamp = newMealTimestamp + item.minutesFromMeal)
+                        item.copy(timestamp = newMealTimestamp + item.timeFromMeal)
                     }
 
                     state.copy(

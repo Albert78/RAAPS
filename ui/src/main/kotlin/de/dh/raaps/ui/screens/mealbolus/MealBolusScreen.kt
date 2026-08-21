@@ -273,6 +273,7 @@ fun MealBolusContent(
         if (uiState.insulinPlan.isNotEmpty()) {
             InsulinPlanCard(
                 plan = uiState.insulinPlan,
+                mealTimestamp = uiState.input.mealTimestamp,
                 isExpanded = uiState.isInsulinPlanExpanded,
                 onToggleExpanded = onToggleInsulinPlan,
                 onTimeChange = onPlannedInsulinTimeChange
@@ -577,6 +578,7 @@ fun MealBolusContextInfo(
 @Composable
 fun InsulinPlanCard(
     plan: List<PlannedInsulinUiModel>,
+    mealTimestamp: Timestamp,
     isExpanded: Boolean,
     onToggleExpanded: () -> Unit,
     onTimeChange: (Int, Timestamp) -> Unit
@@ -610,7 +612,7 @@ fun InsulinPlanCard(
                                 if (index < plan.size - 1) append(" + ")
                             }
 
-                            val lastOffset = plan.lastOrNull()?.minutesFromMeal ?: Minutes(0)
+                            val lastOffset = plan.lastOrNull()?.timeFromMeal ?: Minutes(0)
                             append(" (")
                             append(withinTimeDescription(lastOffset))
                             append(")")
@@ -649,17 +651,22 @@ fun InsulinPlanCard(
                                     style = MaterialTheme.typography.titleMedium,
                                     fontWeight = FontWeight.Bold
                                 )
+                            }
+                            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                TimeStepper(
+                                    currentTime = item.timestamp,
+                                    onTimeChange = { onTimeChange(index, it) },
+                                    baseTime = mealTimestamp,
+                                    showPreposition = false,
+                                    forceSign = true,
+                                    style = TimeStepperDefaults.compactStyle()
+                                )
                                 Text(
-                                    text = stringResource(R.string.approx_time_format, time(item.timestamp)),
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = MaterialTheme.colorScheme.primary
+                                    text = time(item.timestamp),
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = MaterialTheme.colorScheme.primary.copy(alpha = 0.8f)
                                 )
                             }
-                            TimeStepper(
-                                currentTime = item.timestamp,
-                                onTimeChange = { onTimeChange(index, it) },
-                                style = TimeStepperDefaults.compactStyle()
-                            )
                         }
                         if (index < plan.size - 1) {
                             HorizontalDivider(
