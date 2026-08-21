@@ -26,6 +26,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlin.math.max
+import kotlin.time.Duration.Companion.minutes
 import kotlin.time.Duration.Companion.seconds
 
 data class MealBolusUiState(
@@ -54,6 +55,8 @@ data class MealBolusUiState(
     val manualBolus: InsulinAmount = InsulinAmount.ZERO,
     val insulinPlan: List<PlannedInsulin> = emptyList(),
     val isInsulinPlanExpanded: Boolean = false,
+    val isMealReminderEnabled: Boolean = true,
+    val showCloseBanner: Boolean = false,
     val isSubmitting: Boolean = false
 )
 
@@ -94,6 +97,7 @@ class MealBolusViewModel(
             }
             calculateBolus()
             startTicker()
+            startCloseBannerTimer()
         }
     }
 
@@ -138,6 +142,10 @@ class MealBolusViewModel(
 
     fun toggleInsulinPlanExpanded() {
         _uiState.update { it.copy(isInsulinPlanExpanded = !it.isInsulinPlanExpanded) }
+    }
+
+    fun onToggleMealReminder() {
+        _uiState.update { it.copy(isMealReminderEnabled = !it.isMealReminderEnabled) }
     }
 
     private fun calculateBolus() {
@@ -205,7 +213,9 @@ class MealBolusViewModel(
                     treatmentRepository.addMealEntry(mealEntry)
 
                     // Schedule reminder
-                    therapyManager.scheduleMealReminder(lock, state.mealTimestamp)
+                    if (state.isMealReminderEnabled) {
+                        therapyManager.scheduleMealReminder(state.mealTimestamp)
+                    }
                 }
 
                 // 2. Deliver Insulin Plan
@@ -251,6 +261,13 @@ class MealBolusViewModel(
                     state
                 }
             }
+        }
+    }
+
+    private fun startCloseBannerTimer() {
+        viewModelScope.launch {
+            delay(5.minutes)
+            _uiState.update { it.copy(showCloseBanner = true) }
         }
     }
 

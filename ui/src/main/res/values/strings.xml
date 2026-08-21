@@ -221,6 +221,10 @@
     <string name="meal_past_time_validation_error">Muss mindestens 25 Min. in der Vergangenheit liegen</string>
     <string name="meal_bolus_insulin_plan_title">Insulin-Planung</string>
     <string name="meal_bolus_administer_button">Bestätigen</string>
+    <string name="meal_bolus_reminder_label">Mahlzeit-Erinnerung</string>
+    <string name="meal_bolus_close_banner_title">Vorgang abbrechen</string>
+    <string name="meal_bolus_close_banner_message">Schließe diesen Bildschirm, sonst blockiert er den Algorithmus.</string>
+    <string name="meal_bolus_close_banner_button">Schließen</string>
     <string name="meal_edit_screen_title">Mahlzeit bearbeiten</string>
     <string name="meal_edit_save_button">Speichern</string>
     <string name="add_past_meal_save_button">Speichern</string>

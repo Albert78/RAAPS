@@ -369,11 +369,9 @@ class TherapyManager(
     /**
      * Schedules a reminder for the user to eat their meal.
      *
-     * @param treatmentLock The lock held by the caller.
      * @param mealTimestamp The time when the meal is planned to be eaten.
      */
-    fun scheduleMealReminder(treatmentLock: TreatmentLock, mealTimestamp: Timestamp) {
-        checkLock(treatmentLock)
+    fun scheduleMealReminder(mealTimestamp: Timestamp) {
         ToDo.toBeImplemented("Schedule meal reminder")
         // TODO: Implement meal reminder notification logic
         Log.i(TAG, "Scheduled meal reminder for $mealTimestamp")

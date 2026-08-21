@@ -16,6 +16,10 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.KeyboardArrowUp
+import androidx.compose.material.icons.filled.Notifications
+import androidx.compose.material.icons.filled.Warning
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -65,6 +69,7 @@ import de.dh.raaps.ui.common.carbsGramsValue
 import de.dh.raaps.ui.common.carbsKeUnitLabel
 import de.dh.raaps.ui.common.composables.AppColorBlue
 import de.dh.raaps.ui.common.composables.EditableValueStepper
+import de.dh.raaps.ui.common.composables.ImageCaptionWithSwitch
 import de.dh.raaps.ui.common.composables.LightGreenA700
 import de.dh.raaps.ui.common.composables.PrimaryButton
 import de.dh.raaps.ui.common.composables.Red
@@ -102,6 +107,8 @@ fun MealBolusScreen(
         onManualBolusChange = { viewModel.onManualBolusChange(it) },
         onPlannedInsulinTimeChange = { index, time -> viewModel.onPlannedInsulinTimeChange(index, time) },
         onToggleInsulinPlan = { viewModel.toggleInsulinPlanExpanded() },
+        onToggleMealReminder = { viewModel.onToggleMealReminder() },
+        onClose = onNavigateUp,
         onSubmit = { viewModel.submit(treatmentLock, onNavigateUp) }
     )
 }
@@ -115,6 +122,8 @@ fun MealBolusContent(
     onManualBolusChange: (Double) -> Unit,
     onPlannedInsulinTimeChange: (Int, Timestamp) -> Unit,
     onToggleInsulinPlan: () -> Unit,
+    onToggleMealReminder: () -> Unit,
+    onClose: () -> Unit,
     onSubmit: () -> Unit
 ) {
     val scrollState = rememberScrollState()
@@ -128,6 +137,10 @@ fun MealBolusContent(
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
         MealBolusContextInfo(uiState)
+
+        if (uiState.showCloseBanner) {
+            CloseScreenBanner(onClose = onClose)
+        }
 
         // Mahlzeit Card (Carbs + Food Type + Meal Time)
         Card(
@@ -169,7 +182,15 @@ fun MealBolusContent(
                 }
 
                 if (uiState.carbsKe > 0.0) {
+                    FoodTypeSelector(
+                        mealTypes = uiState.mealTypes,
+                        selectedType = uiState.selectedMealType,
+                        onTypeSelected = onMealTypeChange,
+                        isMandatory = true
+                    )
+
                     HorizontalDivider(color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.1f))
+
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
                         Text(
                             text = stringResource(R.string.meal_bolus_meal_time_label),
@@ -190,11 +211,12 @@ fun MealBolusContent(
                         )
                     }
 
-                    FoodTypeSelector(
-                        mealTypes = uiState.mealTypes,
-                        selectedType = uiState.selectedMealType,
-                        onTypeSelected = onMealTypeChange,
-                        isMandatory = true
+                    ImageCaptionWithSwitch(
+                        imageVector = Icons.Default.Notifications,
+                        text = stringResource(R.string.meal_bolus_reminder_label),
+                        checked = uiState.isMealReminderEnabled,
+                        onCheckedChange = { onToggleMealReminder() },
+                        modifier = Modifier.fillMaxWidth()
                     )
                 }
             }
@@ -270,6 +292,55 @@ fun MealBolusContent(
     }
 }
 
+@Composable
+fun CloseScreenBanner(
+    onClose: () -> Unit
+) {
+    Surface(
+        modifier = Modifier.fillMaxWidth(),
+        color = MaterialTheme.colorScheme.errorContainer,
+        shape = RoundedCornerShape(8.dp),
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.error.copy(alpha = 0.5f))
+    ) {
+        Row(
+            modifier = Modifier.padding(12.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            Icon(
+                imageVector = Icons.Default.Warning,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.error
+            )
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = stringResource(R.string.meal_bolus_close_banner_title),
+                    style = MaterialTheme.typography.labelLarge,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.error
+                )
+                Text(
+                    text = stringResource(R.string.meal_bolus_close_banner_message),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onErrorContainer
+                )
+            }
+            Button(
+                onClick = onClose,
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = MaterialTheme.colorScheme.error
+                ),
+                contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 12.dp, vertical = 4.dp),
+                modifier = Modifier.height(32.dp)
+            ) {
+                Text(
+                    text = stringResource(R.string.meal_bolus_close_banner_button),
+                    style = MaterialTheme.typography.labelMedium
+                )
+            }
+        }
+    }
+}
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -606,6 +677,8 @@ fun MealBolusZeroKePreview() {
                     onManualBolusChange = {},
                     onPlannedInsulinTimeChange = { _, _ -> },
                     onToggleInsulinPlan = {},
+                    onToggleMealReminder = {},
+                    onClose = {},
                     onSubmit = {}
                 )
             }
@@ -653,6 +726,8 @@ fun MealBolusDefaultPreview() {
                     onManualBolusChange = {},
                     onPlannedInsulinTimeChange = { _, _ -> },
                     onToggleInsulinPlan = {},
+                    onToggleMealReminder = {},
+                    onClose = {},
                     onSubmit = {}
                 )
             }
