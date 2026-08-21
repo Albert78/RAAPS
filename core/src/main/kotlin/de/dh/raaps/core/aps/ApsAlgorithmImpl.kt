@@ -385,8 +385,8 @@ class ApsAlgorithmImpl(
                 return CalculationResult.zeroTemp(durationInHours = 1).withMetrics(insight)
             }
             // Else go on with decreased basal
-            val safetCorrectionUnits = convertToInsulinAmountFromBgDelta(-bgErrorAtPeak, isfValue)
-            val unitsPerHour = (defaultBasal - safetCorrectionUnits).coerceAtLeast(InsulinAmount.ZERO)
+            val safetyCorrectionUnits = convertToInsulinAmountFromBgDelta(-bgErrorAtPeak, isfValue)
+            val unitsPerHour = (defaultBasal - safetyCorrectionUnits).coerceAtLeast(InsulinAmount.ZERO)
             val percent = if (defaultBasal > InsulinAmount.ZERO) {
                 (unitsPerHour / defaultBasal * 100.0).toInt()
             } else {
