@@ -36,13 +36,31 @@ sealed interface SubmissionStatus {
     object Success : SubmissionStatus
 }
 
+/**
+ * UI-specific model for planned insulin that includes an absolute timestamp for display and execution.
+ */
+data class PlannedInsulinUiModel(
+    val amount: InsulinAmount,
+    val timestamp: Timestamp,
+    val minutesFromMeal: Minutes,
+    val description: String,
+    val isUserModified: Boolean
+) {
+    fun toCoreModel() = PlannedInsulin(
+        amount = amount,
+        timeFromMeal = minutesFromMeal,
+        description = description,
+        isUserModified = isUserModified
+    )
+}
+
 data class MealBolusUiState(
     val isLoading: Boolean = true,
     val mealTimestamp: Timestamp = Timestamp.now(),
     val referenceBg: BgValue? = null,
     val referenceTimestamp: Timestamp = Timestamp.now(),
     val isProjected: Boolean = false,
-    val seaMinutes: Int = 0,
+    val seaMinutes: Minutes = Minutes(0),
     val carbsKe: Double = 0.0,
     val mealTypes: List<MealType> = emptyList(),
     val selectedMealType: MealType? = null,
@@ -60,7 +78,7 @@ data class MealBolusUiState(
     val cobPart: InsulinAmount = InsulinAmount.ZERO,
     val proposedBolus: InsulinAmount = InsulinAmount.ZERO,
     val manualBolus: InsulinAmount = InsulinAmount.ZERO,
-    val insulinPlan: List<PlannedInsulin> = emptyList(),
+    val insulinPlan: List<PlannedInsulinUiModel> = emptyList(),
     val isInsulinPlanExpanded: Boolean = false,
     val isMealReminderEnabled: Boolean = true,
     val showCloseBanner: Boolean = false,
@@ -89,7 +107,7 @@ class MealBolusViewModel(
             _uiState.update {
                 it.copy(
                     isLoading = false,
-                    mealTimestamp = now + Minutes(max(0, baseData.suggestedSea).toShort()),
+                    mealTimestamp = now + Minutes(max(0, baseData.suggestedSea.value.toInt()).toShort()),
                     seaMinutes = baseData.suggestedSea,
                     carbsKe = baseData.suggestedCarbsKe,
                     mealTypes = mealTypes,
@@ -132,18 +150,18 @@ class MealBolusViewModel(
     }
 
     fun onPlannedInsulinTimeChange(index: Int, newTimestamp: Timestamp) {
-        val now = Timestamp.now()
-        val offset = kotlin.math.round((newTimestamp.ms - now.ms) / 60000.0)
-        _uiState.update { state ->
-            val newPlan = state.insulinPlan.toMutableList()
+        val state = _uiState.value
+        val offset = Minutes.timeDifference(state.mealTimestamp, newTimestamp)
+        _uiState.update { s ->
+            val newPlan = s.insulinPlan.toMutableList()
             if (index in newPlan.indices) {
                 newPlan[index] = newPlan[index].copy(
                     timestamp = newTimestamp,
-                    offsetMinutes = offset.toInt(),
+                    minutesFromMeal = offset,
                     isUserModified = true
                 )
             }
-            state.copy(insulinPlan = newPlan)
+            s.copy(insulinPlan = newPlan)
         }
     }
 
@@ -190,16 +208,25 @@ class MealBolusViewModel(
     private fun updateInsulinPlanTimes() {
         viewModelScope.launch {
             val state = _uiState.value
-            val bolusBaseTime = state.mealTimestamp - Minutes(state.seaMinutes.toShort())
 
             val newPlan = registry.systemManager.getBolusCorrectionCalculator().distributeInsulinPlan(
                 manualBolus = state.manualBolus,
                 correctionPart = state.correctionPart,
                 mealType = state.selectedMealType,
-                mealTimestamp = bolusBaseTime,
-                existingPlan = state.insulinPlan
+                suggestedSea = state.seaMinutes,
+                existingPlan = state.insulinPlan.map { it.toCoreModel() }
             )
-            _uiState.update { it.copy(insulinPlan = newPlan) }
+
+            val uiPlan = newPlan.map { core ->
+                PlannedInsulinUiModel(
+                    amount = core.amount,
+                    timestamp = state.mealTimestamp + core.timeFromMeal,
+                    minutesFromMeal = core.timeFromMeal,
+                    description = core.description,
+                    isUserModified = core.isUserModified
+                )
+            }
+            _uiState.update { it.copy(insulinPlan = uiPlan) }
         }
     }
 

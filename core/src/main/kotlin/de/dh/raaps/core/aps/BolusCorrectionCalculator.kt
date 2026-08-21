@@ -33,7 +33,7 @@ data class BolusScreenBaseData(
     val referenceTimestamp: Timestamp,
     val referenceBg: BgValue,
     val suggestedCarbsKe: Double,
-    val suggestedSea: Int
+    val suggestedSea: Minutes
 )
 
 /**
@@ -48,7 +48,7 @@ interface BolusCorrectionCalculator {
     /**
      * Calculates the suggested SEA (Schätzwert der Essens-Anpassung) in minutes.
      */
-    suspend fun calculateSuggestedSea(): Int
+    suspend fun calculateSuggestedSea(): Minutes
 
     /**
      * Calculates the bolus parts for a given carb intake at a specific time.
@@ -61,12 +61,13 @@ interface BolusCorrectionCalculator {
 
     /**
      * Distributes the insulin plan based on the manual bolus amount and other parameters.
+     * The resulting [PlannedInsulin] objects have offsets relative to the meal time.
      */
     suspend fun distributeInsulinPlan(
         manualBolus: InsulinAmount,
         correctionPart: InsulinAmount,
         mealType: MealType?,
-        mealTimestamp: Timestamp,
+        suggestedSea: Minutes,
         existingPlan: List<PlannedInsulin> = emptyList()
     ): List<PlannedInsulin>
 }
@@ -102,20 +103,20 @@ object BolusCalculationMath {
         )
     }
 
-    suspend fun calculateSuggestedSea(currentBg: BgValue, therapyManager: TherapyManager): Int {
-        if (currentBg.isInvalid()) return 0
+    suspend fun calculateSuggestedSea(currentBg: BgValue, therapyManager: TherapyManager): Minutes {
+        if (currentBg.isInvalid()) return Minutes(0)
 
         val bgSettings = therapyManager.getBgSettings()
         val targetBg = bgSettings.first
         val lowThreshold = bgSettings.second
 
-        if (currentBg.mgdl <= lowThreshold.mgdl) return -15 // Suggest 15 min delay for bolus if low
+        if (currentBg.mgdl <= lowThreshold.mgdl) return Minutes(-15) // Suggest 15 min delay for bolus if low
 
         val diff = currentBg.mgdl - targetBg.mgdl
-        if (diff <= 0) return 0
+        if (diff <= 0) return Minutes(0)
 
         // Simple rule: 5 minutes per 20 mg/dL above target, max 45 min
-        return ((diff / 20) * 5).coerceIn(0, 45)
+        return Minutes(((diff / 20) * 5).coerceIn(0, 45).toShort())
     }
 
     suspend fun calculateBolusParts(
@@ -170,22 +171,23 @@ object BolusCalculationMath {
         manualBolus: InsulinAmount,
         correctionPart: InsulinAmount,
         mealType: MealType?,
-        mealTimestamp: Timestamp,
-        suggestedOffset: Int,
+        suggestedSea: Minutes,
         existingPlan: List<PlannedInsulin>
     ): List<PlannedInsulin> {
         if (manualBolus <= InsulinAmount.ZERO) return emptyList()
 
-        val actualOffset = if (suggestedOffset < 0) abs(suggestedOffset) else 0
+        // SEA (Spritz-Ess-Abstand) > 0 means wait time between bolus and meal -> Bolus before meal.
+        // SEA < 0 means a negative wait time (delay) -> Bolus after meal.
+        val defaultTimeFromMeal = if (suggestedSea.value >= 0) Minutes((-suggestedSea.value).toShort()) else Minutes(abs(suggestedSea.value.toInt()).toShort())
 
         if (mealType == null) {
             val existing = existingPlan.getOrNull(0)
             val isUserModified = existing?.isUserModified == true
 
-            // If user modified the offset, keep their offset but apply it to the base time
-            val offset = if (isUserModified) existing.offsetMinutes else actualOffset
+            // If user modified the offset, keep their offset
+            val timeFromMeal = if (isUserModified) existing.timeFromMeal else defaultTimeFromMeal
             return listOf(
-                PlannedInsulin(manualBolus, mealTimestamp + Minutes(offset.toShort()), offset, "Bolus", isUserModified)
+                PlannedInsulin(manualBolus, timeFromMeal, "Bolus", isUserModified)
             )
         }
 
@@ -194,18 +196,17 @@ object BolusCalculationMath {
         return mealType.components.mapIndexed { index, component ->
             val amount = InsulinAmount(roundedAmounts[index])
             val delayFromBase = if (index == 0) 0 else component.peakMinutes.value.toInt()
-            val finalOffset = actualOffset + delayFromBase
+            val finalDefaultTime = defaultTimeFromMeal + Minutes(delayFromBase.toShort())
 
             val existing = existingPlan.getOrNull(index)
             val isUserModified = existing?.isUserModified == true
 
-            // If user modified the offset, apply their offset to the new base time
-            val offset = if (isUserModified) existing.offsetMinutes else finalOffset
+            // If user modified the offset, apply their offset
+            val time = if (isUserModified) existing.timeFromMeal else finalDefaultTime
 
             PlannedInsulin(
                 amount = amount,
-                timestamp = mealTimestamp + Minutes(offset.toShort()),
-                offsetMinutes = offset,
+                timeFromMeal = time,
                 description = if (mealType.components.size > 1) "Teil ${index + 1} (${component.weight}%)" else "Bolus",
                 isUserModified = isUserModified
             )
@@ -273,6 +274,6 @@ class SimpleBolusCorrectionCalculator(
     override suspend fun calculateBolusParts(carbsKe: Double, mealTimestamp: Timestamp, referenceTimestamp: Timestamp) =
         BolusCalculationMath.calculateBolusParts(carbsKe, getCurrentBg(), Timestamp.now(), therapyManager, treatmentRepository, carbsInsulinCalculator)
 
-    override suspend fun distributeInsulinPlan(manualBolus: InsulinAmount, correctionPart: InsulinAmount, mealType: MealType?, mealTimestamp: Timestamp, existingPlan: List<PlannedInsulin>) =
-        BolusCalculationMath.distributeInsulinPlan(manualBolus, correctionPart, mealType, mealTimestamp, calculateSuggestedSea(), existingPlan)
+    override suspend fun distributeInsulinPlan(manualBolus: InsulinAmount, correctionPart: InsulinAmount, mealType: MealType?, suggestedSea: Minutes, existingPlan: List<PlannedInsulin>) =
+        BolusCalculationMath.distributeInsulinPlan(manualBolus, correctionPart, mealType, suggestedSea, existingPlan)
 }

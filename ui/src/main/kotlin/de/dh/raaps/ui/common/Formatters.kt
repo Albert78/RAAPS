@@ -8,6 +8,7 @@ import androidx.compose.ui.res.stringResource
 import de.dh.raaps.common.model.data.BgDelta
 import de.dh.raaps.common.model.data.BgValue
 import de.dh.raaps.common.model.data.GlucoseUnit
+import de.dh.raaps.common.model.data.Minutes
 import de.dh.raaps.common.model.data.Timestamp
 import java.time.LocalDate
 import java.time.LocalDateTime
@@ -180,10 +181,11 @@ fun relativeTimeMinutes(minutes: Int): String {
 }
 
 @Composable
-fun withinTimeDescription(minutes: Int): String {
-    if (minutes <= 0) return stringResource(CommonR.string.within_time_just_now)
-    val hours = minutes / 60
-    val mins = minutes % 60
+fun withinTimeDescription(minutes: Minutes): String {
+    val m = minutes.value.toInt()
+    if (m <= 0) return stringResource(CommonR.string.within_time_just_now)
+    val hours = m / 60
+    val mins = m % 60
 
     val timeStr = when {
         hours == 0 -> stringResource(CommonR.string.duration_minutes_format, mins)

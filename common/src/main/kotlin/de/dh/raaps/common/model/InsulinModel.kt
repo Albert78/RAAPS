@@ -118,12 +118,15 @@ data class InsulinApplication(
 )
 
 /**
- * Represents a bolus that is planned for a future timestamp.
+ * Represents a bolus that is planned relative to a meal.
  */
 data class PlannedInsulin(
     val amount: InsulinAmount,
-    val timestamp: Timestamp,
-    val offsetMinutes: Int = 0,
+    /**
+     * Time relative to the meal timestamp.
+     * Can be negative (bolus before meal) or positive (bolus after meal).
+     */
+    val timeFromMeal: Minutes = Minutes(0),
     val description: String = "",
     val isUserModified: Boolean = false
 )

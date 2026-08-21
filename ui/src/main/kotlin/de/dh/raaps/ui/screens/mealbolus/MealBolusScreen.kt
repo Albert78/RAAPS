@@ -54,7 +54,6 @@ import de.dh.raaps.common.model.ID_MEAL_SLOW
 import de.dh.raaps.common.model.ID_MEAL_STANDARD
 import de.dh.raaps.common.model.InsulinAmount
 import de.dh.raaps.common.model.MealType
-import de.dh.raaps.common.model.PlannedInsulin
 import de.dh.raaps.common.model.data.BgDelta
 import de.dh.raaps.common.model.data.BgValue
 import de.dh.raaps.common.model.data.GlucoseUnit
@@ -554,7 +553,7 @@ fun MealBolusContextInfo(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun InsulinPlanCard(
-    plan: List<PlannedInsulin>,
+    plan: List<PlannedInsulinUiModel>,
     isExpanded: Boolean,
     onToggleExpanded: () -> Unit,
     onTimeChange: (Int, Timestamp) -> Unit
@@ -588,7 +587,7 @@ fun InsulinPlanCard(
                                 if (index < plan.size - 1) append(" + ")
                             }
 
-                            val lastOffset = plan.lastOrNull()?.offsetMinutes ?: 0
+                            val lastOffset = plan.lastOrNull()?.minutesFromMeal ?: Minutes(0)
                             append(" (")
                             append(withinTimeDescription(lastOffset))
                             append(")")

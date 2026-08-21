@@ -5,6 +5,7 @@ import de.dh.raaps.common.model.MealType
 import de.dh.raaps.common.model.PlannedInsulin
 import de.dh.raaps.common.model.data.BgDelta
 import de.dh.raaps.common.model.data.BgValue
+import de.dh.raaps.common.model.data.Minutes
 import de.dh.raaps.common.model.data.Timestamp
 
 sealed class CoreIssue {
@@ -199,7 +200,7 @@ class NoopAlgorithm: ApsAlgorithm {
             override suspend fun calculateBaseData(): BolusScreenBaseData =
                 BolusScreenBaseData(Timestamp.now(), BgValue.INVALID, 0.0, 0)
 
-            override suspend fun calculateSuggestedSea(): Int = 0
+            override suspend fun calculateSuggestedSea(): Minutes = Minutes(0)
             override suspend fun calculateBolusParts(carbsKe: Double, mealTimestamp: Timestamp, referenceTimestamp: Timestamp): BolusParts =
                 BolusParts(
                     InsulinAmount.ZERO,
@@ -215,7 +216,7 @@ class NoopAlgorithm: ApsAlgorithm {
                 manualBolus: InsulinAmount,
                 correctionPart: InsulinAmount,
                 mealType: MealType?,
-                mealTimestamp: Timestamp,
+                suggestedSea: Minutes,
                 existingPlan: List<PlannedInsulin>
             ): List<PlannedInsulin> = emptyList()
         }
