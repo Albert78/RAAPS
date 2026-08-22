@@ -97,17 +97,13 @@ class ApsAlgorithmImpl(
         override suspend fun calculateBolusParts(
             carbsKe: Double,
             mealTimestamp: Timestamp,
+            projectedBg: BgValue,
             projectedIob: InsulinAmount,
             projectedCob: Double
         ): BolusParts {
-            val bgValueAtReferenceTime = run {
-                val tick = timeline.tick(mealTimestamp)
-                predictionModel.withTickState(tick) { it.assumedBg } ?: BgValue.INVALID
-            }
-
             return BolusCalculationMath.calculateBolusParts(
                 carbsKe,
-                bgValueAtReferenceTime,
+                projectedBg,
                 mealTimestamp,
                 therapyManager,
                 projectedIob,

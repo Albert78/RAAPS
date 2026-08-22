@@ -202,6 +202,7 @@ class NoopAlgorithm: ApsAlgorithm {
             override suspend fun calculateBolusParts(
                 carbsKe: Double,
                 mealTimestamp: Timestamp,
+                projectedBg: BgValue,
                 projectedIob: InsulinAmount,
                 projectedCob: Double
             ): BolusParts = BolusParts.empty()

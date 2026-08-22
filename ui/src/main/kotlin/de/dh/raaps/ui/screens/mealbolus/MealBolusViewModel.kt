@@ -288,6 +288,7 @@ class MealBolusViewModel(
             val result = bolusCorrectionCalculator.calculateBolusParts(
                 carbsKe = state.input.carbsKe,
                 mealTimestamp = state.input.mealTimestamp,
+                projectedBg = state.projections.bg,
                 projectedIob = state.projections.iob,
                 projectedCob = state.projections.cob
             )

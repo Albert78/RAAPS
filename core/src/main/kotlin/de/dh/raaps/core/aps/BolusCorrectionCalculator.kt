@@ -66,6 +66,7 @@ interface BolusCorrectionCalculator {
     suspend fun calculateBolusParts(
         carbsKe: Double,
         mealTimestamp: Timestamp,
+        projectedBg: BgValue,
         projectedIob: InsulinAmount,
         projectedCob: Double
     ): BolusParts
@@ -243,13 +244,13 @@ class SimpleBolusCorrectionCalculator(
     override suspend fun calculateBolusParts(
         carbsKe: Double,
         mealTimestamp: Timestamp,
+        projectedBg: BgValue,
         projectedIob: InsulinAmount,
         projectedCob: Double
     ) = BolusCalculationMath.calculateBolusParts(
             carbsKe = carbsKe,
-            referenceBg = getCurrentBg(),
-            // In this simple calculator, just use the current BG at timestamp NOW.
-            referenceTimestamp = Timestamp.now(),
+            referenceBg = projectedBg,
+            referenceTimestamp = mealTimestamp,
             therapyManager = therapyManager,
             iob = projectedIob,
             cob = projectedCob
