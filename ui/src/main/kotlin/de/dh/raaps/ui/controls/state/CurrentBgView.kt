@@ -38,13 +38,10 @@ import de.dh.raaps.ui.common.composables.AppColorBlue
 import de.dh.raaps.ui.common.composables.LightGreenA700
 import de.dh.raaps.ui.common.composables.Red
 import de.dh.raaps.ui.common.composables.Yellow
+import de.dh.raaps.ui.common.deltaValue
+import de.dh.raaps.ui.common.glucoseValue
 import de.dh.raaps.ui.common.shortRelativeTimeAgo
 import de.dh.raaps.ui.common.theme.AppTheme
-import de.dh.raaps.ui.common.glucoseValue
-import de.dh.raaps.ui.common.deltaValue
-import de.dh.raaps.ui.controls.history.BgTrend
-import de.dh.raaps.ui.controls.history.CurrentBgData
-import de.dh.raaps.ui.controls.history.CurrentBgUiState
 import kotlinx.coroutines.delay
 
 @Composable

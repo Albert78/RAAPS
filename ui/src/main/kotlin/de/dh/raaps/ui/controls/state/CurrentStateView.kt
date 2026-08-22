@@ -60,9 +60,6 @@ import de.dh.raaps.ui.common.deltaValue
 import de.dh.raaps.ui.common.glucoseUnitLabel
 import de.dh.raaps.ui.common.insulinValue
 import de.dh.raaps.ui.common.carbsGramsValue
-import de.dh.raaps.ui.controls.history.BgTrend
-import de.dh.raaps.ui.controls.history.CurrentBgData
-import de.dh.raaps.ui.controls.history.CurrentBgUiState
 import kotlinx.coroutines.delay
 import kotlin.time.Duration.Companion.milliseconds
 

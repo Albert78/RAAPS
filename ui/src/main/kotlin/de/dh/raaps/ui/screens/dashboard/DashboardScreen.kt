@@ -35,7 +35,6 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import de.dh.raaps.common.R as CommonR
 import de.dh.raaps.common.model.ApsMode
 import de.dh.raaps.common.model.InsulinAmount
 import de.dh.raaps.common.model.data.BgDelta
@@ -53,7 +52,6 @@ import de.dh.raaps.ui.common.icons.Icon_Menu_Permissions
 import de.dh.raaps.ui.common.icons.Icon_Settings
 import de.dh.raaps.ui.common.theme.AppTheme
 import de.dh.raaps.ui.controls.apscontrol.ApsControlCard
-import de.dh.raaps.ui.controls.history.CurrentBgUiState
 import de.dh.raaps.ui.controls.history.HistoryAndImpactChartOrDefault
 import de.dh.raaps.ui.controls.history.HistoryAndImpactDiagramData
 import de.dh.raaps.ui.controls.history.HistoryUiState
@@ -62,16 +60,20 @@ import de.dh.raaps.ui.controls.history.rememberBgHistoryChartState
 import de.dh.raaps.ui.controls.profile.CurrentTherapyUiState
 import de.dh.raaps.ui.controls.profile.CurrentTherapyViewModel
 import de.dh.raaps.ui.controls.profile.InsulinProfileUiState
+import de.dh.raaps.ui.controls.state.CurrentBgUiState
 import de.dh.raaps.ui.controls.state.CurrentStateView
+import de.dh.raaps.ui.controls.state.SystemViewModel
 import de.dh.raaps.ui.controls.state.createSampleGoodBgUiState
 import de.dh.raaps.ui.screens.history.createSampleHistoryUiState
 import de.dh.raaps.ui.screens.permissions.PermissionStatus
 import de.dh.raaps.ui.screens.permissions.PermissionsUiModel
 import de.dh.raaps.ui.screens.permissions.PermissionsViewModel
+import de.dh.raaps.common.R as CommonR
 
 @Composable
 fun DashboardScreen(
     viewModel: DashboardViewModel,
+    systemViewModel: SystemViewModel,
     historyViewModel: HistoryViewModel,
     currentTherapyViewModel: CurrentTherapyViewModel,
     permissionsViewModel: PermissionsViewModel,
@@ -87,10 +89,10 @@ fun DashboardScreen(
     extraContent: @Composable () -> Unit = {}
 ) {
     val uiState by viewModel.uiState.collectAsState()
-    val currentBgUiState by historyViewModel.currentBgUiState.collectAsState()
+    val currentBgUiState by systemViewModel.currentBgUiState.collectAsState()
     val historyUiState by historyViewModel.historyUiState.collectAsState()
-    val iob by historyViewModel.iob.collectAsState()
-    val cob by historyViewModel.cob.collectAsState()
+    val iob by systemViewModel.iob.collectAsState()
+    val cob by systemViewModel.cob.collectAsState()
     val currentTherapyUiState by currentTherapyViewModel.uiState.collectAsState()
     val permissionsUiState by permissionsViewModel.uiState.collectAsState()
 

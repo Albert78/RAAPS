@@ -14,8 +14,8 @@ import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation3.runtime.NavEntry
 import androidx.navigation3.runtime.NavKey
-import de.dh.raaps.common.navigation.AlarmsRoute
 import de.dh.raaps.common.navigation.AddPastMealRoute
+import de.dh.raaps.common.navigation.AlarmsRoute
 import de.dh.raaps.common.navigation.BgEditorRoute
 import de.dh.raaps.common.navigation.BolusHistoryRoute
 import de.dh.raaps.common.navigation.CoreDecisionsRoute
@@ -38,9 +38,12 @@ import de.dh.raaps.common.navigation.SystemControlRoute
 import de.dh.raaps.common.navigation.TherapyAdjustmentRoute
 import de.dh.raaps.core.SystemRegistry
 import de.dh.raaps.setUserDeclinedPermissions
+import de.dh.raaps.ui.common.treatmentlock.TreatmentLockScreen
+import de.dh.raaps.ui.common.treatmentlock.TreatmentLockViewModel
 import de.dh.raaps.ui.controls.history.HistoryViewModel
 import de.dh.raaps.ui.controls.profile.CurrentTherapyViewModel
 import de.dh.raaps.ui.controls.profile.InsulinProfileSettingsViewModel
+import de.dh.raaps.ui.controls.state.SystemViewModel
 import de.dh.raaps.ui.screens.alarms.AlarmsScreen
 import de.dh.raaps.ui.screens.bolushistory.BolusHistoryScreen
 import de.dh.raaps.ui.screens.bolushistory.BolusHistoryViewModel
@@ -57,8 +60,6 @@ import de.dh.raaps.ui.screens.meals.EditHistoricalMealScreen
 import de.dh.raaps.ui.screens.meals.EditHistoricalMealViewModel
 import de.dh.raaps.ui.screens.meals.MealTypeEditorScreen
 import de.dh.raaps.ui.screens.meals.MealTypeEditorViewModel
-import de.dh.raaps.ui.common.treatmentlock.TreatmentLockScreen
-import de.dh.raaps.ui.common.treatmentlock.TreatmentLockViewModel
 import de.dh.raaps.ui.screens.meals.MealTypesScreen
 import de.dh.raaps.ui.screens.meals.MealTypesViewModel
 import de.dh.raaps.ui.screens.meals.MealsScreen
@@ -92,6 +93,8 @@ class MainFeatureNavGraph(
             is DashboardRoute -> NavEntry(key) {
                 val vm: DashboardViewModel =
                     viewModel(factory = DashboardViewModel.Companion.Factory(registry))
+                val systemVM: SystemViewModel =
+                    viewModel(factory = SystemViewModel.Companion.Factory(registry))
                 val historyVM: HistoryViewModel =
                     viewModel(factory = HistoryViewModel.Companion.Factory(registry))
                 val currentTherapyVM: CurrentTherapyViewModel =
@@ -106,6 +109,7 @@ class MainFeatureNavGraph(
 
                 DashboardScreen(
                     viewModel = vm,
+                    systemViewModel = systemVM,
                     historyViewModel = historyVM,
                     currentTherapyViewModel = currentTherapyVM,
                     permissionsViewModel = permissionsViewModel,
