@@ -115,6 +115,7 @@ class MainFeatureNavGraph(
                     onNavigateToAlarms = { navViewModel.push(AlarmsRoute) },
                     onNavigateToTherapySettings = { navViewModel.push(CurrentTherapySettingsRoute) },
                     onNavigateToMealBolus = { navViewModel.push(MealBolusRoute) },
+                    onNavigateToSystemControl = { navViewModel.push(SystemControlRoute()) },
                     onAdjustmentClick = { navViewModel.push(TherapyAdjustmentRoute) },
                     onHistoryChartClick = { navViewModel.push(HistoryRoute) },
                     extraContent = extraDashboardContent

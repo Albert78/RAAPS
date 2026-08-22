@@ -20,6 +20,7 @@ import de.dh.raaps.common.model.data.TickPriority
 import de.dh.raaps.common.model.data.CurrentTherapySettings
 import de.dh.raaps.common.model.data.Timestamp
 import de.dh.raaps.core.SystemRegistry
+import de.dh.raaps.core.aps.ApsIssue
 import de.dh.raaps.core.aps.CoreState
 import de.dh.raaps.glucoseUnit
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -86,7 +87,8 @@ data class CurrentBgUiState(
     val currentBgValue: CurrentBgData? = null,
     val nextExpectedTimestamp: Timestamp = Timestamp(0),
     val readingsTimeDelay: Minutes = Minutes(5),
-    val coreState: CoreState = CoreState.Uninitialized
+    val coreState: CoreState = CoreState.Uninitialized,
+    val apsIssues: Set<ApsIssue> = emptySet()
 )
 
 data class HistoryUiState(
@@ -140,6 +142,7 @@ class HistoryViewModel(
                 treatmentRepository.observeMeals(),
                 therapyManager.currentTherapySettingsFlow,
                 systemRegistry.systemManager.coreState,
+                systemRegistry.systemManager.apsIssues,
                 _tickCounter
             ) { args ->
                 val readings = args[0] as List<BgReading>
@@ -147,6 +150,7 @@ class HistoryViewModel(
                 val meals = args[2] as List<MealEntry>
                 val settings = args[3] as CurrentTherapySettings
                 val coreState = args[4] as CoreState
+                val apsIssues = args[5] as Set<ApsIssue>
 
                 val historyLimit = Timestamp.now().minusHours(25)
                 val filteredReadings = readings.filter { it.timestamp >= historyLimit }
@@ -160,7 +164,7 @@ class HistoryViewModel(
                 _iob.value = carbsInsulinCalculator.iob(filteredInsulin, now, dia, peak)
                 _cob.value = carbsInsulinCalculator.cob(filteredMeals, now)
 
-                updateUiModel(filteredReadings, filteredInsulin, filteredMeals, coreState)
+                updateUiModel(filteredReadings, filteredInsulin, filteredMeals, coreState, apsIssues)
             }.collect { }
         }
     }
@@ -169,7 +173,8 @@ class HistoryViewModel(
         readings: List<BgReading>,
         insulin: List<InsulinApplication>,
         meals: List<MealEntry>,
-        coreState: CoreState
+        coreState: CoreState,
+        apsIssues: Set<ApsIssue>
     ) {
         val glucoseUnit = systemRegistry.appPreferencesRepository.cachedPreferences.value?.glucoseUnit ?: GlucoseUnit.MG_DL
 
@@ -199,7 +204,8 @@ class HistoryViewModel(
                         currentBgValue = CurrentBgData.invalid(),
                         nextExpectedTimestamp = nextExpectedTimestamp,
                         readingsTimeDelay = readingsTimeDelay,
-                        coreState = coreState
+                        coreState = coreState,
+                        apsIssues = apsIssues
                     )
                 } else {
                     CurrentBgUiState(
@@ -211,7 +217,8 @@ class HistoryViewModel(
                         ),
                         nextExpectedTimestamp = nextExpectedTimestamp,
                         readingsTimeDelay = readingsTimeDelay,
-                        coreState = coreState
+                        coreState = coreState,
+                        apsIssues = apsIssues
                     )
                 }
             } else {
@@ -263,7 +270,8 @@ class HistoryViewModel(
                     ),
                     nextExpectedTimestamp = nextExpectedTimestamp,
                     readingsTimeDelay = readingsTimeDelay,
-                    coreState = coreState
+                    coreState = coreState,
+                    apsIssues = apsIssues
                 )
             }
         }

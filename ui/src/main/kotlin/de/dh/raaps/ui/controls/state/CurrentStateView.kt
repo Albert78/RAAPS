@@ -75,7 +75,8 @@ fun CurrentStateView(
     carbsVisible: Boolean = true,
     onCarbsToggle: (Boolean) -> Unit = {},
     insulinVisible: Boolean = true,
-    onInsulinToggle: (Boolean) -> Unit = {}
+    onInsulinToggle: (Boolean) -> Unit = {},
+    onSystemClick: () -> Unit = {}
 ) {
     val currentBgValue = currentBgUiState.currentBgValue
     val timestamp = currentBgValue?.timestamp
@@ -262,11 +263,11 @@ fun CurrentStateView(
                         }
                     }
 
-                    // Algorithm Column
+                    // System Column
                     val coreState = currentBgUiState.coreState
                     val (statusColor, hasIssues) = when (coreState) {
                         is CoreState.Active -> {
-                            if (coreState.issues.isEmpty()) {
+                            if (currentBgUiState.apsIssues.isEmpty()) {
                                 LightGreenA700 to false
                             } else {
                                 Red to true
@@ -278,6 +279,7 @@ fun CurrentStateView(
                     Column(
                         modifier = Modifier
                             .weight(1f)
+                            .clickable { onSystemClick() }
                             .padding(vertical = 4.dp),
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
@@ -379,7 +381,8 @@ fun CurrentStateViewPreview() {
             trend = BgTrend.FortyFiveUp,
             timestamp = Timestamp.now(),
         ),
-        coreState = CoreState.Active(issues = emptySet())
+        coreState = CoreState.Active(issues = emptySet()),
+        apsIssues = emptySet()
     )
     AppTheme {
         Surface {

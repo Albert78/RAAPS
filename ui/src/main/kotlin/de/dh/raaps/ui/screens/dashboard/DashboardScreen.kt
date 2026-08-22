@@ -81,6 +81,7 @@ fun DashboardScreen(
     onNavigateToAlarms: () -> Unit,
     onNavigateToTherapySettings: () -> Unit,
     onNavigateToMealBolus: () -> Unit,
+    onNavigateToSystemControl: () -> Unit,
     onAdjustmentClick: () -> Unit,
     onHistoryChartClick: () -> Unit,
     extraContent: @Composable () -> Unit = {}
@@ -107,6 +108,7 @@ fun DashboardScreen(
         onNavigateToAlarms = onNavigateToAlarms,
         onNavigateToTherapySettings = onNavigateToTherapySettings,
         onNavigateToMealBolus = onNavigateToMealBolus,
+        onNavigateToSystemControl = onNavigateToSystemControl,
         onHistoryChartClick = onHistoryChartClick,
         onApsModeSelect = { viewModel.setApsMode(it) },
         onAdjustmentClick = onAdjustmentClick,
@@ -130,6 +132,7 @@ fun DashboardContent(
     onNavigateToAlarms: () -> Unit,
     onNavigateToTherapySettings: () -> Unit,
     onNavigateToMealBolus: () -> Unit,
+    onNavigateToSystemControl: () -> Unit,
     onHistoryChartClick: (() -> Unit)?,
     onApsModeSelect: (ApsMode) -> Unit,
     onAdjustmentClick: () -> Unit,
@@ -213,7 +216,8 @@ fun DashboardContent(
                 carbsVisible = carbsVisible,
                 onCarbsToggle = { carbsVisible = it },
                 insulinVisible = insulinVisible,
-                onInsulinToggle = { insulinVisible = it }
+                onInsulinToggle = { insulinVisible = it },
+                onSystemClick = onNavigateToSystemControl
             )
 
             dashboardUiState.recommendations.forEach { recommendation ->
@@ -350,6 +354,7 @@ fun DashboardPreview() {
             onNavigateToPreferences = {},
             onNavigateToAlarms = {},
             onNavigateToTherapySettings = {},
+            onNavigateToSystemControl = {},
             onHistoryChartClick = {},
             onApsModeSelect = {},
             onAdjustmentClick = {},
@@ -404,6 +409,7 @@ fun DashboardPermissionsWarningPreview() {
             onNavigateToPreferences = {},
             onNavigateToAlarms = {},
             onNavigateToTherapySettings = {},
+            onNavigateToSystemControl = {},
             onHistoryChartClick = {},
             onApsModeSelect = {},
             onAdjustmentClick = {},
