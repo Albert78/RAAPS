@@ -74,14 +74,20 @@ class ModuloSteppingStrategy(private val step: Double = 5.0) : SteppingStrategy 
      * Snaps the [currentValue] to the next higher multiple of [step].
      */
     override fun stepUp(currentValue: Double): Double {
-        return (floor(currentValue / step).toInt() + 1) * step
+        // Epsilon step correction is necessary to avoid problems with floating point precision
+        val adjusted = currentValue / step + 0.00001
+        return (floor(adjusted).toInt() + 1) * step
     }
 
     /**
      * Snaps the [currentValue] to the next lower multiple of [step].
      */
     override fun stepDown(currentValue: Double): Double {
-        return (ceil(currentValue / step).toInt() - 1) * step
+        // Epsilon step correction is necessary to avoid problems with floating point precision,
+        // e.g. Step width 0.1, value 0.7 -> 0.6. Without the epsilon correction, we always
+        // come to 0.6000000000000001 and never reach 0.5.
+        val adjusted = currentValue / step - 0.00001
+        return (ceil(adjusted).toInt() - 1) * step
     }
 }
 
