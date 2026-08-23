@@ -62,6 +62,8 @@ interface BolusCorrectionCalculator {
 
     /**
      * Calculates the bolus parts for a given carb intake at a specific time.
+     * All projected values (BG, IOB, COB, Future Carbs, Deferred Bolus) must be valid/calculated
+     * for the given meal time.
      */
     suspend fun calculateBolusParts(
         carbsKe: Double,
