@@ -4,6 +4,9 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.CreationExtras
+import de.dh.raaps.common.model.ID_UNDEFINED
+import de.dh.raaps.common.model.MEAL_ADD_THRESHOLD_MINUTES
+import de.dh.raaps.common.model.MEAL_EDIT_THRESHOLD_HOURS
 import de.dh.raaps.common.model.MealEntry
 import de.dh.raaps.common.model.MealType
 import de.dh.raaps.common.model.data.Minutes
@@ -17,6 +20,7 @@ import kotlinx.coroutines.launch
 
 data class EditHistoricalMealUiState(
     val isLoading: Boolean = true,
+    val isAddMode: Boolean = false,
     val meal: MealEntry? = null,
     val editedCarbsKe: Double = 0.0,
     val editedTimestamp: Timestamp = Timestamp.now(),
@@ -33,6 +37,7 @@ class EditHistoricalMealViewModel(
     val uiState: StateFlow<EditHistoricalMealUiState> = _uiState.asStateFlow()
 
     private val treatmentRepository = registry.treatmentRepository
+    private val isAddMode = mealId == ID_UNDEFINED
 
     init {
         loadMeal()
@@ -40,16 +45,17 @@ class EditHistoricalMealViewModel(
 
     private fun loadMeal() {
         viewModelScope.launch {
-            val meal = treatmentRepository.getMeal(mealId)
+            val meal = if (isAddMode) null else treatmentRepository.getMeal(mealId)
             val mealTypes = treatmentRepository.getAllMealTypes()
             _uiState.update {
                 it.copy(
                     isLoading = false,
+                    isAddMode = isAddMode,
                     meal = meal,
                     mealTypes = mealTypes,
                     editedCarbsKe = meal?.let { m -> m.carbGrams / 10.0 } ?: 0.0,
                     editedTimestamp = meal?.timestamp ?: Timestamp.now(),
-                    editedMealType = meal?.mealType
+                    editedMealType = meal?.mealType ?: mealTypes.firstOrNull()
                 )
             }
         }
@@ -61,7 +67,8 @@ class EditHistoricalMealViewModel(
 
     fun onTimestampChange(timestamp: Timestamp) {
         val now = Timestamp.now()
-        val minTime = now - Minutes(120)
+        val thresholdMinutes = if (isAddMode) MEAL_ADD_THRESHOLD_MINUTES else (MEAL_EDIT_THRESHOLD_HOURS * 60)
+        val minTime = now - Minutes(thresholdMinutes.toShort())
         val maxTime = now + Minutes(30)
         
         val cappedTimestamp = if (timestamp < minTime) minTime else if (timestamp > maxTime) maxTime else timestamp
@@ -74,20 +81,30 @@ class EditHistoricalMealViewModel(
 
     fun saveChanges(onSuccess: () -> Unit) {
         val state = _uiState.value
-        val meal = state.meal ?: return
+        val mealType = state.editedMealType ?: return
         
         viewModelScope.launch {
             _uiState.update { it.copy(isSaving = true) }
-            val updatedMeal = meal.copy(
-                carbGrams = state.editedCarbsKe * 10.0,
-                timestamp = state.editedTimestamp,
-                mealType = state.editedMealType ?: meal.mealType
-            )
-            treatmentRepository.addMealEntry(updatedMeal)
+            val mealToSave = if (isAddMode) {
+                MealEntry(
+                    id = ID_UNDEFINED,
+                    timestamp = state.editedTimestamp,
+                    carbGrams = state.editedCarbsKe * 10.0,
+                    mealType = mealType
+                )
+            } else {
+                state.meal?.copy(
+                    carbGrams = state.editedCarbsKe * 10.0,
+                    timestamp = state.editedTimestamp,
+                    mealType = mealType
+                ) ?: return@launch
+            }
+            
+            treatmentRepository.addMealEntry(mealToSave)
             _uiState.update { 
                 it.copy(
                     isSaving = false, 
-                    meal = updatedMeal
+                    meal = if (isAddMode) mealToSave else it.meal
                 ) 
             }
             onSuccess()

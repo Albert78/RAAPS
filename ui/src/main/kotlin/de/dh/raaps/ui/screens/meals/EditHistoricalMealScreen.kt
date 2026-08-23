@@ -87,7 +87,14 @@ fun EditHistoricalMealContent(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text(stringResource(R.string.meal_edit_screen_title)) },
+                title = {
+                    Text(
+                        stringResource(
+                            if (uiState.isAddMode) R.string.meal_add_historical_screen_title
+                            else R.string.meal_edit_screen_title
+                        )
+                    )
+                },
                 navigationIcon = {
                     IconButton(onClick = onNavigateUp) {
                         Icon(
@@ -97,12 +104,14 @@ fun EditHistoricalMealContent(
                     }
                 },
                 actions = {
-                    IconButton(onClick = onDelete) {
-                        Icon(
-                            imageVector = Icons.Default.Delete,
-                            contentDescription = stringResource(id = CommonR.string.cd_delete),
-                            tint = MaterialTheme.colorScheme.error
-                        )
+                    if (!uiState.isAddMode) {
+                        IconButton(onClick = onDelete) {
+                            Icon(
+                                imageVector = Icons.Default.Delete,
+                                contentDescription = stringResource(id = CommonR.string.cd_delete),
+                                tint = MaterialTheme.colorScheme.error
+                            )
+                        }
                     }
                     IconButton(onClick = onSave, enabled = !uiState.isSaving) {
                         Icon(
@@ -123,7 +132,7 @@ fun EditHistoricalMealContent(
         ) {
             if (uiState.isLoading) {
                 // Show nothing or a skeleton
-            } else if (uiState.meal == null) {
+            } else if (!uiState.isAddMode && uiState.meal == null) {
                 Text(text = stringResource(R.string.meal_not_found))
             } else {
                 EditMealCard(
@@ -239,8 +248,42 @@ private fun EditHistoricalMealContentPreview() {
     )
     val sampleUiState = EditHistoricalMealUiState(
         isLoading = false,
+        isAddMode = false,
         meal = sampleMeal,
         editedCarbsKe = 4.0,
+        editedTimestamp = Timestamp.now(),
+        editedMealType = sampleMealType,
+        mealTypes = sampleMealTypes,
+        isSaving = false
+    )
+
+    AppTheme {
+        EditHistoricalMealContent(
+            uiState = sampleUiState,
+            onNavigateUp = {},
+            onDelete = {},
+            onCarbsChange = {},
+            onTimestampChange = {},
+            onMealTypeChange = {},
+            onSave = {}
+        )
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+private fun AddHistoricalMealContentPreview() {
+    val sampleMealTypes = listOf(
+        MealType(id = ID_MEAL_FAST, name = "Schnell", components = listOf(CarbCurveComponentData(100, Minutes(30))), cat = Minutes(120)),
+        MealType(id = ID_MEAL_STANDARD, name = "Standard", components = listOf(CarbCurveComponentData(100, Minutes(60))), cat = Minutes(180)),
+        MealType(id = ID_MEAL_SLOW, name = "Langsam", components = listOf(CarbCurveComponentData(100, Minutes(90))), cat = Minutes(240)),
+    )
+    val sampleMealType = sampleMealTypes[1]
+    val sampleUiState = EditHistoricalMealUiState(
+        isLoading = false,
+        isAddMode = true,
+        meal = null,
+        editedCarbsKe = 0.0,
         editedTimestamp = Timestamp.now(),
         editedMealType = sampleMealType,
         mealTypes = sampleMealTypes,
