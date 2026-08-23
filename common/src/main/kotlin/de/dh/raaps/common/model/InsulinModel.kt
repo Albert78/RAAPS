@@ -86,6 +86,26 @@ value class InsulinConcentration(val factor: Double) {
     }
 }
 
+/**
+ * Represents a bolus that is planned relative to a meal.
+ *
+ * This model is primarily intended for user interaction. It serves as the basis for
+ * presenting the proposed insulin plan to the user and allowing them to review
+ * or adjust the timing and amounts before the plan is finalized.
+ */
+data class PlannedInsulin(
+    val amount: InsulinAmount,
+    /**
+     * Time relative to the meal timestamp.
+     * Can be negative (bolus before meal) or positive (bolus after meal).
+     */
+    val timeFromMeal: Minutes = Minutes(0),
+    /**
+     * Weight of this bolus in combination with other boluses, in percent.
+     */
+    val partWeight: Int? = null
+)
+
 enum class InsulinOrigin {
     /**
      * An insulin dose delivered by the insulin pump.
@@ -106,31 +126,63 @@ enum class InsulinCategory {
 }
 
 /**
- * Historical insulin application (Bolus or Basal).
+ * Represents a historical insulin dose that is assumed to have been administered.
+ * For insulin deliveries that are planned but not yet confirmed as delivered,
+ * use [ScheduledPumpInsulin].
  */
 data class InsulinApplication(
     var id: Long = ID_UNDEFINED,
     val timestamp: Timestamp,
     val amount: InsulinAmount,
+    /**
+     * The type of the insulin (peak, dia etc.)
+     */
     val insulinType: InsulinType,
+    /**
+     * If it's a Bolus or Basal treatment.
+     */
     val category: InsulinCategory,
-    val origin: InsulinOrigin
+    /**
+     * If the application was injected via pump or manual.
+     */
+    val origin: InsulinOrigin,
+    /**
+     * Optional link to the associated [MealEntry].
+     * This can refer to both historical and upcoming meals.
+     */
+    val mealId: Long? = null
 )
 
 /**
- * Represents a bolus that is planned relative to a meal.
+ * Represents an insulin dose that is scheduled to be delivered by the pump.
+ *
+ * This entity serves as temporary storage for delivery metadata until the pump
+ * confirms the delivery. Once confirmed, the data is migrated to an [InsulinApplication].
  */
-data class PlannedInsulin(
+data class ScheduledPumpInsulin(
+    var id: Long = ID_UNDEFINED,
+    val timestamp: Timestamp,
     val amount: InsulinAmount,
+    val insulinType: InsulinType,
+    val category: InsulinCategory,
     /**
-     * Time relative to the meal timestamp.
-     * Can be negative (bolus before meal) or positive (bolus after meal).
+     * Optional link to the associated [MealEntry].
      */
-    val timeFromMeal: Minutes = Minutes(0),
-    /**
-     * Weight of this bolus in combination with other boluses, in percent.
-     */
-    val partWeight: Int? = null
+    val mealId: Long? = null
+)
+
+/**
+ * Represents a bolus dose that is scheduled for future delivery by the system.
+ *
+ * This is typically used to handle meals with long absorption times (e.g., high-fat or
+ * high-protein meals) by split-bolusing or delaying part of the insulin to match
+ * the carbohydrate impact.
+ */
+data class DeferredBolus(
+    var id: Long = ID_UNDEFINED,
+    val amount: InsulinAmount,
+    val timestamp: Timestamp,
+    val mealId: Long? = null
 )
 
 /**

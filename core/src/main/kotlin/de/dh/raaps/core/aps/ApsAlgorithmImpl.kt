@@ -1,6 +1,7 @@
 package de.dh.raaps.core.aps
 
 import android.util.Log
+import de.dh.raaps.common.model.DeferredBolus
 import de.dh.raaps.common.model.InsulinAmount
 import de.dh.raaps.common.model.METABOLIC_EVENTS_HISTORY_HOURS
 import de.dh.raaps.common.model.MealType

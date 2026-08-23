@@ -3,6 +3,7 @@ package de.dh.raaps.core.aps
 import android.util.Log
 import de.dh.raaps.AppPreferencesRepository
 import de.dh.raaps.common.model.ApsMode
+import de.dh.raaps.common.model.DeferredBolus
 import de.dh.raaps.common.model.InsulinAmount
 import de.dh.raaps.common.model.InsulinHistory
 import de.dh.raaps.common.model.InsulinType
@@ -48,12 +49,6 @@ sealed class LockResult {
     data object Success : LockResult()
     data class Busy(val owner: String) : LockResult()
 }
-
-data class DeferredBolus(
-    var id: Long = de.dh.raaps.common.model.ID_UNDEFINED,
-    val amount : InsulinAmount,
-    val timestamp : Timestamp
-)
 
 /**
  * Central manager for all therapy-related operations and decisions in the APS system.

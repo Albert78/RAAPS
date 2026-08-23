@@ -39,6 +39,7 @@ data class MealEntity(
     val meal_type_id: String,
     val timestamp: Timestamp,
     val carbGrams: Double,
+    val description: String = ""
 )
 
 @Entity(
@@ -61,9 +62,15 @@ data class InsulinTypeEntity(
             parentColumns = ["id"],
             childColumns = ["insulin_type_id"],
             onDelete = ForeignKey.RESTRICT
+        ),
+        ForeignKey(
+            entity = MealEntity::class,
+            parentColumns = ["id"],
+            childColumns = ["meal_id"],
+            onDelete = ForeignKey.SET_NULL
         )
     ],
-    indices = [Index("timestamp")]
+    indices = [Index("timestamp"), Index("meal_id")]
 )
 data class InsulinEntity(
     @PrimaryKey(autoGenerate = true)
@@ -72,15 +79,54 @@ data class InsulinEntity(
     val timestamp: Timestamp,
     val amount: InsulinAmount,
     val category: InsulinCategory,
-    val origin: InsulinOrigin
+    val origin: InsulinOrigin,
+    val meal_id: Long? = null
 )
 
 @Entity(
-    tableName = "deferred_bolus"
+    tableName = "deferred_bolus",
+    foreignKeys = [
+        ForeignKey(
+            entity = MealEntity::class,
+            parentColumns = ["id"],
+            childColumns = ["meal_id"],
+            onDelete = ForeignKey.SET_NULL
+        )
+    ],
+    indices = [Index("meal_id")]
 )
 data class DeferredBolusEntity(
     @PrimaryKey(autoGenerate = true)
     var id: Long = ID_UNDEFINED,
     val timestamp: Timestamp,
-    val amount: Double
+    val amount: Double,
+    val meal_id: Long? = null
+)
+
+@Entity(
+    tableName = "scheduled_pump_insulin",
+    foreignKeys = [
+        ForeignKey(
+            entity = InsulinTypeEntity::class,
+            parentColumns = ["id"],
+            childColumns = ["insulin_type_id"],
+            onDelete = ForeignKey.RESTRICT
+        ),
+        ForeignKey(
+            entity = MealEntity::class,
+            parentColumns = ["id"],
+            childColumns = ["meal_id"],
+            onDelete = ForeignKey.SET_NULL
+        )
+    ],
+    indices = [Index("timestamp"), Index("meal_id")]
+)
+data class ScheduledPumpInsulinEntity(
+    @PrimaryKey(autoGenerate = true)
+    var id: Long = ID_UNDEFINED,
+    val insulin_type_id: String,
+    val timestamp: Timestamp,
+    val amount: InsulinAmount,
+    val category: InsulinCategory,
+    val meal_id: Long? = null
 )

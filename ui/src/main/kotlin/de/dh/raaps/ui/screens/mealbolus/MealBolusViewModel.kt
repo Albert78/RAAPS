@@ -8,6 +8,7 @@ import de.dh.raaps.common.model.DEFAULT_BG_LOW_THRESHOLD_MGDL
 import de.dh.raaps.common.model.DEFAULT_BG_TARGET_MGDL
 import de.dh.raaps.common.model.DEFAULT_CR_GRAM_PER_UNIT
 import de.dh.raaps.common.model.DEFAULT_ISF_MGDL_PER_UNIT
+import de.dh.raaps.common.model.DeferredBolus
 import de.dh.raaps.common.model.ID_UNDEFINED
 import de.dh.raaps.common.model.InsulinAmount
 import de.dh.raaps.common.model.MealEntry
@@ -19,7 +20,6 @@ import de.dh.raaps.common.model.data.Timestamp
 import de.dh.raaps.core.SystemRegistry
 import de.dh.raaps.core.aps.BolusCalculationMath
 import de.dh.raaps.core.aps.BolusProjections
-import de.dh.raaps.core.aps.DeferredBolus
 import de.dh.raaps.core.aps.TreatmentLock
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow

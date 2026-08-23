@@ -1,5 +1,6 @@
 package de.dh.raaps.core.repository.db
 
+import de.dh.raaps.common.model.DeferredBolus
 import de.dh.raaps.common.model.InsulinAmount
 import de.dh.raaps.common.model.CarbCurveComponentData
 import de.dh.raaps.common.model.DataProvider
@@ -8,7 +9,7 @@ import de.dh.raaps.common.model.InsulinConcentration
 import de.dh.raaps.common.model.InsulinType
 import de.dh.raaps.common.model.MealEntry
 import de.dh.raaps.common.model.MealType
-import de.dh.raaps.core.aps.DeferredBolus
+import de.dh.raaps.common.model.ScheduledPumpInsulin
 import de.dh.raaps.common.model.data.BgBlock
 import de.dh.raaps.common.model.data.BgReading
 import de.dh.raaps.common.model.data.BgValue
@@ -31,6 +32,7 @@ import de.dh.raaps.core.repository.db.entities.InsulinProfileEntity
 import de.dh.raaps.core.repository.db.entities.InsulinTypeEntity
 import de.dh.raaps.core.repository.db.entities.MealEntity
 import de.dh.raaps.core.repository.db.entities.MealTypeEntity
+import de.dh.raaps.core.repository.db.entities.ScheduledPumpInsulinEntity
 import de.dh.raaps.core.repository.db.entities.SensorTypeEntity
 
 // BgReading Converters
@@ -111,14 +113,16 @@ fun MealEntry.toEntity() = MealEntity(
     id = this.id,
     meal_type_id = this.mealType.id,
     timestamp = this.timestamp,
-    carbGrams = this.carbGrams
+    carbGrams = this.carbGrams,
+    description = this.description
 )
 
 fun MealEntity.toModel(type: MealType) = MealEntry(
     id = this.id,
     timestamp = this.timestamp,
     carbGrams = this.carbGrams,
-    mealType = type
+    mealType = type,
+    description = this.description
 )
 
 // Insulin Converters
@@ -144,7 +148,8 @@ fun InsulinApplication.toEntity() = InsulinEntity(
     amount = this.amount,
     insulin_type_id = this.insulinType.id,
     category = this.category,
-    origin = this.origin
+    origin = this.origin,
+    meal_id = this.mealId
 )
 
 fun InsulinEntity.toModel(type: InsulinType) = InsulinApplication(
@@ -153,20 +158,42 @@ fun InsulinEntity.toModel(type: InsulinType) = InsulinApplication(
     amount = this.amount,
     insulinType = type,
     category = this.category,
-    origin = this.origin
+    origin = this.origin,
+    mealId = this.meal_id
+)
+
+// Scheduled Pump Insulin Converters
+fun ScheduledPumpInsulin.toEntity() = ScheduledPumpInsulinEntity(
+    id = this.id,
+    timestamp = this.timestamp,
+    amount = this.amount,
+    insulin_type_id = this.insulinType.id,
+    category = this.category,
+    meal_id = this.mealId
+)
+
+fun ScheduledPumpInsulinEntity.toModel(type: InsulinType) = ScheduledPumpInsulin(
+    id = this.id,
+    timestamp = this.timestamp,
+    amount = this.amount,
+    insulinType = type,
+    category = this.category,
+    mealId = this.meal_id
 )
 
 // Deferred Bolus Converters
 fun DeferredBolus.toEntity() = DeferredBolusEntity(
     id = this.id,
     timestamp = this.timestamp,
-    amount = this.amount.iu
+    amount = this.amount.iu,
+    meal_id = this.mealId
 )
 
 fun DeferredBolusEntity.toModel() = DeferredBolus(
     id = this.id,
     amount = InsulinAmount(this.amount),
-    timestamp = this.timestamp
+    timestamp = this.timestamp,
+    mealId = this.meal_id
 )
 
 

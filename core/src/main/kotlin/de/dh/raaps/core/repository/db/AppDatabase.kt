@@ -23,6 +23,7 @@ import de.dh.raaps.core.repository.db.entities.InsulinProfileEntity
 import de.dh.raaps.core.repository.db.entities.InsulinTypeEntity
 import de.dh.raaps.core.repository.db.entities.MealEntity
 import de.dh.raaps.core.repository.db.entities.MealTypeEntity
+import de.dh.raaps.core.repository.db.entities.ScheduledPumpInsulinEntity
 import de.dh.raaps.core.repository.db.entities.SensorTypeEntity
 import kotlinx.coroutines.flow.Flow
 import java.util.concurrent.Executors
@@ -209,6 +210,25 @@ interface MetabolicEventsDao {
 
     @Query("DELETE FROM deferred_bolus WHERE id = :id")
     suspend fun deleteDeferredBolus(id: Long)
+
+    // Scheduled Pump Insulin
+    @Query("SELECT * FROM scheduled_pump_insulin ORDER BY timestamp ASC")
+    suspend fun getAllScheduledPumpInsulin(): List<ScheduledPumpInsulinEntity>
+
+    @Query("SELECT * FROM scheduled_pump_insulin WHERE timestamp >= :since ORDER BY timestamp ASC")
+    suspend fun getScheduledPumpInsulinSince(since: Long): List<ScheduledPumpInsulinEntity>
+
+    @Insert
+    suspend fun insertScheduledPumpInsulin(insulin: ScheduledPumpInsulinEntity): Long
+
+    @Update
+    suspend fun updateScheduledPumpInsulin(insulin: ScheduledPumpInsulinEntity)
+
+    @Query("DELETE FROM scheduled_pump_insulin where id = :id")
+    suspend fun deleteScheduledPumpInsulin(id: Long)
+
+    @Query("DELETE FROM scheduled_pump_insulin WHERE timestamp >= :from AND timestamp <= :to")
+    suspend fun deleteScheduledPumpInsulinInRange(from: Long, to: Long)
 }
 
 @Dao
@@ -243,6 +263,7 @@ interface CoreInsightDao {
     InsulinTypeEntity::class,
     InsulinEntity::class,
     DeferredBolusEntity::class,
+    ScheduledPumpInsulinEntity::class,
     CoreInsightEntity::class
 ], version = 1)
 @TypeConverters(
