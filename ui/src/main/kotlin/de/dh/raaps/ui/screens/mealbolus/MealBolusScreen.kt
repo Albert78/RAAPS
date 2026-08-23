@@ -481,6 +481,20 @@ fun CalculationDetailsSelector(
                             color = MaterialTheme.colorScheme.primary
                         )
                     }
+                    if (uiState.calculation.futureCarbsPart > InsulinAmount.ZERO) {
+                        Text(
+                            text = stringResource(R.string.meal_bolus_calc_future_carbs_part, insulinValue(uiState.calculation.futureCarbsPart.iu, signed = true)),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.primary
+                        )
+                    }
+                    if (uiState.calculation.deferredBolusPart > InsulinAmount.ZERO) {
+                        Text(
+                            text = stringResource(R.string.meal_bolus_calc_deferred_part, insulinValue(-uiState.calculation.deferredBolusPart.iu, signed = true)),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.error
+                        )
+                    }
                 }
 
                 Spacer(Modifier.height(8.dp))
@@ -768,6 +782,7 @@ fun MealBolusDefaultPreview() {
                             bg = BgValue(145),
                             iob = InsulinAmount(1.2),
                             cob = 25.0,
+                            futureCarbs = 10.0
                         ),
                         targetBg = BgValue(100),
                         isf = BgDelta.fromMgDl(50),

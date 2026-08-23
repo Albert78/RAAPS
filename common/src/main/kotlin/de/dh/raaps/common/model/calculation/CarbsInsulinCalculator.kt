@@ -24,15 +24,29 @@ class CarbsInsulinCalculator(
         SampledInsulinCalculationCache(intervalSize)
 
     /**
-     * Calculates the total COB which is expected as result of the given meal consumptions
-     * in the interval at the given timestamp.
+     * Calculates the total COB (Carbs On Board) at the given [timestamp].
+     *
+     * @param meals The list of all relevant meals.
+     * @param timestamp The point in time for which the COB is calculated.
+     * @param includeFutureMeals Explicitly defines how to treat meals occurring after [timestamp].
+     * - If **false**: Future meals are ignored (standard for realistic projections).
+     * - If **true**: Future meals are added with their full amount.
+     * This parameter is intentionally mandatory to force the caller to decide whether upcoming
+     * planned meals should be part of the current calculation context.
      * @return COB in grams.
      */
     fun cob(
         meals: List<MealEntry>,
-        timestamp: Timestamp
+        timestamp: Timestamp,
+        includeFutureMeals: Boolean
     ): Double {
         return meals.sumOf { meal ->
+            if (meal.timestamp > timestamp) {
+                if (includeFutureMeals)
+                    return@sumOf meal.carbGrams
+                else
+                    return@sumOf 0.0
+            }
             val intervalsSinceMeal =
                 Minutes.timeDifference(meal.timestamp, timestamp).value / intervalSize.value
 

@@ -206,6 +206,7 @@ class NoopAlgorithm: ApsAlgorithm {
                 projectedBg: BgValue,
                 projectedIob: InsulinAmount,
                 projectedCob: Double,
+                futureCarbs: Double,
                 deferredBolusAmount: InsulinAmount
             ): BolusParts = BolusParts.empty()
 

@@ -82,8 +82,8 @@ class SystemViewModel(
                 val peak = settings.insulinProfile.peak
 
                 // Filter for IOB/COB calculation (usually last few hours is enough, but calculator handles it)
-                _iob.value = carbsInsulinCalculator.iob(insulin, now, dia, peak)
-                _cob.value = carbsInsulinCalculator.cob(meals, now)
+                _iob.value = carbsInsulinCalculator.iob(insulinApplications = insulin, timestamp = now, dia = dia, peak = peak)
+                _cob.value = carbsInsulinCalculator.cob(meals = meals, timestamp = now, includeFutureMeals = false)
 
                 updateUiModel(readings, coreState, apsIssues)
             }.collect { }

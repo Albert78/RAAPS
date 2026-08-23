@@ -21,9 +21,11 @@ data class BolusParts(
     val correctionPart: InsulinAmount,
     val iobPart: InsulinAmount,
     val cobPart: InsulinAmount,
+    val futureCarbsPart: InsulinAmount,
     val deferredBolusPart: InsulinAmount,
     val totalProposed: InsulinAmount,
     val cobGrams: Double,
+    val futureCarbsGrams: Double,
     val calculationBg: BgValue,
     val calculationTimestamp: Timestamp
 ) {
@@ -33,9 +35,11 @@ data class BolusParts(
             correctionPart = InsulinAmount.ZERO,
             iobPart = InsulinAmount.ZERO,
             cobPart = InsulinAmount.ZERO,
+            futureCarbsPart = InsulinAmount.ZERO,
             deferredBolusPart = InsulinAmount.ZERO,
             totalProposed = InsulinAmount.ZERO,
             cobGrams = 0.0,
+            futureCarbsGrams = 0.0,
             calculationBg = BgValue.INVALID,
             calculationTimestamp = Timestamp.now()
         )
@@ -51,6 +55,7 @@ data class BolusProjections(
     val bg: BgValue = BgValue.INVALID,
     val iob: InsulinAmount = InsulinAmount.ZERO,
     val cob: Double = 0.0,
+    val futureCarbs: Double = 0.0,
     val deferredBolusAmount: InsulinAmount = InsulinAmount.ZERO
 )
 
@@ -72,6 +77,7 @@ interface BolusCorrectionCalculator {
         projectedBg: BgValue,
         projectedIob: InsulinAmount,
         projectedCob: Double,
+        futureCarbs: Double,
         deferredBolusAmount: InsulinAmount
     ): BolusParts
 
@@ -91,13 +97,14 @@ interface BolusCorrectionCalculator {
  * Shared calculation logic for bolus correction.
  */
 object BolusCalculationMath {
-    fun calculateSuggestedCarbsKe(bg: BgValue, targetBg: BgValue, isf: BgDelta, cr: Double): Double {
+    fun calculateSuggestedCarbsKe(bg: BgValue, targetBg: BgValue, isf: BgDelta, cr: Double, futureCarbs: Double): Double {
         var suggestedCarbsKe = 0.0
         if (bg.isValid() && bg < targetBg) {
             val bgDiff = targetBg - bg
             val carbsGrams = convertToCarbsFromBgDelta(bgDiff, isf, cr)
+            val remainingCarbsGrams = (carbsGrams - futureCarbs).coerceAtLeast(0.0)
             // Round up to whole 5g
-            val roundedCarbsGrams = ceil(carbsGrams / 5.0) * 5.0
+            val roundedCarbsGrams = ceil(remainingCarbsGrams / 5.0) * 5.0
             suggestedCarbsKe = roundedCarbsGrams / 10.0
         }
         return suggestedCarbsKe
@@ -126,6 +133,7 @@ object BolusCalculationMath {
         therapyManager: TherapyManager,
         iob: InsulinAmount,
         cob: Double,
+        futureCarbs: Double,
         deferredBolusAmount: InsulinAmount
     ): BolusParts {
         val cr = therapyManager.getCrFactor(referenceTimestamp)
@@ -140,8 +148,9 @@ object BolusCalculationMath {
 
         val correctionPart = convertToInsulinAmountFromBgDelta(BgDelta(bgDiff.toShort()), BgDelta(isf.toShort()))
         val cobPart = convertToInsulinAmountFromCarbs(cob, cr)
+        val futureCarbsPart = convertToInsulinAmountFromCarbs(futureCarbs, cr)
 
-        val total = (mealPart + correctionPart - iob + cobPart - deferredBolusAmount).coerceAtLeast(InsulinAmount.ZERO)
+        val total = (mealPart + correctionPart - iob + cobPart + futureCarbsPart - deferredBolusAmount).coerceAtLeast(InsulinAmount.ZERO)
         val roundedTotal = round(total.iu * 100.0) / 100.0
         val bolusAmount = InsulinAmount(roundedTotal)
 
@@ -150,9 +159,11 @@ object BolusCalculationMath {
             correctionPart = correctionPart,
             iobPart = iob,
             cobPart = cobPart,
+            futureCarbsPart = futureCarbsPart,
             deferredBolusPart = deferredBolusAmount,
             totalProposed = bolusAmount,
             cobGrams = cob,
+            futureCarbsGrams = futureCarbs,
             calculationBg = referenceBg,
             calculationTimestamp = referenceTimestamp
         )
@@ -244,7 +255,8 @@ class SimpleBolusCorrectionCalculator(
         isProjected = false,
         bg = getCurrentBg(),
         iob = InsulinAmount.ZERO,
-        cob = 0.0
+        cob = 0.0,
+        futureCarbs = 0.0
     )
 
     override suspend fun calculateBolusParts(
@@ -253,6 +265,7 @@ class SimpleBolusCorrectionCalculator(
         projectedBg: BgValue,
         projectedIob: InsulinAmount,
         projectedCob: Double,
+        futureCarbs: Double,
         deferredBolusAmount: InsulinAmount
     ) = BolusCalculationMath.calculateBolusParts(
             carbsKe = carbsKe,
@@ -261,6 +274,7 @@ class SimpleBolusCorrectionCalculator(
             therapyManager = therapyManager,
             iob = projectedIob,
             cob = projectedCob,
+            futureCarbs = futureCarbs,
             deferredBolusAmount = deferredBolusAmount
         )
 
