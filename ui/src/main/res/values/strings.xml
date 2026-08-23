@@ -245,6 +245,8 @@
     <string name="meal_history_detail_title">Mahlzeit Details</string>
     <string name="meals_empty_list">Keine Mahlzeiten eingetragen</string>
     <string name="meal_not_found">Mahlzeit nicht gefunden</string>
+    <string name="delete_meal_title">Mahlzeit löschen</string>
+    <string name="delete_meal_message">Möchtest du diese Mahlzeit wirklich löschen?</string>
     <string name="menu_meal_types_label">Mahlzeitentypen</string>
     <string name="meal_types_screen_title">Mahlzeitentypen</string>
     <string name="meal_type_label">Mahlzeit-Typ</string>

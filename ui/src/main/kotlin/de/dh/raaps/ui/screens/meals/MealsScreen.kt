@@ -18,6 +18,7 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -29,6 +30,7 @@ import androidx.compose.material3.ListItem
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
@@ -89,6 +91,30 @@ fun MealsContent(
     onNavigateUp: () -> Unit,
 ) {
     var showMenu by remember { mutableStateOf(false) }
+    var mealToDelete by remember { mutableStateOf<MealEntry?>(null) }
+
+    if (mealToDelete != null) {
+        AlertDialog(
+            onDismissRequest = { mealToDelete = null },
+            title = { Text(stringResource(id = R.string.delete_meal_title)) },
+            text = { Text(stringResource(id = R.string.delete_meal_message)) },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        mealToDelete?.let { onDeleteMeal(it) }
+                        mealToDelete = null
+                    }
+                ) {
+                    Text(stringResource(id = CommonR.string.action_delete))
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { mealToDelete = null }) {
+                    Text(stringResource(id = CommonR.string.cd_cancel))
+                }
+            }
+        )
+    }
 
     Scaffold(
         topBar = {
@@ -165,7 +191,7 @@ fun MealsContent(
                         meal = meal,
                         isEditable = isEditable,
                         onEditClick = { onEditMeal(meal) },
-                        onDeleteClick = { onDeleteMeal(meal) },
+                        onDeleteClick = { mealToDelete = meal },
                     )
                     HorizontalDivider()
                 }
