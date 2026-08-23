@@ -61,7 +61,7 @@ import de.dh.raaps.common.R as CommonR
 fun MealsScreen(
     viewModel: MealsViewModel,
     onNavigateToMealTypes: () -> Unit,
-    onNavigateToMealBolus: () -> Unit,
+    onAddMeal: () -> Unit,
     onEditMeal: (MealEntry) -> Unit,
     onDeleteMeal: (MealEntry) -> Unit,
     onNavigateUp: () -> Unit,
@@ -71,7 +71,7 @@ fun MealsScreen(
     MealsContent(
         uiState = uiState,
         onNavigateToMealTypes = onNavigateToMealTypes,
-        onNavigateToMealBolus = onNavigateToMealBolus,
+        onAddMeal = onAddMeal,
         onEditMeal = onEditMeal,
         onDeleteMeal = onDeleteMeal,
         onNavigateUp = onNavigateUp,
@@ -83,7 +83,7 @@ fun MealsScreen(
 fun MealsContent(
     uiState: MealsUiState,
     onNavigateToMealTypes: () -> Unit,
-    onNavigateToMealBolus: () -> Unit,
+    onAddMeal: () -> Unit,
     onEditMeal: (MealEntry) -> Unit,
     onDeleteMeal: (MealEntry) -> Unit,
     onNavigateUp: () -> Unit,
@@ -126,7 +126,7 @@ fun MealsContent(
             )
         },
         floatingActionButton = {
-            FloatingActionButton(onClick = onNavigateToMealBolus) {
+            FloatingActionButton(onClick = onAddMeal) {
                 Icon(
                     imageVector = Icons.Default.Add,
                     contentDescription = stringResource(id = R.string.cd_add_meal)
@@ -236,7 +236,7 @@ fun MealsPreview() {
         MealsContent(
             uiState = MealsUiState(),
             onNavigateToMealTypes = {},
-            onNavigateToMealBolus = {},
+            onAddMeal = {},
             onEditMeal = {},
             onDeleteMeal = {},
             onNavigateUp = {}
@@ -262,7 +262,7 @@ fun MealsWithDataPreview() {
         MealsContent(
             uiState = MealsUiState(meals = sampleMeals),
             onNavigateToMealTypes = {},
-            onNavigateToMealBolus = {},
+            onAddMeal = {},
             onEditMeal = {},
             onDeleteMeal = {},
             onNavigateUp = {}

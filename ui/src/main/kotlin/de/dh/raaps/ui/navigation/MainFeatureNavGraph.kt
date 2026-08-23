@@ -14,6 +14,7 @@ import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation3.runtime.NavEntry
 import androidx.navigation3.runtime.NavKey
+import de.dh.raaps.common.model.ID_UNDEFINED
 import de.dh.raaps.common.navigation.AlarmsRoute
 import de.dh.raaps.common.navigation.BgEditorRoute
 import de.dh.raaps.common.navigation.BolusHistoryRoute
@@ -280,7 +281,7 @@ class MainFeatureNavGraph(
                 MealsScreen(
                     viewModel = vm,
                     onNavigateToMealTypes = { navViewModel.push(MealTypesRoute) },
-                    onNavigateToMealBolus = { navViewModel.push(MealBolusRoute) },
+                    onAddMeal = { navViewModel.push(HistoricalMealRoute(mealId = ID_UNDEFINED)) },
                     onEditMeal = { meal -> navViewModel.push(HistoricalMealRoute(mealId = meal.id)) },
                     onDeleteMeal = { vm.deleteMeal(it) },
                     onNavigateUp = { navViewModel.pop() }
