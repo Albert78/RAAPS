@@ -40,9 +40,12 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import de.dh.raaps.common.model.CARBS_KE_MAX
 import de.dh.raaps.common.model.CARBS_KE_MIN
+import de.dh.raaps.common.model.CarbCurveComponentData
+import de.dh.raaps.common.model.MealEntry
 import de.dh.raaps.common.model.MealType
 import de.dh.raaps.common.model.data.Minutes
 import de.dh.raaps.common.model.data.Timestamp
@@ -50,6 +53,7 @@ import de.dh.raaps.ui.R
 import de.dh.raaps.ui.common.DefaultSteppingStrategy
 import de.dh.raaps.ui.common.ValueDisplayStrategy
 import de.dh.raaps.ui.common.carbsKeUnitLabel
+import de.dh.raaps.ui.common.composables.AbsoluteTimeStepper
 import de.dh.raaps.ui.common.composables.AppColorBlue
 import de.dh.raaps.ui.common.composables.EditableValueStepper
 import de.dh.raaps.ui.common.composables.PrimaryButton
@@ -58,6 +62,7 @@ import de.dh.raaps.ui.common.composables.StepperStyle
 import de.dh.raaps.ui.common.composables.WheelPickerDialog
 import de.dh.raaps.ui.common.icons.Icon_Minus
 import de.dh.raaps.ui.common.icons.Icon_Plus
+import de.dh.raaps.ui.common.theme.AppTheme
 import de.dh.raaps.ui.common.time
 import de.dh.raaps.ui.controls.meal.FoodTypeSelector
 import java.util.Locale
@@ -231,94 +236,38 @@ fun EditMealCard(
     }
 }
 
+@Preview(showBackground = true)
 @Composable
-fun AbsoluteTimeStepper(
-    currentTime: Timestamp,
-    onTimeChange: (Timestamp) -> Unit,
-    modifier: Modifier = Modifier,
-    stepMinutes: Int = 5,
-    style: StepperStyle = StepperDefaults.defaultStyle()
-) {
-    var showPickerDialog by remember { mutableStateOf(false) }
+private fun EditHistoricalMealContentPreview() {
+    val sampleMealType = MealType(
+        name = "Standard",
+        components = listOf(CarbCurveComponentData(weight = 100, peakMinutes = Minutes(45))),
+        cat = Minutes(180)
+    )
+    val sampleMeal = MealEntry(
+        timestamp = Timestamp.now(),
+        carbGrams = 40.0,
+        mealType = sampleMealType
+    )
+    val sampleUiState = EditHistoricalMealUiState(
+        isLoading = false,
+        meal = sampleMeal,
+        editedCarbsKe = 4.0,
+        editedTimestamp = Timestamp.now(),
+        editedMealType = sampleMealType,
+        mealTypes = listOf(sampleMealType),
+        isSaving = false
+    )
 
-    val now = Timestamp.now()
-    val minTime = now - Minutes(120)
-    val maxTime = now + Minutes(30)
-
-    val allowedTimestamps = remember(now) {
-        val stepMs = stepMinutes * 60000L
-        // Align baseNow to the nearest multiple of 5 minutes relative to epoch
-        // (Works for most timezones as they are offset by multiples of 5 mins)
-        val baseNow = (now.ms / stepMs) * stepMs
-        val startMs = baseNow - 120 * 60000
-        val endMs = baseNow + 30 * 60000
-        (startMs..endMs step stepMs).map { Timestamp(it) }
-    }
-
-    if (showPickerDialog) {
-        // Find nearest allowed timestamp for initial selection
-        val initialSelection = allowedTimestamps.minByOrNull { kotlin.math.abs(it.ms - currentTime.ms) } ?: currentTime
-        
-        WheelPickerDialog(
-            initialValue = initialSelection,
-            options = allowedTimestamps,
-            onValueSelected = { onTimeChange(it) },
-            onDismiss = { showPickerDialog = false },
-            labelProvider = { time(it) },
-            width = 150.dp
+    AppTheme {
+        EditHistoricalMealContent(
+            uiState = sampleUiState,
+            onNavigateUp = {},
+            onDelete = {},
+            onCarbsChange = {},
+            onTimestampChange = {},
+            onMealTypeChange = {},
+            onSave = {}
         )
-    }
-
-    Row(
-        modifier = modifier,
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.Center
-    ) {
-        IconButton(
-            onClick = {
-                // Snap to previous multiple of 5
-                val currentMs = currentTime.ms
-                val stepMs = stepMinutes * 60000L
-                val remainder = currentMs % stepMs
-                val nextTime = if (remainder == 0L) currentTime - Minutes(stepMinutes.toShort()) 
-                               else Timestamp(currentMs - remainder)
-                onTimeChange(nextTime)
-            },
-            modifier = Modifier.size(style.buttonSize),
-            enabled = currentTime > minTime
-        ) {
-            Icon(Icon_Minus, contentDescription = null, modifier = Modifier.size(style.buttonSize * 0.5f))
-        }
-
-        Spacer(Modifier.width(style.spacing))
-
-        Text(
-            text = time(currentTime),
-            style = style.textStyle,
-            textAlign = TextAlign.Center,
-            modifier = Modifier
-                .width(style.valueWidth)
-                .clip(RoundedCornerShape(8.dp))
-                .clickable { showPickerDialog = true }
-                .padding(vertical = 4.dp)
-        )
-
-        Spacer(Modifier.width(style.spacing))
-
-        IconButton(
-            onClick = {
-                // Snap to next multiple of 5
-                val currentMs = currentTime.ms
-                val stepMs = stepMinutes * 60000L
-                val remainder = currentMs % stepMs
-                val nextTime = if (remainder == 0L) currentTime + Minutes(stepMinutes.toShort())
-                               else Timestamp(currentMs + (stepMs - remainder))
-                onTimeChange(nextTime)
-            },
-            modifier = Modifier.size(style.buttonSize),
-            enabled = currentTime < maxTime
-        ) {
-            Icon(Icon_Plus, contentDescription = null, modifier = Modifier.size(style.buttonSize * 0.5f))
-        }
     }
 }
