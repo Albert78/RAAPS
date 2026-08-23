@@ -118,31 +118,65 @@ object BolusCalculationMath {
         return Minutes(((diff / 20) * 5).coerceIn(0, 45).toShort())
     }
 
+    /**
+     * Calculates the individual insulin components for a bolus proposal.
+     *
+     * IMPORTANT: This calculation is anchored at [mealTimestamp]. All time-dependent therapy factors
+     * (CR, ISF) and all projected values (BG, IOB, COB, Future Carbs, Deferred Bolus) must be
+     * valid/calculated for this specific point in time.
+     *
+     * This method breaks down the total required insulin into its contributing parts:
+     * - Meal: Based on current carb intake (KE).
+     * - Correction: To reach the BG target from the current projected BG.
+     * - IOB: Active insulin that is subtracted.
+     * - COB: Remaining active carbohydrates that require insulin.
+     * - Future Carbs: Pre-announced carbohydrates.
+     * - Deferred Bolus: Already planned insulin amounts that should not be double-dosed.
+     *
+     * @param carbsKe The amount of carbohydrates in KE (1 KE = 10g).
+     * @param bg The projected blood glucose value at [mealTimestamp].
+     * @param mealTimestamp The reference time for the bolus (determines CR/ISF and projection context).
+     * @param therapyManager Provider for patient settings (ISF, CR, Target).
+     * @param iob The projected active insulin on board at [mealTimestamp].
+     * @param cob The projected active carbohydrates on board (in grams) at [mealTimestamp].
+     * @param futureCarbs Carbohydrates pre-announced for the future relative to [mealTimestamp].
+     * @param deferredBolusAmount Insulin amount already planned for administration after [mealTimestamp].
+     * @return A [BolusParts] object containing all calculated components.
+     */
     suspend fun calculateBolusParts(
         carbsKe: Double,
-        referenceBg: BgValue,
-        referenceTimestamp: Timestamp,
+        bg: BgValue,
+        mealTimestamp: Timestamp,
         therapyManager: TherapyManager,
         iob: InsulinAmount,
         cob: Double,
         futureCarbs: Double,
         deferredBolusAmount: InsulinAmount
     ): BolusParts {
-        val cr = therapyManager.getCrFactor(referenceTimestamp)
-        val isf = therapyManager.getIsfFactor(referenceTimestamp).mgdl.toInt()
+        // Retrieve therapy factors valid for the meal time
+        val cr = therapyManager.getCrFactor(mealTimestamp)
+        val isf = therapyManager.getIsfFactor(mealTimestamp).mgdl.toInt()
         val targetBg = therapyManager.getBgSettings().first
 
+        // Calculate insulin needed for the current meal (KE -> Grams -> IU)
         val carbsGrams = carbsKe * 10.0
         val mealPart = convertToInsulinAmountFromCarbs(carbsGrams, cr)
 
-        val bgMgdl = if (referenceBg.isValid()) referenceBg.mgdl else targetBg.mgdl
+        // Determine BG deviation from target at the time of the meal.
+        // Fallback to target if no valid BG is available.
+        val bgMgdl = if (bg.isValid()) bg.mgdl else targetBg.mgdl
         val bgDiff = bgMgdl - targetBg.mgdl
 
+        // Calculate correction, COB and future carb parts using meal-time factors
         val correctionPart = convertToInsulinAmountFromBgDelta(BgDelta(bgDiff.toShort()), BgDelta(isf.toShort()))
         val cobPart = convertToInsulinAmountFromCarbs(cob, cr)
         val futureCarbsPart = convertToInsulinAmountFromCarbs(futureCarbs, cr)
 
+        // Sum up all parts: Add requirements (Meal, Correction, COB, Future Carbs),
+        // subtract already active/planned resources (IOB, Deferred Boluses).
         val total = (mealPart + correctionPart - iob + cobPart + futureCarbsPart - deferredBolusAmount).coerceAtLeast(InsulinAmount.ZERO)
+
+        // Round to 2 decimal places for insulin pump precision
         val roundedTotal = round(total.iu * 100.0) / 100.0
         val bolusAmount = InsulinAmount(roundedTotal)
 
@@ -257,8 +291,8 @@ class SimpleBolusCorrectionCalculator(
         deferredBolusAmount: InsulinAmount
     ) = BolusCalculationMath.calculateBolusParts(
             carbsKe = carbsKe,
-            referenceBg = projectedBg,
-            referenceTimestamp = mealTimestamp,
+            bg = projectedBg,
+            mealTimestamp = mealTimestamp,
             therapyManager = therapyManager,
             iob = projectedIob,
             cob = projectedCob,
