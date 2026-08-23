@@ -283,7 +283,6 @@ class MainFeatureNavGraph(
                     onNavigateToMealTypes = { navViewModel.push(MealTypesRoute) },
                     onAddMeal = { navViewModel.push(HistoricalMealRoute(mealId = ID_UNDEFINED)) },
                     onEditMeal = { meal -> navViewModel.push(HistoricalMealRoute(mealId = meal.id)) },
-                    onDeleteMeal = { vm.deleteMeal(it) },
                     onNavigateUp = { navViewModel.pop() }
                 )
             }

@@ -15,10 +15,8 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.MoreVert
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -30,7 +28,6 @@ import androidx.compose.material3.ListItem
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
@@ -65,7 +62,6 @@ fun MealsScreen(
     onNavigateToMealTypes: () -> Unit,
     onAddMeal: () -> Unit,
     onEditMeal: (MealEntry) -> Unit,
-    onDeleteMeal: (MealEntry) -> Unit,
     onNavigateUp: () -> Unit,
 ) {
     val uiState by viewModel.uiState.collectAsState()
@@ -75,7 +71,6 @@ fun MealsScreen(
         onNavigateToMealTypes = onNavigateToMealTypes,
         onAddMeal = onAddMeal,
         onEditMeal = onEditMeal,
-        onDeleteMeal = onDeleteMeal,
         onNavigateUp = onNavigateUp,
     )
 }
@@ -87,34 +82,9 @@ fun MealsContent(
     onNavigateToMealTypes: () -> Unit,
     onAddMeal: () -> Unit,
     onEditMeal: (MealEntry) -> Unit,
-    onDeleteMeal: (MealEntry) -> Unit,
     onNavigateUp: () -> Unit,
 ) {
     var showMenu by remember { mutableStateOf(false) }
-    var mealToDelete by remember { mutableStateOf<MealEntry?>(null) }
-
-    if (mealToDelete != null) {
-        AlertDialog(
-            onDismissRequest = { mealToDelete = null },
-            title = { Text(stringResource(id = R.string.delete_meal_title)) },
-            text = { Text(stringResource(id = R.string.delete_meal_message)) },
-            confirmButton = {
-                TextButton(
-                    onClick = {
-                        mealToDelete?.let { onDeleteMeal(it) }
-                        mealToDelete = null
-                    }
-                ) {
-                    Text(stringResource(id = CommonR.string.action_delete))
-                }
-            },
-            dismissButton = {
-                TextButton(onClick = { mealToDelete = null }) {
-                    Text(stringResource(id = CommonR.string.cd_cancel))
-                }
-            }
-        )
-    }
 
     Scaffold(
         topBar = {
@@ -191,7 +161,6 @@ fun MealsContent(
                         meal = meal,
                         isEditable = isEditable,
                         onEditClick = { onEditMeal(meal) },
-                        onDeleteClick = { mealToDelete = meal },
                     )
                     HorizontalDivider()
                 }
@@ -205,7 +174,6 @@ fun MealItem(
     meal: MealEntry,
     isEditable: Boolean,
     onEditClick: () -> Unit,
-    onDeleteClick: () -> Unit,
 ) {
     val timeFormatter = remember { DateTimeFormatter.ofLocalizedDateTime(FormatStyle.SHORT) }
     val timeString = remember(meal.timestamp) {
@@ -240,14 +208,6 @@ fun MealItem(
                             modifier = Modifier.size(16.dp),
                         )
                     }
-                    IconButton(onClick = onDeleteClick, modifier = Modifier.size(24.dp)) {
-                        Icon(
-                            imageVector = Icons.Default.Delete,
-                            contentDescription = stringResource(id = R.string.cd_delete_profile),
-                            tint = MaterialTheme.colorScheme.error,
-                            modifier = Modifier.size(16.dp),
-                        )
-                    }
                 }
             }
         }
@@ -264,7 +224,6 @@ fun MealsPreview() {
             onNavigateToMealTypes = {},
             onAddMeal = {},
             onEditMeal = {},
-            onDeleteMeal = {},
             onNavigateUp = {}
         )
     }
@@ -290,7 +249,6 @@ fun MealsWithDataPreview() {
             onNavigateToMealTypes = {},
             onAddMeal = {},
             onEditMeal = {},
-            onDeleteMeal = {},
             onNavigateUp = {}
         )
     }
