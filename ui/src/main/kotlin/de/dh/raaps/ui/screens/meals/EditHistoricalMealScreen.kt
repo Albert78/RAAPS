@@ -113,7 +113,7 @@ fun EditHistoricalMealContent(
                             )
                         }
                     }
-                    IconButton(onClick = onSave, enabled = !uiState.isSaving) {
+                    IconButton(onClick = onSave, enabled = uiState.isFormValid && !uiState.isSaving) {
                         Icon(
                             imageVector = Icons.Default.Check,
                             contentDescription = stringResource(id = R.string.cd_save_profile)
@@ -150,7 +150,7 @@ fun EditHistoricalMealContent(
                 PrimaryButton(
                     onClick = onSave,
                     modifier = Modifier.fillMaxWidth(),
-                    enabled = !uiState.isSaving
+                    enabled = uiState.isFormValid && !uiState.isSaving
                 ) {
                     Text(text = stringResource(R.string.meal_edit_save_button))
                 }
@@ -254,7 +254,8 @@ private fun EditHistoricalMealContentPreview() {
         editedTimestamp = Timestamp.now(),
         editedMealType = sampleMealType,
         mealTypes = sampleMealTypes,
-        isSaving = false
+        isSaving = false,
+        isFormValid = true
     )
 
     AppTheme {
@@ -278,16 +279,16 @@ private fun AddHistoricalMealContentPreview() {
         MealType(id = ID_MEAL_STANDARD, name = "Standard", components = listOf(CarbCurveComponentData(100, Minutes(60))), cat = Minutes(180)),
         MealType(id = ID_MEAL_SLOW, name = "Langsam", components = listOf(CarbCurveComponentData(100, Minutes(90))), cat = Minutes(240)),
     )
-    val sampleMealType = sampleMealTypes[1]
     val sampleUiState = EditHistoricalMealUiState(
         isLoading = false,
         isAddMode = true,
         meal = null,
         editedCarbsKe = 0.0,
         editedTimestamp = Timestamp.now(),
-        editedMealType = sampleMealType,
+        editedMealType = null,
         mealTypes = sampleMealTypes,
-        isSaving = false
+        isSaving = false,
+        isFormValid = false
     )
 
     AppTheme {

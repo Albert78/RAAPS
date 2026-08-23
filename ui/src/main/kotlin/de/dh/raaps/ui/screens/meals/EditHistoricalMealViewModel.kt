@@ -26,7 +26,8 @@ data class EditHistoricalMealUiState(
     val editedTimestamp: Timestamp = Timestamp.now(),
     val editedMealType: MealType? = null,
     val mealTypes: List<MealType> = emptyList(),
-    val isSaving: Boolean = false
+    val isSaving: Boolean = false,
+    val isFormValid: Boolean = false
 )
 
 class EditHistoricalMealViewModel(
@@ -54,29 +55,39 @@ class EditHistoricalMealViewModel(
                     meal = meal,
                     mealTypes = mealTypes,
                     editedCarbsKe = meal?.let { m -> m.carbGrams / 10.0 } ?: 0.0,
-                    editedTimestamp = meal?.timestamp ?: Timestamp.now(),
-                    editedMealType = meal?.mealType ?: mealTypes.firstOrNull()
+                    editedTimestamp = meal?.timestamp ?: (Timestamp.now() - Minutes(15)),
+                    editedMealType = meal?.mealType
                 )
             }
+            validateForm()
         }
     }
 
     fun onCarbsChange(ke: Double) {
         _uiState.update { it.copy(editedCarbsKe = ke) }
+        validateForm()
     }
 
     fun onTimestampChange(timestamp: Timestamp) {
         val now = Timestamp.now()
         val thresholdMinutes = if (isAddMode) MEAL_ADD_THRESHOLD_MINUTES else (MEAL_EDIT_THRESHOLD_HOURS * 60)
         val minTime = now - Minutes(thresholdMinutes.toShort())
-        val maxTime = now + Minutes(30)
+        val maxTime = now
         
         val cappedTimestamp = if (timestamp < minTime) minTime else if (timestamp > maxTime) maxTime else timestamp
         _uiState.update { it.copy(editedTimestamp = cappedTimestamp) }
+        validateForm()
     }
 
     fun onMealTypeChange(mealType: MealType) {
         _uiState.update { it.copy(editedMealType = mealType) }
+        validateForm()
+    }
+
+    private fun validateForm() {
+        _uiState.update { 
+            it.copy(isFormValid = it.editedCarbsKe > 0.0 && it.editedMealType != null)
+        }
     }
 
     fun saveChanges(onSuccess: () -> Unit) {
