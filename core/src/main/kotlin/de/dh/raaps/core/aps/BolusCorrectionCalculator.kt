@@ -23,11 +23,7 @@ data class BolusParts(
     val cobPart: InsulinAmount,
     val futureCarbsPart: InsulinAmount,
     val deferredBolusPart: InsulinAmount,
-    val totalProposed: InsulinAmount,
-    val cobGrams: Double,
-    val futureCarbsGrams: Double,
-    val calculationBg: BgValue,
-    val calculationTimestamp: Timestamp
+    val totalProposed: InsulinAmount
 ) {
     companion object {
         fun empty(): BolusParts = BolusParts(
@@ -37,11 +33,7 @@ data class BolusParts(
             cobPart = InsulinAmount.ZERO,
             futureCarbsPart = InsulinAmount.ZERO,
             deferredBolusPart = InsulinAmount.ZERO,
-            totalProposed = InsulinAmount.ZERO,
-            cobGrams = 0.0,
-            futureCarbsGrams = 0.0,
-            calculationBg = BgValue.INVALID,
-            calculationTimestamp = Timestamp.now()
+            totalProposed = InsulinAmount.ZERO
         )
     }
 }
@@ -161,11 +153,7 @@ object BolusCalculationMath {
             cobPart = cobPart,
             futureCarbsPart = futureCarbsPart,
             deferredBolusPart = deferredBolusAmount,
-            totalProposed = bolusAmount,
-            cobGrams = cob,
-            futureCarbsGrams = futureCarbs,
-            calculationBg = referenceBg,
-            calculationTimestamp = referenceTimestamp
+            totalProposed = bolusAmount
         )
     }
 
