@@ -21,6 +21,7 @@ data class BolusParts(
     val correctionPart: InsulinAmount,
     val iobPart: InsulinAmount,
     val cobPart: InsulinAmount,
+    val deferredBolusPart: InsulinAmount,
     val totalProposed: InsulinAmount,
     val cobGrams: Double,
     val calculationBg: BgValue,
@@ -32,6 +33,7 @@ data class BolusParts(
             correctionPart = InsulinAmount.ZERO,
             iobPart = InsulinAmount.ZERO,
             cobPart = InsulinAmount.ZERO,
+            deferredBolusPart = InsulinAmount.ZERO,
             totalProposed = InsulinAmount.ZERO,
             cobGrams = 0.0,
             calculationBg = BgValue.INVALID,
@@ -48,7 +50,8 @@ data class BolusProjections(
     val isProjected: Boolean = false,
     val bg: BgValue = BgValue.INVALID,
     val iob: InsulinAmount = InsulinAmount.ZERO,
-    val cob: Double = 0.0
+    val cob: Double = 0.0,
+    val deferredBolusAmount: InsulinAmount = InsulinAmount.ZERO
 )
 
 /**
@@ -68,7 +71,8 @@ interface BolusCorrectionCalculator {
         mealTimestamp: Timestamp,
         projectedBg: BgValue,
         projectedIob: InsulinAmount,
-        projectedCob: Double
+        projectedCob: Double,
+        deferredBolusAmount: InsulinAmount
     ): BolusParts
 
     /**
@@ -121,7 +125,8 @@ object BolusCalculationMath {
         referenceTimestamp: Timestamp,
         therapyManager: TherapyManager,
         iob: InsulinAmount,
-        cob: Double
+        cob: Double,
+        deferredBolusAmount: InsulinAmount
     ): BolusParts {
         val cr = therapyManager.getCrFactor(referenceTimestamp)
         val isf = therapyManager.getIsfFactor(referenceTimestamp).mgdl.toInt()
@@ -136,7 +141,7 @@ object BolusCalculationMath {
         val correctionPart = convertToInsulinAmountFromBgDelta(BgDelta(bgDiff.toShort()), BgDelta(isf.toShort()))
         val cobPart = convertToInsulinAmountFromCarbs(cob, cr)
 
-        val total = (mealPart + correctionPart - iob + cobPart).coerceAtLeast(InsulinAmount.ZERO)
+        val total = (mealPart + correctionPart - iob + cobPart - deferredBolusAmount).coerceAtLeast(InsulinAmount.ZERO)
         val roundedTotal = round(total.iu * 100.0) / 100.0
         val bolusAmount = InsulinAmount(roundedTotal)
 
@@ -145,6 +150,7 @@ object BolusCalculationMath {
             correctionPart = correctionPart,
             iobPart = iob,
             cobPart = cobPart,
+            deferredBolusPart = deferredBolusAmount,
             totalProposed = bolusAmount,
             cobGrams = cob,
             calculationBg = referenceBg,
@@ -246,14 +252,16 @@ class SimpleBolusCorrectionCalculator(
         mealTimestamp: Timestamp,
         projectedBg: BgValue,
         projectedIob: InsulinAmount,
-        projectedCob: Double
+        projectedCob: Double,
+        deferredBolusAmount: InsulinAmount
     ) = BolusCalculationMath.calculateBolusParts(
             carbsKe = carbsKe,
             referenceBg = projectedBg,
             referenceTimestamp = mealTimestamp,
             therapyManager = therapyManager,
             iob = projectedIob,
-            cob = projectedCob
+            cob = projectedCob,
+            deferredBolusAmount = deferredBolusAmount
         )
 
     override suspend fun distributeInsulinPlan(

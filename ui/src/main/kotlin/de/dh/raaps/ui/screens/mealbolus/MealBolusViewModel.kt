@@ -141,6 +141,7 @@ data class BolusCalculationDetails(
     val correctionPart: InsulinAmount = InsulinAmount.ZERO,
     val iobPart: InsulinAmount = InsulinAmount.ZERO,
     val cobPart: InsulinAmount = InsulinAmount.ZERO,
+    val deferredBolusPart: InsulinAmount = InsulinAmount.ZERO,
     val proposedTotal: InsulinAmount = InsulinAmount.ZERO
 )
 
@@ -290,7 +291,8 @@ class MealBolusViewModel(
                 mealTimestamp = state.input.mealTimestamp,
                 projectedBg = state.projections.bg,
                 projectedIob = state.projections.iob,
-                projectedCob = state.projections.cob
+                projectedCob = state.projections.cob,
+                deferredBolusAmount = state.projections.deferredBolusAmount
             )
 
             _uiState.update {
@@ -300,6 +302,7 @@ class MealBolusViewModel(
                         correctionPart = result.correctionPart,
                         iobPart = result.iobPart,
                         cobPart = result.cobPart,
+                        deferredBolusPart = result.deferredBolusPart,
                         proposedTotal = result.totalProposed,
                     ),
                     input = it.input.copy(

@@ -83,13 +83,17 @@ class ApsAlgorithmImpl(
 
                 val projectedIob = carbsInsulinCalculator.iob(insulinHistory, mealTimestamp, dia, peak, excludeBasal = true)
                 val projectedCob = carbsInsulinCalculator.cob(mealsHistory, mealTimestamp)
+                val deferredBoluses = treatmentRepository.getDeferredBoluses()
+                val sumFutureDeferredBolus = deferredBoluses
+                    .fold(InsulinAmount.ZERO) { acc, next -> acc + next.amount }
 
                 BolusProjections(
                     timestamp = mealTimestamp,
                     isProjected = mealTimestamp > Timestamp.now(),
                     bg = state.assumedBg,
                     iob = projectedIob,
-                    cob = projectedCob
+                    cob = projectedCob,
+                    deferredBolusAmount = sumFutureDeferredBolus
                 )
             } ?: BolusProjections()
         }
@@ -99,7 +103,8 @@ class ApsAlgorithmImpl(
             mealTimestamp: Timestamp,
             projectedBg: BgValue,
             projectedIob: InsulinAmount,
-            projectedCob: Double
+            projectedCob: Double,
+            deferredBolusAmount: InsulinAmount
         ): BolusParts {
             return BolusCalculationMath.calculateBolusParts(
                 carbsKe,
@@ -107,7 +112,8 @@ class ApsAlgorithmImpl(
                 mealTimestamp,
                 therapyManager,
                 projectedIob,
-                projectedCob
+                projectedCob,
+                deferredBolusAmount
             )
         }
 
