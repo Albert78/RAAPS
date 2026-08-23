@@ -342,7 +342,6 @@ class TreatmentRepository(
         val historyStart = historyStart()
         mutex.withLock {
             if (deferredBolus.timestamp >= historyStart) {
-                deferredBoluses.removeIf { it.timestamp == deferredBolus.timestamp }
                 deferredBoluses.add(deferredBolus)
                 deferredBoluses.sortBy { it.timestamp }
             }
@@ -355,6 +354,15 @@ class TreatmentRepository(
 
     suspend fun getDeferredBoluses(): List<DeferredBolus> = mutex.withLock {
         return deferredBoluses.toList()
+    }
+
+    suspend fun updateDeferredBolus(deferredBolus: DeferredBolus) {
+        mutex.withLock {
+            deferredBoluses.removeIf { it.id == deferredBolus.id }
+            deferredBoluses.add(deferredBolus)
+            deferredBoluses.sortBy { it.timestamp }
+        }
+        metabolicEventsDao.updateDeferredBolus(deferredBolus.toEntity())
     }
 
     suspend fun removeDeferredBolus(deferredBolus: DeferredBolus) {

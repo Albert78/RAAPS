@@ -381,6 +381,11 @@ class TherapyManager(
         return treatmentRepository.getDeferredBoluses()
     }
 
+    suspend fun updateDeferredBolus(treatmentLock: TreatmentLock, deferredBolus: DeferredBolus) {
+        checkLock(treatmentLock)
+        treatmentRepository.updateDeferredBolus(deferredBolus)
+    }
+
     suspend fun markDeferredBolusHandled(treatmentLock: TreatmentLock, deferredBolus: DeferredBolus) {
         checkLock(treatmentLock)
         treatmentRepository.removeDeferredBolus(deferredBolus)

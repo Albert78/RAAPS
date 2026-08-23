@@ -208,6 +208,9 @@ interface MetabolicEventsDao {
     @Insert
     suspend fun insertDeferredBolus(deferredBolus: DeferredBolusEntity): Long
 
+    @Update
+    suspend fun updateDeferredBolus(deferredBolus: DeferredBolusEntity)
+
     @Query("DELETE FROM deferred_bolus WHERE id = :id")
     suspend fun deleteDeferredBolus(id: Long)
 
