@@ -14,13 +14,14 @@ import de.dh.raaps.common.model.data.Minutes
 import de.dh.raaps.common.model.data.Timestamp
 import de.dh.raaps.core.repository.db.AppDatabase
 import de.dh.raaps.core.repository.db.MetabolicEventsDao
+import de.dh.raaps.core.repository.db.entities.ScheduledPumpInsulinEntity
 import de.dh.raaps.core.repository.db.toEntity
 import de.dh.raaps.core.repository.db.toModel
-import de.dh.raaps.core.repository.db.entities.ScheduledPumpInsulinEntity
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
+import kotlin.math.abs
 
 /**
  * Repository for active metabolic treatments (Insulin and Meals).
@@ -122,16 +123,28 @@ class TreatmentRepository(
         val to = Timestamp(history.to)
         val historyStart = historyStart()
 
+        // Use metadata from ScheduledPumpInsulin to determine correction or meal flags
+        val scheduled = metabolicEventsDao.getScheduledPumpInsulinUntil(to.ms + 60_000)
+
         val newApplications = history.points.map { point ->
+            val timestamp = Timestamp(point.timestamp)
+
+            // Find matching scheduled entry within 60 seconds for non-basal entries
+            val match =
+                scheduled.find { s ->
+                    abs(s.timestamp.ms - timestamp.ms) <= 120_000
+                }
+
             InsulinApplication(
-                timestamp = Timestamp(point.timestamp),
+                timestamp = timestamp,
                 amount = point.amount,
                 insulinType = insulinType,
                 origin = InsulinOrigin.Pump,
-                basal = point.category == InsulinCategory.Basal
+                basal = point.category == InsulinCategory.Basal || (match?.basal ?: false),
+                correction = match?.correction ?: false,
+                meal = match?.meal ?: false
             )
         }.filter { it.amount >= InsulinAmount.EPSILON }
-        // TODO: Use metadata from ScheduledPumpInsulin to determine correction or meal flags
 
         // 1. Database sync
         metabolicEventsDao.replaceInsulinApplicationsInRange(
@@ -141,7 +154,10 @@ class TreatmentRepository(
             newApplications = newApplications.map { it.toEntity() }
         )
 
-        // 2. In-memory sync
+        // 2. Delete matched scheduled entries with buffer
+        metabolicEventsDao.deleteScheduledPumpInsulinUntil(to.ms - 120_000)
+
+        // 3. In-memory sync
         if (to >= historyStart) {
             val effectiveFrom = if (from < historyStart) historyStart else from
             insulinHistory.removeIf {

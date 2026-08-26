@@ -227,6 +227,9 @@ interface MetabolicEventsDao {
     @Query("SELECT * FROM scheduled_pump_insulin WHERE timestamp >= :since ORDER BY timestamp ASC")
     suspend fun getScheduledPumpInsulinSince(since: Long): List<ScheduledPumpInsulinEntity>
 
+    @Query("SELECT * FROM scheduled_pump_insulin WHERE timestamp <= :to ORDER BY timestamp ASC")
+    suspend fun getScheduledPumpInsulinUntil(to: Long): List<ScheduledPumpInsulinEntity>
+
     @Insert
     suspend fun insertScheduledPumpInsulin(insulin: ScheduledPumpInsulinEntity): Long
 
@@ -236,8 +239,8 @@ interface MetabolicEventsDao {
     @Query("DELETE FROM scheduled_pump_insulin where id = :id")
     suspend fun deleteScheduledPumpInsulin(id: Long)
 
-    @Query("DELETE FROM scheduled_pump_insulin WHERE timestamp >= :from AND timestamp <= :to")
-    suspend fun deleteScheduledPumpInsulinInRange(from: Long, to: Long)
+    @Query("DELETE FROM scheduled_pump_insulin WHERE timestamp <= :to")
+    suspend fun deleteScheduledPumpInsulinUntil(to: Long)
 }
 
 @Dao
