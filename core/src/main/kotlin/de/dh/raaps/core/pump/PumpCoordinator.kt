@@ -42,6 +42,7 @@ sealed class PumpCommand {
 data class PumpJob(
     val id: String = UUID.randomUUID().toString(),
     val command: PumpCommand,
+    val finishCallback: ((PumpCommand) -> Unit)? = null,
     val createdAt: Timestamp = Timestamp.now(),
     val expiresAt: Timestamp? = null,
     val retryCount: Int = 0,
@@ -154,10 +155,12 @@ class PumpCoordinator(
      */
     fun issueCommand(
         command: PumpCommand,
+        finishCallback: ((PumpCommand) -> Unit)? = null,
         expiresAt: Timestamp? = null
     ) {
         val job = PumpJob(
             command = command,
+            finishCallback = finishCallback,
             expiresAt = expiresAt
         )
 
@@ -241,7 +244,9 @@ class PumpCoordinator(
     private suspend fun tryExecuteJobWithRetries(job: PumpJob): Boolean {
         repeat(3) {
             try {
-                executeOnPump(job.command)
+                val command = job.command
+                executeOnPump(command)
+                job.finishCallback?.invoke(command)
                 return true
             } catch (e: Exception) {
                 Log.w(TAG, "Exception while executing pump job", e)

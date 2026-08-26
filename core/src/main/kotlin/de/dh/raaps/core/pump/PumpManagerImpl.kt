@@ -80,8 +80,11 @@ class PumpManagerImpl(
             }
         }
 
-    override fun issueCommand(command: PumpCommand) {
-        pumpCoordinator?.issueCommand(command)
+    override fun issueCommand(
+        command: PumpCommand,
+        finishCallback: ((PumpCommand) -> Unit)?
+    ) {
+        pumpCoordinator?.issueCommand(command, finishCallback)
     }
 
     override fun cancelJobs(predicate: (PumpJob) -> Boolean) {

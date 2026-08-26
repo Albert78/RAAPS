@@ -21,8 +21,8 @@ import de.dh.raaps.core.pump.PumpCommand
 import de.dh.raaps.core.pump.PumpManager
 import de.dh.raaps.core.repository.TherapyRepository
 import de.dh.raaps.core.repository.TreatmentRepository
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -30,6 +30,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
+import kotlinx.coroutines.withTimeoutOrNull
 import kotlin.time.Duration.Companion.seconds
 
 /**
@@ -426,11 +427,23 @@ class TherapyManager(
      */
     suspend fun waitForPumpSync(treatmentLock: TreatmentLock): Int {
         checkLock(treatmentLock)
-        pumpManager.issueCommand(PumpCommand.SyncHistory)
+
+        val finished = CompletableDeferred<Unit>()
+        pumpManager.issueCommand(
+            command = PumpCommand.SyncHistory,
+            finishCallback = {
+                finished.complete(Unit)
+            }
+        )
 
         pumpManager.wakeup()
         pumpManager.waitForIdle()
-        delay(10.seconds)
+
+        withTimeoutOrNull(20.seconds) {
+            // When finished is set above, SyncHistory and all other commands in the Queue before
+            // have been executed.
+            finished.await()
+        }
 
         return pumpManager.getPendingJobsCount()
     }

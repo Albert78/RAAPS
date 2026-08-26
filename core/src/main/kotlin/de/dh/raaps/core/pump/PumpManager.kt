@@ -36,7 +36,7 @@ interface PumpManager {
     /**
      * Issues a command to the pump.
      */
-    fun issueCommand(command: PumpCommand)
+    fun issueCommand(command: PumpCommand, finishCallback: ((PumpCommand) -> Unit)? = null)
 
     /**
      * Cancels pending jobs that match the predicate.
