@@ -32,6 +32,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import de.dh.raaps.common.R as CommonR
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import de.dh.raaps.common.model.InsulinAmount
 import de.dh.raaps.common.model.data.BgReadingsInterval
 import de.dh.raaps.core.pump.PumpCommand
 import de.dh.raaps.core.pump.PumpJob
@@ -187,8 +188,7 @@ fun SystemControlPumpPreview() {
             uiState = previewUiState().copy(
                 pendingPumpJobs = listOf(
                     PumpJob(
-                        command = PumpCommand.DeliverBolus(de.dh.raaps.common.model.InsulinAmount(1.5)),
-                        isCancelableAPSCommand = false
+                        command = PumpCommand.DeliverBolus(InsulinAmount(1.5))
                     )
                 )
             ),

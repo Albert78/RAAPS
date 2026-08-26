@@ -80,8 +80,8 @@ class PumpManagerImpl(
             }
         }
 
-    override suspend fun issueCommand(command: PumpCommand, isCancelableAPSCommand: Boolean) {
-        pumpCoordinator?.issueCommand(command, isCancelableAPSCommand)
+    override fun issueCommand(command: PumpCommand) {
+        pumpCoordinator?.issueCommand(command)
     }
 
     override fun cancelJobs(predicate: (PumpJob) -> Boolean) {

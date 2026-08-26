@@ -14,6 +14,7 @@ sealed class CoreIssue {
     data object NoisyValues : CoreIssue()
     data class InternalError(val message: String?) : CoreIssue()
     data object TherapyLockBusy : CoreIssue()
+    data class NoPumpConnection(val since: Timestamp): CoreIssue()
 }
 
 enum class CoreReasoning {

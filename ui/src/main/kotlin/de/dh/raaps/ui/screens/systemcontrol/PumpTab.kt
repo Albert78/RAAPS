@@ -40,6 +40,9 @@ import de.dh.raaps.ui.R
 import de.dh.raaps.ui.common.theme.AppTheme
 import java.text.SimpleDateFormat
 import java.util.Date
+import java.util.Locale
+import androidx.compose.ui.platform.LocalLocale
+import de.dh.raaps.common.model.InsulinAmount
 
 @Composable
 fun PumpTabContent(
@@ -235,6 +238,7 @@ fun PumpJobsCard(uiState: SystemControlUiState, onCancelJob: (String) -> Unit) {
                     )
                     Spacer(modifier = Modifier.width(8.dp))
                     val commandText = when (val cmd = job.command) {
+                        is PumpCommand.SyncHistory -> stringResource(id = R.string.system_control_pump_job_type_history_sync)
                         is PumpCommand.DeliverBolus -> stringResource(id = R.string.system_control_pump_job_type_bolus, cmd.amount.iu)
                         is PumpCommand.SetTempBasal -> stringResource(id = R.string.system_control_pump_job_type_temp_basal, cmd.percent)
                         is PumpCommand.SetProfile -> stringResource(id = R.string.system_control_pump_job_type_profile)
@@ -322,8 +326,7 @@ fun PumpTabPreview() {
                 pumpModel = "DANA-i",
                 pendingPumpJobs = listOf(
                     PumpJob(
-                        command = PumpCommand.DeliverBolus(de.dh.raaps.common.model.InsulinAmount(1.5)),
-                        isCancelableAPSCommand = false
+                        command = PumpCommand.DeliverBolus(InsulinAmount(1.5))
                     )
                 ),
                 pumpPluginUiProvider = object : PumpPluginUiProvider {
@@ -342,7 +345,7 @@ fun PumpTabPreview() {
                     }
                 }
             ),
-            timeFormat = SimpleDateFormat("HH:mm:ss", java.util.Locale.getDefault()),
+            timeFormat = SimpleDateFormat("HH:mm:ss", LocalLocale.current.platformLocale),
             onNavigateToPumpManagement = {},
             onRefreshPumpStatus = {},
             onCancelPumpJob = {}

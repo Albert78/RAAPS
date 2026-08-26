@@ -141,6 +141,7 @@
     <string name="core_issue_noisy_values">Die Glukosewerte sind zu verrauscht für eine sichere Berechnung.</string>
     <string name="core_issue_internal_error">Interner Fehler im Algorithmus: %1$s</string>
     <string name="core_issue_therapy_lock_busy">Therapie-Sperre aktiv (Nutzer-Aktion)</string>
+    <string name="core_issue_no_pump_connection">Pumpen-Kommunikation ist fehlgeschlagen</string>
 
     <string name="insulin_unit_label_format">%1$.2f I.E.</string>
 
@@ -307,6 +308,7 @@
     <string name="system_control_pump_jobs_title">Ausstehende Pumpenjobs</string>
     <string name="system_control_pump_jobs_empty">Keine ausstehenden Jobs</string>
     <string name="system_control_pump_job_cancel">Abbrechen</string>
+    <string name="system_control_pump_job_type_history_sync">History übertragen</string>
     <string name="system_control_pump_job_type_bolus">Bolus: %1$s I.E.</string>
     <string name="system_control_pump_job_type_temp_basal">Temp-Basal: %1$d%%</string>
     <string name="system_control_pump_job_type_profile">Profil setzen</string>

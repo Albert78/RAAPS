@@ -249,8 +249,7 @@ class SystemManagerImpl(
             onClearTempBasal = { treatmentLock -> therapyManager.clearTempBasal(treatmentLock) },
             onCarbsHint = { treatmentLock, amountInGram -> therapyManager.recommendCarbs(treatmentLock, amountInGram) },
             onClearRecommendations = { treatmentLock -> therapyManager.clearRecommendations(treatmentLock) },
-            onCancelInsulinJobs = { treatmentLock -> therapyManager.coreCancelInsulinJobs(treatmentLock) },
-            onWaitForInsulinJobs = { treatmentLock -> therapyManager.waitForInsulinJobs(treatmentLock) },
+            onWaitForPumpSync = { treatmentLock -> therapyManager.waitForPumpSync(treatmentLock) },
             coreInsightRepository = coreInsightRepository,
             scope = scope
         )

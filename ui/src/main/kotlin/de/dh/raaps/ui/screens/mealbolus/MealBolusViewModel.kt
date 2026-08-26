@@ -403,6 +403,8 @@ class MealBolusViewModel(
                     deferredBoluses.forEach {
                         therapyManager.addDeferredBolus(lock, it)
                     }
+
+                    therapyManager.waitForPumpSync(treatmentLock = lock)
                 }
 
                 _uiState.update { it.copy(submissionStatus = SubmissionStatus.Success) }

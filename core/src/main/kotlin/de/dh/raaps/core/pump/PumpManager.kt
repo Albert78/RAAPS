@@ -36,7 +36,7 @@ interface PumpManager {
     /**
      * Issues a command to the pump.
      */
-    suspend fun issueCommand(command: PumpCommand, isCancelableAPSCommand: Boolean)
+    fun issueCommand(command: PumpCommand)
 
     /**
      * Cancels pending jobs that match the predicate.

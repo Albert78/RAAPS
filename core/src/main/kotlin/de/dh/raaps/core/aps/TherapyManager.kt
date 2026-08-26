@@ -90,18 +90,19 @@ class TherapyManager(
     val currentTherapySettingsFlow: Flow<CurrentTherapySettings> = therapyRepository.observeCurrentTherapySettings()
 
     /**
-     * Wires up the therapy manager with external components.
+     * Wires up the therapy manager with external components, sync history.
      */
     fun startInitialization() {
         pumpManager.setOnHistoryUpdateListener { history ->
             updatePumpHistory(history)
         }
 
+        pumpManager.issueCommand(PumpCommand.SyncHistory)
+
         scope.launch {
             currentTherapySettingsFlow.collect { settings ->
                 pumpManager.issueCommand(
-                    PumpCommand.SetProfile(settings.insulinProfile),
-                    isCancelableAPSCommand = false
+                    PumpCommand.SetProfile(settings.insulinProfile)
                 )
             }
         }
@@ -316,10 +317,7 @@ class TherapyManager(
             ApsMode.BasalOnly -> recommendBolus(treatmentLock, amount)
             ApsMode.AutoCorrection -> {
                 scope.launch {
-                    pumpManager.issueCommand(
-                        PumpCommand.DeliverBolus(amount),
-                        isCancelableAPSCommand = true
-                    )
+                    pumpManager.issueCommand(PumpCommand.DeliverBolus(amount))
                 }
             }
         }
@@ -343,8 +341,7 @@ class TherapyManager(
                         PumpCommand.SetTempBasal(
                             percent = percent,
                             durationHours = durationInHours
-                        ),
-                        isCancelableAPSCommand = true
+                        )
                     )
                 }
             }
@@ -362,8 +359,7 @@ class TherapyManager(
             ApsMode.AutoCorrection -> {
                 scope.launch {
                     pumpManager.issueCommand(
-                        PumpCommand.CancelTempBasal,
-                        isCancelableAPSCommand = true
+                        PumpCommand.CancelTempBasal
                     )
                 }
             }
@@ -425,26 +421,17 @@ class TherapyManager(
     }
 
     /**
-     * Cancels all cancellable APS commands currently pending in the pump manager.
+     * Causes the insulin pump to execute its pending jobs and to do a history sync.
+     * @return Number of pending jobs.
      */
-    fun coreCancelInsulinJobs(treatmentLock: TreatmentLock) {
+    suspend fun waitForPumpSync(treatmentLock: TreatmentLock): Int {
         checkLock(treatmentLock)
-        when (systemManager.apsMode.value) {
-            ApsMode.Suspend -> return
-            ApsMode.BasalOnly -> return
-            ApsMode.AutoCorrection -> {
-                pumpManager.cancelJobs { it.isCancelableAPSCommand }
-            }
-        }
-    }
+        pumpManager.issueCommand(PumpCommand.SyncHistory)
 
-    suspend fun waitForInsulinJobs(treatmentLock: TreatmentLock): Int {
-        checkLock(treatmentLock)
-        if (pumpManager.hasPendingJobs()) {
-            pumpManager.wakeup()
-            pumpManager.waitForIdle()
-            delay(10.seconds)
-        }
+        pumpManager.wakeup()
+        pumpManager.waitForIdle()
+        delay(10.seconds)
+
         return pumpManager.getPendingJobsCount()
     }
 

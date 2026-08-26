@@ -10,7 +10,6 @@ import android.util.Log
 import androidx.core.app.NotificationCompat
 import androidx.core.content.getSystemService
 import de.dh.raaps.R
-import de.dh.raaps.common.R as CommonR
 import de.dh.raaps.common.model.data.BgDelta
 import de.dh.raaps.common.model.data.BgValue
 import de.dh.raaps.common.model.data.GlucoseUnit
@@ -21,6 +20,7 @@ import de.dh.raaps.core.system.AndroidNotifications
 import de.dh.raaps.core.system.RegistryProvider
 import de.dh.raaps.ui.activities.MainActivity
 import de.dh.raaps.ui.screens.permissions.canPostNotifications
+import de.dh.raaps.common.R as CommonR
 import de.dh.raaps.ui.R as UiR
 
 /**
@@ -174,6 +174,7 @@ class AndroidNotificationsImpl(
                 issue.message ?: context.getString(UiR.string.unknown_label)
             )
             CoreIssue.TherapyLockBusy -> context.getString(UiR.string.core_issue_therapy_lock_busy)
+            is CoreIssue.NoPumpConnection -> context.getString(UiR.string.core_issue_no_pump_connection)
         }
 
         val dashboardIntent = MainActivity.createStartDashboardIntent(context)
@@ -182,7 +183,6 @@ class AndroidNotificationsImpl(
             dashboardIntent, PendingIntent.FLAG_IMMUTABLE
         )
 
-        // TODO: Let the user decide whether he wants to switch to manual mode. Show button in notification?
         val notification = NotificationCompat.Builder(context, ALGORITHM_ISSUE_CHANNEL_ID)
             .setContentTitle(title)
             .setContentText(text)

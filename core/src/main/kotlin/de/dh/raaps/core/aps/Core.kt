@@ -77,8 +77,7 @@ class Core(
     private val onCarbsHint: (treatmentLock: TreatmentLock, Int) -> Unit,
     private val onClearRecommendations: (treatmentLock: TreatmentLock) -> Unit,
 
-    private val onCancelInsulinJobs: (treatmentLock: TreatmentLock) -> Unit,
-    private val onWaitForInsulinJobs: suspend (treatmentLock: TreatmentLock) -> Int,
+    private val onWaitForPumpSync: suspend (treatmentLock: TreatmentLock) -> Int,
     private val coreInsightRepository: CoreInsightRepository,
     private val scope: CoroutineScope
 ) : TickHandler {
@@ -88,6 +87,8 @@ class Core(
         private set
 
     private var isReadOnly: Boolean = true
+
+    private var lastCompletion: Timestamp = Timestamp.now()
 
     /**
      * Lock which is acquired in situations where a suspend function
@@ -167,7 +168,8 @@ class Core(
     }
 
     internal suspend fun processCalculation() {
-        if (coreState !is CoreState.Active) return
+        val currentCoreState = coreState
+        if (currentCoreState !is CoreState.Active) return
 
         // This is the outer part of the process tick.
         // We acquire the wake lock, we acquire the therapy manager's treatment lock,
@@ -178,32 +180,35 @@ class Core(
             val res = therapyManager.tryAcquire(TAG ?: "Core") { treatmentLock ->
                 atomic {
                     try {
-                        onClearRecommendations(treatmentLock)
-                        val pendingCount = onWaitForInsulinJobs(treatmentLock)
-                        if (pendingCount > 0) {
-                            Log.w(
-                                TAG,
-                                "processCalculation: Insulin jobs were not executed! Cancelling $pendingCount pending jobs."
-                            )
-                            scope.launch {
-                                coreInsightRepository.saveInsight(
-                                    CoreInsight(
-                                        timestamp = now,
-                                        bgOriginal = BgValue.INVALID,
-                                        bgFiltered = BgValue.INVALID,
-                                        deviationPerTick = BgDelta.fromMgDl(0),
-                                        futureActiveInsulin = InsulinAmount.ZERO,
-                                        futureActiveCarbs = 0.0,
-                                        predictedBgAtPeak = BgValue.INVALID,
-                                        targetBg = BgValue.INVALID,
-                                        isf = BgDelta.fromMgDl(0),
-                                        cr = 0.0,
-                                        reasoning = CoreReasoning.PENDING_PUMP_JOBS
-                                    )
+                        if (!isReadOnly) {
+                            val pendingCount = onWaitForPumpSync(treatmentLock)
+                            if (pendingCount > 0) {
+                                Log.w(
+                                    TAG,
+                                    "processCalculation: $pendingCount insulin jobs were not executed! Skipping core calculation..."
                                 )
+                                scope.launch {
+                                    coreInsightRepository.saveInsight(
+                                        CoreInsight(
+                                            timestamp = now,
+                                            bgOriginal = BgValue.INVALID,
+                                            bgFiltered = BgValue.INVALID,
+                                            deviationPerTick = BgDelta.fromMgDl(0),
+                                            futureActiveInsulin = InsulinAmount.ZERO,
+                                            futureActiveCarbs = 0.0,
+                                            predictedBgAtPeak = BgValue.INVALID,
+                                            targetBg = BgValue.INVALID,
+                                            isf = BgDelta.fromMgDl(0),
+                                            cr = 0.0,
+                                            reasoning = CoreReasoning.PENDING_PUMP_JOBS
+                                        )
+                                    )
+                                }
+                                setCoreState(CoreState.Active(currentCoreState.issues + CoreIssue.NoPumpConnection(lastCompletion)))
+                                return@atomic
                             }
-                            onCancelInsulinJobs(treatmentLock)
                         }
+                        onClearRecommendations(treatmentLock)
 
                         val result = calculationAlgorithm.recalculate()
 
@@ -238,6 +243,15 @@ class Core(
                                 )
                             }
                         }
+
+                        if (!isReadOnly) {
+                            val pendingCount2 = onWaitForPumpSync(treatmentLock)
+                            if (pendingCount2 > 0) {
+                                setCoreState(CoreState.Active(currentCoreState.issues + CoreIssue.NoPumpConnection(lastCompletion)))
+                                return@atomic
+                            }
+                        }
+                        lastCompletion = Timestamp.now()
 
                         // Core can be active and yet have issues. In this case, the user is notified
                         // about the issues (e.g. no BG values) but the algorithm will still be called.
@@ -351,8 +365,7 @@ class Core(
             onClearTempBasal: (treatmentLock: TreatmentLock) -> Unit,
             onCarbsHint: (treatmentLock: TreatmentLock, amountInGram: Int) -> Unit,
             onClearRecommendations: (treatmentLock: TreatmentLock) -> Unit,
-            onCancelInsulinJobs: (treatmentLock: TreatmentLock) -> Unit,
-            onWaitForInsulinJobs: suspend (treatmentLock: TreatmentLock) -> Int,
+            onWaitForPumpSync: suspend (treatmentLock: TreatmentLock) -> Int,
             coreInsightRepository: CoreInsightRepository,
             scope: CoroutineScope
         ): Core {
@@ -372,8 +385,7 @@ class Core(
                 onClearTempBasal = onClearTempBasal,
                 onCarbsHint = onCarbsHint,
                 onClearRecommendations = onClearRecommendations,
-                onCancelInsulinJobs = onCancelInsulinJobs,
-                onWaitForInsulinJobs = onWaitForInsulinJobs,
+                onWaitForPumpSync = onWaitForPumpSync,
                 coreInsightRepository = coreInsightRepository,
                 scope = scope
             )
