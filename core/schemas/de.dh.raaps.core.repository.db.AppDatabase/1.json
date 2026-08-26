@@ -2,7 +2,7 @@
   "formatVersion": 1,
   "database": {
     "version": 1,
-    "identityHash": "4da3f5365448be86d84407446b7dcef4",
+    "identityHash": "0419458a089a430f95497896338686ed",
     "entities": [
       {
         "tableName": "sensor_type",
@@ -344,7 +344,7 @@
       },
       {
         "tableName": "meal",
-        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `meal_type_id` TEXT NOT NULL, `timestamp` INTEGER NOT NULL, `carbGrams` REAL NOT NULL, `description` TEXT NOT NULL, FOREIGN KEY(`meal_type_id`) REFERENCES `meal_type`(`id`) ON UPDATE NO ACTION ON DELETE RESTRICT )",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `meal_type_id` TEXT NOT NULL, `timestamp` INTEGER NOT NULL, `carbGrams` REAL NOT NULL, `description` TEXT NOT NULL, `insulinAdministered` INTEGER NOT NULL, FOREIGN KEY(`meal_type_id`) REFERENCES `meal_type`(`id`) ON UPDATE NO ACTION ON DELETE RESTRICT )",
         "fields": [
           {
             "fieldPath": "id",
@@ -374,6 +374,12 @@
             "fieldPath": "description",
             "columnName": "description",
             "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "insulinAdministered",
+            "columnName": "insulinAdministered",
+            "affinity": "INTEGER",
             "notNull": true
           }
         ],
@@ -441,7 +447,7 @@
       },
       {
         "tableName": "insulin",
-        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `insulin_type_id` TEXT NOT NULL, `timestamp` INTEGER NOT NULL, `amount` REAL NOT NULL, `category` TEXT NOT NULL, `origin` TEXT NOT NULL, `meal_id` INTEGER, FOREIGN KEY(`insulin_type_id`) REFERENCES `insulin_type`(`id`) ON UPDATE NO ACTION ON DELETE RESTRICT , FOREIGN KEY(`meal_id`) REFERENCES `meal`(`id`) ON UPDATE NO ACTION ON DELETE SET NULL )",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `insulin_type_id` TEXT NOT NULL, `timestamp` INTEGER NOT NULL, `amount` REAL NOT NULL, `origin` TEXT NOT NULL, `basal` INTEGER NOT NULL, `correction` INTEGER NOT NULL, `meal` INTEGER NOT NULL, FOREIGN KEY(`insulin_type_id`) REFERENCES `insulin_type`(`id`) ON UPDATE NO ACTION ON DELETE RESTRICT )",
         "fields": [
           {
             "fieldPath": "id",
@@ -468,21 +474,28 @@
             "notNull": true
           },
           {
-            "fieldPath": "category",
-            "columnName": "category",
-            "affinity": "TEXT",
-            "notNull": true
-          },
-          {
             "fieldPath": "origin",
             "columnName": "origin",
             "affinity": "TEXT",
             "notNull": true
           },
           {
-            "fieldPath": "meal_id",
-            "columnName": "meal_id",
-            "affinity": "INTEGER"
+            "fieldPath": "basal",
+            "columnName": "basal",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "correction",
+            "columnName": "correction",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "meal",
+            "columnName": "meal",
+            "affinity": "INTEGER",
+            "notNull": true
           }
         ],
         "primaryKey": {
@@ -500,15 +513,6 @@
             ],
             "orders": [],
             "createSql": "CREATE INDEX IF NOT EXISTS `index_insulin_timestamp` ON `${TABLE_NAME}` (`timestamp`)"
-          },
-          {
-            "name": "index_insulin_meal_id",
-            "unique": false,
-            "columnNames": [
-              "meal_id"
-            ],
-            "orders": [],
-            "createSql": "CREATE INDEX IF NOT EXISTS `index_insulin_meal_id` ON `${TABLE_NAME}` (`meal_id`)"
           }
         ],
         "foreignKeys": [
@@ -518,17 +522,6 @@
             "onUpdate": "NO ACTION",
             "columns": [
               "insulin_type_id"
-            ],
-            "referencedColumns": [
-              "id"
-            ]
-          },
-          {
-            "table": "meal",
-            "onDelete": "SET NULL",
-            "onUpdate": "NO ACTION",
-            "columns": [
-              "meal_id"
             ],
             "referencedColumns": [
               "id"
@@ -597,18 +590,12 @@
       },
       {
         "tableName": "scheduled_pump_insulin",
-        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `insulin_type_id` TEXT NOT NULL, `timestamp` INTEGER NOT NULL, `amount` REAL NOT NULL, `category` TEXT NOT NULL, `meal_id` INTEGER, FOREIGN KEY(`insulin_type_id`) REFERENCES `insulin_type`(`id`) ON UPDATE NO ACTION ON DELETE RESTRICT , FOREIGN KEY(`meal_id`) REFERENCES `meal`(`id`) ON UPDATE NO ACTION ON DELETE SET NULL )",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `timestamp` INTEGER NOT NULL, `amount` REAL NOT NULL, `basal` INTEGER NOT NULL, `correction` INTEGER NOT NULL, `meal` INTEGER NOT NULL)",
         "fields": [
           {
             "fieldPath": "id",
             "columnName": "id",
             "affinity": "INTEGER",
-            "notNull": true
-          },
-          {
-            "fieldPath": "insulin_type_id",
-            "columnName": "insulin_type_id",
-            "affinity": "TEXT",
             "notNull": true
           },
           {
@@ -624,15 +611,22 @@
             "notNull": true
           },
           {
-            "fieldPath": "category",
-            "columnName": "category",
-            "affinity": "TEXT",
+            "fieldPath": "basal",
+            "columnName": "basal",
+            "affinity": "INTEGER",
             "notNull": true
           },
           {
-            "fieldPath": "meal_id",
-            "columnName": "meal_id",
-            "affinity": "INTEGER"
+            "fieldPath": "correction",
+            "columnName": "correction",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "meal",
+            "columnName": "meal",
+            "affinity": "INTEGER",
+            "notNull": true
           }
         ],
         "primaryKey": {
@@ -650,45 +644,12 @@
             ],
             "orders": [],
             "createSql": "CREATE INDEX IF NOT EXISTS `index_scheduled_pump_insulin_timestamp` ON `${TABLE_NAME}` (`timestamp`)"
-          },
-          {
-            "name": "index_scheduled_pump_insulin_meal_id",
-            "unique": false,
-            "columnNames": [
-              "meal_id"
-            ],
-            "orders": [],
-            "createSql": "CREATE INDEX IF NOT EXISTS `index_scheduled_pump_insulin_meal_id` ON `${TABLE_NAME}` (`meal_id`)"
-          }
-        ],
-        "foreignKeys": [
-          {
-            "table": "insulin_type",
-            "onDelete": "RESTRICT",
-            "onUpdate": "NO ACTION",
-            "columns": [
-              "insulin_type_id"
-            ],
-            "referencedColumns": [
-              "id"
-            ]
-          },
-          {
-            "table": "meal",
-            "onDelete": "SET NULL",
-            "onUpdate": "NO ACTION",
-            "columns": [
-              "meal_id"
-            ],
-            "referencedColumns": [
-              "id"
-            ]
           }
         ]
       },
       {
         "tableName": "core_insights",
-        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `timestamp` INTEGER NOT NULL, `bgOriginal` INTEGER NOT NULL, `bgFiltered` INTEGER NOT NULL, `deviationPerTick` INTEGER NOT NULL, `iobAtPeak` REAL NOT NULL, `cobAtPeak` REAL NOT NULL, `predictedBgAtPeak` INTEGER NOT NULL, `targetBg` INTEGER NOT NULL, `isf` INTEGER NOT NULL, `cr` REAL NOT NULL, `actionBolus` REAL, `actionTempBasalPercent` INTEGER, `actionTempBasalDurationInHours` INTEGER, `reasoning` TEXT NOT NULL)",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `timestamp` INTEGER NOT NULL, `bgOriginal` INTEGER NOT NULL, `bgFiltered` INTEGER NOT NULL, `deviationPerTick` INTEGER NOT NULL, `futureActiveInsulin` REAL NOT NULL, `futureActiveCarbs` REAL NOT NULL, `predictedBgAtPeak` INTEGER NOT NULL, `targetBg` INTEGER NOT NULL, `isf` INTEGER NOT NULL, `cr` REAL NOT NULL, `actionBolus` REAL, `actionTempBasalPercent` INTEGER, `actionTempBasalDurationInHours` INTEGER, `reasoning` TEXT NOT NULL)",
         "fields": [
           {
             "fieldPath": "id",
@@ -721,14 +682,14 @@
             "notNull": true
           },
           {
-            "fieldPath": "iobAtPeak",
-            "columnName": "iobAtPeak",
+            "fieldPath": "futureActiveInsulin",
+            "columnName": "futureActiveInsulin",
             "affinity": "REAL",
             "notNull": true
           },
           {
-            "fieldPath": "cobAtPeak",
-            "columnName": "cobAtPeak",
+            "fieldPath": "futureActiveCarbs",
+            "columnName": "futureActiveCarbs",
             "affinity": "REAL",
             "notNull": true
           },
@@ -788,7 +749,7 @@
     ],
     "setupQueries": [
       "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
-      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '4da3f5365448be86d84407446b7dcef4')"
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '0419458a089a430f95497896338686ed')"
     ]
   }
 }

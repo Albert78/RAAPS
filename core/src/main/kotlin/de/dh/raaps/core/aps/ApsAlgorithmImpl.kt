@@ -344,7 +344,8 @@ class ApsAlgorithmImpl(
             }
         }
 
-        val cobAtPeak = carbsInsulinCalculator.cob(meals = meals, timestamp = now + insulinPeak, includeFutureMeals = false)
+        // Expected future carbs and insulin activity
+        val futureActiveCarbsAtPeak = carbsInsulinCalculator.cob(meals = meals, timestamp = now + insulinPeak, includeFutureMeals = true)
         val iobNow = carbsInsulinCalculator.iob(
             insulinApplications = insulinApplications,
             timestamp = now,
@@ -358,13 +359,18 @@ class ApsAlgorithmImpl(
             peak = insulinPeak
         )
 
+        val deferredBoluses = therapyManager.getDeferredBoluses()
+        val sumDeferredBolusesAtPeak = deferredBoluses.
+            filter { it.timestamp >= now + insulinPeak }.
+            fold(InsulinAmount.ZERO) { acc, next -> acc + next.amount }
+
         val insightTemplate = CoreInsight(
             timestamp = now,
             bgOriginal = sampledBgReadings.getAt(nowTick),
             bgFiltered = BgValue.fromMgDl(currentBgMgDl),
             deviationPerTick = avgCurrentDeviationPerTick,
-            iobAtPeak = iobAtPeak,
-            cobAtPeak = cobAtPeak,
+            futureActiveInsulin = iobAtPeak + sumDeferredBolusesAtPeak,
+            futureActiveCarbs = futureActiveCarbsAtPeak,
             predictedBgAtPeak = BgValue.INVALID, // Will be filled below if available
             targetBg = targetBg,
             isf = isfValue,
@@ -389,9 +395,9 @@ class ApsAlgorithmImpl(
             // Either BG is falling, or, raising too slow -> Lower basal rate and defer meals
 
             val cumulatedInsulinActivityUntilPeak = iobNow - iobAtPeak
-            val currentInsulinEffectUntilPeak = -convertToBgDeltaFromUnits(cumulatedInsulinActivityUntilPeak, isfValue)
+            val insulinEffectUntilPeak = -convertToBgDeltaFromUnits(cumulatedInsulinActivityUntilPeak, isfValue)
             val normalBasalEffectUntilPeak = -convertToBgDeltaFromUnits(cumulatedBasalInsulinAtPeak, isfValue)
-            val lowTempBasalEffectUntilPeak = currentInsulinEffectUntilPeak - normalBasalEffectUntilPeak
+            val lowTempBasalEffectUntilPeak = insulinEffectUntilPeak - normalBasalEffectUntilPeak
 
             if (bgErrorAtPeak + lowTempBasalEffectUntilPeak < BgDelta(-20)) {
                 // Prediction is too low -> Defer ongoing meal boluses
@@ -435,22 +441,24 @@ class ApsAlgorithmImpl(
         // Calculate scheduled meal boluses
         var dueMealBolusAmount = InsulinAmount.ZERO
         val dueDeferredBoluses: MutableList<DeferredBolus> = mutableListOf()
-
-        val deferredBoluses = therapyManager.getDeferredBoluses()
-        val sumFutureDeferredBolus = deferredBoluses.filter { it.timestamp >= now }.fold(InsulinAmount.ZERO) { acc, next -> acc + next.amount }
         for (deferredBolus in deferredBoluses) {
             if (deferredBolus.timestamp < now) {
                 dueMealBolusAmount += deferredBolus.amount
                 dueDeferredBoluses += deferredBolus
             }
         }
+        val sumFutureDeferredBoluses = deferredBoluses.
+            filter { it.timestamp >= now }.
+            fold(InsulinAmount.ZERO) { acc, next -> acc + next.amount }
 
-        val insulinEquivalentOfCob = convertToInsulinAmountFromCarbs(carbs = cobAtPeak, cr = crValue)
+        val insulinEquivalentOfCarbsAtPeak = convertToInsulinAmountFromCarbs(carbs = futureActiveCarbsAtPeak, cr = crValue)
 
         val bgErrorCorrectionUnits = (convertToInsulinAmountFromBgDelta(bgErrorAtPeak, isfValue) * AGGRESSIVENESS_ERROR_CORRECTION)
             .coerceAtLeast(InsulinAmount.ZERO)
-        val futureInsulin = iobAtPeak + dueMealBolusAmount + sumFutureDeferredBolus
-        if (futureInsulin + InsulinAmount.EPSILON >= insulinEquivalentOfCob + bgErrorCorrectionUnits) {
+
+        // Simplified calculation. We mix remaining insulin/carbs activity of now and peak.
+        val futureInsulin = iobAtPeak + dueMealBolusAmount + sumFutureDeferredBoluses
+        if (futureInsulin + InsulinAmount.EPSILON >= insulinEquivalentOfCarbsAtPeak + bgErrorCorrectionUnits) {
             // Meals and BG error are covered by IOB/planned boluses.
             // Return to normal basal rate and wait for insulin/carbs to act.
             if (dueDeferredBoluses.isEmpty()) {
@@ -466,11 +474,9 @@ class ApsAlgorithmImpl(
             }
         } else {
             // Insufficient insulin: Calculate the delta needed to cover the gap.
-            // TODO: If BG is too high, consider administering a deferred bolus at once
-            val neededInsulin = (insulinEquivalentOfCob * AGGRESSIVENESS_CARBS_CORRECTION) +
+            val neededInsulin = (insulinEquivalentOfCarbsAtPeak * AGGRESSIVENESS_CARBS_CORRECTION) +
                     bgErrorCorrectionUnits
-            val futureAvailableInsulin = iobAtPeak + dueMealBolusAmount + sumFutureDeferredBolus
-            val bolusAmount = dueMealBolusAmount + (neededInsulin - futureAvailableInsulin).coerceAtLeast(InsulinAmount.ZERO)
+            val bolusAmount = dueMealBolusAmount + (neededInsulin - futureInsulin).coerceAtLeast(InsulinAmount.ZERO)
 
             CalculationResult.mealOrCorrectionBolus(
                 bolusAmount = bolusAmount,
