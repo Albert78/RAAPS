@@ -82,7 +82,7 @@ fun DashboardScreen(
     onNavigateToPreferences: () -> Unit,
     onNavigateToAlarms: () -> Unit,
     onNavigateToTherapySettings: () -> Unit,
-    onNavigateToMealBolus: () -> Unit,
+    onNavigateToMealCorrectionBolus: () -> Unit,
     onNavigateToSystemControl: () -> Unit,
     onAdjustmentClick: () -> Unit,
     onHistoryChartClick: () -> Unit,
@@ -109,8 +109,8 @@ fun DashboardScreen(
         onNavigateToPreferences = onNavigateToPreferences,
         onNavigateToAlarms = onNavigateToAlarms,
         onNavigateToTherapySettings = onNavigateToTherapySettings,
-        onNavigateToMealBolus = onNavigateToMealBolus,
-        isMealBolusAllowed = uiState.isMealBolusAllowed,
+        onNavigateToMealCorrectionBolus = onNavigateToMealCorrectionBolus,
+        isMealCorrectionBolusAllowed = uiState.isMealCorrectionBolusAllowed,
         onNavigateToSystemControl = onNavigateToSystemControl,
         onHistoryChartClick = onHistoryChartClick,
         onApsModeSelect = { viewModel.setApsMode(it) },
@@ -134,8 +134,8 @@ fun DashboardContent(
     onNavigateToPreferences: () -> Unit,
     onNavigateToAlarms: () -> Unit,
     onNavigateToTherapySettings: () -> Unit,
-    onNavigateToMealBolus: () -> Unit,
-    isMealBolusAllowed: Boolean,
+    onNavigateToMealCorrectionBolus: () -> Unit,
+    isMealCorrectionBolusAllowed: Boolean,
     onNavigateToSystemControl: () -> Unit,
     onHistoryChartClick: (() -> Unit)?,
     onApsModeSelect: (ApsMode) -> Unit,
@@ -296,12 +296,12 @@ fun DashboardContent(
             Spacer(modifier = Modifier.height(24.dp))
 
             PrimaryButton(
-                onClick = onNavigateToMealBolus,
-                enabled = isMealBolusAllowed,
+                onClick = onNavigateToMealCorrectionBolus,
+                enabled = isMealCorrectionBolusAllowed,
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Text(
-                    text = stringResource(R.string.dashboard_meal_bolus_button),
+                    text = stringResource(R.string.dashboard_meal_correction_bolus_button),
                     style = MaterialTheme.typography.titleMedium
                 )
             }
@@ -363,8 +363,8 @@ fun DashboardPreview() {
             onHistoryChartClick = {},
             onApsModeSelect = {},
             onAdjustmentClick = {},
-            onNavigateToMealBolus = {},
-            isMealBolusAllowed = true
+            onNavigateToMealCorrectionBolus = {},
+            isMealCorrectionBolusAllowed = true
         )
     }
 }
@@ -419,8 +419,8 @@ fun DashboardPermissionsWarningPreview() {
             onHistoryChartClick = {},
             onApsModeSelect = {},
             onAdjustmentClick = {},
-            onNavigateToMealBolus = {},
-            isMealBolusAllowed = true
+            onNavigateToMealCorrectionBolus = {},
+            isMealCorrectionBolusAllowed = true
         )
     }
 }

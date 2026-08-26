@@ -103,7 +103,7 @@ interface SystemManager {
     /**
      * Returns whether the meal bolus screen can be opened.
      */
-    fun canOpenMealBolus(): Boolean
+    fun canOpenMealCorrectionBolus(): Boolean
 }
 
 /**
@@ -337,7 +337,7 @@ class SystemManagerImpl(
         }
     }
 
-    override fun canOpenMealBolus(): Boolean = when (apsMode.value) {
+    override fun canOpenMealCorrectionBolus(): Boolean = when (apsMode.value) {
         ApsMode.AutoCorrection, ApsMode.BasalOnly -> true
         ApsMode.Suspend -> false
     }

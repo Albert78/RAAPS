@@ -148,7 +148,7 @@ data class BolusCalculationDetails(
     val proposedTotal: InsulinAmount = InsulinAmount.ZERO
 )
 
-data class MealBolusUiState(
+data class MealCorrectionBolusUiState(
     val isLoading: Boolean = true,
     val input: MealInput = MealInput(),
     val projections: BolusProjections = BolusProjections(),
@@ -166,11 +166,11 @@ data class MealBolusUiState(
     val submissionStatus: SubmissionStatus = SubmissionStatus.NotSubmitted
 )
 
-class MealBolusViewModel(
+class MealCorrectionBolusViewModel(
     private val registry: SystemRegistry
 ) : ViewModel() {
-    private val _uiState = MutableStateFlow(MealBolusUiState())
-    val uiState: StateFlow<MealBolusUiState> = _uiState.asStateFlow()
+    private val _uiState = MutableStateFlow(MealCorrectionBolusUiState())
+    val uiState: StateFlow<MealCorrectionBolusUiState> = _uiState.asStateFlow()
 
     private val therapyManager = registry.therapyManager
     private val treatmentRepository = registry.treatmentRepository
@@ -465,7 +465,7 @@ class MealBolusViewModel(
         class Factory(private val registry: SystemRegistry) : ViewModelProvider.Factory {
             @Suppress("UNCHECKED_CAST")
             override fun <T : ViewModel> create(modelClass: Class<T>, extras: CreationExtras): T {
-                return MealBolusViewModel(registry) as T
+                return MealCorrectionBolusViewModel(registry) as T
             }
         }
     }

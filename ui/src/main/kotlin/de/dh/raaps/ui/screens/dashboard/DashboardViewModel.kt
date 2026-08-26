@@ -22,7 +22,7 @@ data class DashboardUiState(
     // TODO: Get selectable modes from core
     val availableApsModes: List<ApsMode> = ApsMode.entries,
     val recommendations: List<ApsRecommendation> = emptyList(),
-    val isMealBolusAllowed: Boolean = false
+    val isMealCorrectionBolusAllowed: Boolean = false
 )
 
 /**
@@ -42,7 +42,7 @@ class DashboardViewModel(
         state.copy(
             apsMode = mode,
             recommendations = recommendations,
-            isMealBolusAllowed = systemManager.canOpenMealBolus()
+            isMealCorrectionBolusAllowed = systemManager.canOpenMealCorrectionBolus()
         )
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), DashboardUiState())
 

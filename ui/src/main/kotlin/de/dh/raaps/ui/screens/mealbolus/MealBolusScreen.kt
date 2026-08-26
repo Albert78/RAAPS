@@ -97,14 +97,14 @@ import java.util.Locale
 import de.dh.raaps.common.R as CommonR
 
 @Composable
-fun MealBolusScreen(
-    viewModel: MealBolusViewModel,
+fun MealCorrectionBolusScreen(
+    viewModel: MealCorrectionBolusViewModel,
     treatmentLock: TreatmentLock,
     onNavigateUp: () -> Unit
 ) {
     val uiState by viewModel.uiState.collectAsState()
 
-    MealBolusContent(
+    MealCorrectionBolusContent(
         uiState = uiState,
         onCarbsChange = { viewModel.onCarbsChange(it) },
         onMealTimeChange = { viewModel.onMealTimeChange(it) },
@@ -120,8 +120,8 @@ fun MealBolusScreen(
 }
 
 @Composable
-fun MealBolusContent(
-    uiState: MealBolusUiState,
+fun MealCorrectionBolusContent(
+    uiState: MealCorrectionBolusUiState,
     onCarbsChange: (Double) -> Unit,
     onMealTimeChange: (Timestamp) -> Unit,
     onMealTypeChange: (MealType) -> Unit,
@@ -143,7 +143,7 @@ fun MealBolusContent(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
-        MealBolusContextInfo(uiState = uiState, onRefresh = onRefreshProjections)
+        MealCorrectionBolusContextInfo(uiState = uiState, onRefresh = onRefreshProjections)
 
         if (uiState.showCloseBanner) {
             CloseScreenBanner(onClose = onClose)
@@ -167,7 +167,7 @@ fun MealBolusContent(
             ) {
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
                     Text(
-                        text = stringResource(R.string.meal_bolus_carbs_label),
+                        text = stringResource(R.string.meal_correction_bolus_carbs_label),
                         style = MaterialTheme.typography.titleMedium
                     )
                     Spacer(Modifier.height(8.dp))
@@ -200,7 +200,7 @@ fun MealBolusContent(
 
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
                         Text(
-                            text = stringResource(R.string.meal_bolus_meal_time_label),
+                            text = stringResource(R.string.meal_correction_bolus_meal_time_label),
                             style = MaterialTheme.typography.titleMedium
                         )
                         Spacer(Modifier.height(8.dp))
@@ -220,7 +220,7 @@ fun MealBolusContent(
 
                     ImageCaptionWithSwitch(
                         imageVector = Icons.Default.Notifications,
-                        text = stringResource(R.string.meal_bolus_reminder_label),
+                        text = stringResource(R.string.meal_correction_bolus_reminder_label),
                         checked = uiState.isMealReminderEnabled,
                         onCheckedChange = { onToggleMealReminder() },
                         modifier = Modifier.fillMaxWidth()
@@ -247,7 +247,7 @@ fun MealBolusContent(
             ) {
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
                     Text(
-                        text = stringResource(R.string.meal_bolus_insulin_label),
+                        text = stringResource(R.string.meal_correction_bolus_insulin_label),
                         style = MaterialTheme.typography.titleMedium
                     )
                     Spacer(Modifier.height(8.dp))
@@ -298,8 +298,8 @@ fun MealBolusContent(
             enabled = uiState.submissionStatus == SubmissionStatus.NotSubmitted && isInputValid
         ) {
             Text(
-                if (uiState.submissionStatus == SubmissionStatus.Success) stringResource(R.string.meal_bolus_administer_button_submitted)
-                else stringResource(R.string.meal_bolus_administer_button)
+                if (uiState.submissionStatus == SubmissionStatus.Success) stringResource(R.string.meal_correction_bolus_administer_button_submitted)
+                else stringResource(R.string.meal_correction_bolus_administer_button)
             )
         }
     }
@@ -327,13 +327,13 @@ fun CloseScreenBanner(
             )
             Column(modifier = Modifier.weight(1f)) {
                 Text(
-                    text = stringResource(R.string.meal_bolus_close_banner_title),
+                    text = stringResource(R.string.meal_correction_bolus_close_banner_title),
                     style = MaterialTheme.typography.labelLarge,
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.error
                 )
                 Text(
-                    text = stringResource(R.string.meal_bolus_close_banner_message),
+                    text = stringResource(R.string.meal_correction_bolus_close_banner_message),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onErrorContainer
                 )
@@ -347,7 +347,7 @@ fun CloseScreenBanner(
                 modifier = Modifier.height(32.dp)
             ) {
                 Text(
-                    text = stringResource(R.string.meal_bolus_close_banner_button),
+                    text = stringResource(R.string.meal_correction_bolus_close_banner_button),
                     style = MaterialTheme.typography.labelMedium
                 )
             }
@@ -358,7 +358,7 @@ fun CloseScreenBanner(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CalculationDetailsSelector(
-    uiState: MealBolusUiState,
+    uiState: MealCorrectionBolusUiState,
     onResultClick: () -> Unit
 ) {
     var expanded by remember { mutableStateOf(false) }
@@ -385,7 +385,7 @@ fun CalculationDetailsSelector(
                         .clickable { expanded = true }
                 ) {
                     Text(
-                        text = stringResource(R.string.meal_bolus_calc_result_label, insulinValue(uiState.calculation.proposedTotal.iu)),
+                        text = stringResource(R.string.meal_correction_bolus_calc_result_label, insulinValue(uiState.calculation.proposedTotal.iu)),
                         style = MaterialTheme.typography.bodyMedium,
                         fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.primary,
@@ -409,7 +409,7 @@ fun CalculationDetailsSelector(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Text(
-                        text = stringResource(R.string.meal_bolus_calculation_title),
+                        text = stringResource(R.string.meal_correction_bolus_calculation_title),
                         style = MaterialTheme.typography.labelLarge,
                         color = MaterialTheme.colorScheme.primary,
                         fontWeight = FontWeight.Bold
@@ -427,7 +427,7 @@ fun CalculationDetailsSelector(
 
                 Text(
                     stringResource(
-                        R.string.meal_bolus_calc_factors_label,
+                        R.string.meal_correction_bolus_calc_factors_label,
                         isfValue(uiState.isf),
                         crValue(uiState.cr, withUnit = false)
                     ),
@@ -437,7 +437,7 @@ fun CalculationDetailsSelector(
                 val bgProjection = uiState.projections.bg
                 if (bgProjection.isInvalid()) {
                     Text(
-                        text = stringResource(R.string.meal_bolus_calc_no_bg_warning),
+                        text = stringResource(R.string.meal_correction_bolus_calc_no_bg_warning),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.error,
                         fontWeight = FontWeight.Bold
@@ -445,7 +445,7 @@ fun CalculationDetailsSelector(
                 } else if (bgProjection <= uiState.lowThreshold) {
                     Text(
                         text = stringResource(
-                            R.string.meal_bolus_calc_low_bg_warning,
+                            R.string.meal_correction_bolus_calc_low_bg_warning,
                             glucoseValue(uiState.lowThreshold, withUnit = true),
                             time(uiState.projections.timestamp)
                         ),
@@ -459,38 +459,38 @@ fun CalculationDetailsSelector(
 
                 Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
                     Text(
-                        text = stringResource(R.string.meal_bolus_calc_meal_part, insulinValue(uiState.calculation.mealPart.iu, signed = true)),
+                        text = stringResource(R.string.meal_correction_bolus_calc_meal_part, insulinValue(uiState.calculation.mealPart.iu, signed = true)),
                         style = MaterialTheme.typography.bodySmall
                     )
                     Text(
-                        text = stringResource(R.string.meal_bolus_calc_correction_part, insulinValue(uiState.calculation.correctionPart.iu, signed = true)),
+                        text = stringResource(R.string.meal_correction_bolus_calc_correction_part, insulinValue(uiState.calculation.correctionPart.iu, signed = true)),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                     if (uiState.calculation.iobPart > InsulinAmount.ZERO) {
                         Text(
-                            text = stringResource(R.string.meal_bolus_calc_iob_part, insulinValue(-uiState.calculation.iobPart.iu, signed = true)),
+                            text = stringResource(R.string.meal_correction_bolus_calc_iob_part, insulinValue(-uiState.calculation.iobPart.iu, signed = true)),
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.error
                         )
                     }
                     if (uiState.calculation.cobPart > InsulinAmount.ZERO) {
                         Text(
-                            text = stringResource(R.string.meal_bolus_calc_cob_part, insulinValue(uiState.calculation.cobPart.iu, signed = true)),
+                            text = stringResource(R.string.meal_correction_bolus_calc_cob_part, insulinValue(uiState.calculation.cobPart.iu, signed = true)),
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.primary
                         )
                     }
                     if (uiState.calculation.futureCarbsPart > InsulinAmount.ZERO) {
                         Text(
-                            text = stringResource(R.string.meal_bolus_calc_future_carbs_part, insulinValue(uiState.calculation.futureCarbsPart.iu, signed = true)),
+                            text = stringResource(R.string.meal_correction_bolus_calc_future_carbs_part, insulinValue(uiState.calculation.futureCarbsPart.iu, signed = true)),
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.primary
                         )
                     }
                     if (uiState.calculation.deferredBolusPart > InsulinAmount.ZERO) {
                         Text(
-                            text = stringResource(R.string.meal_bolus_calc_deferred_part, insulinValue(-uiState.calculation.deferredBolusPart.iu, signed = true)),
+                            text = stringResource(R.string.meal_correction_bolus_calc_deferred_part, insulinValue(-uiState.calculation.deferredBolusPart.iu, signed = true)),
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.error
                         )
@@ -501,7 +501,7 @@ fun CalculationDetailsSelector(
                 HorizontalDivider(color = MaterialTheme.colorScheme.secondary.copy(alpha = 0.2f))
                 Spacer(Modifier.height(4.dp))
                 Text(
-                    text = stringResource(R.string.meal_bolus_calc_result_label, insulinValue(uiState.calculation.proposedTotal.iu)),
+                    text = stringResource(R.string.meal_correction_bolus_calc_result_label, insulinValue(uiState.calculation.proposedTotal.iu)),
                     style = MaterialTheme.typography.bodyMedium,
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.primary,
@@ -515,8 +515,8 @@ fun CalculationDetailsSelector(
 }
 
 @Composable
-fun MealBolusContextInfo(
-    uiState: MealBolusUiState,
+fun MealCorrectionBolusContextInfo(
+    uiState: MealCorrectionBolusUiState,
     onRefresh: () -> Unit
 ) {
     Surface(
@@ -574,12 +574,12 @@ fun MealBolusContextInfo(
 
                 Spacer(Modifier.height(8.dp))
                 Text(
-                    text = stringResource(R.string.meal_bolus_active_carbs_format, carbsGramsValue(uiState.projections.cob)),
+                    text = stringResource(R.string.meal_correction_bolus_active_carbs_format, carbsGramsValue(uiState.projections.cob)),
                     style = MaterialTheme.typography.bodyLarge,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
                 Text(
-                    text = stringResource(R.string.meal_bolus_active_insulin_format, insulinValue(uiState.projections.iob.iu)),
+                    text = stringResource(R.string.meal_correction_bolus_active_insulin_format, insulinValue(uiState.projections.iob.iu)),
                     style = MaterialTheme.typography.bodyLarge,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -628,7 +628,7 @@ fun InsulinPlanCard(
             ) {
                 Column {
                     Text(
-                        text = stringResource(R.string.meal_bolus_insulin_plan_title),
+                        text = stringResource(R.string.meal_correction_bolus_insulin_plan_title),
                         style = MaterialTheme.typography.titleSmall,
                         fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.primary
@@ -714,12 +714,12 @@ fun InsulinPlanCard(
 
 @Preview(showBackground = true, name = "0 KE Mode")
 @Composable
-fun MealBolusZeroKePreview() {
+fun MealCorrectionBolusZeroKePreview() {
     AppTheme {
         CompositionLocalProvider(LocalGlucoseUnit provides GlucoseUnit.MG_DL) {
             Surface {
-                MealBolusContent(
-                    uiState = MealBolusUiState(
+                MealCorrectionBolusContent(
+                    uiState = MealCorrectionBolusUiState(
                         isLoading = false,
                         input = MealInput(
                             carbsKe = 0.0,
@@ -756,7 +756,7 @@ fun MealBolusZeroKePreview() {
 @Preview(showBackground = true, name = "Default Mode")
 @Preview(showBackground = true, name = "Default Mode - Dark", uiMode = Configuration.UI_MODE_NIGHT_YES)
 @Composable
-fun MealBolusDefaultPreview() {
+fun MealCorrectionBolusDefaultPreview() {
     val sampleMealTypes = listOf(
         MealType(id = ID_MEAL_FAST, name = "Schnell", components = listOf(CarbCurveComponentData(100, Minutes(30))), cat = Minutes(120)),
         MealType(id = ID_MEAL_STANDARD, name = "Standard", components = listOf(CarbCurveComponentData(100, Minutes(60))), cat = Minutes(180)),
@@ -766,8 +766,8 @@ fun MealBolusDefaultPreview() {
     AppTheme {
         CompositionLocalProvider(LocalGlucoseUnit provides GlucoseUnit.MG_DL) {
             Surface {
-                MealBolusContent(
-                    uiState = MealBolusUiState(
+                MealCorrectionBolusContent(
+                    uiState = MealCorrectionBolusUiState(
                         isLoading = false,
                         input = MealInput(
                             carbsKe = 4.5,

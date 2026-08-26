@@ -26,7 +26,7 @@ import de.dh.raaps.common.navigation.FoodDatabaseRoute
 import de.dh.raaps.common.navigation.HistoricalMealRoute
 import de.dh.raaps.common.navigation.HistoryRoute
 import de.dh.raaps.common.navigation.InsulinProfileEditorRoute
-import de.dh.raaps.common.navigation.MealBolusRoute
+import de.dh.raaps.common.navigation.MealCorrectionBolusRoute
 import de.dh.raaps.common.navigation.MealTypeEditorRoute
 import de.dh.raaps.common.navigation.MealTypesRoute
 import de.dh.raaps.common.navigation.MealsRoute
@@ -52,8 +52,8 @@ import de.dh.raaps.ui.screens.dashboard.DashboardViewModel
 import de.dh.raaps.ui.screens.fooddatabase.FoodDatabaseScreen
 import de.dh.raaps.ui.screens.history.HistoryScreen
 import de.dh.raaps.ui.screens.insulinprofile.InsulinProfileEditorScreen
-import de.dh.raaps.ui.screens.mealbolus.MealBolusScreen
-import de.dh.raaps.ui.screens.mealbolus.MealBolusViewModel
+import de.dh.raaps.ui.screens.mealbolus.MealCorrectionBolusScreen
+import de.dh.raaps.ui.screens.mealbolus.MealCorrectionBolusViewModel
 import de.dh.raaps.ui.screens.meals.EditHistoricalMealScreen
 import de.dh.raaps.ui.screens.meals.EditHistoricalMealViewModel
 import de.dh.raaps.ui.screens.meals.MealTypeEditorScreen
@@ -116,7 +116,7 @@ class MainFeatureNavGraph(
                     onNavigateToPreferences = { navViewModel.push(PreferencesMainRoute) },
                     onNavigateToAlarms = { navViewModel.push(AlarmsRoute) },
                     onNavigateToTherapySettings = { navViewModel.push(CurrentTherapySettingsRoute) },
-                    onNavigateToMealBolus = { navViewModel.push(MealBolusRoute) },
+                    onNavigateToMealCorrectionBolus = { navViewModel.push(MealCorrectionBolusRoute) },
                     onNavigateToSystemControl = { navViewModel.push(SystemControlRoute()) },
                     onAdjustmentClick = { navViewModel.push(TherapyAdjustmentRoute) },
                     onHistoryChartClick = { navViewModel.push(HistoryRoute) },
@@ -177,13 +177,13 @@ class MainFeatureNavGraph(
                 )
             }
 
-            is MealBolusRoute -> NavEntry(key) {
-                val vm: MealBolusViewModel = viewModel(
-                    factory = MealBolusViewModel.Companion.Factory(registry)
+            is MealCorrectionBolusRoute -> NavEntry(key) {
+                val vm: MealCorrectionBolusViewModel = viewModel(
+                    factory = MealCorrectionBolusViewModel.Companion.Factory(registry)
                 )
                 val lockViewModel: TreatmentLockViewModel = viewModel(
                     factory = TreatmentLockViewModel.Companion.Factory(
-                        tag = "MealBolusScreen",
+                        tag = "MealCorrectionBolusScreen",
                         registry = registry,
                         requirePumpSync = true
                     )
@@ -200,7 +200,7 @@ class MainFeatureNavGraph(
                     title = stringResource(id = de.dh.raaps.ui.R.string.meal_add_screen_title),
                     onNavigateUp = { navViewModel.pop() }
                 ) { treatmentLock ->
-                    MealBolusScreen(
+                    MealCorrectionBolusScreen(
                         viewModel = vm,
                         treatmentLock = treatmentLock,
                         onNavigateUp = { navViewModel.pop() }

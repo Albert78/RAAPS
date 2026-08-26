@@ -258,7 +258,7 @@ class TherapyManager(
     suspend fun updatePumpHistory(history: InsulinHistory) {
         val cts = getCurrentTherapySettings()
         // Update history. I don't think it makes sense to wait for the treatmentLock;
-        // If the pump history sync happens during MealBolusScreen or during core calculation,
+        // If the pump history sync happens during MealCorrectionBolusScreen or during core calculation,
         // something is wrong. In normal operation, all pump commands should have been executed
         // before we acquire the lock.
         treatmentRepository.mergeInsulinHistory(history, cts.insulinProfile.insulinType)
@@ -438,7 +438,7 @@ class TherapyManager(
     /**
      * Tries to acquire a lock for a specific execution block.
      * The lock must be acquired, if either
-     * - the following process needs consistent data for the ongoing process (e.g. MealBolus screen,
+     * - the following process needs consistent data for the ongoing process (e.g. MealCorrectionBolus screen,
      *   where the bolus decision needs a stable carbs and insulin situation until commit)
      * or
      * - the following process needs to change critical data which might interfere with a

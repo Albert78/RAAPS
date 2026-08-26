@@ -186,7 +186,7 @@ fun EditMealCard(
         ) {
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
                 Text(
-                    text = stringResource(R.string.meal_bolus_meal_time_label),
+                    text = stringResource(R.string.meal_correction_bolus_meal_time_label),
                     style = MaterialTheme.typography.titleMedium
                 )
                 Spacer(Modifier.height(8.dp))
@@ -202,7 +202,7 @@ fun EditMealCard(
 
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
                 Text(
-                    text = stringResource(R.string.meal_bolus_carbs_label),
+                    text = stringResource(R.string.meal_correction_bolus_carbs_label),
                     style = MaterialTheme.typography.titleMedium
                 )
                 Spacer(Modifier.height(8.dp))
