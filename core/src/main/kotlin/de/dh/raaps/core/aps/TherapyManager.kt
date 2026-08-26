@@ -450,6 +450,14 @@ class TherapyManager(
 
     /**
      * Tries to acquire a lock for a specific execution block.
+     * The lock must be acquired, if either
+     * - the following process needs consistent data for the ongoing process (e.g. MealBolus screen,
+     *   where the bolus decision needs a stable carbs and insulin situation until commit)
+     * or
+     * - the following process needs to change critical data which might interfere with a
+     *   potential ongoing other process (like issuing a bolus will interfere with an ongoing
+     *   core calculation).
+     * Most of the critical functions require the lock in their method signature.
      * If the lock is already held by another system part, returns [LockResult.Busy].
      * Otherwise, executes the block and returns [LockResult.Success].
      */
