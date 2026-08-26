@@ -7,6 +7,7 @@ import de.dh.raaps.common.model.DeferredBolus
 import de.dh.raaps.common.model.InsulinAmount
 import de.dh.raaps.common.model.InsulinHistory
 import de.dh.raaps.common.model.InsulinType
+import de.dh.raaps.common.model.MealEntry
 import de.dh.raaps.common.model.ToDo
 import de.dh.raaps.common.model.data.BgBlock
 import de.dh.raaps.common.model.data.BgDelta
@@ -255,6 +256,10 @@ class TherapyManager(
      */
     suspend fun updatePumpHistory(history: InsulinHistory) {
         val cts = getCurrentTherapySettings()
+        // Update history. I don't think it makes sense to wait for the treatmentLock;
+        // If the pump history sync happens during MealBolusScreen or during core calculation,
+        // something is wrong. In normal operation, all pump commands should have been executed
+        // before we acquire the lock.
         treatmentRepository.mergeInsulinHistory(history, cts.insulinProfile.insulinType)
     }
 
@@ -268,11 +273,39 @@ class TherapyManager(
      * @param amount The amount of insulin to deliver.
      * @param handledDeferredBoluses Optional deferred boluses that were handled by this delivery.
      */
-    suspend fun issueBolus(treatmentLock: TreatmentLock, amount: InsulinAmount, handledDeferredBoluses: List<DeferredBolus>? = null) {
+    suspend fun issueBolus(
+        treatmentLock: TreatmentLock,
+        amount: InsulinAmount,
+        meal: MealEntry? ? = null,
+        handledDeferredBoluses: List<DeferredBolus>? = null,
+        containsCorrectionPart: Boolean = false,
+        containsBasalPart: Boolean = false
+    ) {
         checkLock(treatmentLock)
+
+        // Record insulin administration in meals
+        val administeredMealIds: MutableSet<Long> = mutableSetOf()
+        meal?.id?.let { administeredMealIds.add(it) }
         handledDeferredBoluses?.forEach {
-            markDeferredBolusHandled(treatmentLock, it)
+            val mealId = it.mealId
+            if (mealId != null) {
+                administeredMealIds.add(mealId)
+            }
         }
+        treatmentRepository.setInsulinAdministered(administeredMealIds)
+        // Remove deferred boluses
+        handledDeferredBoluses?.let {
+            treatmentRepository.removeDeferredBoluses(it)
+        }
+        // Preserve delivery metadata until history sync
+        treatmentRepository.addScheduledPumpInsulinEntry(
+            timestamp = Timestamp.now(),
+            amount = amount,
+            basal = containsBasalPart,
+            correction = containsCorrectionPart,
+            meal = administeredMealIds.isNotEmpty()
+        )
+
         val minBolusIncrement = pumpManager.insulinPump?.pumpCapabilities?.value?.minBolusIncrement
         if (minBolusIncrement != null && amount < minBolusIncrement) {
             Log.i(TAG, "Skipping bolus which is too low for pump (amount=$amount, minBolusIncrement=$minBolusIncrement)")
@@ -386,7 +419,7 @@ class TherapyManager(
         treatmentRepository.updateDeferredBolus(deferredBolus)
     }
 
-    suspend fun markDeferredBolusHandled(treatmentLock: TreatmentLock, deferredBolus: DeferredBolus) {
+    suspend fun removeDeferredBolus(treatmentLock: TreatmentLock, deferredBolus: DeferredBolus) {
         checkLock(treatmentLock)
         treatmentRepository.removeDeferredBolus(deferredBolus)
     }

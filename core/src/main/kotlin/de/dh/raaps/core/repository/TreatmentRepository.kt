@@ -371,4 +371,20 @@ class TreatmentRepository(
         }
         metabolicEventsDao.deleteDeferredBolus(deferredBolus.id)
     }
+
+    suspend fun removeDeferredBoluses(deferredBoluses: Collection<DeferredBolus>) {
+        TODO: if possible and sensible, create methods for deleting multiple boluses. Else, iterate through.
+        mutex.withLock {
+            deferredBoluses.removeIf { it.id == deferredBolus.id }
+        }
+        metabolicEventsDao.deleteDeferredBoluses(deferredBolus.id)
+    }
+
+    fun addScheduledPumpInsulinEntry(timestamp: Timestamp, amount: InsulinAmount, basal: Boolean, correction: Boolean, meal: Boolean) {
+        TODO: ScheduledPumpInsulin anlegen
+    }
+
+    fun setInsulinAdministered(administeredMealIds: MutableSet<Long>) {
+        TODO: Set Flag containsMealComponent in all meals with the given ids
+    }
 }
