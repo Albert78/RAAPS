@@ -280,7 +280,7 @@ class ApsAlgorithmImpl(
 
         // ------------------------------ Recovery Check -------------------------------------------
 
-        // If we're currently low, check if we're already recovering.
+        // If we're currently low, check if we're already recovering to switch on normal basal early enough.
         if (currentBgMgDl < lowThreshold.mgdl) {
             // Phase 1: Find the first point within the next 30 minutes where we're back above the threshold
             val recoveryStartTick = predictionModel.findNext(
@@ -309,8 +309,9 @@ class ApsAlgorithmImpl(
 
         // -------------------------------- Low handling -------------------------------------------
 
-        // Get out of a current or impending low by suggesting carbs
-        // Find the next occurrence where the value falls below the minimum; find the minimum with time
+        // Get out of a current or impending low by suggesting carbs.
+
+        // Find the next occurrence where the value falls below the minimum within the next LOW_WARNING_THRESHOLD minutes
         val impendingLow = predictionModel.findNext(
             startAt = nowTick,
             until = nowTick.plusMinutes(LOW_WARNING_THRESHOLD.value.toInt()),
@@ -319,25 +320,25 @@ class ApsAlgorithmImpl(
         ) ?: false
 
         if (impendingLow) {
-            // We're too low. Find out, how low we'll come to calculate the amount of suggested carbs.
+            // We're too low or becoming too low soon. Find out, how low we'll come to calculate the amount of suggested carbs.
 
             // Correct the minimum BG for twice the peak time of fast KE -> Don't look into the future too much
             val bgMin = predictionModel.findBgMin(
                 startAt = nowTick,
-                until = nowTick.plusMinutes(FAST_KE_DEFAULT_PEAK.value.toInt()),
+                until = nowTick.plusMinutes(FAST_KE_DEFAULT_PEAK.value.toInt() * 2),
                 block = { it.assumedBg }
             )
             if (bgMin != null && bgMin.isValid()) {
                 val bgErrorAtMin = targetBg - bgMin
-                val lowCorrectionCarbsForMinInG = convertToCarbsFromBgDelta(
+                val neededLowCorrectionCarbsForMinInG = convertToCarbsFromBgDelta(
                     bgDelta = bgErrorAtMin,
                     isf = isfValue,
                     cr = crValue
                 )
                 val recentCarbsInG = meals.
-                    filter { meal -> meal.timestamp > now.minusMinutes(20) }.
+                    filter { meal -> meal.timestamp > now.minusMinutes(20) && meal.timestamp < now.plusMinutes(15) }.
                     sumOf { meal -> meal.carbGrams }
-                val rawCarbsInGHint = lowCorrectionCarbsForMinInG - recentCarbsInG
+                val rawCarbsInGHint = neededLowCorrectionCarbsForMinInG - recentCarbsInG
                 val carbsInGHint = (ceil(rawCarbsInGHint / 5.0) * 5).toInt()
                 if (carbsInGHint > 0) {
                     return CalculationResult.carbsSuggestion(carbsInGHint = carbsInGHint) // Stop further processing when we're currently low
@@ -395,23 +396,27 @@ class ApsAlgorithmImpl(
             // Prediction is too low under normal basal;
             // Either BG is falling, or, raising too slow -> Lower basal rate and defer meals
 
+            // IOB now and IOB at peak contain already injected insulin, inclusive basal insulin.
+            // Not included is future basal.
+            // So cumulatedInsulinActivityUntilPeak is what we expect to be active from past
+            // injections, without any new basal injections.
             val cumulatedInsulinActivityUntilPeak = iobNow - iobAtPeak
             val insulinEffectUntilPeak = -convertToBgDeltaFromUnits(cumulatedInsulinActivityUntilPeak, isfValue)
             val normalBasalEffectUntilPeak = -convertToBgDeltaFromUnits(cumulatedBasalInsulinAtPeak, isfValue)
+
+            // All predictions are based on the assumption that we deliver normal basal. So
+            // to calculate the low temp scenario, we just subtract the normal basal effect.
             val lowTempBasalEffectUntilPeak = insulinEffectUntilPeak - normalBasalEffectUntilPeak
 
             if (bgErrorAtPeak + lowTempBasalEffectUntilPeak < BgDelta(-20)) {
-                // Prediction is too low -> Defer ongoing meal boluses
+                // Prediction is too low, even without basal -> Zero temp and defer ongoing meal boluses
                 return CalculationResult.zeroTemp(durationInHours = 1).withMetrics(insight)
             }
             // Else go on with decreased basal
-            val safetyCorrectionUnits = convertToInsulinAmountFromBgDelta(-bgErrorAtPeak, isfValue)
-            val unitsPerHour = (defaultBasal - safetyCorrectionUnits).coerceAtLeast(InsulinAmount.ZERO)
-            val percent = if (defaultBasal > InsulinAmount.ZERO) {
-                (unitsPerHour / defaultBasal * 100.0).toInt()
-            } else {
-                0
-            }
+            val needed = -(normalBasalEffectUntilPeak - bgErrorAtPeak).coerceAtMost(BgDelta.fromMgDl(0))
+            val normalEffect = -normalBasalEffectUntilPeak
+            val percent = ((needed * 100.0 / normalEffect).coerceIn(0.0, 100.0)).toInt()
+
             return CalculationResult.tempBasal(
                 percent = percent,
                 durationInHours = 1
