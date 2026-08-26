@@ -8,7 +8,10 @@ import de.dh.raaps.common.model.data.Timestamp
 import de.dh.raaps.core.system.SystemWakeService
 import de.dh.raaps.core.system.WakeupHandler
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.plus
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -42,6 +45,7 @@ class PumpManagerImpl(
         set(value) {
             _activeInsulinPump.value = value
             pumpMonitorJob?.cancel()
+            pumpCoordinator?.shutdown()
             pumpCoordinator = if (value == null) {
                 null
             } else {
@@ -51,6 +55,7 @@ class PumpManagerImpl(
                     onReleaseBusyState = { wakeService.releaseBusyState(WAKE_TAG) },
                     onRequestWakeup = { timestamp -> wakeService.scheduleWakeup(WAKE_TAG, WAKEUP_PUMP_COORDINATOR, timestamp) },
                     onJobError = { job, jobErrorCode -> handleJobError(job, jobErrorCode) },
+                    scope = scope + SupervisorJob() + Dispatchers.Default
                 )
                 pumpMonitorJob = scope.launch {
                     launch {

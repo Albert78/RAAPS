@@ -7,9 +7,9 @@ import de.dh.raaps.common.model.data.InsulinProfile
 import de.dh.raaps.common.model.data.Minutes
 import de.dh.raaps.common.model.data.Timestamp
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -87,7 +87,7 @@ class PumpCoordinator(
     /** Callback to request a wakeup from the system at a specific time. The caller should ensure [wakeup] is called at that time. */
     private val onRequestWakeup: (Timestamp) -> Unit,
     private val onJobError: (job: PumpJob, code: JobErrorCode) -> Unit,
-    private val scope: CoroutineScope = CoroutineScope(SupervisorJob() + Dispatchers.Default),
+    private val scope: CoroutineScope,
 ) {
     /**
      * Current execution state of the coordinator.
@@ -349,6 +349,13 @@ class PumpCoordinator(
         operate()
     }
 
+    /**
+     * Shuts down the coordinator, cancelling all internal coroutines.
+     */
+    fun shutdown() {
+        scope.cancel()
+    }
+
     companion object {
         val TAG = PumpCoordinator::class.simpleName
         private val HEARTBEAT_INTERVAL = Minutes(15)
@@ -363,6 +370,7 @@ class PumpCoordinator(
             /** Callback to request a wakeup from the system at a specific time. The caller should ensure [wakeup] is called at that time. */
             onRequestWakeup: (Timestamp) -> Unit,
             onJobError: (PumpJob, JobErrorCode) -> Unit,
+            scope: CoroutineScope
         ): PumpCoordinator {
             return PumpCoordinator(
                 pump = pump,
@@ -370,6 +378,7 @@ class PumpCoordinator(
                 onReleaseBusyState = onReleaseBusyState,
                 onRequestWakeup = onRequestWakeup,
                 onJobError = onJobError,
+                scope = scope
             )
         }
     }
