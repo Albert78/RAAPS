@@ -144,15 +144,7 @@ fun SimBodyHistoryScreen(
                         horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Text(stringResource(R.string.unit_u, insulin.amount.iu))
-                            Spacer(modifier = Modifier.width(8.dp))
-                            Text(
-                                text = "(${insulin.origin})",
-                                style = MaterialTheme.typography.bodySmall,
-                                color = Color.Gray
-                            )
-                        }
+                        Text(stringResource(R.string.unit_u, insulin.amount.iu))
                         Column(horizontalAlignment = Alignment.End) {
                             Text(
                                 text = timeFormat.format(Date(insulin.timestamp.ms)),

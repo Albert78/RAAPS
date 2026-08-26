@@ -469,18 +469,23 @@ class ApsAlgorithmImpl(
                 // responsibility of the user.
                 CalculationResult.mealOrCorrectionBolus(
                     bolusAmount = dueMealBolusAmount,
-                    handledDeferredBoluses = dueDeferredBoluses
+                    handledDeferredBoluses = dueDeferredBoluses,
+                    containsCorrectionPart = false,
+                    containsBasalPart = false
                 ).withMetrics(insight)
             }
         } else {
             // Insufficient insulin: Calculate the delta needed to cover the gap.
             val neededInsulin = (insulinEquivalentOfCarbsAtPeak * AGGRESSIVENESS_CARBS_CORRECTION) +
                     bgErrorCorrectionUnits
-            val bolusAmount = dueMealBolusAmount + (neededInsulin - futureInsulin).coerceAtLeast(InsulinAmount.ZERO)
+            val correctionPart = (neededInsulin - futureInsulin).coerceAtLeast(InsulinAmount.ZERO)
+            val mealBolusAmount = dueMealBolusAmount + correctionPart
 
             CalculationResult.mealOrCorrectionBolus(
-                bolusAmount = bolusAmount,
-                handledDeferredBoluses = dueDeferredBoluses
+                bolusAmount = mealBolusAmount,
+                handledDeferredBoluses = dueDeferredBoluses,
+                containsCorrectionPart = correctionPart > InsulinAmount.ZERO,
+                containsBasalPart = false
             ).withMetrics(insight)
         }
     } catch (e: Exception) {

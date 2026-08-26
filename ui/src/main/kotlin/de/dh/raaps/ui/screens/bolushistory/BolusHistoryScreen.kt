@@ -22,6 +22,7 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Checkbox
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExposedDropdownMenuAnchorType
@@ -85,8 +86,12 @@ fun BolusHistoryScreen(
 
     BolusHistoryContent(
         uiState = uiState,
-        onAddManualBolus = { amount, type -> viewModel.addManualBolus(amount, type) },
-        onUpdateManualBolus = { app, amount, type -> viewModel.updateManualBolus(app, amount, type) },
+        onAddManualBolus = { amount, type, basal, correction, meal ->
+            viewModel.addManualBolus(amount, type, basal, correction, meal)
+        },
+        onUpdateManualBolus = { app, amount, type, basal, correction, meal ->
+            viewModel.updateManualBolus(app, amount, type, basal, correction, meal)
+        },
         onDeleteBolus = { viewModel.deleteBolus(it) },
         onNavigateUp = onNavigateUp,
     )
@@ -96,8 +101,8 @@ fun BolusHistoryScreen(
 @Composable
 fun BolusHistoryContent(
     uiState: BolusHistoryUiState,
-    onAddManualBolus: (InsulinAmount, InsulinType) -> Unit,
-    onUpdateManualBolus: (InsulinApplication, InsulinAmount, InsulinType) -> Unit,
+    onAddManualBolus: (InsulinAmount, InsulinType, Boolean, Boolean, Boolean) -> Unit,
+    onUpdateManualBolus: (InsulinApplication, InsulinAmount, InsulinType, Boolean, Boolean, Boolean) -> Unit,
     onDeleteBolus: (InsulinApplication) -> Unit,
     onNavigateUp: () -> Unit,
 ) {
@@ -132,8 +137,8 @@ fun BolusHistoryContent(
                 availableInsulinTypes = uiState.insulinTypes,
                 defaultInsulinType = uiState.defaultInsulinType,
                 onDismiss = { showAddDialog = false },
-                onConfirm = { amount, type ->
-                    onAddManualBolus(amount, type)
+                onConfirm = { amount, type, basal, correction, meal ->
+                    onAddManualBolus(amount, type, basal, correction, meal)
                     showAddDialog = false
                 }
             )
@@ -144,10 +149,13 @@ fun BolusHistoryContent(
                 availableInsulinTypes = uiState.insulinTypes,
                 defaultInsulinType = bolus.insulinType,
                 initialAmount = bolus.amount,
+                initialBasal = bolus.basal,
+                initialCorrection = bolus.correction,
+                initialMeal = bolus.meal,
                 isEditMode = true,
                 onDismiss = { editingBolus = null },
-                onConfirm = { amount, type ->
-                    onUpdateManualBolus(bolus, amount, type)
+                onConfirm = { amount, type, basal, correction, meal ->
+                    onUpdateManualBolus(bolus, amount, type, basal, correction, meal)
                     editingBolus = null
                 }
             )
@@ -254,13 +262,23 @@ fun BolusItem(
             Text(text = stringResource(id = R.string.insulin_unit_label_format, entry.amount.iu))
         },
         supportingContent = {
-            Row {
-                Text(text = originString)
-                Spacer(Modifier.width(8.dp))
-                Text(
-                    text = entry.insulinType.name,
-                    color = Color.DarkGray
-                )
+            Column {
+                Row {
+                    Text(text = originString)
+                    Spacer(Modifier.width(8.dp))
+                    Text(
+                        text = entry.insulinType.name,
+                        color = Color.DarkGray
+                    )
+                }
+                if (entry.basal || entry.correction || entry.meal) {
+                    Spacer(Modifier.height(4.dp))
+                    Row {
+                        if (entry.basal) CategoryBadge(stringResource(R.string.bolus_category_basal))
+                        if (entry.correction) CategoryBadge(stringResource(R.string.bolus_category_correction))
+                        if (entry.meal) CategoryBadge(stringResource(R.string.bolus_category_meal))
+                    }
+                }
             }
         },
         trailingContent = {
@@ -295,17 +313,39 @@ fun BolusItem(
     )
 }
 
+@Composable
+fun CategoryBadge(text: String) {
+    Surface(
+        shape = MaterialTheme.shapes.extraSmall,
+        color = MaterialTheme.colorScheme.secondaryContainer,
+        modifier = Modifier.padding(end = 4.dp)
+    ) {
+        Text(
+            text = text,
+            style = MaterialTheme.typography.labelSmall,
+            modifier = Modifier.padding(horizontal = 4.dp, vertical = 2.dp),
+            color = MaterialTheme.colorScheme.onSecondaryContainer
+        )
+    }
+}
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AddManualBolusDialog(
     availableInsulinTypes: List<InsulinType>,
     defaultInsulinType: InsulinType?,
     initialAmount: InsulinAmount = InsulinAmount.ZERO,
+    initialBasal: Boolean = false,
+    initialCorrection: Boolean = false,
+    initialMeal: Boolean = false,
     isEditMode: Boolean = false,
     onDismiss: () -> Unit,
-    onConfirm: (InsulinAmount, InsulinType) -> Unit
+    onConfirm: (InsulinAmount, InsulinType, Boolean, Boolean, Boolean) -> Unit
 ) {
     var amount by remember { mutableDoubleStateOf(initialAmount.iu) }
+    var basal by remember { mutableStateOf(initialBasal) }
+    var correction by remember { mutableStateOf(initialCorrection) }
+    var meal by remember { mutableStateOf(initialMeal) }
     var selectedInsulinType by remember { mutableStateOf(defaultInsulinType ?: availableInsulinTypes.firstOrNull()) }
     var expanded by remember { mutableStateOf(false) }
 
@@ -375,6 +415,23 @@ fun AddManualBolusDialog(
                         suffix = " U"
                     )
                 }
+
+                Spacer(Modifier.height(16.dp))
+
+                Column {
+                    Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.clickable { basal = !basal }) {
+                        Checkbox(checked = basal, onCheckedChange = { basal = it })
+                        Text(text = stringResource(R.string.bolus_category_basal))
+                    }
+                    Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.clickable { correction = !correction }) {
+                        Checkbox(checked = correction, onCheckedChange = { correction = it })
+                        Text(text = stringResource(R.string.bolus_category_correction))
+                    }
+                    Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.clickable { meal = !meal }) {
+                        Checkbox(checked = meal, onCheckedChange = { meal = it })
+                        Text(text = stringResource(R.string.bolus_category_meal))
+                    }
+                }
             }
         },
         confirmButton = {
@@ -382,7 +439,7 @@ fun AddManualBolusDialog(
                 onClick = {
                     val type = selectedInsulinType
                     if (amount > 0 && type != null) {
-                        onConfirm(InsulinAmount(amount), type)
+                        onConfirm(InsulinAmount(amount), type, basal, correction, meal)
                     }
                 },
                 enabled = amount > 0 && selectedInsulinType != null
@@ -405,8 +462,8 @@ fun BolusHistoryPreview() {
     AppTheme {
         BolusHistoryContent(
             uiState = BolusHistoryUiState(),
-            onAddManualBolus = { _, _ -> },
-            onUpdateManualBolus = { _, _, _ -> },
+            onAddManualBolus = { _, _, _, _, _ -> },
+            onUpdateManualBolus = { _, _, _, _, _, _ -> },
             onDeleteBolus = {},
             onNavigateUp = {}
         )
@@ -418,16 +475,16 @@ fun BolusHistoryPreview() {
 fun BolusHistoryWithDataPreview() {
     val sampleInsulinType = InsulinType(name = "Fiasp", peak = Minutes(50.toShort()), dia = Minutes(300.toShort()))
     val sampleEntries = listOf(
-        InsulinApplication(id = 1, timestamp = Timestamp.now().minusHours(8), amount = InsulinAmount(5.0), insulinType = sampleInsulinType, origin = InsulinOrigin.Pump, meal = true),
+        InsulinApplication(id = 1, timestamp = Timestamp.now().minusHours(8), amount = InsulinAmount(5.0), insulinType = sampleInsulinType, origin = InsulinOrigin.Pump, meal = true, correction = true),
         InsulinApplication(id = 2, timestamp = Timestamp.now().minusHours(5), amount = InsulinAmount(2.5), insulinType = sampleInsulinType, origin = InsulinOrigin.Manual, meal = true),
-        InsulinApplication(id = 3, timestamp = Timestamp.now().minusHours(1), amount = InsulinAmount(3.0), insulinType = sampleInsulinType, origin = InsulinOrigin.Manual, meal = true)
+        InsulinApplication(id = 3, timestamp = Timestamp.now().minusHours(1), amount = InsulinAmount(3.0), insulinType = sampleInsulinType, origin = InsulinOrigin.Manual, basal = true)
     )
 
     AppTheme {
         BolusHistoryContent(
             uiState = BolusHistoryUiState(bolusEntries = sampleEntries),
-            onAddManualBolus = { _, _ -> },
-            onUpdateManualBolus = { _, _, _ -> },
+            onAddManualBolus = { _, _, _, _, _ -> },
+            onUpdateManualBolus = { _, _, _, _, _, _ -> },
             onDeleteBolus = {},
             onNavigateUp = {}
         )

@@ -276,7 +276,7 @@ class TherapyManager(
     suspend fun issueBolus(
         treatmentLock: TreatmentLock,
         amount: InsulinAmount,
-        meal: MealEntry? ? = null,
+        meal: MealEntry? = null,
         handledDeferredBoluses: List<DeferredBolus>? = null,
         containsCorrectionPart: Boolean = false,
         containsBasalPart: Boolean = false

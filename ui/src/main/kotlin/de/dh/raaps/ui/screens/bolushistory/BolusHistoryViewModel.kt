@@ -68,24 +68,42 @@ class BolusHistoryViewModel(
         }
     }
 
-    fun addManualBolus(amount: InsulinAmount, insulinType: InsulinType) {
+    fun addManualBolus(
+        amount: InsulinAmount,
+        insulinType: InsulinType,
+        basal: Boolean,
+        correction: Boolean,
+        meal: Boolean
+    ) {
         viewModelScope.launch {
             val application = InsulinApplication(
                 timestamp = Timestamp.now(),
                 amount = amount,
                 insulinType = insulinType,
-                origin = InsulinOrigin.Manual
-                // TODO: Set flags: meal/correction?
+                origin = InsulinOrigin.Manual,
+                basal = basal,
+                correction = correction,
+                meal = meal
             )
             treatmentRepository.addInsulinApplication(application)
         }
     }
 
-    fun updateManualBolus(application: InsulinApplication, newAmount: InsulinAmount, newType: InsulinType) {
+    fun updateManualBolus(
+        application: InsulinApplication,
+        newAmount: InsulinAmount,
+        newType: InsulinType,
+        basal: Boolean,
+        correction: Boolean,
+        meal: Boolean
+    ) {
         viewModelScope.launch {
             val updated = application.copy(
                 amount = newAmount,
-                insulinType = newType
+                insulinType = newType,
+                basal = basal,
+                correction = correction,
+                meal = meal
             )
             treatmentRepository.updateInsulinApplication(updated)
         }

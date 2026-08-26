@@ -367,8 +367,9 @@ class MealBolusViewModel(
             _uiState.update { it.copy(submissionStatus = SubmissionStatus.Submitting) }
             try {
                 // 1. Record Meal
+                var mealEntry: MealEntry? = null
                 if ((state.input.carbsKe > 0) && (state.input.selectedMealType != null)) {
-                    val mealEntry = MealEntry(
+                    mealEntry = MealEntry(
                         timestamp = state.input.mealTimestamp,
                         carbGrams = state.input.carbsKe * 10.0,
                         mealType = state.input.selectedMealType
@@ -391,7 +392,12 @@ class MealBolusViewModel(
                         .map { DeferredBolus(id = ID_UNDEFINED, amount = it.amount, timestamp = it.timestamp) }
 
                     if (immediateBolus > InsulinAmount.ZERO) {
-                        therapyManager.issueBolus(lock, immediateBolus)
+                        therapyManager.issueBolus(
+                            treatmentLock = lock,
+                            amount = immediateBolus,
+                            meal = mealEntry,
+                            containsCorrectionPart = state.calculation.correctionPart > InsulinAmount.ZERO
+                        )
                     }
 
                     deferredBoluses.forEach {

@@ -60,6 +60,8 @@ data class CalculationResult(
     val clearTempBasal: Boolean,
     val bolus: InsulinAmount?,
     val handledDeferredBoluses: List<DeferredBolus>?,
+    val containsCorrectionPart: Boolean = false,
+    val containsBasalPart: Boolean = false,
     val coreIssues: Set<CoreIssue>?,
     val reasoning: CoreReasoning,
     val metrics: CoreInsight? = null
@@ -131,13 +133,17 @@ data class CalculationResult(
 
         fun mealOrCorrectionBolus(
             bolusAmount: InsulinAmount,
-            handledDeferredBoluses: MutableList<DeferredBolus>
+            handledDeferredBoluses: MutableList<DeferredBolus>,
+            containsCorrectionPart: Boolean = false,
+            containsBasalPart: Boolean = false
         ) = CalculationResult(
             carbsInGHint = null,
             tempBasal = null,
             clearTempBasal = true,
             bolus = bolusAmount,
             handledDeferredBoluses = handledDeferredBoluses,
+            containsCorrectionPart = containsCorrectionPart,
+            containsBasalPart = containsBasalPart,
             coreIssues = null,
             reasoning = CoreReasoning.MEAL_OR_CORRECTION_BOLUS
         )

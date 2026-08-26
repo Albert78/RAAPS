@@ -235,8 +235,15 @@ class SystemManagerImpl(
             onAcquireBusyState = { acquireBusyState() },
             onReleaseBusyState = { releaseBusyState() },
 
-            onDeliverBolus = { treatmentLock, amount, handledDeferredBoluses ->
-                therapyManager.issueBolus(treatmentLock, amount, handledDeferredBoluses)
+            onDeliverBolus = { treatmentLock, amount, meal, handledDeferredBoluses, containsCorrectionPart, containsBasalPart ->
+                therapyManager.issueBolus(
+                    treatmentLock = treatmentLock,
+                    amount = amount,
+                    meal = meal,
+                    handledDeferredBoluses = handledDeferredBoluses,
+                    containsCorrectionPart = containsCorrectionPart,
+                    containsBasalPart = containsBasalPart
+                )
             },
             onSetTempBasal = { treatmentLock, durationInHours, percent -> therapyManager.setTempBasal(treatmentLock, durationInHours, percent) },
             onClearTempBasal = { treatmentLock -> therapyManager.clearTempBasal(treatmentLock) },

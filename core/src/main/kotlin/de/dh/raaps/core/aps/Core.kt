@@ -3,6 +3,7 @@ package de.dh.raaps.core.aps
 import android.util.Log
 import de.dh.raaps.common.model.DeferredBolus
 import de.dh.raaps.common.model.InsulinAmount
+import de.dh.raaps.common.model.MealEntry
 import de.dh.raaps.common.model.calculation.CarbsInsulinCalculator
 import de.dh.raaps.common.model.data.BgDelta
 import de.dh.raaps.common.model.data.BgValue
@@ -70,7 +71,7 @@ class Core(
     private val onAcquireBusyState: () -> Unit,
     private val onReleaseBusyState: () -> Unit,
 
-    private val onDeliverBolus: suspend (treatmentLock: TreatmentLock, amount: InsulinAmount, handledDeferredBoluses: List<DeferredBolus>?) -> Unit,
+    private val onDeliverBolus: suspend (treatmentLock: TreatmentLock, amount: InsulinAmount, meal: MealEntry?, handledDeferredBoluses: List<DeferredBolus>?, containsCorrectionPart: Boolean, containsBasalPart: Boolean) -> Unit,
     private val onSetTempBasal: (treatmentLock: TreatmentLock, durationInHours: Int, percent: Int) -> Unit,
     private val onClearTempBasal: (treatmentLock: TreatmentLock) -> Unit,
     private val onCarbsHint: (treatmentLock: TreatmentLock, Int) -> Unit,
@@ -230,7 +231,10 @@ class Core(
                                 onDeliverBolus(
                                     treatmentLock,
                                     result.bolus,
-                                    result.handledDeferredBoluses
+                                    null,
+                                    result.handledDeferredBoluses,
+                                    result.containsCorrectionPart,
+                                    result.containsBasalPart
                                 )
                             }
                         }
@@ -342,7 +346,7 @@ class Core(
             onAcquireBusyState: () -> Unit,
             onReleaseBusyState: () -> Unit,
 
-            onDeliverBolus: suspend (treatmentLock: TreatmentLock, amount: InsulinAmount, handledDeferredBoluses: List<DeferredBolus>?) -> Unit,
+            onDeliverBolus: suspend (treatmentLock: TreatmentLock, amount: InsulinAmount, meal: MealEntry?, handledDeferredBoluses: List<DeferredBolus>?, containsCorrectionPart: Boolean, containsBasalPart: Boolean) -> Unit,
             onSetTempBasal: (treatmentLock: TreatmentLock, durationInHours: Int, percent: Int) -> Unit,
             onClearTempBasal: (treatmentLock: TreatmentLock) -> Unit,
             onCarbsHint: (treatmentLock: TreatmentLock, amountInGram: Int) -> Unit,
