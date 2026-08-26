@@ -52,8 +52,8 @@ import de.dh.raaps.ui.screens.dashboard.DashboardViewModel
 import de.dh.raaps.ui.screens.fooddatabase.FoodDatabaseScreen
 import de.dh.raaps.ui.screens.history.HistoryScreen
 import de.dh.raaps.ui.screens.insulinprofile.InsulinProfileEditorScreen
-import de.dh.raaps.ui.screens.mealbolus.MealCorrectionBolusScreen
-import de.dh.raaps.ui.screens.mealbolus.MealCorrectionBolusViewModel
+import de.dh.raaps.ui.screens.mealcorrectionbolus.MealCorrectionBolusScreen
+import de.dh.raaps.ui.screens.mealcorrectionbolus.MealCorrectionBolusViewModel
 import de.dh.raaps.ui.screens.meals.EditHistoricalMealScreen
 import de.dh.raaps.ui.screens.meals.EditHistoricalMealViewModel
 import de.dh.raaps.ui.screens.meals.MealTypeEditorScreen
@@ -189,7 +189,7 @@ class MainFeatureNavGraph(
                     )
                 )
 
-                // Leave MealBolus screen to release the therapy manager lock when the user
+                // Leave MealCorrectionBolus screen to release the therapy manager lock when the user
                 // leaves the screen open.
                 LifecycleEventEffect(Lifecycle.Event.ON_STOP) {
                     navViewModel.pop()

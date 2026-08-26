@@ -1,4 +1,4 @@
-package de.dh.raaps.ui.screens.mealbolus
+package de.dh.raaps.ui.screens.mealcorrectionbolus
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider

@@ -237,6 +237,10 @@
     <string name="meal_add_historical_screen_title">Mahlzeit nachtragen</string>
     <string name="meal_edit_save_button">Speichern</string>
 
+    <string name="food_type_selector_food_type_label">Nahrungstyp</string>
+    <string name="edit_meal_meal_time_label">Zeit der Mahlzeit</string>
+    <string name="edit_meal_carbs_label">Mahlzeit</string>
+
     <string name="drawer_header_title">RAAPS</string>
     <string name="menu_meals_label">Mahlzeiten</string>
     <string name="menu_bolus_history_label">Bolus-History</string>

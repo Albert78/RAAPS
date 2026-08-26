@@ -1,4 +1,4 @@
-package de.dh.raaps.ui.screens.mealbolus
+package de.dh.raaps.ui.screens.mealcorrectionbolus
 
 import android.content.res.Configuration
 import androidx.compose.foundation.BorderStroke

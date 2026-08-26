@@ -120,7 +120,7 @@ fun FoodTypeSelector(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Text(
-                        text = stringResource(R.string.meal_correction_bolus_food_type_label),
+                        text = stringResource(R.string.food_type_selector_food_type_label),
                         style = MaterialTheme.typography.labelLarge,
                         color = MaterialTheme.colorScheme.primary,
                         fontWeight = FontWeight.Bold,
