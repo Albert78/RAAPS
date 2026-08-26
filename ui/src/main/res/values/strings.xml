@@ -192,8 +192,6 @@
     <string name="current_state_carbs_label_short">KH</string>
     <string name="current_state_insulin_label_short">INSULIN</string>
     <string name="current_state_algorithm_label_short">SYSTEM</string>
-    <string name="meal_bolus_active_carbs_format">Aktive Kohlenhydrate: %1$s</string>
-    <string name="meal_bolus_active_insulin_format">Aktives Insulin: %1$s</string>
 
     <string name="history_impact_ie_label">I.E.</string>
     <string name="history_impact_ke_label">KE</string>
@@ -211,6 +209,8 @@
 
     <string name="dashboard_meal_bolus_button">Mahlzeit/Korrektur</string>
     <string name="meal_add_screen_title">Mahlzeit/Korrekturbolus</string>
+    <string name="meal_bolus_active_carbs_format">Aktive Kohlenhydrate: %1$s</string>
+    <string name="meal_bolus_active_insulin_format">Aktives Insulin: %1$s</string>
     <string name="meal_bolus_carbs_label">Mahlzeit</string>
     <string name="meal_bolus_food_type_label">Nahrungstyp</string>
     <string name="meal_bolus_calculation_title">Berechnung</string>

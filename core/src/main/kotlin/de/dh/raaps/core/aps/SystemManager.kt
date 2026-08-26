@@ -99,6 +99,11 @@ interface SystemManager {
      * Returns the bolus correction calculator.
      */
     fun getBolusCorrectionCalculator(): BolusCorrectionCalculator
+
+    /**
+     * Returns whether the meal bolus screen can be opened.
+     */
+    fun canOpenMealBolus(): Boolean
 }
 
 /**
@@ -330,6 +335,11 @@ class SystemManagerImpl(
         } else {
             NoopAlgorithm().getBolusCorrectionCalculator()
         }
+    }
+
+    override fun canOpenMealBolus(): Boolean = when (apsMode.value) {
+        ApsMode.AutoCorrection, ApsMode.BasalOnly -> true
+        ApsMode.Suspend -> false
     }
 
     override fun setApsMode(mode: ApsMode) {

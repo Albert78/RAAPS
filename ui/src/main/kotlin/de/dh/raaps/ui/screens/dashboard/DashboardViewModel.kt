@@ -21,7 +21,8 @@ data class DashboardUiState(
     val apsMode: ApsMode = ApsMode.Suspend,
     // TODO: Get selectable modes from core
     val availableApsModes: List<ApsMode> = ApsMode.entries,
-    val recommendations: List<ApsRecommendation> = emptyList()
+    val recommendations: List<ApsRecommendation> = emptyList(),
+    val isMealBolusAllowed: Boolean = false
 )
 
 /**
@@ -38,7 +39,11 @@ class DashboardViewModel(
         systemManager.apsMode,
         systemRegistry.therapyManager.recommendations
     ) { state, mode, recommendations ->
-        state.copy(apsMode = mode, recommendations = recommendations)
+        state.copy(
+            apsMode = mode,
+            recommendations = recommendations,
+            isMealBolusAllowed = systemManager.canOpenMealBolus()
+        )
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), DashboardUiState())
 
     private val glucoseRepository = systemRegistry.glucoseRepository
