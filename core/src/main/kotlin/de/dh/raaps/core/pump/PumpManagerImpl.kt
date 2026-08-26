@@ -61,6 +61,13 @@ class PumpManagerImpl(
                         }
                     }
                     launch {
+                        pc.pumpCommunicationErrorSince.collect { time ->
+                            if (time != Timestamp.INVALID) {
+                                addIssue(PumpIssue.ConnectionMissing)
+                            }
+                        }
+                    }
+                    launch {
                         pc.pump.pumpStatus.collect { status ->
                             if (status.pumpSuspended) {
                                 addIssue(PumpIssue.Inoperative)
@@ -80,19 +87,16 @@ class PumpManagerImpl(
             }
         }
 
-    override fun issueCommand(
-        command: PumpCommand,
-        finishCallback: ((PumpCommand) -> Unit)?
-    ) {
-        pumpCoordinator?.issueCommand(command, finishCallback)
+    override fun issueCommand(command: PumpCommand) {
+        pumpCoordinator?.issueCommand(command)
     }
 
     override fun cancelJobs(predicate: (PumpJob) -> Boolean) {
         pumpCoordinator?.cancelJobs(predicate)
     }
 
-    override suspend fun waitForIdle() {
-        pumpCoordinator?.waitForIdle()
+    override suspend fun waitForJobsOrError() {
+        pumpCoordinator?.waitForJobsOrError()
     }
 
     override fun wakeup() {

@@ -14,6 +14,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
@@ -42,7 +43,6 @@ sealed class PumpCommand {
 data class PumpJob(
     val id: String = UUID.randomUUID().toString(),
     val command: PumpCommand,
-    val finishCallback: ((PumpCommand) -> Unit)? = null,
     val createdAt: Timestamp = Timestamp.now(),
     val expiresAt: Timestamp? = null,
     val retryCount: Int = 0,
@@ -77,7 +77,6 @@ sealed interface JobErrorCode {
  */
 // TODO: Multithreading/thread allocation
 // TODO: Notifications from pump
-// TODO: Show pending pump jobs in UI
 @OptIn(ExperimentalCoroutinesApi::class)
 class PumpCoordinator(
     val pump: InsulinPump,
@@ -99,6 +98,9 @@ class PumpCoordinator(
 
     private val _pendingJobs = MutableStateFlow<List<PumpJob>>(emptyList())
     val pendingJobs: StateFlow<List<PumpJob>> = _pendingJobs.asStateFlow()
+
+    private val _pumpCommunicationErrorSince = MutableStateFlow<Timestamp>(Timestamp.INVALID)
+    val pumpCommunicationErrorSince: StateFlow<Timestamp> = _pumpCommunicationErrorSince.asStateFlow()
 
     private val _lastConnectionTime = MutableStateFlow(Timestamp.INVALID)
     val lastConnectionTime: StateFlow<Timestamp> = _lastConnectionTime.asStateFlow()
@@ -128,9 +130,11 @@ class PumpCoordinator(
     }
 
     /**
-     * Main execution loop using the "Queue-Drain" pattern.
-     * Ensures that all pending jobs are processed serially and no new jobs are missed
-     * due to concurrent calls.
+     * Main execution loop.
+     * Processes the jobs queue if possible. This method might be called from different threads,
+     * internally, it schedules its work to be executed asynchronously, exactly once.
+     * When the asynchronous coroutine finishes, either the job queue is empty or
+     * [pumpCommunicationErrorSince] signals a communication error.
      */
     private fun operate() {
         // Early exit if already running to avoid unnecessary coroutine launches
@@ -148,7 +152,12 @@ class PumpCoordinator(
                         }
                         val success = sync()
                         scheduleNextWakeup()
-                        if (!success) {
+                        if (success) {
+                            _pumpCommunicationErrorSince.value = Timestamp.INVALID
+                        } else {
+                            if (_pumpCommunicationErrorSince.value == Timestamp.INVALID) {
+                                _pumpCommunicationErrorSince.value = Timestamp.now()
+                            } // Else keep former error time
                             // On communication error, stop the loop and rely on the next
                             // scheduled wakeup or manual trigger to retry.
                             return@launch
@@ -166,8 +175,11 @@ class PumpCoordinator(
         }
     }
 
-    suspend fun waitForIdle() {
-        pumpCoordinatorState.first { it == PumpCoordinatorState.Idle }
+    suspend fun waitForJobsOrError() {
+        // Wait for Idle and all jobs processed (or error in communication)
+        combine(pumpCoordinatorState, pendingJobs, pumpCommunicationErrorSince) { state, jobs, errorSince ->
+            state == PumpCoordinatorState.Idle && (jobs.none { it.isReady() } || errorSince.isValid())
+        }.first { it }
     }
 
     private suspend fun sync(): Boolean {
@@ -238,7 +250,6 @@ class PumpCoordinator(
                 val command = job.command
                 executeOnPump(command)
                 _lastConnectionTime.value = Timestamp.now()
-                job.finishCallback?.invoke(command)
                 return true
             } catch (e: Exception) {
                 Log.w(TAG, "Exception while executing pump job", e)
@@ -301,18 +312,21 @@ class PumpCoordinator(
     }
 
     /**
-     * Issues a new command to the pump.
+     * Puts a new command into our command queue and tries to send all commands to the pump,
+     * if possible. If the pump is connected and if it accepts all commands, the command queue
+     * will be empty a short time after calling this method. If the pump connection cannot be established
+     * or the pump rejects one of the commands, the queue will still contain the failed commands and
+     * [pumpCommunicationErrorSince] is filled.
+     * Use [waitForJobsOrError] to wait for the operation cycle to finish.
      * @param command The command to execute.
      * @param expiresAt Optional time when the command becomes invalid.
      */
     fun issueCommand(
         command: PumpCommand,
-        finishCallback: ((PumpCommand) -> Unit)? = null,
         expiresAt: Timestamp? = null
     ) {
         val job = PumpJob(
             command = command,
-            finishCallback = finishCallback,
             expiresAt = expiresAt
         )
 

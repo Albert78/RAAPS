@@ -36,7 +36,7 @@ interface PumpManager {
     /**
      * Issues a command to the pump.
      */
-    fun issueCommand(command: PumpCommand, finishCallback: ((PumpCommand) -> Unit)? = null)
+    fun issueCommand(command: PumpCommand)
 
     /**
      * Cancels pending jobs that match the predicate.
@@ -46,7 +46,7 @@ interface PumpManager {
     /**
      * Waits until all pending pump jobs are completed.
      */
-    suspend fun waitForIdle()
+    suspend fun waitForJobsOrError()
 
     /**
      * Explicitly wakes up the pump connection to process pending jobs or refresh status.

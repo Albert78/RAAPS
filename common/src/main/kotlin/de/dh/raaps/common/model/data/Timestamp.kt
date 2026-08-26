@@ -44,6 +44,8 @@ value class Timestamp(val ms: Long): Comparable<Timestamp> {
         return Minutes((calendar.get(Calendar.HOUR_OF_DAY) * 60 + calendar.get(Calendar.MINUTE)).toShort())
     }
 
+    fun isValid() = this != INVALID
+
     override fun toString(): String {
         return SimpleDateFormat("HH:mm:ss.SSS", Locale.getDefault()).format(Date(ms))
     }
