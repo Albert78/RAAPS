@@ -56,7 +56,7 @@ fun TreatmentLockScreenContent(
 ) {
 
     // 1. Loading / Busy Status
-    if (uiState.status == LockStatus.Loading || uiState.status == LockStatus.Busy) {
+    if (uiState.status == LockStatus.Loading || uiState.status == LockStatus.Busy || uiState.status == LockStatus.Syncing) {
         Column(
             modifier = Modifier.fillMaxSize()
         ) {
@@ -70,8 +70,12 @@ fun TreatmentLockScreenContent(
             ) {
                 CircularProgressIndicator()
                 Spacer(Modifier.height(16.dp))
+                val message = when (uiState.status) {
+                    LockStatus.Syncing -> stringResource(R.string.treatment_lock_syncing)
+                    else -> stringResource(R.string.treatment_lock_busy_system, uiState.busyOwner ?: "System")
+                }
                 Text(
-                    text = stringResource(R.string.treatment_lock_busy_system, uiState.busyOwner ?: "System"),
+                    text = message,
                     style = MaterialTheme.typography.bodyMedium
                 )
             }
@@ -96,6 +100,24 @@ fun TreatmentLockScreenContent(
         }
     }
 
+    // 2.5 Pump Sync Pending Status
+    if (uiState.status == LockStatus.PumpSyncPending) {
+        Column(
+            modifier = Modifier.fillMaxSize()
+        ) {
+            TreatmentLockHeader(title = title, onNavigateUp = onNavigateUp)
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(16.dp),
+                verticalArrangement = Arrangement.Center,
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                LockPumpSyncErrorCard(onNavigateUp = onNavigateUp)
+            }
+        }
+    }
+
     // 3. Acquired Status
     if (uiState.status == LockStatus.Acquired && uiState.acquiredLock != null) {
         Column(
@@ -103,6 +125,34 @@ fun TreatmentLockScreenContent(
         ) {
             TreatmentLockHeader(title = title, onNavigateUp = onNavigateUp)
             content(uiState.acquiredLock!!)
+        }
+    }
+}
+
+@Composable
+private fun LockPumpSyncErrorCard(onNavigateUp: () -> Unit) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(12.dp),
+        border = BorderStroke(2.dp, Red.copy(alpha = 0.5f)),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.5f)
+        )
+    ) {
+        Column(
+            modifier = Modifier.padding(16.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Text(
+                text = stringResource(R.string.treatment_lock_pump_sync_error),
+                style = MaterialTheme.typography.bodyLarge,
+                textAlign = TextAlign.Center,
+                color = MaterialTheme.colorScheme.onErrorContainer
+            )
+            Spacer(Modifier.height(16.dp))
+            PrimaryButton(onClick = onNavigateUp) {
+                Text(stringResource(id = CommonR.string.cd_navigate_up))
+            }
         }
     }
 }
@@ -169,6 +219,19 @@ fun TreatmentLockScreenBusyPreview() {
     }
 }
 
+@androidx.compose.ui.tooling.preview.Preview(showBackground = true, name = "Syncing")
+@Composable
+fun TreatmentLockScreenSyncingPreview() {
+    de.dh.raaps.ui.common.theme.AppTheme {
+        TreatmentLockScreenContent(
+            uiState = TreatmentLockUiState(status = LockStatus.Syncing),
+            onNavigateUp = {},
+            title = "Preview Screen",
+            content = {}
+        )
+    }
+}
+
 @androidx.compose.ui.tooling.preview.Preview(showBackground = true, name = "Error")
 @Composable
 fun TreatmentLockScreenErrorPreview() {
@@ -198,5 +261,18 @@ fun TreatmentLockScreenAcquiredPreview() {
                 Text("This is the protected content!")
             }
         }
+    }
+}
+
+@androidx.compose.ui.tooling.preview.Preview(showBackground = true, name = "Pump Sync Pending")
+@Composable
+fun TreatmentLockScreenPumpSyncPendingPreview() {
+    de.dh.raaps.ui.common.theme.AppTheme {
+        TreatmentLockScreenContent(
+            uiState = TreatmentLockUiState(status = LockStatus.PumpSyncPending),
+            onNavigateUp = {},
+            title = "Preview Screen",
+            content = {}
+        )
     }
 }

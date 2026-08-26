@@ -17,7 +17,7 @@ import kotlinx.coroutines.launch
 import kotlin.time.Duration.Companion.seconds
 
 enum class LockStatus {
-    Loading, Busy, Acquired, Error
+    Loading, Syncing, Busy, Acquired, Error, PumpSyncPending
 }
 
 data class TreatmentLockUiState(
@@ -28,7 +28,8 @@ data class TreatmentLockUiState(
 
 class TreatmentLockViewModel(
     private val tag: String,
-    private val registry: SystemRegistry
+    private val registry: SystemRegistry,
+    private val requirePumpSync: Boolean = false
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(TreatmentLockUiState())
@@ -45,6 +46,15 @@ class TreatmentLockViewModel(
             var retryAttempt = 0
             while (retryAttempt < 2) {
                 val result = therapyManager.tryAcquire(tag) { treatmentLock ->
+                    if (requirePumpSync) {
+                        _uiState.update { it.copy(status = LockStatus.Syncing, busyOwner = null) }
+                        val pendingJobs = therapyManager.waitForPumpSync(treatmentLock)
+                        if (pendingJobs > 0) {
+                            _uiState.update { it.copy(status = LockStatus.PumpSyncPending) }
+                            return@tryAcquire
+                        }
+                    }
+
                     _uiState.update { 
                         it.copy(
                             status = LockStatus.Acquired,
@@ -76,10 +86,14 @@ class TreatmentLockViewModel(
     }
 
     companion object {
-        class Factory(private val tag: String, private val registry: SystemRegistry) : ViewModelProvider.Factory {
+        class Factory(
+            private val tag: String,
+            private val registry: SystemRegistry,
+            private val requirePumpSync: Boolean = false
+        ) : ViewModelProvider.Factory {
             @Suppress("UNCHECKED_CAST")
             override fun <T : ViewModel> create(modelClass: Class<T>, extras: CreationExtras): T {
-                return TreatmentLockViewModel(tag, registry) as T
+                return TreatmentLockViewModel(tag, registry, requirePumpSync) as T
             }
         }
     }

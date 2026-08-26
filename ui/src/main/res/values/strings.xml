@@ -205,7 +205,9 @@
     <string name="label_adjusted">(angepasst)</string>
 
     <string name="treatment_lock_busy_system">Warten auf %s…</string>
+    <string name="treatment_lock_syncing">Synchronisierung mit der Pumpe…</string>
     <string name="treatment_lock_error_message">Das System ist aktuell belegt (%1$s). Bitte versuche es später noch einmal.</string>
+    <string name="treatment_lock_pump_sync_error">Die Kommunikation mit der Pumpe ist noch nicht abgeschlossen. Bitte versuche es in wenigen Augenblicken erneut.</string>
 
     <string name="dashboard_meal_bolus_button">Mahlzeit/Korrektur</string>
     <string name="meal_add_screen_title">Mahlzeit/Korrekturbolus</string>

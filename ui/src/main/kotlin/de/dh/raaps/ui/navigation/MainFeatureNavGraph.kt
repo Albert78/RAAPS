@@ -182,7 +182,11 @@ class MainFeatureNavGraph(
                     factory = MealBolusViewModel.Companion.Factory(registry)
                 )
                 val lockViewModel: TreatmentLockViewModel = viewModel(
-                    factory = TreatmentLockViewModel.Companion.Factory("MealBolusScreen", registry)
+                    factory = TreatmentLockViewModel.Companion.Factory(
+                        tag = "MealBolusScreen",
+                        registry = registry,
+                        requirePumpSync = true
+                    )
                 )
 
                 // Leave MealBolus screen to release the therapy manager lock when the user
