@@ -123,7 +123,7 @@ class CurrentTherapyViewModel(
         val isf = therapyManager.getIsfFactor(now)
         val cr = therapyManager.getCrFactor(now)
         val basal = therapyManager.getBasalPerHour(now)
-        val bgSettings = therapyManager.getBgSettings()
+        val bgSettings = therapyManager.getBgSettings(now)
 
         val crValues = currentSettings.insulinProfile.crBlocks.map { it.amount }
         val isfValues = currentSettings.insulinProfile.isfBlocks.map { it.amount }

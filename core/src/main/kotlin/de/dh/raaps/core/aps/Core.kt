@@ -168,6 +168,10 @@ class Core(
     internal suspend fun processCalculation() {
         if (coreState !is CoreState.Active) return
 
+        // This is the outer part of the process tick.
+        // We acquire the wake lock, we acquire the therapy manager's treatment lock,
+        // we let the algorithm do its calculations and finally, we
+        // execute the calculation result commands.
         busyWork {
             val now = Timestamp.now()
             val res = therapyManager.tryAcquire(TAG ?: "Core") { treatmentLock ->

@@ -150,9 +150,9 @@ class TherapyManager(
         return BgDelta.fromMgDl((amount / factor).toInt())
     }
 
-    suspend fun getBgSettings(): Pair<BgValue, BgValue> {
+    suspend fun getBgSettings(timestamp: Timestamp = Timestamp.now()): Pair<BgValue, BgValue> {
         val settings = getCurrentTherapySettings()
-        val defaultBg = settings.defaultBgBlocks.getBgForMinute(Timestamp.now().minutesSinceMidnight())
+        val defaultBg = settings.defaultBgBlocks.getBgForMinute(timestamp.minutesSinceMidnight())
         return Pair(
             settings.targetBgOverride ?: defaultBg.first,
             settings.lowThresholdOverride ?: defaultBg.second

@@ -104,12 +104,12 @@ object BolusCalculationMath {
         return suggestedCarbsKe
     }
 
-    suspend fun calculateSuggestedImi(currentBg: BgValue, therapyManager: TherapyManager): Minutes {
-        if (currentBg.isInvalid()) return Minutes(DEFAULT_IMI_MINUTES)
-
-        val bgSettings = therapyManager.getBgSettings()
-        val targetBg = bgSettings.first
-        val lowThreshold = bgSettings.second
+    fun calculateSuggestedImi(
+        currentBg: BgValue,
+        targetBg: BgValue,
+        lowThreshold: BgValue
+    ): Minutes {
+        if (currentBg.isInvalid() || targetBg.isInvalid() || lowThreshold.isInvalid()) return Minutes(DEFAULT_IMI_MINUTES)
 
         if (currentBg.mgdl <= lowThreshold.mgdl) return Minutes(-15) // Suggest 15 min delay for bolus if low
 
@@ -136,30 +136,27 @@ object BolusCalculationMath {
      * - Deferred Bolus: Already planned insulin amounts that should not be double-dosed.
      *
      * @param carbsKe The amount of carbohydrates in KE (1 KE = 10g).
-     * @param bg The projected blood glucose value at [mealTimestamp].
-     * @param mealTimestamp The reference time for the bolus (determines CR/ISF and projection context).
-     * @param therapyManager Provider for patient settings (ISF, CR, Target).
-     * @param iob The projected active insulin on board at [mealTimestamp].
-     * @param cob The projected active carbohydrates on board (in grams) at [mealTimestamp].
-     * @param futureCarbs Carbohydrates pre-announced for the future relative to [mealTimestamp].
-     * @param deferredBolusAmount Insulin amount already planned for administration after [mealTimestamp].
+     * @param bg The projected blood glucose value.
+     * @param cr The Carb Ratio (CR) factor.
+     * @param isf The Insulin Sensitivity Factor (ISF).
+     * @param targetBg The target blood glucose value.
+     * @param iob The projected active insulin on board.
+     * @param cob The projected active carbohydrates on board (in grams).
+     * @param futureCarbs Carbohydrates pre-announced for the future.
+     * @param deferredBolusAmount Insulin amount already planned for administration.
      * @return A [BolusParts] object containing all calculated components.
      */
-    suspend fun calculateBolusParts(
+    fun calculateBolusParts(
         carbsKe: Double,
         bg: BgValue,
-        mealTimestamp: Timestamp,
-        therapyManager: TherapyManager,
+        cr: Double,
+        isf: BgDelta,
+        targetBg: BgValue,
         iob: InsulinAmount,
         cob: Double,
         futureCarbs: Double,
         deferredBolusAmount: InsulinAmount
     ): BolusParts {
-        // Retrieve therapy factors valid for the meal time
-        val cr = therapyManager.getCrFactor(mealTimestamp)
-        val isf = therapyManager.getIsfFactor(mealTimestamp).mgdl.toInt()
-        val targetBg = therapyManager.getBgSettings().first
-
         // Calculate insulin needed for the current meal (KE -> Grams -> IU)
         val carbsGrams = carbsKe * 10.0
         val mealPart = convertToInsulinAmountFromCarbs(carbsGrams, cr)
@@ -170,7 +167,7 @@ object BolusCalculationMath {
         val bgDiff = bgMgdl - targetBg.mgdl
 
         // Calculate correction, COB and future carb parts using meal-time factors
-        val correctionPart = convertToInsulinAmountFromBgDelta(BgDelta(bgDiff.toShort()), BgDelta(isf.toShort()))
+        val correctionPart = convertToInsulinAmountFromBgDelta(BgDelta(bgDiff.toShort()), BgDelta(isf.mgdl))
         val cobPart = convertToInsulinAmountFromCarbs(cob, cr)
         val futureCarbsPart = convertToInsulinAmountFromCarbs(futureCarbs, cr)
 
@@ -294,8 +291,9 @@ class SimpleBolusCorrectionCalculator(
     ) = BolusCalculationMath.calculateBolusParts(
             carbsKe = carbsKe,
             bg = projectedBg,
-            mealTimestamp = mealTimestamp,
-            therapyManager = therapyManager,
+            cr = therapyManager.getCrFactor(mealTimestamp),
+            isf = therapyManager.getIsfFactor(mealTimestamp),
+            targetBg = therapyManager.getBgSettings(mealTimestamp).first,
             iob = projectedIob,
             cob = projectedCob,
             futureCarbs = futureCarbs,

@@ -5,7 +5,6 @@ import de.dh.raaps.common.model.DeferredBolus
 import de.dh.raaps.common.model.InsulinAmount
 import de.dh.raaps.common.model.METABOLIC_EVENTS_HISTORY_HOURS
 import de.dh.raaps.common.model.MealType
-import de.dh.raaps.common.model.PlannedInsulin
 import de.dh.raaps.common.model.calculation.CarbsInsulinCalculator
 import de.dh.raaps.common.model.convertToBgDeltaFromUnits
 import de.dh.raaps.common.model.convertToCarbsFromBgDelta
@@ -119,32 +118,29 @@ class ApsAlgorithmImpl(
             projectedCob: Double,
             futureCarbs: Double,
             deferredBolusAmount: InsulinAmount
-        ): BolusParts {
-            return BolusCalculationMath.calculateBolusParts(
-                carbsKe,
-                projectedBg,
-                mealTimestamp,
-                therapyManager,
-                projectedIob,
-                projectedCob,
-                futureCarbs,
-                deferredBolusAmount
-            )
-        }
+        ) = BolusCalculationMath.calculateBolusParts(
+            carbsKe = carbsKe,
+            bg = projectedBg,
+            cr = therapyManager.getCrFactor(mealTimestamp),
+            isf = therapyManager.getIsfFactor(mealTimestamp),
+            targetBg = therapyManager.getBgSettings(mealTimestamp).first,
+            iob = projectedIob,
+            cob = projectedCob,
+            futureCarbs = futureCarbs,
+            deferredBolusAmount = deferredBolusAmount
+        )
 
         override suspend fun distributeInsulinPlan(
             manualBolus: InsulinAmount,
             correctionPart: InsulinAmount,
             mealType: MealType?,
             suggestedImi: Minutes
-        ): List<PlannedInsulin> {
-            return BolusCalculationMath.distributeInsulinPlan(
-                manualBolus,
-                correctionPart,
-                mealType,
-                suggestedImi
-            )
-        }
+        ) = BolusCalculationMath.distributeInsulinPlan(
+            manualBolus,
+            correctionPart,
+            mealType,
+            suggestedImi
+        )
     }
 
 
@@ -273,7 +269,7 @@ class ApsAlgorithmImpl(
             carbsInsulinCalculator = carbsInsulinCalculator
         )
 
-        val bgSettings = therapyManager.getBgSettings()
+        val bgSettings = therapyManager.getBgSettings(now)
         val targetBg = bgSettings.first
         val lowThreshold = bgSettings.second
 

@@ -181,13 +181,18 @@ class MealBolusViewModel(
             val now = Timestamp.now()
             val isf = therapyManager.getIsfFactor(now)
             val cr = therapyManager.getCrFactor(now)
-            val bgSettings = therapyManager.getBgSettings()
+            val bgSettings = therapyManager.getBgSettings(now)
             val targetBg = bgSettings.first
+            val lowThreshold = bgSettings.second
             val mealTypes = treatmentRepository.getAllMealTypes()
 
             val projections = bolusCorrectionCalculator.calculateBolusProjections(now)
             val projectedBg = projections.bg
-            val suggestedImi = BolusCalculationMath.calculateSuggestedImi(projectedBg, therapyManager)
+            val suggestedImi = BolusCalculationMath.calculateSuggestedImi(
+                currentBg = projectedBg,
+                targetBg = targetBg,
+                lowThreshold = lowThreshold
+            )
             val suggestedCarbsKe = BolusCalculationMath.calculateSuggestedCarbsKe(projectedBg, targetBg, isf, cr, projections.futureCarbs)
 
             _uiState.update {
@@ -201,7 +206,7 @@ class MealBolusViewModel(
                     mealTypes = mealTypes,
                     projections = projections,
                     targetBg = targetBg,
-                    lowThreshold = bgSettings.second,
+                    lowThreshold = lowThreshold,
                     isf = isf,
                     cr = if (cr == 0.0) DEFAULT_CR_GRAM_PER_UNIT else cr,
                 )
@@ -328,7 +333,12 @@ class MealBolusViewModel(
         val now = Timestamp.now()
 
         val projectedBg = state.projections.bg
-        val suggestedImi = BolusCalculationMath.calculateSuggestedImi(projectedBg, therapyManager)
+        val bgSettings = therapyManager.getBgSettings(state.input.mealTimestamp)
+        val suggestedImi = BolusCalculationMath.calculateSuggestedImi(
+            currentBg = projectedBg,
+            targetBg = bgSettings.first,
+            lowThreshold = bgSettings.second
+        )
 
         val newPlan = bolusCorrectionCalculator.distributeInsulinPlan(
             manualBolus = state.input.manualBolus,
