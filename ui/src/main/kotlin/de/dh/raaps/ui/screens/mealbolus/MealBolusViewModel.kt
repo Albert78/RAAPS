@@ -9,6 +9,7 @@ import de.dh.raaps.common.model.DEFAULT_BG_TARGET_MGDL
 import de.dh.raaps.common.model.DEFAULT_CR_GRAM_PER_UNIT
 import de.dh.raaps.common.model.DEFAULT_ISF_MGDL_PER_UNIT
 import de.dh.raaps.common.model.DeferredBolus
+import de.dh.raaps.common.model.ID_MEAL_STANDARD
 import de.dh.raaps.common.model.ID_UNDEFINED
 import de.dh.raaps.common.model.InsulinAmount
 import de.dh.raaps.common.model.MealEntry
@@ -17,6 +18,7 @@ import de.dh.raaps.common.model.data.BgDelta
 import de.dh.raaps.common.model.data.BgValue
 import de.dh.raaps.common.model.data.Minutes
 import de.dh.raaps.common.model.data.Timestamp
+import de.dh.raaps.common.model.getDefaultStandardMealType
 import de.dh.raaps.core.SystemRegistry
 import de.dh.raaps.core.aps.BolusCalculationMath
 import de.dh.raaps.core.aps.BolusProjections
@@ -368,11 +370,18 @@ class MealBolusViewModel(
             try {
                 // 1. Record Meal
                 var mealEntry: MealEntry? = null
-                if ((state.input.carbsKe > 0) && (state.input.selectedMealType != null)) {
+                if (state.input.carbsKe > 0) {
+                    var mealType = state.input.selectedMealType
+                    if (mealType == null) {
+                        mealType = treatmentRepository.getAllMealTypes().find { it.id == ID_MEAL_STANDARD }
+                            ?: getDefaultStandardMealType(registry.appContext).also {
+                                treatmentRepository.insertMealType(it)
+                            }
+                    }
                     mealEntry = MealEntry(
                         timestamp = state.input.mealTimestamp,
                         carbGrams = state.input.carbsKe * 10.0,
-                        mealType = state.input.selectedMealType
+                        mealType = mealType
                     )
                     treatmentRepository.addMealEntry(mealEntry)
 

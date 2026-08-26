@@ -25,6 +25,16 @@ fun getDefaultInsulinTypes(context: Context): List<InsulinType> = listOf(
     )
 )
 
+fun getDefaultStandardMealType(context: Context): MealType = MealType(
+    id = ID_MEAL_STANDARD,
+    name = context.getString(R.string.meal_type_standard_meal_name),
+    components = listOf(
+        CarbCurveComponentData(weight = 70, peakMinutes = Minutes(75)),
+        CarbCurveComponentData(weight = 30, peakMinutes = Minutes(150))
+    ),
+    cat = Minutes.ofHours(4)
+)
+
 fun getDefaultMealTypes(context: Context): List<MealType> = listOf(
     MealType(
         id = ID_MEAL_FAST,
@@ -34,15 +44,7 @@ fun getDefaultMealTypes(context: Context): List<MealType> = listOf(
         ),
         cat = Minutes(90)
     ),
-    MealType(
-        id = ID_MEAL_STANDARD,
-        name = context.getString(R.string.meal_type_standard_meal_name),
-        components = listOf(
-            CarbCurveComponentData(weight = 70, peakMinutes = Minutes(75)),
-            CarbCurveComponentData(weight = 30, peakMinutes = Minutes(150))
-        ),
-        cat = Minutes.ofHours(4)
-    ),
+    getDefaultStandardMealType(context),
     MealType(
         id = ID_MEAL_HIGH_FAT,
         name = context.getString(R.string.meal_type_high_fat_meal_name),
