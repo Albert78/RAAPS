@@ -250,6 +250,7 @@ class SystemManagerImpl(
                     containsBasalPart = containsBasalPart
                 )
             },
+            onDecreaseNextDeferredBolus = { treatmentLock, amount -> therapyManager.tryDecreaseNextDeferredBolus(treatmentLock, amount) },
             onSetTempBasal = { treatmentLock, durationInHours, percent -> therapyManager.setTempBasal(treatmentLock, durationInHours, percent) },
             onClearTempBasal = { treatmentLock -> therapyManager.clearTempBasal(treatmentLock) },
             onCarbsHint = { treatmentLock, amountInGram -> therapyManager.recommendCarbs(treatmentLock, amountInGram) },

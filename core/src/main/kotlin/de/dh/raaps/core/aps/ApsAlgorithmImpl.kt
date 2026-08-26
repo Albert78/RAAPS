@@ -476,8 +476,8 @@ class ApsAlgorithmImpl(
                 CalculationResult.mealOrCorrectionBolus(
                     bolusAmount = dueMealBolusAmount,
                     handledDeferredBoluses = dueDeferredBoluses,
-                    containsCorrectionPart = false,
-                    containsBasalPart = false
+                    correctionPart = InsulinAmount.ZERO,
+                    basalPart = InsulinAmount.ZERO
                 ).withMetrics(insight)
             }
         } else {
@@ -490,8 +490,9 @@ class ApsAlgorithmImpl(
             CalculationResult.mealOrCorrectionBolus(
                 bolusAmount = mealBolusAmount,
                 handledDeferredBoluses = dueDeferredBoluses,
-                containsCorrectionPart = correctionPart > InsulinAmount.ZERO,
-                containsBasalPart = false
+                correctionPart = correctionPart,
+                decreaseNextDeferredBolusBy = correctionPart, // Try to "shift" the next deferred bolus earlier
+                basalPart = InsulinAmount.ZERO
             ).withMetrics(insight)
         }
     } catch (e: Exception) {

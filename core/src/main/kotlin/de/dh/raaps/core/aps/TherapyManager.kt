@@ -418,6 +418,19 @@ class TherapyManager(
         treatmentRepository.removeDeferredBolus(deferredBolus)
     }
 
+    suspend fun tryDecreaseNextDeferredBolus(treatmentLock: TreatmentLock, earlyCorrection: InsulinAmount) {
+        checkLock(treatmentLock)
+        val nextBolus = treatmentRepository.getDeferredBoluses().minByOrNull { it.timestamp } ?: return
+        val minBolusIncrement = pumpManager.insulinPump?.pumpCapabilities?.value?.minBolusIncrement ?: InsulinAmount.ZERO
+        val updatedAmount = nextBolus.amount - earlyCorrection
+
+        if (updatedAmount > minBolusIncrement) {
+            treatmentRepository.updateDeferredBolus(nextBolus.copy(amount = updatedAmount))
+        } else {
+            treatmentRepository.removeDeferredBolus(nextBolus)
+        }
+    }
+
     /**
      * Causes the insulin pump to execute its pending jobs and to do a history sync.
      * @return Number of pending jobs.
