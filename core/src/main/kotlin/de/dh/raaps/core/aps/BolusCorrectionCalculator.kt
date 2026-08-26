@@ -104,6 +104,7 @@ object BolusCalculationMath {
         return suggestedCarbsKe
     }
 
+    // TODO: Calculate better IMI
     fun calculateSuggestedImi(
         currentBg: BgValue,
         targetBg: BgValue,
@@ -111,7 +112,7 @@ object BolusCalculationMath {
     ): Minutes {
         if (currentBg.isInvalid() || targetBg.isInvalid() || lowThreshold.isInvalid()) return Minutes(DEFAULT_IMI_MINUTES)
 
-        if (currentBg.mgdl <= lowThreshold.mgdl) return Minutes(-15) // Suggest 15 min delay for bolus if low
+        if (currentBg.mgdl <= lowThreshold.mgdl) return Minutes(-15) // Suggest 15-min delay for bolus if low
 
         val diff = currentBg.mgdl - targetBg.mgdl
         if (diff <= 0) return Minutes(0)
@@ -168,7 +169,9 @@ object BolusCalculationMath {
 
         // Calculate correction, COB and future carb parts using meal-time factors
         val correctionPart = convertToInsulinAmountFromBgDelta(BgDelta(bgDiff.toShort()), BgDelta(isf.mgdl))
-        val cobPart = convertToInsulinAmountFromCarbs(cob, cr)
+
+        // Safety first: If we are too low, the COB part might be incorrect, so just ignore it for now.
+        val cobPart = if (bgDiff < -15) InsulinAmount.ZERO else convertToInsulinAmountFromCarbs(cob, cr)
         val futureCarbsPart = convertToInsulinAmountFromCarbs(futureCarbs, cr)
 
         // Sum up all parts: Add requirements (Meal, Correction, COB, Future Carbs),

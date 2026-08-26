@@ -435,8 +435,6 @@ class TherapyManager(
                 finished.complete(Unit)
             }
         )
-
-        pumpManager.wakeup()
         pumpManager.waitForIdle()
 
         withTimeoutOrNull(20.seconds) {

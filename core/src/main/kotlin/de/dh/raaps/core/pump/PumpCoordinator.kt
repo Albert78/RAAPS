@@ -90,6 +90,10 @@ class PumpCoordinator(
     private val onJobError: (job: PumpJob, code: JobErrorCode) -> Unit,
     private val scope: CoroutineScope = CoroutineScope(SupervisorJob() + Dispatchers.Default),
 ) {
+    /**
+     * Current execution state of the coordinator.
+     * Used as a concurrency gate to ensure serial execution of pump commands.
+     */
     private val _pumpCoordinatorState = MutableStateFlow(PumpCoordinatorState.Idle)
     val pumpCoordinatorState: StateFlow<PumpCoordinatorState> = _pumpCoordinatorState.asStateFlow()
 
@@ -101,7 +105,7 @@ class PumpCoordinator(
 
     init {
         setupPump()
-        startPumpConnection()
+        operate()
     }
 
     private fun setupPump() {
@@ -123,14 +127,40 @@ class PumpCoordinator(
         }
     }
 
-    private fun startPumpConnection() {
+    /**
+     * Main execution loop using the "Queue-Drain" pattern.
+     * Ensures that all pending jobs are processed serially and no new jobs are missed
+     * due to concurrent calls.
+     */
+    private fun operate() {
+        // Early exit if already running to avoid unnecessary coroutine launches
+        if (_pumpCoordinatorState.value != PumpCoordinatorState.Idle) {
+            return
+        }
         scope.launch {
             onAcquireBusyState()
             try {
-                sync()
-                scheduleNextWakeup()
+                do {
+                    try {
+                        // Atomically transition to Running. If another coroutine won the race, exit.
+                        if (!_pumpCoordinatorState.compareAndSet(PumpCoordinatorState.Idle, PumpCoordinatorState.Running)) {
+                            return@launch
+                        }
+                        val success = sync()
+                        scheduleNextWakeup()
+                        if (!success) {
+                            // On communication error, stop the loop and rely on the next
+                            // scheduled wakeup or manual trigger to retry.
+                            return@launch
+                        }
+                    } finally {
+                        // Reset to Idle to allow subsequent 'operate' calls to trigger a new cycle
+                        _pumpCoordinatorState.value = PumpCoordinatorState.Idle
+                    }
+                    // Catch-up check: To avoid race conditions with issueCommand(), we must verify
+                    // if new jobs were added while we were processing. If so, re-enter the loop.
+                } while (_pendingJobs.value.any { it.isReady() })
             } finally {
-                _pumpCoordinatorState.value = PumpCoordinatorState.Idle
                 onReleaseBusyState()
             }
         }
@@ -140,54 +170,9 @@ class PumpCoordinator(
         pumpCoordinatorState.first { it == PumpCoordinatorState.Idle }
     }
 
-    fun hasPendingJobs() = _pendingJobs.value.isNotEmpty()
-
-    fun getPendingJobsCount() = _pendingJobs.value.size
-
-    fun clearPendingJobs() {
-        _pendingJobs.value = emptyList()
-    }
-
-    /**
-     * Issues a new command to the pump.
-     * @param command The command to execute.
-     * @param expiresAt Optional time when the command becomes invalid.
-     */
-    fun issueCommand(
-        command: PumpCommand,
-        finishCallback: ((PumpCommand) -> Unit)? = null,
-        expiresAt: Timestamp? = null
-    ) {
-        val job = PumpJob(
-            command = command,
-            finishCallback = finishCallback,
-            expiresAt = expiresAt
-        )
-
-        _pendingJobs.update { it + job }
-        wakeup()
-    }
-
-    /**
-     * Cancels pending jobs that match the given predicate.
-     */
-    fun cancelJobs(predicate: (PumpJob) -> Boolean = { true }) {
-        _pendingJobs.update { it.filterNot(predicate) }
-    }
-
-    /**
-     * Triggers a synchronization cycle.
-     * This should be called by the system when a requested wakeup time (via [onRequestWakeup]) is reached.
-     */
-    fun wakeup() {
-        if (_pumpCoordinatorState.compareAndSet(PumpCoordinatorState.Idle, PumpCoordinatorState.Running)) {
-            startPumpConnection()
-        }
-    }
-
-    private suspend fun sync() {
+    private suspend fun sync(): Boolean {
         checkHeartbeat()
-        processJobs()
+        return processJobs()
     }
 
     private suspend fun checkHeartbeat() {
@@ -199,6 +184,7 @@ class PumpCoordinator(
                 try {
                     pump.refreshStatus()
                     pump.syncHistory()
+                    _lastConnectionTime.value = Timestamp.now()
                     return
                 } catch (_: Exception) {
                     if (it < 2) delay(1000.milliseconds)
@@ -209,7 +195,12 @@ class PumpCoordinator(
         }
     }
 
-    private suspend fun processJobs() {
+    /**
+     * Processes all due jobs in the queue, if the pump connection is ready. Else, commands will
+     * be deferred until next try.
+     * @return `true` if all commands could be executed, else `false`.
+     */
+    private suspend fun processJobs(): Boolean {
         // Cleanup expired jobs
         val expired = _pendingJobs.value.filter { it.isExpired() }
         if (expired.isNotEmpty()) {
@@ -221,7 +212,7 @@ class PumpCoordinator(
         while (true) {
             val job = _pendingJobs.value
                 .filter { it.isReady() }
-                .minByOrNull { it.nextAttemptAt } ?: break
+                .minByOrNull { it.nextAttemptAt } ?: return true // All due jobs executed
 
             val success = tryExecuteJobWithRetries(job)
 
@@ -235,8 +226,8 @@ class PumpCoordinator(
                 )
 
                 _pendingJobs.update { (it - job) + updatedJob }
-                // Break loop and try again next time
-                break
+                // Return with pending jobs in the queue
+                return false
             }
         }
     }
@@ -246,6 +237,7 @@ class PumpCoordinator(
             try {
                 val command = job.command
                 executeOnPump(command)
+                _lastConnectionTime.value = Timestamp.now()
                 job.finishCallback?.invoke(command)
                 return true
             } catch (e: Exception) {
@@ -298,6 +290,49 @@ class PumpCoordinator(
 
         val earliest = listOfNotNull(nextJobTime, nextHeartbeatTime).minOrNull() ?: return null
         return if (earliest < minWakeup) minWakeup else earliest
+    }
+
+    fun hasPendingJobs() = _pendingJobs.value.isNotEmpty()
+
+    fun getPendingJobsCount() = _pendingJobs.value.size
+
+    fun clearPendingJobs() {
+        _pendingJobs.value = emptyList()
+    }
+
+    /**
+     * Issues a new command to the pump.
+     * @param command The command to execute.
+     * @param expiresAt Optional time when the command becomes invalid.
+     */
+    fun issueCommand(
+        command: PumpCommand,
+        finishCallback: ((PumpCommand) -> Unit)? = null,
+        expiresAt: Timestamp? = null
+    ) {
+        val job = PumpJob(
+            command = command,
+            finishCallback = finishCallback,
+            expiresAt = expiresAt
+        )
+
+        _pendingJobs.update { it + job }
+        operate()
+    }
+
+    /**
+     * Cancels pending jobs that match the given predicate.
+     */
+    fun cancelJobs(predicate: (PumpJob) -> Boolean = { true }) {
+        _pendingJobs.update { it.filterNot(predicate) }
+    }
+
+    /**
+     * Triggers a synchronization cycle.
+     * This should be called by the system when a requested wakeup time (via [onRequestWakeup]) is reached.
+     */
+    internal fun wakeup() {
+        operate()
     }
 
     companion object {
