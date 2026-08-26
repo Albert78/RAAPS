@@ -375,12 +375,14 @@ class TreatmentRepository(
         metabolicEventsDao.deleteDeferredBolus(deferredBolus.id)
     }
 
-    suspend fun removeDeferredBoluses(deferredBoluses: Collection<DeferredBolus>) {
-        TODO: if possible and sensible, create methods for deleting multiple boluses. Else, iterate through.
+    suspend fun removeDeferredBoluses(deferredBolusesToRemove: Collection<DeferredBolus>) {
+        val idsToRemove = deferredBolusesToRemove.map { it.id }.filter { it != ID_UNDEFINED }
+        if (idsToRemove.isEmpty()) return
+
         mutex.withLock {
-            deferredBoluses.removeIf { it.id == deferredBolus.id }
+            deferredBoluses.removeIf { bolus -> idsToRemove.contains(bolus.id) }
         }
-        metabolicEventsDao.deleteDeferredBoluses(deferredBolus.id)
+        metabolicEventsDao.deleteDeferredBoluses(idsToRemove)
     }
 
     suspend fun addScheduledPumpInsulinEntry(timestamp: Timestamp, amount: InsulinAmount, basal: Boolean, correction: Boolean, meal: Boolean) {

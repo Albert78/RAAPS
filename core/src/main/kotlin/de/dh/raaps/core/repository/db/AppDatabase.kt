@@ -217,6 +217,9 @@ interface MetabolicEventsDao {
     @Query("DELETE FROM deferred_bolus WHERE id = :id")
     suspend fun deleteDeferredBolus(id: Long)
 
+    @Query("DELETE FROM deferred_bolus WHERE id IN (:ids)")
+    suspend fun deleteDeferredBoluses(ids: List<Long>)
+
     // Scheduled Pump Insulin
     @Query("SELECT * FROM scheduled_pump_insulin ORDER BY timestamp ASC")
     suspend fun getAllScheduledPumpInsulin(): List<ScheduledPumpInsulinEntity>
