@@ -72,7 +72,7 @@ class Core(
     private val onReleaseBusyState: () -> Unit,
 
     private val onDeliverBolus: suspend (treatmentLock: TreatmentLock, amount: InsulinAmount, meal: MealEntry?, handledDeferredBoluses: List<DeferredBolus>?, containsCorrectionPart: Boolean, containsBasalPart: Boolean) -> Unit,
-    private val onDecreaseNextDeferredBolus: suspend (treatmentLock: TreatmentLock, InsulinAmount) -> Unit,
+    private val onApplyDeferredBolusUpdates: suspend (treatmentLock: TreatmentLock, List<DeferredBolusUpdate>) -> Unit,
     private val onSetTempBasal: (treatmentLock: TreatmentLock, durationInHours: Int, percent: Int) -> Unit,
     private val onClearTempBasal: (treatmentLock: TreatmentLock) -> Unit,
     private val onCarbsHint: (treatmentLock: TreatmentLock, Int) -> Unit,
@@ -242,10 +242,10 @@ class Core(
                                     result.correctionPart > InsulinAmount.ZERO,
                                     result.basalPart > InsulinAmount.ZERO
                                 )
-                                if (result.decreaseNextDeferredBolusBy > InsulinAmount.EPSILON) {
-                                    onDecreaseNextDeferredBolus(
+                                result.deferredBolusUpdates?.let { updates ->
+                                    onApplyDeferredBolusUpdates(
                                         treatmentLock,
-                                        result.decreaseNextDeferredBolusBy
+                                        updates
                                     )
                                 }
                             }
@@ -368,7 +368,7 @@ class Core(
             onReleaseBusyState: () -> Unit,
 
             onDeliverBolus: suspend (treatmentLock: TreatmentLock, amount: InsulinAmount, meal: MealEntry?, handledDeferredBoluses: List<DeferredBolus>?, containsCorrectionPart: Boolean, containsBasalPart: Boolean) -> Unit,
-            onDecreaseNextDeferredBolus: suspend (treatmentLock: TreatmentLock, InsulinAmount) -> Unit,
+            onApplyDeferredBolusUpdates: suspend (treatmentLock: TreatmentLock, List<DeferredBolusUpdate>) -> Unit,
             onSetTempBasal: (treatmentLock: TreatmentLock, durationInHours: Int, percent: Int) -> Unit,
             onClearTempBasal: (treatmentLock: TreatmentLock) -> Unit,
             onCarbsHint: (treatmentLock: TreatmentLock, amountInGram: Int) -> Unit,
@@ -389,7 +389,7 @@ class Core(
                 onReleaseBusyState = onReleaseBusyState,
 
                 onDeliverBolus = onDeliverBolus,
-                onDecreaseNextDeferredBolus = onDecreaseNextDeferredBolus,
+                onApplyDeferredBolusUpdates = onApplyDeferredBolusUpdates,
                 onSetTempBasal = onSetTempBasal,
                 onClearTempBasal = onClearTempBasal,
                 onCarbsHint = onCarbsHint,

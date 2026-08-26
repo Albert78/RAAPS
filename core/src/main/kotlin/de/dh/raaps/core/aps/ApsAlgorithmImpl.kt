@@ -487,11 +487,23 @@ class ApsAlgorithmImpl(
             val correctionPart = (neededInsulin - futureInsulin).coerceAtLeast(InsulinAmount.ZERO)
             val mealBolusAmount = dueMealBolusAmount + correctionPart
 
+            // We assume that the current blood glucose deviation is primarily caused by faster
+            // carbs absorption than specified in the model (just a timing issue).
+            // Before we generate additional correction insulin, to prevent overdoses, we bring
+            // planned future doses forward to the present (“shifting”). If the user has indeed
+            // underreported their intake, the system will gradually use up all deferred boluses
+            // and only then increase the total dose.
+            val deferredBolusUpdates = if (correctionPart > InsulinAmount.EPSILON) {
+                deferredBoluses.filter { it.timestamp >= now }.minByOrNull { it.timestamp }?.let { next ->
+                    listOf(DeferredBolusUpdate(next.id, (next.amount - correctionPart).coerceAtLeast(InsulinAmount.ZERO)))
+                }
+            } else null
+
             CalculationResult.mealOrCorrectionBolus(
                 bolusAmount = mealBolusAmount,
                 handledDeferredBoluses = dueDeferredBoluses,
                 correctionPart = correctionPart,
-                decreaseNextDeferredBolusBy = correctionPart, // Try to "shift" the next deferred bolus earlier
+                deferredBolusUpdates = deferredBolusUpdates,
                 basalPart = InsulinAmount.ZERO
             ).withMetrics(insight)
         }

@@ -418,16 +418,18 @@ class TherapyManager(
         treatmentRepository.removeDeferredBolus(deferredBolus)
     }
 
-    suspend fun tryDecreaseNextDeferredBolus(treatmentLock: TreatmentLock, earlyCorrection: InsulinAmount) {
+    suspend fun applyDeferredBolusUpdates(treatmentLock: TreatmentLock, updates: List<DeferredBolusUpdate>) {
         checkLock(treatmentLock)
-        val nextBolus = treatmentRepository.getDeferredBoluses().minByOrNull { it.timestamp } ?: return
         val minBolusIncrement = pumpManager.insulinPump?.pumpCapabilities?.value?.minBolusIncrement ?: InsulinAmount.ZERO
-        val updatedAmount = nextBolus.amount - earlyCorrection
+        val allDeferred = treatmentRepository.getDeferredBoluses()
 
-        if (updatedAmount > minBolusIncrement) {
-            treatmentRepository.updateDeferredBolus(nextBolus.copy(amount = updatedAmount))
-        } else {
-            treatmentRepository.removeDeferredBolus(nextBolus)
+        for (update in updates) {
+            val bolus = allDeferred.find { it.id == update.id } ?: continue
+            if (update.newAmount > minBolusIncrement) {
+                treatmentRepository.updateDeferredBolus(bolus.copy(amount = update.newAmount))
+            } else {
+                treatmentRepository.removeDeferredBolus(bolus)
+            }
         }
     }
 

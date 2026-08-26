@@ -47,6 +47,11 @@ data class CoreInsight(
     val reasoning: CoreReasoning
 )
 
+data class DeferredBolusUpdate(
+    val id: Long,
+    val newAmount: InsulinAmount
+)
+
 data class TempBasalResult(
     val percent: Int,
     val durationInHours: Int
@@ -62,7 +67,7 @@ data class CalculationResult(
     val bolus: InsulinAmount?,
     val handledDeferredBoluses: List<DeferredBolus>?,
     val correctionPart: InsulinAmount = InsulinAmount.ZERO,
-    val decreaseNextDeferredBolusBy: InsulinAmount = InsulinAmount.ZERO,
+    val deferredBolusUpdates: List<DeferredBolusUpdate>? = null,
     val basalPart: InsulinAmount = InsulinAmount.ZERO,
     val coreIssues: Set<CoreIssue>?,
     val reasoning: CoreReasoning,
@@ -137,7 +142,7 @@ data class CalculationResult(
             bolusAmount: InsulinAmount,
             handledDeferredBoluses: MutableList<DeferredBolus>,
             correctionPart: InsulinAmount,
-            decreaseNextDeferredBolusBy: InsulinAmount = InsulinAmount.ZERO,
+            deferredBolusUpdates: List<DeferredBolusUpdate>? = null,
             basalPart: InsulinAmount = InsulinAmount.ZERO
         ) = CalculationResult(
             carbsInGHint = null,
@@ -146,7 +151,7 @@ data class CalculationResult(
             bolus = bolusAmount,
             handledDeferredBoluses = handledDeferredBoluses,
             correctionPart = correctionPart,
-            decreaseNextDeferredBolusBy = decreaseNextDeferredBolusBy,
+            deferredBolusUpdates = deferredBolusUpdates,
             basalPart = basalPart,
             coreIssues = null,
             reasoning = CoreReasoning.MEAL_OR_CORRECTION_BOLUS
