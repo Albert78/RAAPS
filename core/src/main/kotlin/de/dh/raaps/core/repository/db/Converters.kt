@@ -114,7 +114,8 @@ fun MealEntry.toEntity() = MealEntity(
     meal_type_id = this.mealType.id,
     timestamp = this.timestamp,
     carbGrams = this.carbGrams,
-    description = this.description
+    description = this.description,
+    insulinAdministered = this.insulinAdministered
 )
 
 fun MealEntity.toModel(type: MealType) = MealEntry(
@@ -122,7 +123,8 @@ fun MealEntity.toModel(type: MealType) = MealEntry(
     timestamp = this.timestamp,
     carbGrams = this.carbGrams,
     mealType = type,
-    description = this.description
+    description = this.description,
+    insulinAdministered = this.insulinAdministered
 )
 
 // Insulin Converters
@@ -147,9 +149,10 @@ fun InsulinApplication.toEntity() = InsulinEntity(
     timestamp = this.timestamp,
     amount = this.amount,
     insulin_type_id = this.insulinType.id,
-    category = this.category,
     origin = this.origin,
-    meal_id = this.mealId
+    basal = this.basal,
+    correction = this.correction,
+    meal = this.meal
 )
 
 fun InsulinEntity.toModel(type: InsulinType) = InsulinApplication(
@@ -157,9 +160,10 @@ fun InsulinEntity.toModel(type: InsulinType) = InsulinApplication(
     timestamp = this.timestamp,
     amount = this.amount,
     insulinType = type,
-    category = this.category,
     origin = this.origin,
-    mealId = this.meal_id
+    basal = this.basal,
+    correction = this.correction,
+    meal = this.meal
 )
 
 // Scheduled Pump Insulin Converters
@@ -167,18 +171,18 @@ fun ScheduledPumpInsulin.toEntity() = ScheduledPumpInsulinEntity(
     id = this.id,
     timestamp = this.timestamp,
     amount = this.amount,
-    insulin_type_id = this.insulinType.id,
-    category = this.category,
-    meal_id = this.mealId
+    basal = this.basal,
+    correction = this.correction,
+    meal = this.meal
 )
 
-fun ScheduledPumpInsulinEntity.toModel(type: InsulinType) = ScheduledPumpInsulin(
+fun ScheduledPumpInsulinEntity.toModel() = ScheduledPumpInsulin(
     id = this.id,
     timestamp = this.timestamp,
     amount = this.amount,
-    insulinType = type,
-    category = this.category,
-    mealId = this.meal_id
+    basal = this.basal,
+    correction = this.correction,
+    meal = this.meal
 )
 
 // Deferred Bolus Converters

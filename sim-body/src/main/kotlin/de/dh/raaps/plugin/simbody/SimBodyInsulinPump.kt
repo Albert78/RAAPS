@@ -3,7 +3,9 @@ package de.dh.raaps.plugin.simbody
 import de.dh.raaps.common.model.BasalStatus
 import de.dh.raaps.common.model.HardwareInformation
 import de.dh.raaps.common.model.InsulinAmount
+import de.dh.raaps.common.model.InsulinCategory
 import de.dh.raaps.common.model.InsulinHistory
+import de.dh.raaps.common.model.InsulinHistoryPoint
 import de.dh.raaps.common.model.InsulinPump
 import de.dh.raaps.common.model.InsulinPumpStatus
 import de.dh.raaps.common.model.PumpAlerts
@@ -182,10 +184,10 @@ class SimBodyInsulinPump(
     override suspend fun syncHistory() {
         if (!_isConnected.value) return
         val points = device.getHistory().map { point ->
-            object : de.dh.raaps.common.model.InsulinHistoryPoint {
+            object : InsulinHistoryPoint {
                 override val timestamp: Long = point.timestamp
                 override val amount: InsulinAmount = point.amount
-                override val category: de.dh.raaps.common.model.InsulinCategory = point.category
+                override val category: InsulinCategory = point.category
             }
         }
         if (points.isNotEmpty()) {

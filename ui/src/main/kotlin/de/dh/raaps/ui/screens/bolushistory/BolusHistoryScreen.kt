@@ -56,7 +56,6 @@ import de.dh.raaps.common.model.BOLUS_MAX
 import de.dh.raaps.common.model.BOLUS_MIN
 import de.dh.raaps.common.model.InsulinAmount
 import de.dh.raaps.common.model.InsulinApplication
-import de.dh.raaps.common.model.InsulinCategory
 import de.dh.raaps.common.model.InsulinOrigin
 import de.dh.raaps.common.model.InsulinType
 import de.dh.raaps.common.model.data.Minutes
@@ -419,9 +418,9 @@ fun BolusHistoryPreview() {
 fun BolusHistoryWithDataPreview() {
     val sampleInsulinType = InsulinType(name = "Fiasp", peak = Minutes(50.toShort()), dia = Minutes(300.toShort()))
     val sampleEntries = listOf(
-        InsulinApplication(id = 1, timestamp = Timestamp.now().minusHours(8), amount = InsulinAmount(5.0), insulinType = sampleInsulinType, category = InsulinCategory.Bolus, origin = InsulinOrigin.Pump),
-        InsulinApplication(id = 2, timestamp = Timestamp.now().minusHours(5), amount = InsulinAmount(2.5), insulinType = sampleInsulinType, category = InsulinCategory.Bolus, origin = InsulinOrigin.Manual),
-        InsulinApplication(id = 3, timestamp = Timestamp.now().minusHours(1), amount = InsulinAmount(3.0), insulinType = sampleInsulinType, category = InsulinCategory.Bolus, origin = InsulinOrigin.Manual)
+        InsulinApplication(id = 1, timestamp = Timestamp.now().minusHours(8), amount = InsulinAmount(5.0), insulinType = sampleInsulinType, origin = InsulinOrigin.Pump, meal = true),
+        InsulinApplication(id = 2, timestamp = Timestamp.now().minusHours(5), amount = InsulinAmount(2.5), insulinType = sampleInsulinType, origin = InsulinOrigin.Manual, meal = true),
+        InsulinApplication(id = 3, timestamp = Timestamp.now().minusHours(1), amount = InsulinAmount(3.0), insulinType = sampleInsulinType, origin = InsulinOrigin.Manual, meal = true)
     )
 
     AppTheme {

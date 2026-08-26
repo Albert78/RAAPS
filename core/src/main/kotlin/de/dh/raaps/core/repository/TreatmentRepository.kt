@@ -4,6 +4,7 @@ import de.dh.raaps.common.model.DeferredBolus
 import de.dh.raaps.common.model.ID_UNDEFINED
 import de.dh.raaps.common.model.InsulinAmount
 import de.dh.raaps.common.model.InsulinApplication
+import de.dh.raaps.common.model.InsulinCategory
 import de.dh.raaps.common.model.InsulinHistory
 import de.dh.raaps.common.model.InsulinOrigin
 import de.dh.raaps.common.model.InsulinType
@@ -15,6 +16,7 @@ import de.dh.raaps.core.repository.db.AppDatabase
 import de.dh.raaps.core.repository.db.MetabolicEventsDao
 import de.dh.raaps.core.repository.db.toEntity
 import de.dh.raaps.core.repository.db.toModel
+import de.dh.raaps.core.repository.db.entities.ScheduledPumpInsulinEntity
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.sync.Mutex
@@ -125,10 +127,11 @@ class TreatmentRepository(
                 timestamp = Timestamp(point.timestamp),
                 amount = point.amount,
                 insulinType = insulinType,
-                category = point.category,
-                origin = InsulinOrigin.Pump
+                origin = InsulinOrigin.Pump,
+                basal = point.category == InsulinCategory.Basal
             )
         }.filter { it.amount >= InsulinAmount.EPSILON }
+        // TODO: Use metadata from ScheduledPumpInsulin to determine correction or meal flags
 
         // 1. Database sync
         metabolicEventsDao.replaceInsulinApplicationsInRange(
@@ -380,11 +383,20 @@ class TreatmentRepository(
         metabolicEventsDao.deleteDeferredBoluses(deferredBolus.id)
     }
 
-    fun addScheduledPumpInsulinEntry(timestamp: Timestamp, amount: InsulinAmount, basal: Boolean, correction: Boolean, meal: Boolean) {
-        TODO: ScheduledPumpInsulin anlegen
+    suspend fun addScheduledPumpInsulinEntry(timestamp: Timestamp, amount: InsulinAmount, basal: Boolean, correction: Boolean, meal: Boolean) {
+        val entity = ScheduledPumpInsulinEntity(
+            timestamp = timestamp,
+            amount = amount,
+            basal = basal,
+            correction = correction,
+            meal = meal
+        )
+        metabolicEventsDao.insertScheduledPumpInsulin(entity)
     }
 
-    fun setInsulinAdministered(administeredMealIds: MutableSet<Long>) {
-        TODO: Set Flag containsMealComponent in all meals with the given ids
+    suspend fun setInsulinAdministered(administeredMealIds: MutableSet<Long>) {
+        if (administeredMealIds.isNotEmpty()) {
+            metabolicEventsDao.markMealsAsInsulinAdministered(administeredMealIds.toList())
+        }
     }
 }

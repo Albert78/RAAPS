@@ -68,5 +68,6 @@ data class MealEntry(
     val timestamp: Timestamp,
     val carbGrams: Double,
     val mealType: MealType,
-    val description: String = ""
+    val description: String = "",
+    val insulinAdministered: Boolean = false
 )

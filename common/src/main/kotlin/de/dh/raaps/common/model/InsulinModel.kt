@@ -139,18 +139,12 @@ data class InsulinApplication(
      */
     val insulinType: InsulinType,
     /**
-     * If it's a Bolus or Basal treatment.
-     */
-    val category: InsulinCategory,
-    /**
      * If the application was injected via pump or manual.
      */
     val origin: InsulinOrigin,
-    /**
-     * Optional link to the associated [MealEntry].
-     * This can refer to both historical and upcoming meals.
-     */
-    val mealId: Long? = null
+    val basal: Boolean = false,
+    val correction: Boolean = false,
+    val meal: Boolean = false
 )
 
 /**
@@ -163,12 +157,9 @@ data class ScheduledPumpInsulin(
     var id: Long = ID_UNDEFINED,
     val timestamp: Timestamp,
     val amount: InsulinAmount,
-    val insulinType: InsulinType,
-    val category: InsulinCategory,
-    /**
-     * Optional link to the associated [MealEntry].
-     */
-    val mealId: Long? = null
+    val basal: Boolean = false,
+    val correction: Boolean = false,
+    val meal: Boolean = false
 )
 
 /**

@@ -39,7 +39,8 @@ data class MealEntity(
     val meal_type_id: String,
     val timestamp: Timestamp,
     val carbGrams: Double,
-    val description: String = ""
+    val description: String = "",
+    val insulinAdministered: Boolean = false
 )
 
 @Entity(
@@ -62,15 +63,9 @@ data class InsulinTypeEntity(
             parentColumns = ["id"],
             childColumns = ["insulin_type_id"],
             onDelete = ForeignKey.RESTRICT
-        ),
-        ForeignKey(
-            entity = MealEntity::class,
-            parentColumns = ["id"],
-            childColumns = ["meal_id"],
-            onDelete = ForeignKey.SET_NULL
         )
     ],
-    indices = [Index("timestamp"), Index("meal_id")]
+    indices = [Index("timestamp")]
 )
 data class InsulinEntity(
     @PrimaryKey(autoGenerate = true)
@@ -78,9 +73,10 @@ data class InsulinEntity(
     val insulin_type_id: String,
     val timestamp: Timestamp,
     val amount: InsulinAmount,
-    val category: InsulinCategory,
     val origin: InsulinOrigin,
-    val meal_id: Long? = null
+    val basal: Boolean = false,
+    val correction: Boolean = false,
+    val meal: Boolean = false
 )
 
 @Entity(
@@ -105,28 +101,14 @@ data class DeferredBolusEntity(
 
 @Entity(
     tableName = "scheduled_pump_insulin",
-    foreignKeys = [
-        ForeignKey(
-            entity = InsulinTypeEntity::class,
-            parentColumns = ["id"],
-            childColumns = ["insulin_type_id"],
-            onDelete = ForeignKey.RESTRICT
-        ),
-        ForeignKey(
-            entity = MealEntity::class,
-            parentColumns = ["id"],
-            childColumns = ["meal_id"],
-            onDelete = ForeignKey.SET_NULL
-        )
-    ],
-    indices = [Index("timestamp"), Index("meal_id")]
+    indices = [Index("timestamp")]
 )
 data class ScheduledPumpInsulinEntity(
     @PrimaryKey(autoGenerate = true)
     var id: Long = ID_UNDEFINED,
-    val insulin_type_id: String,
     val timestamp: Timestamp,
     val amount: InsulinAmount,
-    val category: InsulinCategory,
-    val meal_id: Long? = null
+    val basal: Boolean = false,
+    val correction: Boolean = false,
+    val meal: Boolean = false
 )

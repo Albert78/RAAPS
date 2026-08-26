@@ -7,8 +7,6 @@ import de.dh.raaps.common.model.ID_MEAL_HIGH_FAT
 import de.dh.raaps.common.model.ID_MEAL_SLOW
 import de.dh.raaps.common.model.ID_MEAL_STANDARD
 import de.dh.raaps.common.model.InsulinAmount
-import de.dh.raaps.common.model.InsulinApplication
-import de.dh.raaps.common.model.InsulinCategory
 import de.dh.raaps.common.model.InsulinOrigin
 import de.dh.raaps.common.model.InsulinType
 import de.dh.raaps.common.model.MealEntry
@@ -41,6 +39,13 @@ data class Impacts(
     val currentTimestamp: Timestamp
 )
 
+data class SimInsulinApplication(
+    val timestamp: Timestamp,
+    val amount: InsulinAmount,
+    val peak: Minutes,
+    val dia: Minutes
+)
+
 /**
  * Models a diabetic's body for simulation purposes.
  * It tracks blood glucose levels influenced by meals, insulin, exercise, and health states.
@@ -63,7 +68,7 @@ class BodyModel(
 
     // Inputs (historical data) - using Compose state for UI updates
     val meals = mutableStateListOf<MealEntry>()
-    val insulinApplications = mutableStateListOf<InsulinApplication>()
+    val insulinApplications = mutableStateListOf<SimInsulinApplication>()
     val impactHistory = mutableStateListOf<Impacts>()
 
     // Health factors (external influences, controlled via UI)
@@ -133,8 +138,8 @@ class BodyModel(
             val now = Timestamp.now()
             return insulinApplications.fold(InsulinAmount.ZERO) { acc, bolus ->
                 val curve = InsulinCurve(
-                    diaMinutes = bolus.insulinType.dia.value.toDouble(),
-                    peakMinutes = bolus.insulinType.peak.value.toDouble()
+                    diaMinutes = bolus.dia.value.toDouble(),
+                    peakMinutes = bolus.peak.value.toDouble()
                 )
                 val timeSinceBolus = (now.ms - bolus.timestamp.ms) / 60000.0
                 acc + bolus.amount * (1.0 - curve.spentFraction(timeSinceBolus)).coerceAtLeast(0.0)
@@ -258,12 +263,12 @@ class BodyModel(
                 meals.addAll(loadedMeals)
 
                 val loadedInsulin = events.filter { it.type == "BOLUS" }.map { event ->
-                    InsulinApplication(
+                    val type = defaultInsulinType
+                    SimInsulinApplication(
                         timestamp = Timestamp(event.timestampMs),
                         amount = event.amount,
-                        insulinType = if (event.detailId == defaultInsulinType.id) defaultInsulinType else defaultInsulinType,
-                        category = InsulinCategory.Bolus,
-                        origin = event.insulinOrigin ?: InsulinOrigin.Pump
+                        peak = type.peak,
+                        dia = type.dia
                     )
                 }
                 insulinApplications.clear()
@@ -448,12 +453,12 @@ class BodyModel(
     ) {
         if (amount < SimBodyInsulinPump.SIM_PUMP_MIN_BOLUS_INCREMENT) return
 
-        val entry = InsulinApplication(
+        val insulinType = type ?: defaultInsulinType
+        val entry = SimInsulinApplication(
             timestamp = timestamp,
             amount = amount,
-            insulinType = type ?: defaultInsulinType,
-            category = InsulinCategory.Bolus,
-            origin = InsulinOrigin.Pump
+            peak = insulinType.peak,
+            dia = insulinType.dia
         )
         insulinApplications.add(0, entry)
 
@@ -464,8 +469,8 @@ class BodyModel(
                         type = "BOLUS",
                         timestampMs = entry.timestamp.ms,
                         amount = entry.amount,
-                        detailId = entry.insulinType.id,
-                        insulinOrigin = entry.origin
+                        detailId = insulinType.id,
+                        insulinOrigin = InsulinOrigin.Pump
                     )
                 )
             }
@@ -477,8 +482,8 @@ class BodyModel(
 
         for (bolus in insulinApplications) {
             val curve = InsulinCurve(
-                diaMinutes = bolus.insulinType.dia.value.toDouble(),
-                peakMinutes = bolus.insulinType.peak.value.toDouble()
+                diaMinutes = bolus.dia.value.toDouble(),
+                peakMinutes = bolus.peak.value.toDouble()
             )
 
             val timeStart = (start.ms - bolus.timestamp.ms) / 60000.0

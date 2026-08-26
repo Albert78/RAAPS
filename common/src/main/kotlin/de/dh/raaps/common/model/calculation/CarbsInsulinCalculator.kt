@@ -2,7 +2,6 @@ package de.dh.raaps.common.model.calculation
 
 import de.dh.raaps.common.model.InsulinAmount
 import de.dh.raaps.common.model.InsulinApplication
-import de.dh.raaps.common.model.InsulinCategory
 import de.dh.raaps.common.model.MealEntry
 import de.dh.raaps.common.model.convertToBgDeltaFromUnits
 import de.dh.raaps.common.model.data.BgDelta
@@ -119,7 +118,7 @@ class CarbsInsulinCalculator(
     ): InsulinAmount {
         var total = InsulinAmount.ZERO
         insulinApplications.forEach { entry ->
-            if (excludeBasal && entry.category == InsulinCategory.Basal) {
+            if (excludeBasal && entry.basal) {
                 return@forEach
             }
             val intervalsSinceApplication =

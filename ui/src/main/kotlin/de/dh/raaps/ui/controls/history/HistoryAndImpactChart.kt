@@ -625,9 +625,9 @@ fun createSampleImpactDiagramData(): HistoryAndImpactDiagramData {
     )
 
     val insulinApplications = listOf(
-        InsulinApplication(0, Timestamp(baseTs + 30 * MS_PER_MINUTE), InsulinAmount(5.0), InsulinType("1", "Rapid", Minutes(60.toShort()), Minutes(300.toShort())), InsulinCategory.Bolus, InsulinOrigin.Manual),
-        InsulinApplication(0, Timestamp(baseTs + 280 * MS_PER_MINUTE), InsulinAmount(8.0), InsulinType("1", "Rapid", Minutes(60.toShort()), Minutes(300.toShort())), InsulinCategory.Bolus, InsulinOrigin.Manual),
-        InsulinApplication(0, Timestamp(baseTs + 450 * MS_PER_MINUTE), InsulinAmount(4.0), InsulinType("1", "Rapid", Minutes(60.toShort()), Minutes(300.toShort())), InsulinCategory.Bolus, InsulinOrigin.Manual)
+        InsulinApplication(0, Timestamp(baseTs + 30 * MS_PER_MINUTE), InsulinAmount(5.0), InsulinType("1", "Rapid", Minutes(60.toShort()), Minutes(300.toShort())), InsulinOrigin.Manual, meal = true),
+        InsulinApplication(0, Timestamp(baseTs + 280 * MS_PER_MINUTE), InsulinAmount(8.0), InsulinType("1", "Rapid", Minutes(60.toShort()), Minutes(300.toShort())), InsulinOrigin.Manual, meal = true),
+        InsulinApplication(0, Timestamp(baseTs + 450 * MS_PER_MINUTE), InsulinAmount(4.0), InsulinType("1", "Rapid", Minutes(60.toShort()), Minutes(300.toShort())), InsulinOrigin.Manual, meal = true)
     )
 
     val meals = listOf(
