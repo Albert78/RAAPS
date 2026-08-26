@@ -35,6 +35,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import de.dh.raaps.common.model.data.Timestamp
 import de.dh.raaps.core.pump.PumpCommand
+import de.dh.raaps.core.pump.PumpJob
 import de.dh.raaps.ui.R
 import de.dh.raaps.ui.common.theme.AppTheme
 import java.text.SimpleDateFormat
@@ -320,8 +321,8 @@ fun PumpTabPreview() {
                 pumpConnected = true,
                 pumpModel = "DANA-i",
                 pendingPumpJobs = listOf(
-                    de.dh.raaps.core.pump.PumpJob(
-                        command = de.dh.raaps.core.pump.PumpCommand.DeliverBolus(de.dh.raaps.common.model.InsulinAmount(1.5)),
+                    PumpJob(
+                        command = PumpCommand.DeliverBolus(de.dh.raaps.common.model.InsulinAmount(1.5)),
                         isCancelableAPSCommand = false
                     )
                 ),
