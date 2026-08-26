@@ -32,6 +32,7 @@ android {
     productFlavors {
         create("sim") {
             dimension = "version"
+            isDefault = true
             applicationIdSuffix = ".sim"
         }
         create("prod") {
