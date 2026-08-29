@@ -38,13 +38,19 @@ data class BolusParts(
     }
 }
 
+data class ProjectedBg(
+    val bg: BgValue,
+    val timestamp: Timestamp
+)
+
 /**
  * System projections for a reference timestamp.
  */
 data class BolusProjections(
     val timestamp: Timestamp = Timestamp.now(),
-    val isProjected: Boolean = false,
     val bg: BgValue = BgValue.INVALID,
+    val isProjected: Boolean = false,
+    val impendingLow: ProjectedBg? = null,
     val iob: InsulinAmount = InsulinAmount.ZERO,
     val cob: Double = 0.0,
     val futureCarbs: Double = 0.0,
@@ -69,6 +75,7 @@ interface BolusCorrectionCalculator {
         carbsKe: Double,
         mealTimestamp: Timestamp,
         projectedBg: BgValue,
+        impendingLow: ProjectedBg?,
         projectedIob: InsulinAmount,
         projectedCob: Double,
         futureCarbs: Double,
@@ -153,6 +160,7 @@ object BolusCalculationMath {
         cr: Double,
         isf: BgDelta,
         targetBg: BgValue,
+        impendingLow: ProjectedBg?,
         iob: InsulinAmount,
         cob: Double,
         futureCarbs: Double,
@@ -168,7 +176,12 @@ object BolusCalculationMath {
         val bgDiff = bgMgdl - targetBg.mgdl
 
         // Calculate correction, COB and future carb parts using meal-time factors
-        val correctionPart = convertToInsulinAmountFromBgDelta(BgDelta(bgDiff.toShort()), BgDelta(isf.mgdl))
+
+        val correctionPart = if (impendingLow != null) {
+            InsulinAmount.ZERO
+        } else {
+            convertToInsulinAmountFromBgDelta(BgDelta(bgDiff.toShort()), BgDelta(isf.mgdl))
+        }
 
         // Safety first: If we are too low, the COB part might be incorrect, so just ignore it for now.
         val cobPart = if (bgDiff < -15) InsulinAmount.ZERO else convertToInsulinAmountFromCarbs(cob, cr)
@@ -275,18 +288,14 @@ class SimpleBolusCorrectionCalculator(
     private fun getCurrentBg() = glucoseSourceManager.currentBg.value?.value ?: BgValue.INVALID
 
     override suspend fun calculateBolusProjections(mealTimestamp: Timestamp) = BolusProjections(
-        timestamp = Timestamp.now(),
-        isProjected = false,
-        bg = getCurrentBg(),
-        iob = InsulinAmount.ZERO,
-        cob = 0.0,
-        futureCarbs = 0.0
+        bg = getCurrentBg()
     )
 
     override suspend fun calculateBolusParts(
         carbsKe: Double,
         mealTimestamp: Timestamp,
         projectedBg: BgValue,
+        impendingLow: ProjectedBg?,
         projectedIob: InsulinAmount,
         projectedCob: Double,
         futureCarbs: Double,
@@ -297,6 +306,7 @@ class SimpleBolusCorrectionCalculator(
             cr = therapyManager.getCrFactor(mealTimestamp),
             isf = therapyManager.getIsfFactor(mealTimestamp),
             targetBg = therapyManager.getBgSettings(mealTimestamp).first,
+            impendingLow = impendingLow,
             iob = projectedIob,
             cob = projectedCob,
             futureCarbs = futureCarbs,

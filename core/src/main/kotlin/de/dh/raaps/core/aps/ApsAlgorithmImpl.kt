@@ -81,6 +81,14 @@ class ApsAlgorithmImpl(
                 val settings = therapyManager.getCurrentTherapySettings()
                 val dia = settings.insulinProfile.dia
                 val peak = settings.insulinProfile.peak
+                val lowThreshold = therapyManager.getBgSettings().second
+
+                val impendingLow = predictionModel.findNextWithLock(
+                    startAt = mealTimeTick,
+                    until = mealTimeTick.plusMinutes(BOLUS_CALCULATOR_LOW_PREDICTION_LOOKAHEAD.value.toInt()),
+                    predicate = { it.assumedBg.isValid() && it.assumedBg < lowThreshold },
+                    block = { ProjectedBg(bg = it.assumedBg, timestamp = timeline.timestamp(it.tick)) }
+                )
 
                 val projectedIob = carbsInsulinCalculator.iob(
                     insulinApplications = insulinHistory,
@@ -101,8 +109,9 @@ class ApsAlgorithmImpl(
 
                 BolusProjections(
                     timestamp = mealTimestamp,
-                    isProjected = mealTimestamp > Timestamp.now(),
                     bg = state.assumedBg,
+                    isProjected = mealTimestamp > Timestamp.now(),
+                    impendingLow = impendingLow,
                     iob = projectedIob,
                     cob = projectedCob,
                     futureCarbs = sumFutureCarbs,
@@ -115,6 +124,7 @@ class ApsAlgorithmImpl(
             carbsKe: Double,
             mealTimestamp: Timestamp,
             projectedBg: BgValue,
+            impendingLow: ProjectedBg?,
             projectedIob: InsulinAmount,
             projectedCob: Double,
             futureCarbs: Double,
@@ -125,6 +135,7 @@ class ApsAlgorithmImpl(
             cr = therapyManager.getCrFactor(mealTimestamp),
             isf = therapyManager.getIsfFactor(mealTimestamp),
             targetBg = therapyManager.getBgSettings(mealTimestamp).first,
+            impendingLow = impendingLow,
             iob = projectedIob,
             cob = projectedCob,
             futureCarbs = futureCarbs,
@@ -244,7 +255,6 @@ class ApsAlgorithmImpl(
         val avgCurrentDeviationPerTick = calcAvgDeviationPerTick(DEVIATION_TIME_BASE)
         // Assumption: That deviation will be continued in the future but will fade away
 
-        val defaultBasal = therapyManager.getBasalPerHour(now)
         val meals = treatmentRepository.getMeals()
         val insulinApplications = treatmentRepository.getInsulinApplications()
         val settings = therapyManager.getCurrentTherapySettings()
@@ -302,7 +312,7 @@ class ApsAlgorithmImpl(
                 if (!relapseFound) {
                     val recoveryTime = SimpleDateFormat("HH:mm", Locale.getDefault()).format(timeline.timestamp(recoveryStartTick).ms)
                     Log.d(TAG, "Recovery detected: We're currently low ($currentBgMgDl mg/dl), but returning above threshold of ${lowThreshold.mgdl} mg/dl at $recoveryTime and staying stable for 30m. Don't suggest carbs.")
-                    return@recalculate CalculationResult.normalSafetyBasal()
+                    return CalculationResult.normalSafetyBasal()
                 }
             }
         }

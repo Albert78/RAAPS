@@ -219,6 +219,7 @@ class NoopAlgorithm: ApsAlgorithm {
                 carbsKe: Double,
                 mealTimestamp: Timestamp,
                 projectedBg: BgValue,
+                impendingLow: ProjectedBg?,
                 projectedIob: InsulinAmount,
                 projectedCob: Double,
                 futureCarbs: Double,

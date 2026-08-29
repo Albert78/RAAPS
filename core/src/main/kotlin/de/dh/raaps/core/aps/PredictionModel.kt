@@ -208,8 +208,18 @@ class PredictionModel(
         predicate: suspend (ReadOnlyPredictionTickState) -> Boolean,
         block: suspend (ReadOnlyPredictionTickState) -> T
     ): T? = mutex.withLock {
-        rollingHistory.findForwardS(startTick = startAt, endTick = until, predicate = predicate)?.let { block(it) }
+        findNextWithLock(startAt = startAt, until = until, predicate = predicate, block = block)
     }
+
+    /**
+     * Internal function which must only be called within a block of any public method in this class.
+     */
+    internal suspend fun <T> findNextWithLock(
+        startAt: Tick,
+        until: Tick? = null,
+        predicate: suspend (ReadOnlyPredictionTickState) -> Boolean,
+        block: suspend (ReadOnlyPredictionTickState) -> T
+    ): T? = rollingHistory.findForwardS(startTick = startAt, endTick = until, predicate = predicate)?.let { block(it) }
 
     suspend fun forEach(
         from: Tick? = null,

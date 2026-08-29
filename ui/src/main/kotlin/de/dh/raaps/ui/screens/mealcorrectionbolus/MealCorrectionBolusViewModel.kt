@@ -298,6 +298,7 @@ class MealCorrectionBolusViewModel(
                 carbsKe = state.input.carbsKe,
                 mealTimestamp = state.input.mealTimestamp,
                 projectedBg = state.projections.bg,
+                impendingLow = state.projections.impendingLow,
                 projectedIob = state.projections.iob,
                 projectedCob = state.projections.cob,
                 futureCarbs = state.projections.futureCarbs,

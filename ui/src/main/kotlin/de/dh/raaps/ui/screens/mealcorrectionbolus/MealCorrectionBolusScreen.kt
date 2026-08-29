@@ -64,6 +64,7 @@ import de.dh.raaps.common.model.data.GlucoseUnit
 import de.dh.raaps.common.model.data.Minutes
 import de.dh.raaps.common.model.data.Timestamp
 import de.dh.raaps.core.aps.BolusProjections
+import de.dh.raaps.core.aps.ProjectedBg
 import de.dh.raaps.core.aps.TreatmentLock
 import de.dh.raaps.ui.R
 import de.dh.raaps.ui.common.DefaultSteppingStrategy
@@ -306,6 +307,95 @@ fun MealCorrectionBolusContent(
 }
 
 @Composable
+fun MealCorrectionBolusContextInfo(
+    uiState: MealCorrectionBolusUiState,
+    onRefresh: () -> Unit
+) {
+    Surface(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(12.dp),
+        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
+    ) {
+        Box(modifier = Modifier.fillMaxWidth()) {
+            Column(
+                modifier = Modifier.padding(16.dp).fillMaxWidth(),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(4.dp)
+                ) {
+                    if (uiState.projections.isProjected) {
+                        Text(
+                            text = stringResource(R.string.approx_prefix),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = Color.Gray,
+                            modifier = Modifier.align(Alignment.CenterVertically)
+                        )
+                    }
+
+                    val displayBgValue = uiState.projections.bg
+                    val bgText = glucoseValue(displayBgValue, default = "??")
+                    val textColor = if (displayBgValue.isInvalid()) {
+                        Color.Gray
+                    } else when {
+                        displayBgValue.mgdl < 70 -> Red
+                        displayBgValue.mgdl < 180 -> LightGreenA700
+                        else -> Yellow
+                    }
+                    Text(
+                        text = bgText,
+                        style = MaterialTheme.typography.displayMedium.copy(fontWeight = FontWeight.Bold),
+                        color = textColor
+                    )
+                    Text(
+                        text = glucoseUnitLabel(),
+                        style = MaterialTheme.typography.titleMedium,
+                        color = Color.Gray,
+                        modifier = Modifier
+                            .align(Alignment.Bottom)
+                            .padding(bottom = 12.dp)
+                    )
+                }
+
+                Text(
+                    text = stringResource(R.string.at_time_format, time(uiState.projections.timestamp)),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = Color.Gray
+                )
+
+                Spacer(Modifier.height(8.dp))
+                Text(
+                    text = stringResource(R.string.meal_correction_bolus_active_carbs_format, carbsGramsValue(uiState.projections.cob)),
+                    style = MaterialTheme.typography.bodyLarge,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                Text(
+                    text = stringResource(R.string.meal_correction_bolus_active_insulin_format, insulinValue(uiState.projections.iob.iu)),
+                    style = MaterialTheme.typography.bodyLarge,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+
+            if (uiState.isProjectionsStale) {
+                IconButton(
+                    onClick = onRefresh,
+                    modifier = Modifier
+                        .align(Alignment.TopEnd)
+                        .padding(4.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Refresh,
+                        contentDescription = stringResource(R.string.cd_refresh_calculations),
+                        tint = MaterialTheme.colorScheme.primary
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
 fun CloseScreenBanner(
     onClose: () -> Unit
 ) {
@@ -434,20 +524,21 @@ fun CalculationDetailsSelector(
                     style = MaterialTheme.typography.bodySmall
                 )
 
-                val bgProjection = uiState.projections.bg
-                if (bgProjection.isInvalid()) {
+                val lowBgProjection = uiState.projections.impendingLow ?:
+                    ProjectedBg(uiState.projections.bg, uiState.projections.timestamp)
+                if (lowBgProjection.bg.isInvalid()) {
                     Text(
                         text = stringResource(R.string.meal_correction_bolus_calc_no_bg_warning),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.error,
                         fontWeight = FontWeight.Bold
                     )
-                } else if (bgProjection <= uiState.lowThreshold) {
+                } else if (lowBgProjection.bg <= uiState.lowThreshold) {
                     Text(
                         text = stringResource(
                             R.string.meal_correction_bolus_calc_low_bg_warning,
                             glucoseValue(uiState.lowThreshold, withUnit = true),
-                            time(uiState.projections.timestamp)
+                            time(lowBgProjection.timestamp)
                         ),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.error,
@@ -509,95 +600,6 @@ fun CalculationDetailsSelector(
                         .fillMaxWidth()
                         .clickable { onResultClick() }
                 )
-            }
-        }
-    }
-}
-
-@Composable
-fun MealCorrectionBolusContextInfo(
-    uiState: MealCorrectionBolusUiState,
-    onRefresh: () -> Unit
-) {
-    Surface(
-        modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(12.dp),
-        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
-    ) {
-        Box(modifier = Modifier.fillMaxWidth()) {
-            Column(
-                modifier = Modifier.padding(16.dp).fillMaxWidth(),
-                horizontalAlignment = Alignment.CenterHorizontally
-            ) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(4.dp)
-                ) {
-                    if (uiState.projections.isProjected) {
-                        Text(
-                            text = stringResource(R.string.approx_prefix),
-                            style = MaterialTheme.typography.bodySmall,
-                            color = Color.Gray,
-                            modifier = Modifier.align(Alignment.CenterVertically)
-                        )
-                    }
-
-                    val displayBgValue = uiState.projections.bg
-                    val bgText = glucoseValue(displayBgValue, default = "??")
-                    val textColor = if (displayBgValue.isInvalid()) {
-                        Color.Gray
-                    } else when {
-                        displayBgValue.mgdl < 70 -> Red
-                        displayBgValue.mgdl < 180 -> LightGreenA700
-                        else -> Yellow
-                    }
-                    Text(
-                        text = bgText,
-                        style = MaterialTheme.typography.displayMedium.copy(fontWeight = FontWeight.Bold),
-                        color = textColor
-                    )
-                    Text(
-                        text = glucoseUnitLabel(),
-                        style = MaterialTheme.typography.titleMedium,
-                        color = Color.Gray,
-                        modifier = Modifier
-                            .align(Alignment.Bottom)
-                            .padding(bottom = 12.dp)
-                    )
-                }
-
-                Text(
-                    text = stringResource(R.string.at_time_format, time(uiState.projections.timestamp)),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = Color.Gray
-                )
-
-                Spacer(Modifier.height(8.dp))
-                Text(
-                    text = stringResource(R.string.meal_correction_bolus_active_carbs_format, carbsGramsValue(uiState.projections.cob)),
-                    style = MaterialTheme.typography.bodyLarge,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-                Text(
-                    text = stringResource(R.string.meal_correction_bolus_active_insulin_format, insulinValue(uiState.projections.iob.iu)),
-                    style = MaterialTheme.typography.bodyLarge,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-            }
-
-            if (uiState.isProjectionsStale) {
-                IconButton(
-                    onClick = onRefresh,
-                    modifier = Modifier
-                        .align(Alignment.TopEnd)
-                        .padding(4.dp)
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.Refresh,
-                        contentDescription = stringResource(R.string.cd_refresh_calculations),
-                        tint = MaterialTheme.colorScheme.primary
-                    )
-                }
             }
         }
     }
@@ -778,8 +780,8 @@ fun MealCorrectionBolusDefaultPreview() {
                         mealTypes = sampleMealTypes,
                         projections = BolusProjections(
                             timestamp = Timestamp.now().plusMinutes(15),
-                            isProjected = true,
                             bg = BgValue(145),
+                            isProjected = true,
                             iob = InsulinAmount(1.2),
                             cob = 25.0,
                             futureCarbs = 10.0
