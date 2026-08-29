@@ -84,7 +84,7 @@ class PumpCoordinator(
     private val onAcquireBusyState: () -> Unit,
     /** Callback to release the wake-lock acquired via [onAcquireBusyState]. */
     private val onReleaseBusyState: () -> Unit,
-    /** Callback to request a wakeup from the system at a specific time. The caller should ensure [wakeup] is called at that time. */
+    /** Callback to request a system wakeup at the specified [Timestamp]. The implementation must ensure [wakeup] is called when that time is reached. */
     private val onRequestWakeup: (Timestamp) -> Unit,
     private val onJobError: (job: PumpJob, code: JobErrorCode) -> Unit,
     private val scope: CoroutineScope,
@@ -367,7 +367,7 @@ class PumpCoordinator(
             onAcquireBusyState: () -> Unit,
             /** Callback to release the wake-lock acquired via [onAcquireBusyState]. */
             onReleaseBusyState: () -> Unit,
-            /** Callback to request a wakeup from the system at a specific time. The caller should ensure [wakeup] is called at that time. */
+            /** Callback to request a system wakeup at the specified [Timestamp]. The implementation must ensure [wakeup] is called when that time is reached. */
             onRequestWakeup: (Timestamp) -> Unit,
             onJobError: (PumpJob, JobErrorCode) -> Unit,
             scope: CoroutineScope
