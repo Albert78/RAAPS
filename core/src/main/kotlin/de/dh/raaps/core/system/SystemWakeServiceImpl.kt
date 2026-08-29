@@ -9,6 +9,10 @@ import android.os.Build
 import android.os.PowerManager
 import android.util.Log
 import de.dh.raaps.common.model.data.Timestamp
+import de.dh.raaps.core.repository.SystemMetricsRepository
+import de.dh.raaps.core.repository.WakeupMetric
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.launch
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.atomic.AtomicInteger
 
@@ -18,7 +22,9 @@ import java.util.concurrent.atomic.AtomicInteger
  * per tag to ensure the device stays awake as long as any component is busy.
  */
 class SystemWakeServiceImpl(
-    private val context: Context
+    private val context: Context,
+    private val systemMetricsRepository: SystemMetricsRepository,
+    private val scope: CoroutineScope
 ) : SystemWakeService {
 
     private val handlers = ConcurrentHashMap<String, WakeupHandler>()
@@ -47,6 +53,7 @@ class SystemWakeServiceImpl(
             action = ACTION_WAKEUP
             putExtra(EXTRA_TAG, tag)
             putExtra(EXTRA_WAKEUP_ID, internalWakeupId)
+            putExtra(EXTRA_SCHEDULED_TIME, timestamp.ms)
         }
 
         // Create a unique requestCode combining tag hash and wakeupId to avoid collisions
@@ -111,16 +118,37 @@ class SystemWakeServiceImpl(
     override fun dispatchWakeup(intent: Intent) {
         if (intent.action != ACTION_WAKEUP) return
 
+        val dispatchTime = Timestamp.now()
         val tag = intent.getStringExtra(EXTRA_TAG) ?: return
         val internalWakeupId = intent.getIntExtra(EXTRA_WAKEUP_ID, -1)
         val wakeupId = if (internalWakeupId == -1) null else internalWakeupId.toUInt()
-        
+        val scheduledTimeMs = intent.getLongExtra(EXTRA_SCHEDULED_TIME, -1)
+        val scheduledTime = if (scheduledTimeMs == -1L) Timestamp.INVALID else Timestamp(scheduledTimeMs)
+
+        var onWakeupStartTime: Timestamp? = null
+        var onWakeupEndTime: Timestamp? = null
+
         // Temporarily acquire wake lock to ensure handler has time to process
         acquireBusyState("DISPATCH_WAKEUP_$tag")
         try {
+            onWakeupStartTime = Timestamp.now()
             handlers[tag]?.onWakeup(wakeupId, intent)
+            onWakeupEndTime = Timestamp.now()
         } finally {
             releaseBusyState("DISPATCH_WAKEUP_$tag")
+
+            scope.launch {
+                systemMetricsRepository.saveWakeupMetric(
+                    WakeupMetric(
+                        tag = tag,
+                        wakeupId = wakeupId,
+                        scheduledTime = scheduledTime,
+                        dispatchTime = dispatchTime,
+                        onWakeupStartTime = onWakeupStartTime,
+                        onWakeupEndTime = onWakeupEndTime
+                    )
+                )
+            }
         }
     }
 
@@ -129,5 +157,6 @@ class SystemWakeServiceImpl(
         private const val ACTION_WAKEUP = "de.dh.raaps.core.system.ACTION_WAKEUP"
         private const val EXTRA_TAG = "extra_tag"
         private const val EXTRA_WAKEUP_ID = "extra_wakeup_id"
+        private const val EXTRA_SCHEDULED_TIME = "extra_scheduled_time"
     }
 }

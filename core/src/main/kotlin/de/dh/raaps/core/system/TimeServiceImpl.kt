@@ -8,6 +8,8 @@ import de.dh.raaps.common.model.data.TickHandler
 import de.dh.raaps.common.model.data.TimeService
 import de.dh.raaps.common.model.data.Timeline
 import de.dh.raaps.common.model.data.Timestamp
+import de.dh.raaps.core.repository.SystemMetricsRepository
+import de.dh.raaps.core.repository.TickHandlerMetric
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -22,6 +24,7 @@ import java.util.concurrent.CopyOnWriteArrayList
 class TimeServiceImpl(
     override val tickInterval: Minutes = Timeline.DEFAULT_TICK_INTERVAL,
     private val wakeService: SystemWakeService,
+    private val systemMetricsRepository: SystemMetricsRepository,
     private val scope: CoroutineScope
 ) : TimeService, WakeupHandler {
     override val timeline = Timeline(tickInterval)
@@ -53,10 +56,21 @@ class TimeServiceImpl(
 
                 // Sequential execution of handlers
                 handlers.forEach { entry ->
+                    val startTime = Timestamp.now()
                     try {
                         entry.handler.onTick(tick)
                     } catch (e: Exception) {
                         Log.e(TAG, "Error in tick handler ${entry.handler}", e)
+                    } finally {
+                        val endTime = Timestamp.now()
+                        systemMetricsRepository.saveTickMetric(
+                            TickHandlerMetric(
+                                tick = tick,
+                                handlerName = entry.handler.javaClass.simpleName.ifBlank { entry.handler.toString() },
+                                startTime = startTime,
+                                endTime = endTime
+                            )
+                        )
                     }
                 }
 

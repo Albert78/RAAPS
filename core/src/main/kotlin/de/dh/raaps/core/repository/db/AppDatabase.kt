@@ -25,6 +25,8 @@ import de.dh.raaps.core.repository.db.entities.MealEntity
 import de.dh.raaps.core.repository.db.entities.MealTypeEntity
 import de.dh.raaps.core.repository.db.entities.ScheduledPumpInsulinEntity
 import de.dh.raaps.core.repository.db.entities.SensorTypeEntity
+import de.dh.raaps.core.repository.db.entities.TickMetricEntity
+import de.dh.raaps.core.repository.db.entities.WakeupMetricEntity
 import kotlinx.coroutines.flow.Flow
 import java.util.concurrent.Executors
 
@@ -244,7 +246,7 @@ interface MetabolicEventsDao {
 }
 
 @Dao
-interface CoreInsightDao {
+interface SystemMetricsDao {
     @Insert
     suspend fun insert(insight: CoreInsightEntity): Long
 
@@ -256,6 +258,18 @@ interface CoreInsightDao {
 
     @Query("DELETE FROM core_insights WHERE timestamp < :timestamp")
     suspend fun pruneOlderThan(timestamp: Long)
+
+    @Insert
+    suspend fun insertWakeupMetric(metric: WakeupMetricEntity): Long
+
+    @Insert
+    suspend fun insertTickMetric(metric: TickMetricEntity): Long
+
+    @Query("DELETE FROM wakeup_metrics WHERE scheduledTime < :timestamp")
+    suspend fun pruneWakeupMetricsOlderThan(timestamp: Long)
+
+    @Query("DELETE FROM tick_metrics WHERE startTime < :timestamp")
+    suspend fun pruneTickMetricsOlderThan(timestamp: Long)
 }
 
 @Database(entities = [
@@ -276,7 +290,9 @@ interface CoreInsightDao {
     InsulinEntity::class,
     DeferredBolusEntity::class,
     ScheduledPumpInsulinEntity::class,
-    CoreInsightEntity::class
+    CoreInsightEntity::class,
+    WakeupMetricEntity::class,
+    TickMetricEntity::class
 ], version = 1)
 @TypeConverters(
     DbTypeConverters::class
@@ -286,7 +302,7 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun therapyDao(): TherapyDao
     abstract fun metabolicEventsDao(): MetabolicEventsDao
     abstract fun settingsDao(): SettingsDao
-    abstract fun coreInsightDao(): CoreInsightDao
+    abstract fun systemMetricsDao(): SystemMetricsDao
 
     companion object {
         const val CURRENT_DATABASE_VERSION = "1.0"

@@ -15,7 +15,7 @@ import de.dh.raaps.core.aps.SystemManagerImpl
 import de.dh.raaps.core.aps.TherapyManager
 import de.dh.raaps.core.pump.PumpManager
 import de.dh.raaps.core.pump.PumpManagerImpl
-import de.dh.raaps.core.repository.CoreInsightRepository
+import de.dh.raaps.core.repository.SystemMetricsRepository
 import de.dh.raaps.core.repository.DatabaseInitializer
 import de.dh.raaps.core.repository.DeviceManagementRepository
 import de.dh.raaps.core.repository.FoodRepository
@@ -43,7 +43,7 @@ class SystemRegistryImpl(
     override val foodRepository: FoodRepository,
     override val deviceManagementRepository: DeviceManagementRepository,
     override val settingsRepository: SettingsRepository,
-    override val coreInsightRepository: CoreInsightRepository,
+    override val systemMetricsRepository: SystemMetricsRepository,
     override val appPreferencesRepository: AppPreferencesRepository,
     override val glucoseSourceManager: GlucoseSourceManager,
     override val therapyManager: TherapyManager,
@@ -82,11 +82,19 @@ class SystemRegistryImpl(
             val foodRepository = FoodRepository(appDatabase)
             val deviceManagementRepository = DeviceManagementRepository(appDatabase)
             val settingsRepository = SettingsRepository(appDatabase)
-            val coreInsightRepository = CoreInsightRepository(appDatabase)
+            val systemMetricsRepository = SystemMetricsRepository(appDatabase)
 
             // Initialize Managers
-            val wakeService = SystemWakeServiceImpl(application)
-            val timeService = TimeServiceImpl(wakeService = wakeService, scope = scope)
+            val wakeService = SystemWakeServiceImpl(
+                context = application,
+                systemMetricsRepository = systemMetricsRepository,
+                scope = scope
+            )
+            val timeService = TimeServiceImpl(
+                wakeService = wakeService,
+                systemMetricsRepository = systemMetricsRepository,
+                scope = scope
+            )
             val pumpManager = PumpManagerImpl(scope = scope, wakeService = wakeService)
 
             val glucoseSourceManager = GlucoseSourceManager(
@@ -128,7 +136,7 @@ class SystemRegistryImpl(
                 therapyManager = therapyManager,
                 appPreferencesRepository = appPreferencesRepository,
                 carbsInsulinCalculator = carbsInsulinCalculator,
-                coreInsightRepository = coreInsightRepository,
+                systemMetricsRepository = systemMetricsRepository,
                 context = application
             )
 
@@ -145,7 +153,7 @@ class SystemRegistryImpl(
                 foodRepository = foodRepository,
                 deviceManagementRepository = deviceManagementRepository,
                 settingsRepository = settingsRepository,
-                coreInsightRepository = coreInsightRepository,
+                systemMetricsRepository = systemMetricsRepository,
                 appPreferencesRepository = appPreferencesRepository,
                 therapyManager = therapyManager,
                 glucoseSourceManager = glucoseSourceManager,

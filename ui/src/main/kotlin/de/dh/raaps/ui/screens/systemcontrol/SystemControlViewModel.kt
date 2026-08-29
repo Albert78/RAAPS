@@ -45,7 +45,7 @@ data class SystemControlUiState(
 class SystemControlViewModel(
     systemRegistry: SystemRegistry
 ) : ViewModel() {
-    private val coreInsightRepository = systemRegistry.coreInsightRepository
+    private val systemMetricsRepository = systemRegistry.systemMetricsRepository
     private val glucoseSourceManager = systemRegistry.glucoseSourceManager
     private val appPreferencesRepository = systemRegistry.appPreferencesRepository
     private val pumpManager = systemRegistry.pumpManager
@@ -84,7 +84,7 @@ class SystemControlViewModel(
     }
 
     val uiState: StateFlow<SystemControlUiState> = combine(
-        coreInsightRepository.observeInsights(),
+        systemMetricsRepository.observeInsights(),
         glucoseInfo,
         pumpInfo
     ) { insights, gInfo, pInfo ->

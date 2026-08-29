@@ -12,7 +12,7 @@ import de.dh.raaps.common.model.data.TickHandler
 import de.dh.raaps.common.model.data.TickPriority
 import de.dh.raaps.common.model.data.TimeService
 import de.dh.raaps.common.model.data.Timestamp
-import de.dh.raaps.core.repository.CoreInsightRepository
+import de.dh.raaps.core.repository.SystemMetricsRepository
 import de.dh.raaps.core.repository.SettingsRepository
 import de.dh.raaps.core.repository.TreatmentRepository
 import de.dh.raaps.core.system.AndroidNotifications
@@ -76,7 +76,7 @@ interface SystemManager {
         therapyManager: TherapyManager,
         appPreferencesRepository: AppPreferencesRepository,
         carbsInsulinCalculator: CarbsInsulinCalculator,
-        coreInsightRepository: CoreInsightRepository,
+        systemMetricsRepository: SystemMetricsRepository,
         context: Context
     )
 
@@ -167,7 +167,7 @@ class SystemManagerImpl(
         therapyManager: TherapyManager,
         appPreferencesRepository: AppPreferencesRepository,
         carbsInsulinCalculator: CarbsInsulinCalculator,
-        coreInsightRepository: CoreInsightRepository,
+        systemMetricsRepository: SystemMetricsRepository,
         context: Context
     ) {
         this.therapyManager = therapyManager
@@ -256,7 +256,7 @@ class SystemManagerImpl(
             onCarbsHint = { treatmentLock, amountInGram -> therapyManager.recommendCarbs(treatmentLock, amountInGram) },
             onClearRecommendations = { treatmentLock -> therapyManager.clearRecommendations(treatmentLock) },
             onWaitForPumpSync = { treatmentLock -> therapyManager.waitForPumpSync(treatmentLock) },
-            coreInsightRepository = coreInsightRepository,
+            systemMetricsRepository = systemMetricsRepository,
             scope = scope
         )
 

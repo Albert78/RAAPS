@@ -9,7 +9,7 @@ import de.dh.raaps.common.model.data.BgDelta
 import de.dh.raaps.common.model.data.BgValue
 import de.dh.raaps.common.model.data.Timeline
 import de.dh.raaps.common.model.data.Timestamp
-import de.dh.raaps.core.repository.CoreInsightRepository
+import de.dh.raaps.core.repository.SystemMetricsRepository
 import de.dh.raaps.core.repository.TreatmentRepository
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
@@ -74,7 +74,7 @@ class Core(
     private val onClearRecommendations: (treatmentLock: TreatmentLock) -> Unit,
 
     private val onWaitForPumpSync: suspend (treatmentLock: TreatmentLock) -> Int,
-    private val coreInsightRepository: CoreInsightRepository,
+    private val systemMetricsRepository: SystemMetricsRepository,
     private val scope: CoroutineScope
 ) {
     private var calculationAlgorithm: ApsAlgorithm = NoopAlgorithm()
@@ -151,7 +151,7 @@ class Core(
                                 "processCalculation: $pendingCount insulin jobs were not executed! Skipping core calculation..."
                             )
                             scope.launch {
-                                coreInsightRepository.saveInsight(
+                                systemMetricsRepository.saveInsight(
                                     CoreInsight(
                                         timestamp = now,
                                         bgOriginal = BgValue.INVALID,
@@ -177,7 +177,7 @@ class Core(
 
                     result.metrics?.let { insight ->
                         scope.launch {
-                            coreInsightRepository.saveInsight(insight)
+                            systemMetricsRepository.saveInsight(insight)
                         }
                     }
 
@@ -233,7 +233,7 @@ class Core(
                         formatErrorMessage("Error during core execution", e)
                     )))
                     scope.launch {
-                        coreInsightRepository.saveInsight(
+                        systemMetricsRepository.saveInsight(
                             CoreInsight(
                                 timestamp = now,
                                 bgOriginal = BgValue.INVALID,
@@ -259,7 +259,7 @@ class Core(
                 setCoreState(CoreState.Active(CoreIssue.TherapyLockBusy))
 
                 scope.launch {
-                    coreInsightRepository.saveInsight(
+                    systemMetricsRepository.saveInsight(
                         CoreInsight(
                             timestamp = now,
                             bgOriginal = BgValue.INVALID,
@@ -329,7 +329,7 @@ class Core(
             onCarbsHint: (treatmentLock: TreatmentLock, amountInGram: Int) -> Unit,
             onClearRecommendations: (treatmentLock: TreatmentLock) -> Unit,
             onWaitForPumpSync: suspend (treatmentLock: TreatmentLock) -> Int,
-            coreInsightRepository: CoreInsightRepository,
+            systemMetricsRepository: SystemMetricsRepository,
             scope: CoroutineScope
         ): Core {
             return Core(
@@ -350,7 +350,7 @@ class Core(
                 onCarbsHint = onCarbsHint,
                 onClearRecommendations = onClearRecommendations,
                 onWaitForPumpSync = onWaitForPumpSync,
-                coreInsightRepository = coreInsightRepository,
+                systemMetricsRepository = systemMetricsRepository,
                 scope = scope
             )
         }
