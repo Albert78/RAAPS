@@ -393,17 +393,23 @@ class ApsAlgorithmImpl(
 
             // Expected future carbs and insulin activity
             val futureActiveCarbsAtPeak = carbsInsulinCalculator.cob(meals = meals, timestamp = now + insulinPeak, includeFutureMeals = true)
-            val iobNow = carbsInsulinCalculator.iob(
+
+            // Includes basal. (Subtract cumulatedBasalInsulinUntilPeak later for net/0-line calculation).
+            val iobNow_WB = carbsInsulinCalculator.iob(
                 insulinApplications = insulinApplications,
                 timestamp = now,
                 dia = dia,
-                peak = insulinPeak
+                peak = insulinPeak,
+                excludeBasal = false
             )
-            val iobAtPeak = carbsInsulinCalculator.iob(
+
+            // Includes basal. (Subtract cumulatedBasalInsulinUntilPeak later for net/0-line calculation).
+            val iobAtPeak_WB = carbsInsulinCalculator.iob(
                 insulinApplications = insulinApplications,
                 timestamp = now + insulinPeak,
                 dia = dia,
-                peak = insulinPeak
+                peak = insulinPeak,
+                excludeBasal = false
             )
 
             val deferredBoluses = therapyManager.getDeferredBoluses()
@@ -412,7 +418,7 @@ class ApsAlgorithmImpl(
                 fold(InsulinAmount.ZERO) { acc, next -> acc + next.amount }
 
             insight = insight.copy(
-                futureActiveInsulin = iobAtPeak + sumDeferredBolusesAtPeak,
+                futureActiveInsulin = iobAtPeak_WB + sumDeferredBolusesAtPeak,
                 futureActiveCarbs = futureActiveCarbsAtPeak
             )
 
@@ -422,7 +428,9 @@ class ApsAlgorithmImpl(
 
             val predictedBgAtPeak = tickStateAtPeakValues.first.takeIf { it.isValid() }
                 ?: return CalculationResult.safetyBasal().withMetrics(insight)
-            val cumulatedBasalInsulinAtPeak = tickStateAtPeakValues.second
+            val cumulatedBasalInsulinUntilPeak = tickStateAtPeakValues.second
+
+            val iobAtPeak_net = iobAtPeak_WB - cumulatedBasalInsulinUntilPeak
 
             insight = insight.copy(predictedBgAtPeak = predictedBgAtPeak)
             val bgErrorAtPeak = predictedBgAtPeak - targetBg // < 0 if too low
@@ -436,13 +444,13 @@ class ApsAlgorithmImpl(
                 // Not included is future basal.
                 // So cumulatedInsulinActivityUntilPeak is what we expect to be active from past
                 // injections, without any new basal injections.
-                val cumulatedInsulinActivityUntilPeak = iobNow - iobAtPeak
-                val insulinEffectUntilPeak = -convertToBgDeltaFromUnits(cumulatedInsulinActivityUntilPeak, isfValue)
-                val normalBasalEffectUntilPeak = -convertToBgDeltaFromUnits(cumulatedBasalInsulinAtPeak, isfValue)
+                val cumulatedInsulinActivityUntilPeak_WB = iobNow_WB - iobAtPeak_WB
+                val insulinEffectUntilPeak_WB = -convertToBgDeltaFromUnits(cumulatedInsulinActivityUntilPeak_WB, isfValue)
+                val normalBasalEffectUntilPeak = -convertToBgDeltaFromUnits(cumulatedBasalInsulinUntilPeak, isfValue)
 
                 // All predictions are based on the assumption that we deliver normal basal. So
                 // to calculate the low temp scenario, we just subtract the normal basal effect.
-                val lowTempBasalEffectUntilPeak = insulinEffectUntilPeak - normalBasalEffectUntilPeak
+                val lowTempBasalEffectUntilPeak = insulinEffectUntilPeak_WB - normalBasalEffectUntilPeak
 
                 if (bgErrorAtPeak + lowTempBasalEffectUntilPeak < BgDelta(-20)) {
                     // Prediction is too low, even without basal -> Zero temp and defer ongoing meal boluses
@@ -499,7 +507,7 @@ class ApsAlgorithmImpl(
                 .coerceAtLeast(InsulinAmount.ZERO)
 
             // Simplified calculation. We mix remaining insulin/carbs activity of now and peak.
-            val futureInsulin = iobAtPeak + dueMealBolusAmount + sumFutureDeferredBoluses
+            val futureInsulin = iobAtPeak_net + dueMealBolusAmount + sumFutureDeferredBoluses
             if (futureInsulin + InsulinAmount.EPSILON >= insulinEquivalentOfCarbsAtPeak + bgErrorCorrectionUnits) {
                 // Meals and BG error are covered by IOB/planned boluses.
                 // Return to normal basal rate and wait for insulin/carbs to act.
