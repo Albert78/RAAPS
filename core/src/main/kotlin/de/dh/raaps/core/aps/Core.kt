@@ -7,9 +7,6 @@ import de.dh.raaps.common.model.MealEntry
 import de.dh.raaps.common.model.calculation.CarbsInsulinCalculator
 import de.dh.raaps.common.model.data.BgDelta
 import de.dh.raaps.common.model.data.BgValue
-import de.dh.raaps.common.model.data.Tick
-import de.dh.raaps.common.model.data.TickHandler
-import de.dh.raaps.common.model.data.TickPriority
 import de.dh.raaps.common.model.data.TimeService
 import de.dh.raaps.common.model.data.Timestamp
 import de.dh.raaps.core.repository.CoreInsightRepository
@@ -81,7 +78,7 @@ class Core(
     private val onWaitForPumpSync: suspend (treatmentLock: TreatmentLock) -> Int,
     private val coreInsightRepository: CoreInsightRepository,
     private val scope: CoroutineScope
-) : TickHandler {
+) {
     private var calculationAlgorithm: ApsAlgorithm = NoopAlgorithm()
 
     var coreState: CoreState = CoreState.Uninitialized
@@ -154,18 +151,10 @@ class Core(
                     carbsInsulinCalculator = carbsInsulinCalculator
                 )
 
-                timeService.registerTickHandler(TickPriority.APS, this@Core)
-
                 Log.d(TAG, "Finished initialization...")
                 setCoreState(CoreState.Suspended)
             }
         }
-    }
-
-    override suspend fun onTick(tick: Tick) {
-        Log.d(TAG, "onTick: $tick")
-
-        processCalculation()
     }
 
     internal suspend fun processCalculation() {

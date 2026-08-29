@@ -291,6 +291,13 @@ class SystemManagerImpl(
                 }
             }
         }
+        timeService.registerTickHandler(TickPriority.APS, object : TickHandler {
+            override suspend fun onTick(tick: Tick) {
+                inCoreThread {
+                    core.processCalculation()
+                }
+            }
+        })
     }
 
     private fun acquireBusyState() {
