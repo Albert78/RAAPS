@@ -18,8 +18,6 @@ import de.dh.raaps.common.model.data.Tick
 import de.dh.raaps.common.model.data.Timeline
 import de.dh.raaps.common.model.data.Timestamp
 import de.dh.raaps.core.repository.TreatmentRepository
-import java.text.SimpleDateFormat
-import java.util.Locale
 import kotlin.math.ceil
 
 class ApsAlgorithmImpl(
@@ -84,7 +82,7 @@ class ApsAlgorithmImpl(
                 val lowThreshold = therapyManager.getBgSettings().second
 
                 val impendingLow = predictionModel.findNextWithLock(
-                    startAt = mealTimeTick,
+                    startAt = mealTimeTick + 1,
                     until = mealTimeTick.plusMinutes(BOLUS_CALCULATOR_LOW_PREDICTION_LOOKAHEAD.value.toInt()),
                     predicate = { it.assumedBg.isValid() && it.assumedBg < lowThreshold },
                     block = { ProjectedBg(bg = it.assumedBg, timestamp = timeline.timestamp(it.tick)) }
@@ -314,7 +312,7 @@ class ApsAlgorithmImpl(
 
             val insulinPeakTicks = timeline.inTicks(insulinPeak)
 
-            // ------------------------------ Recovery Check -------------------------------------------
+            // ------------------------------ Low Recovery Check -------------------------------------
 
             // If we're currently low, check if we're already recovering to switch on normal basal early enough.
             if (currentBgMgDl < lowThreshold.mgdl) {
@@ -322,7 +320,7 @@ class ApsAlgorithmImpl(
                 val recoveryStartTick = predictionModel.findNext(
                     startAt = nowTick,
                     until = nowTick.plusMinutes(30),
-                    predicate = { it.assumedBg.isValid() && it.assumedBg >= lowThreshold },
+                    predicate = { it.assumedBg.isValid() && it.assumedBg >= lowThreshold + LOW_BG_SAFETY_MARGIN },
                     block = { it.tick }
                 )
 
@@ -336,8 +334,6 @@ class ApsAlgorithmImpl(
                     ) ?: false
 
                     if (!relapseFound) {
-                        val recoveryTime = SimpleDateFormat("HH:mm", Locale.getDefault()).format(timeline.timestamp(recoveryStartTick).ms)
-                        Log.d(TAG, "Recovery detected: We're currently low ($currentBgMgDl mg/dl), but returning above threshold of ${lowThreshold.mgdl} mg/dl at $recoveryTime and staying stable for 30m. Don't suggest carbs.")
                         return CalculationResult.normalSafetyBasal(CoreReasoning.LOW_RECOVERY_STABLE).withMetrics(insight)
                     }
                 }
@@ -347,16 +343,29 @@ class ApsAlgorithmImpl(
 
             // Get out of a current or impending low by suggesting carbs.
 
-            // Find the next occurrence where the value falls below the minimum within the next LOW_WARNING_THRESHOLD minutes
-            val impendingLow = predictionModel.findNext(
+            // Find the next tick where the value falls below the minimum within the next LOW_WARNING_THRESHOLD minutes
+            val impendingLowTick = predictionModel.findNext(
                 startAt = nowTick,
                 until = nowTick.plusMinutes(LOW_WARNING_THRESHOLD.value.toInt()),
                 predicate = { it.assumedBg.isValid() && it.assumedBg < lowThreshold + LOW_BG_SAFETY_MARGIN },
-                block = { true }
-            ) ?: false
+                block = { it.tick }
+            )
 
-            if (impendingLow) {
-                // We're too low or becoming too low soon. Find out, how low we'll come to calculate the amount of suggested carbs.
+            if (impendingLowTick != null) {
+                // We're too low or becoming too low soon.
+                val recovery = predictionModel.findNext(
+                    startAt = impendingLowTick,
+                    until = nowTick.plusMinutes(30),
+                    predicate = { it.assumedBg.isValid() && it.assumedBg > lowThreshold + LOW_BG_SAFETY_MARGIN },
+                    block = { true }
+                ) ?: false
+
+                if (recovery) {
+                    // Rising again after low - no problem
+                    return CalculationResult.normalSafetyBasal(CoreReasoning.LOW_RECOVERY_STABLE).withMetrics(insight)
+                }
+
+                // Find out, how low we'll come to calculate the amount of suggested carbs.
 
                 // Correct the minimum BG for twice the peak time of fast KE -> Don't look into the future too much
                 val bgMin = predictionModel.findBgMin(
