@@ -5,7 +5,7 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.CreationExtras
 import de.dh.raaps.common.model.ID_UNDEFINED
-import de.dh.raaps.common.model.MEAL_ADD_THRESHOLD_MINUTES
+import de.dh.raaps.common.model.MEAL_ADD_THRESHOLD_HOURS
 import de.dh.raaps.common.model.MEAL_EDIT_THRESHOLD_HOURS
 import de.dh.raaps.common.model.MealEntry
 import de.dh.raaps.common.model.MealType
@@ -70,10 +70,10 @@ class EditHistoricalMealViewModel(
 
     fun onTimestampChange(timestamp: Timestamp) {
         val now = Timestamp.now()
-        val thresholdMinutes = if (isAddMode) MEAL_ADD_THRESHOLD_MINUTES else (MEAL_EDIT_THRESHOLD_HOURS * 60)
+        val thresholdMinutes = if (isAddMode) MEAL_ADD_THRESHOLD_HOURS * 60 else (MEAL_EDIT_THRESHOLD_HOURS * 60)
         val minTime = now - Minutes(thresholdMinutes.toShort())
-        val maxTime = now
-        
+        val maxTime = now - Minutes(5)
+
         val cappedTimestamp = if (timestamp < minTime) minTime else if (timestamp > maxTime) maxTime else timestamp
         _uiState.update { it.copy(editedTimestamp = cappedTimestamp) }
         validateForm()
@@ -85,7 +85,7 @@ class EditHistoricalMealViewModel(
     }
 
     private fun validateForm() {
-        _uiState.update { 
+        _uiState.update {
             it.copy(isFormValid = it.editedCarbsKe > 0.0 && it.editedMealType != null)
         }
     }
@@ -93,7 +93,7 @@ class EditHistoricalMealViewModel(
     fun saveChanges(onSuccess: () -> Unit) {
         val state = _uiState.value
         val mealType = state.editedMealType ?: return
-        
+
         viewModelScope.launch {
             _uiState.update { it.copy(isSaving = true) }
             val mealToSave = if (isAddMode) {
@@ -110,13 +110,13 @@ class EditHistoricalMealViewModel(
                     mealType = mealType
                 ) ?: return@launch
             }
-            
+
             treatmentRepository.addMealEntry(mealToSave)
-            _uiState.update { 
+            _uiState.update {
                 it.copy(
-                    isSaving = false, 
+                    isSaving = false,
                     meal = if (isAddMode) mealToSave else it.meal
-                ) 
+                )
             }
             onSuccess()
         }
