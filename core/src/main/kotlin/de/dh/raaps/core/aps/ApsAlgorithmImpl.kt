@@ -312,33 +312,6 @@ class ApsAlgorithmImpl(
 
             val insulinPeakTicks = timeline.inTicks(insulinPeak)
 
-            // ------------------------------ Low Recovery Check -------------------------------------
-
-            // If we're currently low, check if we're already recovering to switch on normal basal early enough.
-            if (currentBgMgDl < lowThreshold.mgdl) {
-                // Phase 1: Find the first point within the next 30 minutes where we're back above the threshold
-                val recoveryStartTick = predictionModel.findNext(
-                    startAt = nowTick,
-                    until = nowTick.plusMinutes(30),
-                    predicate = { it.assumedBg.isValid() && it.assumedBg >= lowThreshold + LOW_BG_SAFETY_MARGIN },
-                    block = { it.tick }
-                )
-
-                if (recoveryStartTick != null) {
-                    // Phase 2: Check the following 30 minutes to ensure we stay above the threshold
-                    val relapseFound = predictionModel.findNext(
-                        startAt = recoveryStartTick,
-                        until = recoveryStartTick.plusMinutes(30),
-                        predicate = { it.assumedBg.isValid() && it.assumedBg < lowThreshold },
-                        block = { true }
-                    ) ?: false
-
-                    if (!relapseFound) {
-                        return CalculationResult.normalSafetyBasal(CoreReasoning.LOW_RECOVERY_STABLE).withMetrics(insight)
-                    }
-                }
-            }
-
             // -------------------------------- Low handling -------------------------------------------
 
             // Get out of a current or impending low by suggesting carbs.
@@ -360,33 +333,30 @@ class ApsAlgorithmImpl(
                     block = { true }
                 ) ?: false
 
-                if (recovery) {
-                    // Rising again after low - no problem
-                    return CalculationResult.normalSafetyBasal(CoreReasoning.LOW_RECOVERY_STABLE).withMetrics(insight)
-                }
+                if (!recovery) {
+                    // Find out, how low we'll come to calculate the amount of suggested carbs.
 
-                // Find out, how low we'll come to calculate the amount of suggested carbs.
-
-                // Correct the minimum BG for twice the peak time of fast KE -> Don't look into the future too much
-                val bgMin = predictionModel.findBgMin(
-                    startAt = nowTick,
-                    until = nowTick.plusMinutes(FAST_KE_DEFAULT_PEAK.value.toInt() * 2),
-                    block = { it.assumedBg }
-                )
-                if (bgMin != null && bgMin.isValid()) {
-                    val bgErrorAtMin = targetBg - bgMin
-                    val neededLowCorrectionCarbsForMinInG = convertToCarbsFromBgDelta(
-                        bgDelta = bgErrorAtMin,
-                        isf = isfValue,
-                        cr = crValue
+                    // Correct the minimum BG for twice the peak time of fast KE -> Don't look into the future too much
+                    val bgMin = predictionModel.findBgMin(
+                        startAt = nowTick,
+                        until = nowTick.plusMinutes(FAST_KE_DEFAULT_PEAK.value.toInt() * 2),
+                        block = { it.assumedBg }
                     )
-                    val recentCarbsInG = meals.
-                        filter { meal -> meal.timestamp > now.minusMinutes(20) && meal.timestamp < now.plusMinutes(15) }.
-                        sumOf { meal -> meal.carbGrams }
-                    val rawCarbsInGHint = neededLowCorrectionCarbsForMinInG - recentCarbsInG
-                    val carbsInGHint = (ceil(rawCarbsInGHint / 5.0) * 5).toInt()
-                    if (carbsInGHint > 0) {
-                        return CalculationResult.carbsSuggestion(carbsInGHint = carbsInGHint).withMetrics(insight) // Stop further processing when we're currently low
+                    if (bgMin != null && bgMin.isValid()) {
+                        val bgErrorAtMin = targetBg - bgMin
+                        val neededLowCorrectionCarbsForMinInG = convertToCarbsFromBgDelta(
+                            bgDelta = bgErrorAtMin,
+                            isf = isfValue,
+                            cr = crValue
+                        )
+                        val recentCarbsInG = meals.
+                            filter { meal -> meal.timestamp > now.minusMinutes(20) && meal.timestamp < now.plusMinutes(15) }.
+                            sumOf { meal -> meal.carbGrams }
+                        val rawCarbsInGHint = neededLowCorrectionCarbsForMinInG - recentCarbsInG
+                        val carbsInGHint = (ceil(rawCarbsInGHint / 5.0) * 5).toInt()
+                        if (carbsInGHint > 0) {
+                            return CalculationResult.carbsSuggestion(carbsInGHint = carbsInGHint).withMetrics(insight) // Stop further processing when we're currently low
+                        }
                     }
                 }
             }
@@ -436,7 +406,7 @@ class ApsAlgorithmImpl(
             val bgErrorAtPeak = predictedBgAtPeak - targetBg // < 0 if too low
 
             // Low protection for "lower than target" situations
-            if (bgErrorAtPeak < BgDelta(-10)) {
+            if (bgErrorAtPeak < BgDelta(0)) {
                 // Prediction is too low under normal basal;
                 // Either BG is falling, or, raising too slow -> Lower basal rate and defer meals
 
@@ -465,20 +435,6 @@ class ApsAlgorithmImpl(
                     percent = percent,
                     durationInHours = 1
                 ).withMetrics(insight)
-            }
-
-            // Calculation of recovery phase
-            val isRecoveringFromLow = currentBgMgDl < targetBg.mgdl - 10 &&
-                    bgErrorAtPeak >= BgDelta(-10)
-
-            if (isRecoveringFromLow) {
-                // If current BG is still below target but the prediction at peak has already reached
-                // the target, we stop basal reduction early to avoid a rebound high caused by the
-                // insulin's action delay.
-
-                // Return to normal basal rate (clear temp basal) but do not calculate
-                // any correction boluses yet to avoid overshooting during recovery.
-                return CalculationResult.normalSafetyBasal().withMetrics(insight)
             }
 
             // *****************************************************************************************
