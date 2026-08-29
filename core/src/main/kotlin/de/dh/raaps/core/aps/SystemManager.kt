@@ -232,7 +232,7 @@ class SystemManagerImpl(
         core = Core.createProductiveCore(
             therapyManager = therapyManager,
             treatmentRepository = treatmentRepository,
-            timeService = timeService,
+            timeline = timeService.timeline,
             carbsInsulinCalculator = carbsInsulinCalculator,
             glucoseSourceManager = glucoseSourceManager,
 

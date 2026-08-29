@@ -7,7 +7,7 @@ import de.dh.raaps.common.model.MealEntry
 import de.dh.raaps.common.model.calculation.CarbsInsulinCalculator
 import de.dh.raaps.common.model.data.BgDelta
 import de.dh.raaps.common.model.data.BgValue
-import de.dh.raaps.common.model.data.TimeService
+import de.dh.raaps.common.model.data.Timeline
 import de.dh.raaps.common.model.data.Timestamp
 import de.dh.raaps.core.repository.CoreInsightRepository
 import de.dh.raaps.core.repository.TreatmentRepository
@@ -58,7 +58,7 @@ sealed interface CoreState {
 class Core(
     val treatmentRepository: TreatmentRepository,
     val therapyManager: TherapyManager,
-    private val timeService: TimeService,
+    private val timeline: Timeline,
     private val carbsInsulinCalculator: CarbsInsulinCalculator,
     private val glucoseSourceManager: GlucoseSourceManager,
 
@@ -122,7 +122,7 @@ class Core(
                 treatmentRepository,
                 glucoseSourceManager.sampledBgReadings,
                 therapyManager,
-                timeline = timeService.timeline,
+                timeline = timeline,
                 carbsInsulinCalculator = carbsInsulinCalculator
             )
 
@@ -314,7 +314,7 @@ class Core(
         fun createProductiveCore(
             therapyManager: TherapyManager,
             treatmentRepository: TreatmentRepository,
-            timeService: TimeService,
+            timeline: Timeline,
             carbsInsulinCalculator: CarbsInsulinCalculator,
             glucoseSourceManager: GlucoseSourceManager,
 
@@ -335,7 +335,7 @@ class Core(
             return Core(
                 treatmentRepository = treatmentRepository,
                 therapyManager = therapyManager,
-                timeService = timeService,
+                timeline = timeline,
                 carbsInsulinCalculator = carbsInsulinCalculator,
                 glucoseSourceManager = glucoseSourceManager,
 
