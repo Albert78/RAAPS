@@ -25,6 +25,7 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -135,173 +136,186 @@ fun MealCorrectionBolusContent(
     onSubmit: () -> Unit
 ) {
     val scrollState = rememberScrollState()
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .contentScrollIndicator(scrollState)
-            .verticalScroll(scrollState)
-            .padding(vertical = 24.dp, horizontal = 16.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(16.dp)
-    ) {
-        MealCorrectionBolusContextInfo(uiState = uiState, onRefresh = onRefreshProjections)
-
-        if (uiState.showCloseBanner) {
-            CloseScreenBanner(onClose = onClose)
-        }
-
-        // Mahlzeit Card (Carbs + Food Type + Meal Time)
-        Card(
-            modifier = Modifier.fillMaxWidth(),
-            shape = RoundedCornerShape(12.dp),
-            border = BorderStroke(2.dp, AppColorBlue.copy(alpha = 0.3f)),
-            colors = CardDefaults.cardColors(
-                containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
-            )
+    Box(modifier = Modifier.fillMaxSize()) {
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .contentScrollIndicator(scrollState)
+                .verticalScroll(scrollState)
+                .padding(vertical = 24.dp, horizontal = 16.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            Column(
-                modifier = Modifier
-                    .padding(16.dp)
-                    .fillMaxWidth(),
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.spacedBy(16.dp)
+            MealCorrectionBolusContextInfo(uiState = uiState, onRefresh = onRefreshProjections)
+
+            if (uiState.showCloseBanner) {
+                CloseScreenBanner(onClose = onClose)
+            }
+
+            // Mahlzeit Card (Carbs + Food Type + Meal Time)
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(12.dp),
+                border = BorderStroke(2.dp, AppColorBlue.copy(alpha = 0.3f)),
+                colors = CardDefaults.cardColors(
+                    containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
+                )
             ) {
-                Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    Text(
-                        text = stringResource(R.string.meal_correction_bolus_carbs_label),
-                        style = MaterialTheme.typography.titleMedium
-                    )
-                    Spacer(Modifier.height(8.dp))
-                    EditableValueStepper(
-                        currentValue = uiState.input.carbsKe,
-                        onValueChange = onCarbsChange,
-                        minValue = CARBS_KE_MIN,
-                        maxValue = CARBS_KE_MAX,
-                        steppingStrategy = DefaultSteppingStrategy(0.5), // 0.5 KE steps
-                        displayStrategy = object : ValueDisplayStrategy {
-                            override fun format(value: Double): String =
-                                String.format(Locale.getDefault(), "%.1f", value)
-
-                            override fun color(value: Double): Color = Color.Unspecified
-                        },
-                        suffix = " ${carbsKeUnitLabel()}",
-                        style = StepperDefaults.defaultStyle()
-                    )
-                }
-
-                if (uiState.input.carbsKe > 0.0) {
-                    FoodTypeSelector(
-                        mealTypes = uiState.mealTypes,
-                        selectedType = uiState.input.selectedMealType,
-                        onTypeSelected = onMealTypeChange,
-                        isMandatory = true
-                    )
-
-                    HorizontalDivider(color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.1f))
-
+                Column(
+                    modifier = Modifier
+                        .padding(16.dp)
+                        .fillMaxWidth(),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.spacedBy(16.dp)
+                ) {
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
                         Text(
-                            text = stringResource(R.string.meal_correction_bolus_meal_time_label),
+                            text = stringResource(R.string.meal_correction_bolus_carbs_label),
                             style = MaterialTheme.typography.titleMedium
                         )
                         Spacer(Modifier.height(8.dp))
-                        TimeStepper(
-                            currentTime = uiState.input.mealTimestamp,
-                            onTimeChange = onMealTimeChange,
-                            modifier = Modifier.fillMaxWidth(),
-                            style = TimeStepperDefaults.defaultStyle()
-                        )
-                        Spacer(Modifier.height(4.dp))
-                        Text(
-                            text = stringResource(R.string.approx_time_format, time(uiState.input.mealTimestamp)),
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.primary
+                        EditableValueStepper(
+                            currentValue = uiState.input.carbsKe,
+                            onValueChange = onCarbsChange,
+                            minValue = CARBS_KE_MIN,
+                            maxValue = CARBS_KE_MAX,
+                            steppingStrategy = DefaultSteppingStrategy(0.5), // 0.5 KE steps
+                            displayStrategy = object : ValueDisplayStrategy {
+                                override fun format(value: Double): String =
+                                    String.format(Locale.getDefault(), "%.1f", value)
+
+                                override fun color(value: Double): Color = Color.Unspecified
+                            },
+                            suffix = " ${carbsKeUnitLabel()}",
+                            style = StepperDefaults.defaultStyle()
                         )
                     }
 
-                    ImageCaptionWithSwitch(
-                        imageVector = Icons.Default.Notifications,
-                        text = stringResource(R.string.meal_correction_bolus_reminder_label),
-                        checked = uiState.isMealReminderEnabled,
-                        onCheckedChange = { onToggleMealReminder() },
-                        modifier = Modifier.fillMaxWidth()
-                    )
+                    if (uiState.input.carbsKe > 0.0) {
+                        FoodTypeSelector(
+                            mealTypes = uiState.mealTypes,
+                            selectedType = uiState.input.selectedMealType,
+                            onTypeSelected = onMealTypeChange,
+                            isMandatory = true
+                        )
+
+                        HorizontalDivider(color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.1f))
+
+                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                            Text(
+                                text = stringResource(R.string.meal_correction_bolus_meal_time_label),
+                                style = MaterialTheme.typography.titleMedium
+                            )
+                            Spacer(Modifier.height(8.dp))
+                            TimeStepper(
+                                currentTime = uiState.input.mealTimestamp,
+                                onTimeChange = onMealTimeChange,
+                                modifier = Modifier.fillMaxWidth(),
+                                style = TimeStepperDefaults.defaultStyle()
+                            )
+                            Spacer(Modifier.height(4.dp))
+                            Text(
+                                text = stringResource(R.string.approx_time_format, time(uiState.input.mealTimestamp)),
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.primary
+                            )
+                        }
+
+                        ImageCaptionWithSwitch(
+                            imageVector = Icons.Default.Notifications,
+                            text = stringResource(R.string.meal_correction_bolus_reminder_label),
+                            checked = uiState.isMealReminderEnabled,
+                            onCheckedChange = { onToggleMealReminder() },
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                    }
                 }
             }
-        }
 
-        // Insulin Card (Final Insulin Stepper)
-        Card(
-            modifier = Modifier.fillMaxWidth(),
-            shape = RoundedCornerShape(12.dp),
-            border = BorderStroke(2.dp, AppColorBlue.copy(alpha = 0.3f)),
-            colors = CardDefaults.cardColors(
-                containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
-            )
-        ) {
-            Column(
-                modifier = Modifier
-                    .padding(16.dp)
-                    .fillMaxWidth(),
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.spacedBy(16.dp)
+            // Insulin Card (Final Insulin Stepper)
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(12.dp),
+                border = BorderStroke(2.dp, AppColorBlue.copy(alpha = 0.3f)),
+                colors = CardDefaults.cardColors(
+                    containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
+                )
             ) {
-                Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                    Text(
-                        text = stringResource(R.string.meal_correction_bolus_insulin_label),
-                        style = MaterialTheme.typography.titleMedium
-                    )
-                    Spacer(Modifier.height(8.dp))
+                Column(
+                    modifier = Modifier
+                        .padding(16.dp)
+                        .fillMaxWidth(),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.spacedBy(16.dp)
+                ) {
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        Text(
+                            text = stringResource(R.string.meal_correction_bolus_insulin_label),
+                            style = MaterialTheme.typography.titleMedium
+                        )
+                        Spacer(Modifier.height(8.dp))
 
-                    CalculationDetailsSelector(
-                        uiState = uiState,
-                        onResultClick = { onManualBolusChange(uiState.calculation.proposedTotal.iu) }
-                    )
-                    EditableValueStepper(
-                        currentValue = uiState.input.manualBolus.iu,
-                        onValueChange = onManualBolusChange,
-                        minValue = BOLUS_MIN,
-                        maxValue = BOLUS_MAX,
-                        steppingStrategy = ModuloSteppingStrategy(0.1), // 0.1 U steps
-                        displayStrategy = object : ValueDisplayStrategy {
-                            override fun format(value: Double): String =
-                                String.format(Locale.getDefault(), "%.2f", value)
+                        CalculationDetailsSelector(
+                            uiState = uiState,
+                            onResultClick = { onManualBolusChange(uiState.calculation.proposedTotal.iu) }
+                        )
+                        EditableValueStepper(
+                            currentValue = uiState.input.manualBolus.iu,
+                            onValueChange = onManualBolusChange,
+                            minValue = BOLUS_MIN,
+                            maxValue = BOLUS_MAX,
+                            steppingStrategy = ModuloSteppingStrategy(0.1), // 0.1 U steps
+                            displayStrategy = object : ValueDisplayStrategy {
+                                override fun format(value: Double): String =
+                                    String.format(Locale.getDefault(), "%.2f", value)
 
-                            override fun color(value: Double): Color = Color.Unspecified
-                        },
-                        suffix = " ${insulinUnitLabel()}",
-                        style = StepperDefaults.defaultStyle()
-                    )
+                                override fun color(value: Double): Color = Color.Unspecified
+                            },
+                            suffix = " ${insulinUnitLabel()}",
+                            style = StepperDefaults.defaultStyle()
+                        )
+                    }
                 }
+            }
+
+            // Insulin Plan Card
+            if (uiState.insulinPlan.isNotEmpty()) {
+                InsulinPlanCard(
+                    plan = uiState.insulinPlan,
+                    isExpanded = uiState.isInsulinPlanExpanded,
+                    onToggleExpanded = onToggleInsulinPlan,
+                    onTimeChange = onPlannedInsulinTimeChange
+                )
+            }
+
+            // Bottom Button
+            val isInputValid = if (uiState.input.carbsKe > 0.0) {
+                uiState.input.selectedMealType != null
+            } else {
+                uiState.input.manualBolus > InsulinAmount.ZERO
+            }
+
+            PrimaryButton(
+                onClick = onSubmit,
+                modifier = Modifier.fillMaxWidth(),
+                enabled = uiState.submissionStatus == SubmissionStatus.NotSubmitted && isInputValid
+            ) {
+                Text(
+                    if (uiState.submissionStatus == SubmissionStatus.Success) stringResource(R.string.meal_correction_bolus_administer_button_submitted)
+                    else stringResource(R.string.meal_correction_bolus_administer_button)
+                )
             }
         }
 
-        // Insulin Plan Card
-        if (uiState.insulinPlan.isNotEmpty()) {
-            InsulinPlanCard(
-                plan = uiState.insulinPlan,
-                isExpanded = uiState.isInsulinPlanExpanded,
-                onToggleExpanded = onToggleInsulinPlan,
-                onTimeChange = onPlannedInsulinTimeChange
-            )
-        }
-
-        // Bottom Button
-        val isInputValid = if (uiState.input.carbsKe > 0.0) {
-            uiState.input.selectedMealType != null
-        } else {
-            uiState.input.manualBolus > InsulinAmount.ZERO
-        }
-
-        PrimaryButton(
-            onClick = onSubmit,
-            modifier = Modifier.fillMaxWidth(),
-            enabled = uiState.submissionStatus == SubmissionStatus.NotSubmitted && isInputValid
-        ) {
-            Text(
-                if (uiState.submissionStatus == SubmissionStatus.Success) stringResource(R.string.meal_correction_bolus_administer_button_submitted)
-                else stringResource(R.string.meal_correction_bolus_administer_button)
-            )
+        if (uiState.isLoading) {
+            Surface(
+                modifier = Modifier.fillMaxSize(),
+                color = MaterialTheme.colorScheme.surface.copy(alpha = 0.5f)
+            ) {
+                Box(contentAlignment = Alignment.Center) {
+                    CircularProgressIndicator()
+                }
+            }
         }
     }
 }
@@ -713,6 +727,32 @@ fun InsulinPlanCard(
     }
 }
 
+
+@Preview(showBackground = true, name = "Loading State")
+@Composable
+fun MealCorrectionBolusLoadingPreview() {
+    AppTheme {
+        CompositionLocalProvider(LocalGlucoseUnit provides GlucoseUnit.MG_DL) {
+            Surface {
+                MealCorrectionBolusContent(
+                    uiState = MealCorrectionBolusUiState(
+                        isLoading = true,
+                    ),
+                    onCarbsChange = {},
+                    onMealTimeChange = {},
+                    onMealTypeChange = {},
+                    onManualBolusChange = {},
+                    onPlannedInsulinTimeChange = { _, _ -> },
+                    onToggleInsulinPlan = {},
+                    onToggleMealReminder = {},
+                    onRefreshProjections = {},
+                    onClose = {},
+                    onSubmit = {}
+                )
+            }
+        }
+    }
+}
 
 @Preview(showBackground = true, name = "0 KE Mode")
 @Composable
