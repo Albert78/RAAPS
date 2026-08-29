@@ -231,12 +231,12 @@ class ApsAlgorithmImpl(
                 if (!receivedValidValue) {
                     return@recalculate CalculationResult.coreIssue(
                         CoreIssue.NoRecentValues(SWITCH_OFF_ALGORITHM_INVALID_VALUES_THRESHOLD_IN_MINUTES),
-                        CoreReasoning.BAD_VALUES
+                        CoreReasoning.INVALID_VALUES
                     )
                 }
                 // We cannot make any new predictions if we don't have fresh values.
                 // Fallback to safe basal
-                return@recalculate CalculationResult.safetyBasal()
+                return@recalculate CalculationResult.safetyBasal(CoreReasoning.INVALID_VALUES)
             }
             filtered.mgdl
         }
@@ -312,7 +312,7 @@ class ApsAlgorithmImpl(
                 if (!relapseFound) {
                     val recoveryTime = SimpleDateFormat("HH:mm", Locale.getDefault()).format(timeline.timestamp(recoveryStartTick).ms)
                     Log.d(TAG, "Recovery detected: We're currently low ($currentBgMgDl mg/dl), but returning above threshold of ${lowThreshold.mgdl} mg/dl at $recoveryTime and staying stable for 30m. Don't suggest carbs.")
-                    return CalculationResult.normalSafetyBasal()
+                    return CalculationResult.normalSafetyBasal(CoreReasoning.LOW_RECOVERY_STABLE)
                 }
             }
         }

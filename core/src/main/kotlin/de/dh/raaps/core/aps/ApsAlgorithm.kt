@@ -18,13 +18,14 @@ sealed class CoreIssue {
 }
 
 enum class CoreReasoning {
-    BAD_VALUES,
+    INVALID_VALUES,
     SAFETY_BASAL_FALLBACK,
     LOW_PREDICTED_CARBS_SUGGESTION,
     LOW_PREDICTED_ZERO_TEMP,
     LOW_PREDICTED_LOW_BASAL,
     MEAL_OR_CORRECTION_BOLUS,
     NORMAL_CONDITION_SAFETY_BASAL,
+    LOW_RECOVERY_STABLE,
     PENDING_PUMP_JOBS,
     THERAPY_LOCK_HELD,
     INTERNAL_ERROR
@@ -85,24 +86,24 @@ data class CalculationResult(
     }
 
     companion object {
-        fun safetyBasal(): CalculationResult = CalculationResult(
+        fun safetyBasal(reasoning: CoreReasoning = CoreReasoning.SAFETY_BASAL_FALLBACK): CalculationResult = CalculationResult(
             carbsInGHint = null,
             tempBasal = null,
             clearTempBasal = true,
             bolus = null,
             handledDeferredBoluses = null,
             coreIssues = null,
-            reasoning = CoreReasoning.SAFETY_BASAL_FALLBACK
+            reasoning = reasoning
         )
 
-        fun normalSafetyBasal(): CalculationResult = CalculationResult(
+        fun normalSafetyBasal(reasoning: CoreReasoning = CoreReasoning.NORMAL_CONDITION_SAFETY_BASAL): CalculationResult = CalculationResult(
             carbsInGHint = null,
             tempBasal = null,
             clearTempBasal = true,
             bolus = null,
             handledDeferredBoluses = null,
             coreIssues = null,
-            reasoning = CoreReasoning.NORMAL_CONDITION_SAFETY_BASAL
+            reasoning = reasoning
         )
 
         fun tempBasal(percent: Int, durationInHours: Int) = CalculationResult(

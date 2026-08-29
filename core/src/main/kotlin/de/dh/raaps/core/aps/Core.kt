@@ -175,10 +175,24 @@ class Core(
 
                     val result = calculationAlgorithm.recalculate()
 
-                    result.metrics?.let { insight ->
-                        scope.launch {
-                            systemMetricsRepository.saveInsight(insight)
-                        }
+                    val insight = result.metrics ?: CoreInsight(
+                        timestamp = now,
+                        bgOriginal = BgValue.INVALID,
+                        bgFiltered = BgValue.INVALID,
+                        deviationPerTick = BgDelta.fromMgDl(0),
+                        futureActiveInsulin = InsulinAmount.ZERO,
+                        futureActiveCarbs = 0.0,
+                        predictedBgAtPeak = BgValue.INVALID,
+                        targetBg = BgValue.INVALID,
+                        isf = BgDelta.fromMgDl(0),
+                        cr = 0.0,
+                        actionBolus = result.bolus,
+                        actionTempBasalPercent = result.tempBasal?.percent,
+                        actionTempBasalDurationInHours = result.tempBasal?.durationInHours,
+                        reasoning = result.reasoning
+                    )
+                    scope.launch {
+                        systemMetricsRepository.saveInsight(insight)
                     }
 
                     if (!isReadOnly) {
