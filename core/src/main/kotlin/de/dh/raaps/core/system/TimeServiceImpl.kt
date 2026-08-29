@@ -35,13 +35,14 @@ class TimeServiceImpl(
     override val currentTick: Tick get() = timeline.getNowTick()
     override val currentTime: Timestamp get() = Timestamp.now()
 
-    private data class HandlerEntry(val priority: Int, val handler: TickHandler)
+    private data class HandlerEntry(val priority: Int, val handler: TickHandler, val name: String)
     private val handlers = CopyOnWriteArrayList<HandlerEntry>()
 
     private val firstSyncDeferred = CompletableDeferred<Unit>()
 
-    override fun registerTickHandler(priority: Int, handler: TickHandler) {
-        handlers.add(HandlerEntry(priority, handler))
+    override fun registerTickHandler(priority: Int, handler: TickHandler, name: String?) {
+        val handlerName = name ?: handler.javaClass.simpleName.ifBlank { handler.toString() }
+        handlers.add(HandlerEntry(priority, handler, handlerName))
         handlers.sortBy { it.priority }
     }
 
@@ -66,7 +67,7 @@ class TimeServiceImpl(
                         systemMetricsRepository.saveTickMetric(
                             TickHandlerMetric(
                                 tick = tick,
-                                handlerName = entry.handler.javaClass.simpleName.ifBlank { entry.handler.toString() },
+                                handlerName = entry.name,
                                 startTime = startTime,
                                 endTime = endTime
                             )

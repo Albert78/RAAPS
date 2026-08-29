@@ -201,7 +201,7 @@ class SystemManagerImpl(
         }
 
         androidNotifications.createNotificationChannels()
-        timeService.registerTickHandler(TickPriority.UI, NotificationTickHandler())
+        timeService.registerTickHandler(TickPriority.UI, NotificationTickHandler(), "Notifications")
 
         scope.launch {
             appPreferencesRepository.glucoseUnit.drop(1).collect {
@@ -297,7 +297,7 @@ class SystemManagerImpl(
                     core.processCalculation()
                 }
             }
-        })
+        }, "APS Core")
     }
 
     private fun acquireBusyState() {

@@ -45,7 +45,7 @@ class SimBodyPlugin(
     override fun initialize(pluginManager: PluginManager) {
         bodyModel.loadState()
         pumpDevice.loadState()
-        timeService.registerTickHandler(TickPriority.PRE_CORE, this)
+        timeService.registerTickHandler(TickPriority.PRE_CORE, this, "SimBody")
         heartbeat.start()
     }
 

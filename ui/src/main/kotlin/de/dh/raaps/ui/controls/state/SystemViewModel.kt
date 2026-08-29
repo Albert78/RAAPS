@@ -58,7 +58,7 @@ class SystemViewModel(
     }
 
     init {
-        systemRegistry.timeService.registerTickHandler(TickPriority.UI, this)
+        systemRegistry.timeService.registerTickHandler(TickPriority.UI, this, "SystemUI")
 
         viewModelScope.launch {
             combine(

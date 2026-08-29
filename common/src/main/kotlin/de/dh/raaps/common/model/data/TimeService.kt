@@ -53,8 +53,9 @@ interface TimeService {
      * Registers a [TickHandler] to be called on every tick.
      * Handlers are called sequentially in order of their [priority].
      * Use default [TickPriority] values.
+     * @param name An optional name for the handler, used for logging and metrics.
      */
-    fun registerTickHandler(priority: Int, handler: TickHandler)
+    fun registerTickHandler(priority: Int, handler: TickHandler, name: String? = null)
 
     /**
      * Unregisters a previously registered [TickHandler].
