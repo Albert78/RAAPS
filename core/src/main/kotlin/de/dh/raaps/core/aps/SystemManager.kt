@@ -281,12 +281,12 @@ class SystemManagerImpl(
                 }
             }
             launch {
-                treatmentRepository.observeMeals().drop(1).collect { data ->
+                treatmentRepository.observeMeals().drop(1).collect { _ ->
                     core.onMealsChanged()
                 }
             }
             launch {
-                treatmentRepository.observeInsulinApplications().drop(1).collect { data ->
+                treatmentRepository.observeInsulinApplications().drop(1).collect { _ ->
                     core.onInsulinChanged()
                 }
             }

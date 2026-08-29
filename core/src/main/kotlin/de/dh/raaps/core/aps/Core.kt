@@ -13,8 +13,6 @@ import de.dh.raaps.core.repository.CoreInsightRepository
 import de.dh.raaps.core.repository.TreatmentRepository
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.sync.Mutex
-import kotlinx.coroutines.sync.withLock
 
 sealed interface CoreState {
     /**
@@ -50,7 +48,7 @@ sealed interface CoreState {
  * The computation core of the APS system.
  *
  * **Architecture**
- * This class is NOT thread-safe by itself and must be called from a controlled threading environment (like APS facade).
+ * This class is NOT thread-safe by itself and must be called from a controlled threading environment (like SystemManager facade).
  *
  * **Android integration**
  * This class should remain as free as possible of workarounds for the Android system.
@@ -89,14 +87,6 @@ class Core(
     private var lastCompletion: Timestamp = Timestamp.now()
 
     /**
-     * Lock which is acquired in situations where a suspend function
-     * must be atomic. Other (non-suspend) functions don't need to be locked since
-     * we're single-threaded inside this class by design.
-     */
-    private val atomicOperationLock = Mutex()
-    private val atomicOperationOwner = Any()
-
-    /**
      * Block marker for code blocks which need a wake lock in the system during their executions.
      * If blocks are not marked with this marker, the processor can go into sleep mode any time.
      */
@@ -106,20 +96,6 @@ class Core(
             return block()
         } finally {
             onReleaseBusyState()
-        }
-    }
-
-    /**
-     * Executes the given block atomically, e.g. blocks our (single) thread from being reused
-     * for other functions in case our block suspends.
-     */
-    private suspend fun <T> atomic(block: suspend () -> T): T {
-        return if (atomicOperationLock.holdsLock(atomicOperationOwner)) {
-            block()
-        } else {
-            atomicOperationLock.withLock(atomicOperationOwner) {
-                block()
-            }
         }
     }
 
@@ -139,21 +115,19 @@ class Core(
 
     suspend fun initialize() {
         busyWork {
-            atomic {
-                Log.d(TAG, "Initializing...")
-                setCoreState(CoreState.Initializing)
+            Log.d(TAG, "Initializing...")
+            setCoreState(CoreState.Initializing)
 
-                calculationAlgorithm = ApsAlgorithmImpl.create(
-                    treatmentRepository,
-                    glucoseSourceManager.sampledBgReadings,
-                    therapyManager,
-                    timeline = timeService.timeline,
-                    carbsInsulinCalculator = carbsInsulinCalculator
-                )
+            calculationAlgorithm = ApsAlgorithmImpl.create(
+                treatmentRepository,
+                glucoseSourceManager.sampledBgReadings,
+                therapyManager,
+                timeline = timeService.timeline,
+                carbsInsulinCalculator = carbsInsulinCalculator
+            )
 
-                Log.d(TAG, "Finished initialization...")
-                setCoreState(CoreState.Suspended)
-            }
+            Log.d(TAG, "Finished initialization...")
+            setCoreState(CoreState.Suspended)
         }
     }
 
@@ -168,114 +142,112 @@ class Core(
         busyWork {
             val now = Timestamp.now()
             val res = therapyManager.tryAcquire(TAG ?: "Core") { treatmentLock ->
-                atomic {
-                    try {
-                        if (!isReadOnly) {
-                            val pendingCount = onWaitForPumpSync(treatmentLock)
-                            if (pendingCount > 0) {
-                                Log.w(
-                                    TAG,
-                                    "processCalculation: $pendingCount insulin jobs were not executed! Skipping core calculation..."
-                                )
-                                scope.launch {
-                                    coreInsightRepository.saveInsight(
-                                        CoreInsight(
-                                            timestamp = now,
-                                            bgOriginal = BgValue.INVALID,
-                                            bgFiltered = BgValue.INVALID,
-                                            deviationPerTick = BgDelta.fromMgDl(0),
-                                            futureActiveInsulin = InsulinAmount.ZERO,
-                                            futureActiveCarbs = 0.0,
-                                            predictedBgAtPeak = BgValue.INVALID,
-                                            targetBg = BgValue.INVALID,
-                                            isf = BgDelta.fromMgDl(0),
-                                            cr = 0.0,
-                                            reasoning = CoreReasoning.PENDING_PUMP_JOBS
-                                        )
-                                    )
-                                }
-                                setCoreState(CoreState.Active(currentCoreState.issues + CoreIssue.NoPumpConnection(lastCompletion)))
-                                return@atomic
-                            }
-                        }
-                        onClearRecommendations(treatmentLock)
-
-                        val result = calculationAlgorithm.recalculate()
-
-                        result.metrics?.let { insight ->
+                try {
+                    if (!isReadOnly) {
+                        val pendingCount = onWaitForPumpSync(treatmentLock)
+                        if (pendingCount > 0) {
+                            Log.w(
+                                TAG,
+                                "processCalculation: $pendingCount insulin jobs were not executed! Skipping core calculation..."
+                            )
                             scope.launch {
-                                coreInsightRepository.saveInsight(insight)
-                            }
-                        }
-
-                        if (!isReadOnly) {
-                            if (result.carbsInGHint != null) {
-                                onCarbsHint(treatmentLock, result.carbsInGHint)
-                            }
-                            if (result.tempBasal != null) {
-                                onSetTempBasal(
-                                    treatmentLock,
-                                    result.tempBasal.durationInHours,
-                                    result.tempBasal.percent
-                                )
-                            }
-                            if (result.clearTempBasal) {
-                                onClearTempBasal(treatmentLock)
-                            }
-                            if (result.bolus != null && result.bolus >= InsulinAmount.EPSILON) {
-                                onDeliverBolus(
-                                    treatmentLock,
-                                    result.bolus,
-                                    null,
-                                    result.handledDeferredBoluses,
-                                    result.correctionPart > InsulinAmount.ZERO,
-                                    result.basalPart > InsulinAmount.ZERO
-                                )
-                                result.deferredBolusUpdates?.let { updates ->
-                                    onApplyDeferredBolusUpdates(
-                                        treatmentLock,
-                                        updates
+                                coreInsightRepository.saveInsight(
+                                    CoreInsight(
+                                        timestamp = now,
+                                        bgOriginal = BgValue.INVALID,
+                                        bgFiltered = BgValue.INVALID,
+                                        deviationPerTick = BgDelta.fromMgDl(0),
+                                        futureActiveInsulin = InsulinAmount.ZERO,
+                                        futureActiveCarbs = 0.0,
+                                        predictedBgAtPeak = BgValue.INVALID,
+                                        targetBg = BgValue.INVALID,
+                                        isf = BgDelta.fromMgDl(0),
+                                        cr = 0.0,
+                                        reasoning = CoreReasoning.PENDING_PUMP_JOBS
                                     )
-                                }
-                            }
-                        }
-
-                        if (!isReadOnly) {
-                            val pendingCount2 = onWaitForPumpSync(treatmentLock)
-                            if (pendingCount2 > 0) {
-                                setCoreState(CoreState.Active(currentCoreState.issues + CoreIssue.NoPumpConnection(lastCompletion)))
-                                return@atomic
-                            }
-                        }
-                        lastCompletion = Timestamp.now()
-
-                        // Core can be active and yet have issues. In this case, the user is notified
-                        // about the issues (e.g. no BG values) but the algorithm will still be called.
-                        // If the algorithm can recover from the issues, it will continue working
-                        // and remove the issues.
-                        setCoreState(CoreState.Active(result.coreIssues ?: emptySet()))
-                    } catch (e: Exception) {
-                        Log.e(TAG, "Error during core execution", e)
-                        setCoreState(CoreState.Active(CoreIssue.InternalError(
-                            formatErrorMessage("Error during core execution", e)
-                        )))
-                        scope.launch {
-                            coreInsightRepository.saveInsight(
-                                CoreInsight(
-                                    timestamp = now,
-                                    bgOriginal = BgValue.INVALID,
-                                    bgFiltered = BgValue.INVALID,
-                                    deviationPerTick = BgDelta.fromMgDl(0),
-                                    futureActiveInsulin = InsulinAmount.ZERO,
-                                    futureActiveCarbs = 0.0,
-                                    predictedBgAtPeak = BgValue.INVALID,
-                                    targetBg = BgValue.INVALID,
-                                    isf = BgDelta.fromMgDl(0),
-                                    cr = 0.0,
-                                    reasoning = CoreReasoning.INTERNAL_ERROR
                                 )
+                            }
+                            setCoreState(CoreState.Active(currentCoreState.issues + CoreIssue.NoPumpConnection(lastCompletion)))
+                            return@tryAcquire
+                        }
+                    }
+                    onClearRecommendations(treatmentLock)
+
+                    val result = calculationAlgorithm.recalculate()
+
+                    result.metrics?.let { insight ->
+                        scope.launch {
+                            coreInsightRepository.saveInsight(insight)
+                        }
+                    }
+
+                    if (!isReadOnly) {
+                        if (result.carbsInGHint != null) {
+                            onCarbsHint(treatmentLock, result.carbsInGHint)
+                        }
+                        if (result.tempBasal != null) {
+                            onSetTempBasal(
+                                treatmentLock,
+                                result.tempBasal.durationInHours,
+                                result.tempBasal.percent
                             )
                         }
+                        if (result.clearTempBasal) {
+                            onClearTempBasal(treatmentLock)
+                        }
+                        if (result.bolus != null && result.bolus >= InsulinAmount.EPSILON) {
+                            onDeliverBolus(
+                                treatmentLock,
+                                result.bolus,
+                                null,
+                                result.handledDeferredBoluses,
+                                result.correctionPart > InsulinAmount.ZERO,
+                                result.basalPart > InsulinAmount.ZERO
+                            )
+                            result.deferredBolusUpdates?.let { updates ->
+                                onApplyDeferredBolusUpdates(
+                                    treatmentLock,
+                                    updates
+                                )
+                            }
+                        }
+                    }
+
+                    if (!isReadOnly) {
+                        val pendingCount2 = onWaitForPumpSync(treatmentLock)
+                        if (pendingCount2 > 0) {
+                            setCoreState(CoreState.Active(currentCoreState.issues + CoreIssue.NoPumpConnection(lastCompletion)))
+                            return@tryAcquire
+                        }
+                    }
+                    lastCompletion = Timestamp.now()
+
+                    // Core can be active and yet have issues. In this case, the user is notified
+                    // about the issues (e.g. no BG values) but the algorithm will still be called.
+                    // If the algorithm can recover from the issues, it will continue working
+                    // and remove the issues.
+                    setCoreState(CoreState.Active(result.coreIssues ?: emptySet()))
+                } catch (e: Exception) {
+                    Log.e(TAG, "Error during core execution", e)
+                    setCoreState(CoreState.Active(CoreIssue.InternalError(
+                        formatErrorMessage("Error during core execution", e)
+                    )))
+                    scope.launch {
+                        coreInsightRepository.saveInsight(
+                            CoreInsight(
+                                timestamp = now,
+                                bgOriginal = BgValue.INVALID,
+                                bgFiltered = BgValue.INVALID,
+                                deviationPerTick = BgDelta.fromMgDl(0),
+                                futureActiveInsulin = InsulinAmount.ZERO,
+                                futureActiveCarbs = 0.0,
+                                predictedBgAtPeak = BgValue.INVALID,
+                                targetBg = BgValue.INVALID,
+                                isf = BgDelta.fromMgDl(0),
+                                cr = 0.0,
+                                reasoning = CoreReasoning.INTERNAL_ERROR
+                            )
+                        )
                     }
                 }
             }
@@ -311,27 +283,21 @@ class Core(
      * Triggered when the therapy settings (i.e. profile) has changed.
      */
     suspend fun onTherapySettingsChanged() {
-        atomic {
-            calculationAlgorithm.updateTherapySettings()
-        }
+        calculationAlgorithm.updateTherapySettings()
     }
 
     /**
      * Triggered when the list of declared meals changes.
      */
     suspend fun onMealsChanged() {
-        atomic {
-            calculationAlgorithm.updateMeals()
-        }
+        calculationAlgorithm.updateMeals()
     }
 
     /**
      * Triggered when the list of insulin applications changes.
      */
     suspend fun onInsulinChanged() {
-        atomic {
-            calculationAlgorithm.updateInsulin()
-        }
+        calculationAlgorithm.updateInsulin()
     }
 
     suspend fun getAssumedBg(timestamp: Timestamp): BgValue {
