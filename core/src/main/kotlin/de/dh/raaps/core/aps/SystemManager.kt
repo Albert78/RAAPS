@@ -12,8 +12,8 @@ import de.dh.raaps.common.model.data.TickHandler
 import de.dh.raaps.common.model.data.TickPriority
 import de.dh.raaps.common.model.data.TimeService
 import de.dh.raaps.common.model.data.Timestamp
-import de.dh.raaps.core.repository.SystemMetricsRepository
 import de.dh.raaps.core.repository.SettingsRepository
+import de.dh.raaps.core.repository.SystemMetricsRepository
 import de.dh.raaps.core.repository.TreatmentRepository
 import de.dh.raaps.core.system.AndroidNotifications
 import de.dh.raaps.core.system.SystemWakeService
@@ -23,6 +23,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.asCoroutineDispatcher
+import kotlinx.coroutines.withContext
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -116,7 +117,7 @@ class SystemManagerImpl(
     private val timeService: TimeService,
     private val androidNotifications: AndroidNotifications,
     private val scope: CoroutineScope
-) : SystemManager, WakeupHandler {
+) : SystemManager {
     // Threading: Single background thread to avoid race conditions in the core logic
     private val coreDispatcher = Executors.newSingleThreadExecutor().asCoroutineDispatcher()
     private val coreScope = CoroutineScope(coreDispatcher + SupervisorJob())
@@ -143,21 +144,46 @@ class SystemManagerImpl(
         }
     }
 
+    private inner class SystemWakeupHandler : WakeupHandler {
+        override fun onWakeup(wakeupId: UInt?, intent: Intent?) {
+            if (wakeupId == WAKEUP_STALE_CHECK) {
+                staleCheck()
+            }
+        }
+    }
+
     /**
-     * Executes the given block on the internal core thread.
+     * Executes the given block on the internal core thread asynchronously.
      */
-    private fun inCoreThread(block: suspend CoroutineScope.() -> Unit): Job {
+    private fun inCoreThreadAsync(block: suspend CoroutineScope.() -> Unit): Job {
         return coreScope.launch {
             block()
         }
     }
 
     /**
-     * Executes the given block in a thread of the default dispatcher for
-     * async executions of outgoing events.
+     * Executes the given block on the internal core thread and waits for its completion.
      */
-    private fun inExternalDispatcher(block: suspend CoroutineScope.() -> Unit): Job {
+    private suspend fun <T> inCoreThreadSync(block: suspend CoroutineScope.() -> T): T {
+        return withContext(coreDispatcher) {
+            block()
+        }
+    }
+
+    /**
+     * Executes the given block in the external dispatcher asynchronously.
+     */
+    private fun inExternalDispatcherAsync(block: suspend CoroutineScope.() -> Unit): Job {
         return coreScope.launch(Dispatchers.Default) {
+            block()
+        }
+    }
+
+    /**
+     * Executes the given block in the external dispatcher and waits for its completion.
+     */
+    private suspend fun <T> inExternalDispatcherSync(block: suspend CoroutineScope.() -> T): T {
+        return withContext(Dispatchers.Default) {
             block()
         }
     }
@@ -174,7 +200,7 @@ class SystemManagerImpl(
         this.treatmentRepository = treatmentRepository
         this.carbsInsulinCalculator = carbsInsulinCalculator
 
-        wakeService.registerHandler(WAKE_TAG, this)
+        wakeService.registerHandler(WAKE_TAG, SystemWakeupHandler())
 
         scope.launch {
             settingsRepository.observeCurrentSettings().collect { settings ->
@@ -260,7 +286,7 @@ class SystemManagerImpl(
             scope = scope
         )
 
-        inCoreThread {
+        inCoreThreadAsync {
             core.initialize()
 
             launch {
@@ -293,7 +319,7 @@ class SystemManagerImpl(
         }
         timeService.registerTickHandler(TickPriority.APS, object : TickHandler {
             override suspend fun onTick(tick: Tick) {
-                inCoreThread {
+                inCoreThreadSync {
                     core.processCalculation()
                 }
             }
@@ -309,7 +335,7 @@ class SystemManagerImpl(
     }
 
     private fun handleCoreStateChanged() {
-        inExternalDispatcher {
+        inExternalDispatcherAsync {
             _coreState.emit(core.coreState)
         }
     }
@@ -363,13 +389,11 @@ class SystemManagerImpl(
         }
     }
 
-    override fun onWakeup(wakeupId: UInt?, intent: Intent?) {
-        if (wakeupId == WAKEUP_STALE_CHECK) {
-            if (isBgStale()) {
-                addIssue(ApsIssue.StaleBG)
-            } else {
-                removeIssue(ApsIssue.StaleBG)
-            }
+    private fun staleCheck() {
+        if (isBgStale()) {
+            addIssue(ApsIssue.StaleBG)
+        } else {
+            removeIssue(ApsIssue.StaleBG)
         }
     }
 
