@@ -165,24 +165,24 @@ class ApsAlgorithmImpl(
         val startTick = endTick.minus(pastTime)
 
         val bgStart = sampledBgReadings.getAt(startTick)
-        if (!bgStart.isValid()) return BgDelta(0)
+        if (!bgStart.isValid()) return BgDelta.ZERO
 
         val bgEnd = sampledBgReadings.getAt(endTick)
-        if (!bgEnd.isValid()) return BgDelta(0)
+        if (!bgEnd.isValid()) return BgDelta.ZERO
 
-        val actualChange = bgEnd.mgdl - bgStart.mgdl
+        val actualChange = bgEnd - bgStart
 
-        var sumPredictedBgi = 0.0
+        var sumPredictedBgi = BgDelta.ZERO
         val numTicks = endTick.value - startTick.value
 
-        if (numTicks <= 0) return BgDelta(0)
+        if (numTicks <= 0) return BgDelta.ZERO
 
         predictionModel.forEach(from = startTick + 1, to = endTick) { _, state ->
-            sumPredictedBgi += state.bgi.mgdl
+            sumPredictedBgi += state.bgi
         }
 
         val totalDeviation = actualChange - sumPredictedBgi
-        return BgDelta.fromMgDl((totalDeviation / numTicks).toInt())
+        return totalDeviation / numTicks
     }
 
     override suspend fun recalculate(): CalculationResult {
@@ -193,12 +193,12 @@ class ApsAlgorithmImpl(
             timestamp = now,
             bgOriginal = sampledBgReadings.getAt(nowTick),
             bgFiltered = BgValue.INVALID,
-            deviationPerTick = BgDelta.fromMgDl(0),
+            deviationPerTick = BgDelta.ZERO,
             futureActiveInsulin = InsulinAmount.ZERO,
             futureActiveCarbs = 0.0,
             predictedBgAtPeak = BgValue.INVALID,
             targetBg = BgValue.INVALID,
-            isf = BgDelta.fromMgDl(0),
+            isf = BgDelta.ZERO,
             cr = 0.0,
             reasoning = CoreReasoning.INTERNAL_ERROR
         )
@@ -221,8 +221,8 @@ class ApsAlgorithmImpl(
 
             // ------------------------------- BG Filtering & Validation -------------------------------
 
-            // Use Short value directly to make clear that it's a valid BG value
-            val currentBgMgDl = run {
+            // currentBg is proved to be valid
+            val currentBg = run {
                 // Filter BG values to avoid big jumps caused by measurement errors.
                 // If we have enough input values, we can use the better SavitzkyGolay filter, else fallback to PTWMA
                 var filtered = sampledBgReadings.calculateSavitzkyGolayEndBorder3()
@@ -252,8 +252,8 @@ class ApsAlgorithmImpl(
                     // Fallback to safe basal
                     return@recalculate CalculationResult.safetyBasal(CoreReasoning.INVALID_VALUES).withMetrics(insight)
                 }
-                insight = insight.copy(bgFiltered = BgValue.fromMgDl(filtered.mgdl))
-                filtered.mgdl
+                insight = insight.copy(bgFiltered = filtered)
+                filtered
             }
 
             // TODO: We should check if there is much more insulin then carbs, e.g. BG prediction dropping fast.
@@ -300,7 +300,7 @@ class ApsAlgorithmImpl(
             // Prediction block:
             // Update predicted BGI, update predicted BG
             predictionModel.calculate(
-                currentBGMgDl = currentBgMgDl,
+                currentBg = currentBg,
                 avgCurrentDeviationPerTick = avgCurrentDeviationPerTick,
                 meals = meals,
                 insulinApplications = insulinApplications,
@@ -406,7 +406,7 @@ class ApsAlgorithmImpl(
             val bgErrorAtPeak = predictedBgAtPeak - targetBg // < 0 if too low
 
             // Low protection for "lower than target" situations
-            if (bgErrorAtPeak < BgDelta(0)) {
+            if (bgErrorAtPeak < BgDelta.ZERO) {
                 // Prediction is too low under normal basal;
                 // Either BG is falling, or, raising too slow -> Lower basal rate and defer meals
 
@@ -422,12 +422,12 @@ class ApsAlgorithmImpl(
                 // to calculate the low temp scenario, we just subtract the normal basal effect.
                 val lowTempBasalEffectUntilPeak = insulinEffectUntilPeak_WB - normalBasalEffectUntilPeak
 
-                if (bgErrorAtPeak + lowTempBasalEffectUntilPeak < BgDelta(-20)) {
+                if (bgErrorAtPeak + lowTempBasalEffectUntilPeak < BgDelta.fromMgDl(-20)) {
                     // Prediction is too low, even without basal -> Zero temp and defer ongoing meal boluses
                     return CalculationResult.zeroTemp(durationInHours = 1).withMetrics(insight)
                 }
                 // Else go on with decreased basal
-                val needed = -(normalBasalEffectUntilPeak - bgErrorAtPeak).coerceAtMost(BgDelta.fromMgDl(0))
+                val needed = -(normalBasalEffectUntilPeak - bgErrorAtPeak).coerceAtMost(BgDelta.ZERO)
                 val normalEffect = -normalBasalEffectUntilPeak
                 val percent = ((needed * 100.0 / normalEffect).coerceIn(0.0, 100.0)).toInt()
 
@@ -527,7 +527,7 @@ class ApsAlgorithmImpl(
 
         const val DEVIATION_DECAY_FACTOR_PER_TICK = 0.9
 
-        val LOW_BG_SAFETY_MARGIN = BgDelta(10)
+        val LOW_BG_SAFETY_MARGIN = BgDelta.fromMgDl(10)
 
         suspend fun create(
             treatmentRepository: TreatmentRepository,

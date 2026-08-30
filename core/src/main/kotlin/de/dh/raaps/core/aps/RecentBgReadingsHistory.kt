@@ -136,7 +136,7 @@ class RecentBgReadingsHistory(
             }
         }
 
-        return if (count == 0) null else BgValue.fromMgDl((sum / count).toInt())
+        return if (count == 0) null else BgValue.fromMgDl(sum / count)
     }
 
     /**
@@ -169,7 +169,7 @@ class RecentBgReadingsHistory(
         if (weightTotal <= 0) {
             return BgValue.INVALID
         }
-        return BgValue.fromMgDl((weightedSum / weightTotal).toInt())
+        return BgValue.fromMgDl(weightedSum / weightTotal)
     }
 
     fun last(): BgReading? {

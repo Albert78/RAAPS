@@ -769,9 +769,9 @@ fun MealCorrectionBolusZeroKePreview() {
                         ),
                         mealTypes = emptyList(),
                         projections = BolusProjections(
-                            bg = BgValue(140),
+                            bg = BgValue.fromMgDl(140),
                         ),
-                        targetBg = BgValue(100),
+                        targetBg = BgValue.fromMgDl(100),
                         isf = BgDelta.fromMgDl(50),
                         cr = 10.0,
                         calculation = BolusCalculationDetails(
@@ -820,13 +820,13 @@ fun MealCorrectionBolusDefaultPreview() {
                         mealTypes = sampleMealTypes,
                         projections = BolusProjections(
                             timestamp = Timestamp.now().plusMinutes(15),
-                            bg = BgValue(145),
+                            bg = BgValue.fromMgDl(145),
                             isProjected = true,
                             iob = InsulinAmount(1.2),
                             cob = 25.0,
                             futureCarbs = 10.0
                         ),
-                        targetBg = BgValue(100),
+                        targetBg = BgValue.fromMgDl(100),
                         isf = BgDelta.fromMgDl(50),
                         cr = 10.0,
                         calculation = BolusCalculationDetails(

@@ -213,8 +213,8 @@ fun createSampleGoodBgUiState(): CurrentBgUiState {
         isLoading = false,
         isError = false,
         CurrentBgData(
-            bgValue = BgValue(125),
-            delta = BgDelta(+10),
+            bgValue = BgValue.fromMgDl(125),
+            delta = BgDelta.fromMgDl(+10),
             trend = BgTrend.FortyFiveUp,
             timestamp = Timestamp.now().minusMinutes(90)
         )
@@ -244,7 +244,7 @@ fun BgOldViewPreview() {
                 isLoading = false,
                 isError = false,
                 currentBgValue = CurrentBgData.oldValue(
-                    bgValue = BgValue(110),
+                    bgValue = BgValue.fromMgDl(110),
                     timestamp = Timestamp.now().minusHours(3)
                 )
             )
@@ -261,8 +261,8 @@ fun BgVeryHighViewPreview() {
                 isLoading = false,
                 isError = false,
                 currentBgValue = CurrentBgData.valid(
-                    bgValue = BgValue(325),
-                    delta = BgDelta(+20),
+                    bgValue = BgValue.fromMgDl(325),
+                    delta = BgDelta.fromMgDl(+20),
                     trend = BgTrend.DoubleUp,
                     timestamp = Timestamp.now().minusMinutes(3)
                 )
@@ -280,8 +280,8 @@ fun BgHighViewPreview() {
                 isLoading = false,
                 isError = false,
                 currentBgValue = CurrentBgData.valid(
-                    bgValue = BgValue(225),
-                    delta = BgDelta(+15),
+                    bgValue = BgValue.fromMgDl(225),
+                    delta = BgDelta.fromMgDl(+15),
                     trend = BgTrend.SingleUp,
                     timestamp = Timestamp.now().minusSeconds(20)
                 )
@@ -309,8 +309,8 @@ fun BgGoodFlatViewPreview() {
                 isLoading = false,
                 isError = false,
                 currentBgValue = CurrentBgData.valid(
-                    bgValue = BgValue(125),
-                    delta = BgDelta(+0),
+                    bgValue = BgValue.fromMgDl(125),
+                    delta = BgDelta.fromMgDl(+0),
                     trend = BgTrend.Flat,
                     timestamp = Timestamp.now(),
                     glucoseUnit = GlucoseUnit.MG_DL
@@ -329,8 +329,8 @@ fun BgLowViewPreview() {
                 isLoading = false,
                 isError = false,
                 currentBgValue = CurrentBgData.valid(
-                    bgValue = BgValue(60),
-                    delta = BgDelta(-5),
+                    bgValue = BgValue.fromMgDl(60),
+                    delta = BgDelta.fromMgDl(-5),
                     trend = BgTrend.FortyFiveDown,
                     timestamp = Timestamp.now(),
                     glucoseUnit = GlucoseUnit.MG_DL
@@ -349,8 +349,8 @@ fun BgVeryLowViewPreview() {
                 isLoading = false,
                 isError = false,
                 currentBgValue = CurrentBgData.valid(
-                    bgValue = BgValue(45),
-                    delta = BgDelta(-10),
+                    bgValue = BgValue.fromMgDl(45),
+                    delta = BgDelta.fromMgDl(-10),
                     trend = BgTrend.SingleDown,
                     timestamp = Timestamp.now(),
                     glucoseUnit = GlucoseUnit.MG_DL

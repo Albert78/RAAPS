@@ -26,8 +26,8 @@ fun DBBlock.toModel() = Block(
 
 fun BgBlock.toDb() = DBBgBlock(
     duration = this.duration.value,
-    target = this.target.mgdl,
-    lowThreshold = this.lowThreshold.mgdl
+    target = this.target.mgdlInt.toShort(),
+    lowThreshold = this.lowThreshold.mgdlInt.toShort()
 )
 
 fun DBBgBlock.toModel() = BgBlock(
@@ -65,8 +65,8 @@ fun CurrentTherapySettings.toEntity() = CurrentTherapySettingsEntity(
     insulin_profile_id = this.insulinProfile.id,
     default_bg_blocks = this.defaultBgBlocks.map { it.toDb() },
     insulin_adjustment_percentage = this.insulinAdjustmentPercentage,
-    target_bg_override = this.targetBgOverride?.mgdl,
-    low_threshold_override = this.lowThresholdOverride?.mgdl,
+    target_bg_override = this.targetBgOverride?.mgdlInt?.toShort(),
+    low_threshold_override = this.lowThresholdOverride?.mgdlInt?.toShort(),
     adjustment_hint = this.adjustmentHint,
 )
 

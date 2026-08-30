@@ -2,6 +2,8 @@ package de.dh.raaps.core.repository.db
 
 import androidx.room.TypeConverter
 import de.dh.raaps.common.model.ApsMode
+import de.dh.raaps.common.model.data.BgDelta
+import de.dh.raaps.common.model.data.BgValue
 import de.dh.raaps.common.model.data.Minutes
 import de.dh.raaps.common.model.data.Timestamp
 import de.dh.raaps.core.aps.CoreReasoning
@@ -34,6 +36,18 @@ class DbTypeConverters {
 
     @TypeConverter
     fun toTimestamp(value: Long?): Timestamp? = value?.let { Timestamp(it) }
+
+    @TypeConverter
+    fun fromBgValue(value: BgValue?): Int? = value?.scaled?.toInt()
+
+    @TypeConverter
+    fun toBgValue(value: Int?): BgValue? = value?.let { BgValue.fromMgDlScaled(it) }
+
+    @TypeConverter
+    fun fromBgDelta(value: BgDelta?): Int? = value?.scaled?.toInt()
+
+    @TypeConverter
+    fun toBgDelta(value: Int?): BgDelta? = value?.let { BgDelta.fromMgDlScaled(it) }
 
     @TypeConverter
     fun fromCoreReasoning(reasoning: CoreReasoning): String = reasoning.name

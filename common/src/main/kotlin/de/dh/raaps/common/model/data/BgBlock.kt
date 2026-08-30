@@ -23,6 +23,6 @@ fun List<BgBlock>.getBgForMinute(minuteSinceMidnight: Minutes): Pair<BgValue, Bg
     }
     val last = lastOrNull()
     return if (last != null) Pair(last.target, last.lowThreshold) else Pair(
-        BgValue(DEFAULT_BG_TARGET_MGDL),
-        BgValue(DEFAULT_BG_LOW_THRESHOLD_MGDL))
+        BgValue.fromMgDl(DEFAULT_BG_TARGET_MGDL),
+        BgValue.fromMgDl(DEFAULT_BG_LOW_THRESHOLD_MGDL))
 }

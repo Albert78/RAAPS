@@ -15,6 +15,7 @@ import kotlin.math.abs
 import kotlin.math.ceil
 import kotlin.math.max
 import kotlin.math.round
+import kotlin.math.roundToInt
 
 data class BolusParts(
     val mealPart: InsulinAmount,
@@ -122,10 +123,10 @@ object BolusCalculationMath {
         if (currentBg.mgdl <= lowThreshold.mgdl) return Minutes(-15) // Suggest 15-min delay for bolus if low
 
         val diff = currentBg.mgdl - targetBg.mgdl
-        if (diff <= 0) return Minutes(0)
+        if (diff <= 0.0) return Minutes(0)
 
         // Simple rule: 5 minutes per 20 mg/dL above target, max 45 min
-        return Minutes(((diff / 20) * 5).coerceIn(0, 45).toShort())
+        return Minutes(((diff / 20.0) * 5.0).roundToInt().coerceIn(0, 45).toShort())
     }
 
     /**
@@ -180,7 +181,7 @@ object BolusCalculationMath {
         val correctionPart = if (impendingLow != null) {
             InsulinAmount.ZERO
         } else {
-            convertToInsulinAmountFromBgDelta(BgDelta(bgDiff.toShort()), BgDelta(isf.mgdl))
+            convertToInsulinAmountFromBgDelta(BgDelta.fromMgDl(bgDiff), isf)
         }
 
         // Safety first: If we are too low, the COB part might be incorrect, so just ignore it for now.

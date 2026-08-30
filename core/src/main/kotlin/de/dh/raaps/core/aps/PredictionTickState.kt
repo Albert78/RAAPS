@@ -53,7 +53,7 @@ class PredictionTickState : ReadOnlyPredictionTickState {
     // BGI is calculated based on carbs and "net insulin" (delivered insulin minus basal requirement).
     // This means BGI is 0 if we deliver exactly the standard basal rate and have no active carbs and
     // insulin influence.
-    override var bgi: BgDelta = BgDelta(0)
+    override var bgi: BgDelta = BgDelta.ZERO
 
     // The cumulated activity of 100% rate basal insulin from "now" to the time of this tick.
     // Can be used to calculate LOW or HIGH temp scenarios.
@@ -74,7 +74,7 @@ class PredictionTickState : ReadOnlyPredictionTickState {
         effectiveInsulin = null
         isf = null
         cr = null
-        bgi = BgDelta(0)
+        bgi = BgDelta.ZERO
         cumulatedBasalInsulin = InsulinAmount.ZERO
         predictedBg = BgValue.INVALID
     }

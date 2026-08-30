@@ -841,7 +841,7 @@ fun CurrentTherapySettingsPreview() {
         activeInsulinProfile = InsulinProfileUiState(
             name = "Normal",
             activeProfileId = 1L,
-            currentIsf = BgDelta(40),
+            currentIsf = BgDelta.fromMgDl(40),
             currentCr = 10.0,
             currentBasal = InsulinAmount(0.5),
             isfRange = "40 - 50",

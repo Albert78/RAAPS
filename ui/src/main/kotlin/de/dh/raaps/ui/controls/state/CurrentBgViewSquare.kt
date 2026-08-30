@@ -147,8 +147,8 @@ fun CurrentBgViewSquarePreview() {
         isLoading = false,
         isError = false,
         currentBgValue = CurrentBgData.valid(
-            bgValue = BgValue(125),
-            delta = BgDelta(+15),
+            bgValue = BgValue.fromMgDl(125),
+            delta = BgDelta.fromMgDl(+15),
             trend = BgTrend.FortyFiveUp,
             timestamp = Timestamp.now(),
         )

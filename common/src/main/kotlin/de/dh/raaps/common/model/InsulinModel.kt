@@ -198,16 +198,16 @@ data class InsulinHistory(
 )
 
 inline fun convertToInsulinAmountFromBgDelta(bgDelta: BgDelta, isf: BgDelta): InsulinAmount =
-    InsulinAmount(bgDelta.mgdl.toDouble() / isf.mgdl.toDouble())
+    InsulinAmount(bgDelta.mgdl / isf.mgdl)
 
 inline fun convertToCarbsFromBgDelta(bgDelta: BgDelta, isf: BgDelta, cr: Double): Double =
     convertToCarbsFromUnits(convertToInsulinAmountFromBgDelta(bgDelta, isf), cr)
 
 inline fun convertToBgDeltaFromUnits(amount: InsulinAmount, isf: BgDelta): BgDelta =
-    BgDelta.fromMgDl((amount.iu * isf.mgdl.toDouble()).toInt())
+    BgDelta.fromMgDl((amount.iu * isf.mgdl).toInt())
 
 inline fun convertToBgDeltaFromCarbs(carbs: Double, isf: BgDelta, cr: Double): BgDelta =
-    BgDelta.fromMgDl((carbs / cr * isf.mgdl.toDouble()).toInt())
+    BgDelta.fromMgDl((carbs / cr * isf.mgdl).toInt())
 
 inline fun convertToInsulinAmountFromCarbs(carbs: Double, cr: Double): InsulinAmount =
     InsulinAmount(carbs / cr)

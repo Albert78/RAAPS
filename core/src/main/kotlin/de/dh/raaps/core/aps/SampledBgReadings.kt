@@ -20,7 +20,7 @@ class SampledBgReadings(
     private val history: RecentBgReadingsHistory
 ) {
     private val capacity = history.historySize.value / timeline.tickDuration.value
-    private val buffer = ShortArray(capacity)
+    private val buffer = IntArray(capacity) // Scaled values
     var recentTick: Tick = Tick.invalid()
         private set
 
@@ -39,7 +39,7 @@ class SampledBgReadings(
                 end = timeline.timestamp(tick + 1),
                 endInclusive = false
             )
-            buffer[i] = avg?.mgdl ?: 0
+            buffer[i] = avg?.scaled?.toInt() ?: 0
         }
     }
 
@@ -55,17 +55,17 @@ class SampledBgReadings(
         val current0 = buffer[0] // Last value
         val current1 = buffer[1] // Second to last value
         val current2 = buffer[2] // Third to last value
-        if (current0 == 0.toShort() || current1 == 0.toShort() || current2 == 0.toShort()) return BgValue.INVALID
+        if (current0 == 0 || current1 == 0 || current2 == 0) return BgValue.INVALID
 
         val coeffs = SavitzkyGolayFilterWin5Order2.COEFFS
         // We want the smoothed value for the LAST point, so we cannot apply all 5 coeffs.
         // -> Border treatment for the filter: Center the coeffs at the last entry in the window
         // (at this time we need the smoothed value) and use the last window entry (the most current one)
         // for the last three coeffs. This border treatment seems to be a good compromise.
-        val sum = current2 * coeffs[0] + // Center the coeffs at the 3rd value from behind
-                current1 * coeffs[1] +
-                current0 * (coeffs[2] + coeffs[3] + coeffs[4]) // Use the last entry for the right part of the filter coeffs
-        return BgValue.fromMgDl(sum.toInt())
+        val sum = current2.toDouble() * coeffs[0] + // Center the coeffs at the 3rd value from behind
+                current1.toDouble() * coeffs[1] +
+                current0.toDouble() * (coeffs[2] + coeffs[3] + coeffs[4]) // Use the last entry for the right part of the filter coeffs
+        return BgValue.fromMgDlScaled(sum.toInt())
     }
 
     /**
@@ -76,8 +76,8 @@ class SampledBgReadings(
         val index = recentTick.value - tick.value
 
         if (index in 0 until capacity) {
-            val mgdl = buffer[index]
-            return if (mgdl > 0) BgValue.fromMgDl(mgdl) else BgValue.INVALID
+            val scaled = buffer[index]
+            return if (scaled > 0) BgValue.fromMgDlScaled(scaled) else BgValue.INVALID
         }
         return BgValue.INVALID
     }

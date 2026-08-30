@@ -12,7 +12,7 @@ import de.dh.raaps.core.repository.db.entities.SensorTypeEntity
 // BgReading Converters
 fun BgReading.toEntity(dataProviderId: Long, sourceSensorId: Long) = GlucoseReadingEntity(
     id = this.id,
-    value_mgdl = this.value.mgdl,
+    value_mgdl = this.value.mgdlInt.toShort(),
     sample_kind = this.sampleKind,
     timestamp_ms = this.timestamp.ms,
     fk_data_provider = dataProviderId,

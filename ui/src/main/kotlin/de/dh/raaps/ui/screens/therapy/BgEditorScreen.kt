@@ -337,7 +337,7 @@ private fun BgBlockList(
                                     currentValue = block.target.mgdl.toDouble(),
                                     onValueChange = { newVal ->
                                         val updated = blocks.toMutableList()
-                                        updated[index] = block.copy(target = BgValue(newVal.roundToInt().toShort()))
+                                        updated[index] = block.copy(target = BgValue.fromMgDl(newVal.roundToInt()))
                                         onBlocksChanged(updated)
                                     },
                                     modifier = Modifier.weight(1f),
@@ -360,7 +360,7 @@ private fun BgBlockList(
                                     currentValue = block.lowThreshold.mgdl.toDouble(),
                                     onValueChange = { newVal ->
                                         val updated = blocks.toMutableList()
-                                        updated[index] = block.copy(lowThreshold = BgValue(newVal.roundToInt().toShort()))
+                                        updated[index] = block.copy(lowThreshold = BgValue.fromMgDl(newVal.roundToInt()))
                                         onBlocksChanged(updated)
                                     },
                                     modifier = Modifier.weight(1f),
@@ -389,13 +389,13 @@ private fun BgEditorPreview() {
     val mockBlocks = listOf(
         BgBlock(
             duration = Minutes.ofHours(8),
-            target = BgValue(100),
-            lowThreshold = BgValue(70)
+            target = BgValue.fromMgDl(100),
+            lowThreshold = BgValue.fromMgDl(70)
         ),
         BgBlock(
             duration = Minutes.ofHours(16),
-            target = BgValue(110),
-            lowThreshold = BgValue(80)
+            target = BgValue.fromMgDl(110),
+            lowThreshold = BgValue.fromMgDl(80)
         )
     )
     AppTheme {

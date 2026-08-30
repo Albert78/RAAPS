@@ -81,8 +81,7 @@ class PredictionModel(
      * calculated. Else `false`.
      */
     suspend fun calculate(
-        // Intentionally use Short data type to rule out invalid BG values
-        currentBGMgDl: Short,
+        currentBg: BgValue,
         avgCurrentDeviationPerTick: BgDelta,
         meals: List<MealEntry>,
         insulinApplications: List<InsulinApplication>,
@@ -91,7 +90,7 @@ class PredictionModel(
         therapyManager: TherapyManager,
         carbsInsulinCalculator: CarbsInsulinCalculator
     ) = mutex.withLock {
-        var bg = BgValue.fromMgDl(currentBGMgDl)
+        var bg = currentBg
         val nowTick = timeline.getNowTick()
         rollingHistory.tryGetTickState(nowTick)?.let { state ->
             state.predictedBg = bg
@@ -154,7 +153,7 @@ class PredictionModel(
                 // Ease out the deviation
                 deviationPerTick *= DEVIATION_DECAY_FACTOR_PER_TICK
 
-                bg = bg + state.bgi + deviationPerTick
+                bg += state.bgi + deviationPerTick
                 state.predictedBg = bg
                 state.assumedBg = bg
             } else {

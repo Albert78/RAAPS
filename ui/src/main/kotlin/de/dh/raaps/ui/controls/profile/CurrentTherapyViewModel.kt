@@ -8,12 +8,12 @@ import de.dh.raaps.common.model.InsulinAmount
 import de.dh.raaps.common.model.data.BgBlock
 import de.dh.raaps.common.model.data.BgDelta
 import de.dh.raaps.common.model.data.BgValue
-import de.dh.raaps.common.model.data.getBgForMinute
 import de.dh.raaps.common.model.data.CurrentTherapySettings
 import de.dh.raaps.common.model.data.GlucoseUnit
 import de.dh.raaps.common.model.data.InsulinProfile
 import de.dh.raaps.common.model.data.Minutes
 import de.dh.raaps.common.model.data.Timestamp
+import de.dh.raaps.common.model.data.getBgForMinute
 import de.dh.raaps.core.SystemRegistry
 import de.dh.raaps.glucoseUnit
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -48,7 +48,7 @@ data class InsulinProfileUiState(
         fun empty() = InsulinProfileUiState(
             name = "",
             activeProfileId = null,
-            currentIsf = BgDelta(0),
+            currentIsf = BgDelta.ZERO,
             currentCr = 0.0,
             currentBasal = InsulinAmount.ZERO,
             isfRange = "",
@@ -185,7 +185,7 @@ class CurrentTherapyViewModel(
         val max = values.maxOrNull() ?: 0.0
 
         fun formatVal(v: Double): String {
-            return BgDelta(v.toInt().toShort()).toString(unit)
+            return BgDelta.fromMgDl(v.toDouble()).toString(unit)
         }
 
         return if (min == max) {
