@@ -154,6 +154,8 @@ class TreatmentRepository(
             newApplications = newApplications.map { it.toEntity() }
         )
 
+        // TODO: We could record an issue if there are scheduled entries left.
+        // For simplicity, just delete them for now.
         // 2. Delete matched scheduled entries with buffer
         metabolicEventsDao.deleteScheduledPumpInsulinUntil(to.ms - 120_000)
 
