@@ -11,8 +11,8 @@ import de.dh.raaps.common.model.data.Minutes
 import de.dh.raaps.core.repository.db.AppDatabase
 import de.dh.raaps.core.repository.db.MetabolicEventsDao
 import de.dh.raaps.core.repository.db.TherapyDao
-import de.dh.raaps.core.repository.db.toEntity
-import de.dh.raaps.core.repository.db.toModel
+import de.dh.raaps.core.repository.db.mappers.toEntity
+import de.dh.raaps.core.repository.db.mappers.toModel
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.map

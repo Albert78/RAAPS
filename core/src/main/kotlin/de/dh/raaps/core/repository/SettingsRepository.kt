@@ -3,8 +3,8 @@ package de.dh.raaps.core.repository
 import de.dh.raaps.common.model.data.CurrentSettings
 import de.dh.raaps.core.repository.db.AppDatabase
 import de.dh.raaps.core.repository.db.SettingsDao
-import de.dh.raaps.core.repository.db.toEntity
-import de.dh.raaps.core.repository.db.toModel
+import de.dh.raaps.core.repository.db.mappers.toEntity
+import de.dh.raaps.core.repository.db.mappers.toModel
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 
