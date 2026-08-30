@@ -490,7 +490,8 @@ class ApsAlgorithmImpl(
                 // 2) Future carbs should be covered by deferred boluses
 
                 // So strategy is, just correct the BG error, taking into account the IOB.
-                val correctionPart = bgErrorCorrectionUnits - iobAtPeak_net.abs()
+                val correctionPart = (bgErrorCorrectionUnits - iobAtPeak_net.coerceAtLeast(InsulinAmount.ZERO))
+                    .coerceAtLeast(InsulinAmount.ZERO)
                 val mealCorrectionBolusAmount = dueMealBolusAmount + correctionPart
 
                 // We assume that the current blood glucose deviation is primarily caused by faster
