@@ -23,6 +23,7 @@ enum class CoreReasoning {
     LOW_PREDICTED_CARBS_SUGGESTION,
     LOW_PREDICTED_ZERO_TEMP,
     LOW_PREDICTED_LOW_BASAL,
+    MEAL_BOLUS,
     MEAL_OR_CORRECTION_BOLUS,
     NORMAL_CONDITION_SAFETY_BASAL,
     LOW_RECOVERY_STABLE,
@@ -139,12 +140,28 @@ data class CalculationResult(
             reasoning = CoreReasoning.LOW_PREDICTED_CARBS_SUGGESTION
         )
 
+        fun mealBolus(
+            bolusAmount: InsulinAmount,
+            handledDeferredBoluses: MutableList<DeferredBolus>,
+            deferredBolusUpdates: List<DeferredBolusUpdate>? = null
+        ) = CalculationResult(
+            carbsInGHint = null,
+            tempBasal = null,
+            clearTempBasal = true,
+            bolus = bolusAmount,
+            handledDeferredBoluses = handledDeferredBoluses,
+            correctionPart = InsulinAmount.ZERO,
+            deferredBolusUpdates = deferredBolusUpdates,
+            basalPart = InsulinAmount.ZERO,
+            coreIssues = null,
+            reasoning = CoreReasoning.MEAL_BOLUS
+        )
+
         fun mealOrCorrectionBolus(
             bolusAmount: InsulinAmount,
             handledDeferredBoluses: MutableList<DeferredBolus>,
             correctionPart: InsulinAmount,
-            deferredBolusUpdates: List<DeferredBolusUpdate>? = null,
-            basalPart: InsulinAmount = InsulinAmount.ZERO
+            deferredBolusUpdates: List<DeferredBolusUpdate>? = null
         ) = CalculationResult(
             carbsInGHint = null,
             tempBasal = null,
@@ -153,7 +170,7 @@ data class CalculationResult(
             handledDeferredBoluses = handledDeferredBoluses,
             correctionPart = correctionPart,
             deferredBolusUpdates = deferredBolusUpdates,
-            basalPart = basalPart,
+            basalPart = InsulinAmount.ZERO,
             coreIssues = null,
             reasoning = CoreReasoning.MEAL_OR_CORRECTION_BOLUS
         )

@@ -215,7 +215,7 @@ class Core(
                                 result.bolus,
                                 null,
                                 result.handledDeferredBoluses,
-                                result.correctionPart > InsulinAmount.ZERO,
+                                result.correctionPart > InsulinAmount.EPSILON,
                                 result.basalPart > InsulinAmount.ZERO
                             )
                             result.deferredBolusUpdates?.let { updates ->

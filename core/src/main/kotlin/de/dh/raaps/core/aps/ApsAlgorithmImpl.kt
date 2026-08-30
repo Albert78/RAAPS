@@ -444,6 +444,8 @@ class ApsAlgorithmImpl(
 
             // -------------------------------- Meal & high handling -----------------------------------
 
+            // Situation: BG >= Target
+
             // Calculate scheduled meal boluses
             var dueMealBolusAmount = InsulinAmount.ZERO
             val dueDeferredBoluses: MutableList<DeferredBolus> = mutableListOf()
@@ -473,19 +475,23 @@ class ApsAlgorithmImpl(
                     // Administer due deferred bolus.
                     // It might be that this is too much for the COB but this is in the
                     // responsibility of the user.
-                    CalculationResult.mealOrCorrectionBolus(
+                    CalculationResult.mealBolus(
                         bolusAmount = dueMealBolusAmount,
                         handledDeferredBoluses = dueDeferredBoluses,
-                        correctionPart = InsulinAmount.ZERO,
-                        basalPart = InsulinAmount.ZERO
                     ).withMetrics(insight)
                 }
             } else {
-                // Insufficient insulin: Calculate the delta needed to cover the gap.
-                val neededInsulin = (insulinEquivalentOfCarbsAtPeak * AGGRESSIVENESS_CARBS_CORRECTION) +
-                        bgErrorCorrectionUnits
-                val correctionPart = (neededInsulin - futureInsulin).coerceAtLeast(InsulinAmount.ZERO)
-                val mealBolusAmount = dueMealBolusAmount + correctionPart
+                // Situation is: BG > Target, i.e. a correction is necessary.
+
+                // If we don't have insulin/carbs influence, we can just correct the BG error.
+                // But IF we have insulin/carbs influence, we must not just add predicted
+                // future insulin and carbs because:
+                // 1) Insulin and carbs activity can be so different in time that we would risk low BG
+                // 2) Future carbs should be covered by deferred boluses
+
+                // So strategy is, just correct the BG error, taking into account the IOB.
+                val correctionPart = bgErrorCorrectionUnits - iobAtPeak_net.abs()
+                val mealCorrectionBolusAmount = dueMealBolusAmount + correctionPart
 
                 // We assume that the current blood glucose deviation is primarily caused by faster
                 // carbs absorption than specified in the model (just a timing issue).
@@ -500,11 +506,10 @@ class ApsAlgorithmImpl(
                 } else null
 
                 CalculationResult.mealOrCorrectionBolus(
-                    bolusAmount = mealBolusAmount,
+                    bolusAmount = mealCorrectionBolusAmount,
                     handledDeferredBoluses = dueDeferredBoluses,
                     correctionPart = correctionPart,
-                    deferredBolusUpdates = deferredBolusUpdates,
-                    basalPart = InsulinAmount.ZERO
+                    deferredBolusUpdates = deferredBolusUpdates
                 ).withMetrics(insight)
             }
         } catch (e: Exception) {

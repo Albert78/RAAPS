@@ -51,14 +51,21 @@ class PredictionTickState : ReadOnlyPredictionTickState {
     // Prediction block:
     // BGI values depend on blocks 1 and 2.
     // BGI is calculated based on carbs and "net insulin" (delivered insulin minus basal requirement).
-    // This means BGI is 0 if we deliver exactly the standard basal rate and have no active carbs.
+    // This means BGI is 0 if we deliver exactly the standard basal rate and have no active carbs and
+    // insulin influence.
     override var bgi: BgDelta = BgDelta(0)
 
-    // The cumulated activity of basal insulin from "now" to the time of this tick.
+    // The cumulated activity of 100% rate basal insulin from "now" to the time of this tick.
+    // Can be used to calculate LOW or HIGH temp scenarios.
     override var cumulatedBasalInsulin: InsulinAmount = InsulinAmount.ZERO
 
     // Predicted BG depends on block 3 and current BG.
     override var predictedBg: BgValue = BgValue.INVALID // Calculated from a starting BG, applying BGIs of previous ticks
+
+    // A unified BG value representing the best available data for both past and future ticks.
+    // Since the algorithm's treatment decisions focus on a 1-2 hour horizon, assumedBg
+    // is reliable for the near future but may lose significant accuracy for longer-range
+    // projections.
     override var assumedBg: BgValue = BgValue.INVALID
 
     fun initializeToTick(tick: Tick) {

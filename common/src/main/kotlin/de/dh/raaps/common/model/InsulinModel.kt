@@ -4,6 +4,7 @@ import de.dh.raaps.common.model.data.BgDelta
 import de.dh.raaps.common.model.data.Minutes
 import de.dh.raaps.common.model.data.Timestamp
 import java.util.UUID
+import kotlin.math.abs
 
 
 /**
@@ -30,6 +31,8 @@ value class InsulinAmount(val iu: Double): Comparable<InsulinAmount> {
     operator fun div(factor: Double) = InsulinAmount(iu / factor)
     operator fun div(other: InsulinAmount): Double = iu / other.iu
     operator fun unaryMinus() = InsulinAmount(-iu)
+
+    fun abs(): InsulinAmount = InsulinAmount(abs(iu))
 
     override operator fun compareTo(other: InsulinAmount): Int = iu.compareTo(other.iu)
 

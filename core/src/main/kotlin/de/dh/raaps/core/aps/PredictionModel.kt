@@ -127,7 +127,7 @@ class PredictionModel(
 
             // BGI calculation
 
-            val basalUnitsPerTick = state.basalRateUph!! * (timeline.tickDuration.value.toDouble() / 60.0)
+            val normalBasalUnitsPerTick = state.basalRateUph!! * (timeline.tickDuration.value.toDouble() / 60.0)
 
             // At steady state, the activity of a continuous basal rate is equal to its delivery rate.
             // This simplification allows us to subtract the scheduled basal units directly from
@@ -136,7 +136,7 @@ class PredictionModel(
             // 1. Net insulin is the delivered insulin minus the basal requirement.
             //    If we are on standard basal, net insulin is 0.
             //    If we are on low temp basal, net insulin is negative.
-            val netInsulin = state.effectiveInsulin!! - basalUnitsPerTick
+            val netInsulin = state.effectiveInsulin!! - normalBasalUnitsPerTick
 
             // 2. BGI is (Carbs - NetInsulin) * ISF.
             //    This results in BGI 0 for standard basal (no carbs) and BGI > 0 for low temp basal (no carbs).
@@ -148,7 +148,7 @@ class PredictionModel(
 
             if (tick > nowTick) {
                 // Calculations that only apply to the future prediction window
-                runningCumulatedBasal += basalUnitsPerTick
+                runningCumulatedBasal += normalBasalUnitsPerTick
                 state.cumulatedBasalInsulin = runningCumulatedBasal
 
                 // Ease out the deviation
