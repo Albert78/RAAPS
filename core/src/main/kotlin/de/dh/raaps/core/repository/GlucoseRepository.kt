@@ -2,10 +2,9 @@ package de.dh.raaps.core.repository
 
 import de.dh.raaps.common.model.DataProvider
 import de.dh.raaps.common.model.data.BgReading
+import de.dh.raaps.common.model.data.Minutes
 import de.dh.raaps.common.model.data.SensorType
 import de.dh.raaps.common.model.data.Timestamp
-import de.dh.raaps.core.aps.ApsAlgorithmImpl
-import de.dh.raaps.core.aps.RecentBgReadingsHistory
 import de.dh.raaps.core.repository.db.AppDatabase
 import de.dh.raaps.core.repository.db.ProviderDao
 import de.dh.raaps.core.repository.db.entities.DataProviderEntity
@@ -30,15 +29,10 @@ class GlucoseRepository(appDatabase: AppDatabase) {
     var lastBg: BgReading? = null
         private set
 
-    val history = RecentBgReadingsHistory(ApsAlgorithmImpl.BG_HISTORY_TIME)
-
     suspend fun initialize() {
-        val readings = loadBgReadings(from = Timestamp.now().minus(ApsAlgorithmImpl.BG_HISTORY_TIME))
-        history.setAll(readings)
-
-        val readingsHistory = history.toList()
-        _currentBg.value = readingsHistory.lastOrNull()
-        lastBg = if (readingsHistory.size >= 2) readingsHistory[readingsHistory.size - 2] else null
+        val readings = loadBgReadings(from = Timestamp.now().minus(Minutes(20)))
+        _currentBg.value = readings.lastOrNull()
+        lastBg = if (readings.size >= 2) readings[readings.size - 2] else null
     }
 
     suspend fun addReading(
@@ -47,8 +41,6 @@ class GlucoseRepository(appDatabase: AppDatabase) {
         sourceSensor: SensorType
     ) {
         insertDataProviderGlucoseReading(reading, dataProvider, sourceSensor)
-
-        history.add(reading)
 
         if (_currentBg.value == null || reading.timestamp >= _currentBg.value!!.timestamp) {
             lastBg = _currentBg.value

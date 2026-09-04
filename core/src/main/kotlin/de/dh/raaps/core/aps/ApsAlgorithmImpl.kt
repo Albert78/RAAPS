@@ -14,6 +14,7 @@ import de.dh.raaps.common.model.convertToCarbsFromBgDelta
 import de.dh.raaps.common.model.convertToInsulinAmountFromBgDelta
 import de.dh.raaps.common.model.convertToInsulinAmountFromCarbs
 import de.dh.raaps.common.model.data.BgDelta
+import de.dh.raaps.common.model.data.BgReading
 import de.dh.raaps.common.model.data.BgValue
 import de.dh.raaps.common.model.data.Minutes
 import de.dh.raaps.common.model.data.Tick
@@ -27,6 +28,7 @@ class ApsAlgorithmImpl(
     val timeline: Timeline,
     val treatmentRepository: TreatmentRepository,
     val sampledBgReadings: SampledBgReadings,
+    val history: RecentBgReadingsHistory,
     val predictionModel: PredictionModel,
     val carbsInsulinCalculator: CarbsInsulinCalculator,
     val therapyManager: TherapyManager
@@ -35,6 +37,10 @@ class ApsAlgorithmImpl(
     private fun Tick.plusMinutes(minutes: Int): Tick = this + (minutes / timeline.tickDuration.value.toInt())
     private fun Tick.minusMinutes(minutes: Int): Tick = this - (minutes / timeline.tickDuration.value.toInt())
     private fun Tick.minus(minutes: Minutes): Tick = minusMinutes(minutes.value.toInt())
+
+    override suspend fun onNewBgReading(reading: BgReading) {
+        history.add(reading)
+    }
 
     /**
      * Called when therapy settings changed.
@@ -589,12 +595,17 @@ class ApsAlgorithmImpl(
             )
             predictionModel.initializeToTick(Timestamp.now().minus(PRESERVE_PREDICTIONS_PAST_TIME))
 
-            val sampledBgReadings = SampledBgReadings(timeline, glucoseRepository.history)
+            val history = RecentBgReadingsHistory(BG_HISTORY_TIME)
+            val initialReadings = glucoseRepository.loadBgReadings(from = Timestamp.now().minus(BG_HISTORY_TIME))
+            history.setAll(initialReadings)
+
+            val sampledBgReadings = SampledBgReadings(timeline, history)
 
             return ApsAlgorithmImpl(
                 timeline = timeline,
                 treatmentRepository = treatmentRepository,
                 sampledBgReadings = sampledBgReadings,
+                history = history,
                 predictionModel = predictionModel,
                 carbsInsulinCalculator = carbsInsulinCalculator,
                 therapyManager = therapyManager

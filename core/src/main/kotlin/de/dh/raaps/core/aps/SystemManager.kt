@@ -215,6 +215,10 @@ class SystemManagerImpl(
         scope.launch {
             glucoseRepository.currentBg.drop(1).collect { bg ->
                 if (bg != null) {
+                    inCoreThreadAsync {
+                        core.onNewBgReading(bg)
+                    }
+
                     // Schedule stale check for the next window
                     val nextCheck = nextBgStaleCheckAt()
                     wakeService.scheduleWakeup(WAKE_TAG, WAKEUP_STALE_CHECK, nextCheck)

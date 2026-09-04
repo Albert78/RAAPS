@@ -5,6 +5,7 @@ import de.dh.raaps.common.model.InsulinAmount
 import de.dh.raaps.common.model.MealType
 import de.dh.raaps.common.model.PlannedInsulin
 import de.dh.raaps.common.model.data.BgDelta
+import de.dh.raaps.common.model.data.BgReading
 import de.dh.raaps.common.model.data.BgValue
 import de.dh.raaps.common.model.data.Minutes
 import de.dh.raaps.common.model.data.Timestamp
@@ -200,6 +201,7 @@ data class CalculationResult(
 }
 
 interface ApsAlgorithm {
+    suspend fun onNewBgReading(reading: BgReading)
     suspend fun updateTherapySettings()
     suspend fun updateMeals()
     suspend fun updateInsulin()
@@ -209,6 +211,10 @@ interface ApsAlgorithm {
 }
 
 class NoopAlgorithm: ApsAlgorithm {
+    override suspend fun onNewBgReading(reading: BgReading) {
+        // Do nothing
+    }
+
     override suspend fun updateTherapySettings() {
         // Do nothing
     }

@@ -6,6 +6,7 @@ import de.dh.raaps.common.model.InsulinAmount
 import de.dh.raaps.common.model.MealEntry
 import de.dh.raaps.common.model.calculation.CarbsInsulinCalculator
 import de.dh.raaps.common.model.data.BgDelta
+import de.dh.raaps.common.model.data.BgReading
 import de.dh.raaps.common.model.data.BgValue
 import de.dh.raaps.common.model.data.Timeline
 import de.dh.raaps.common.model.data.Timestamp
@@ -292,6 +293,13 @@ class Core(
                 }
             }
         }
+    }
+
+    /**
+     * Triggered when a new glucose reading is available.
+     */
+    suspend fun onNewBgReading(reading: BgReading) {
+        calculationAlgorithm.onNewBgReading(reading)
     }
 
     /**
