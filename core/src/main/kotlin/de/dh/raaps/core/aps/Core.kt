@@ -15,6 +15,8 @@ import de.dh.raaps.core.repository.SystemMetricsRepository
 import de.dh.raaps.core.repository.TreatmentRepository
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 
 sealed interface CoreState {
     /**
@@ -79,6 +81,7 @@ class Core(
     private val systemMetricsRepository: SystemMetricsRepository,
     private val scope: CoroutineScope
 ) {
+    private val mutex = Mutex()
     private var calculationAlgorithm: ApsAlgorithm = NoopAlgorithm()
 
     var coreState: CoreState = CoreState.Uninitialized
@@ -115,7 +118,7 @@ class Core(
         onCoreStateChanged()
     }
 
-    suspend fun initialize() {
+    suspend fun initialize() = mutex.withLock {
         busyWork {
             Log.d(TAG, "Initializing...")
             setCoreState(CoreState.Initializing)
@@ -133,9 +136,9 @@ class Core(
         }
     }
 
-    internal suspend fun processCalculation() {
+    internal suspend fun processCalculation() = mutex.withLock {
         val currentCoreState = coreState
-        if (currentCoreState !is CoreState.Active) return
+        if (currentCoreState !is CoreState.Active) return@withLock
 
         // This is the outer part of the process tick.
         // We acquire the wake lock, we acquire the therapy manager's treatment lock,
@@ -298,33 +301,33 @@ class Core(
     /**
      * Triggered when a new glucose reading is available.
      */
-    suspend fun onNewBgReading(reading: BgReading) {
+    suspend fun onNewBgReading(reading: BgReading) = mutex.withLock {
         calculationAlgorithm.onNewBgReading(reading)
     }
 
     /**
      * Triggered when the therapy settings (i.e. profile) has changed.
      */
-    suspend fun onTherapySettingsChanged() {
+    suspend fun onTherapySettingsChanged() = mutex.withLock {
         calculationAlgorithm.updateTherapySettings()
     }
 
     /**
      * Triggered when the list of declared meals changes.
      */
-    suspend fun onMealsChanged() {
+    suspend fun onMealsChanged() = mutex.withLock {
         calculationAlgorithm.updateMeals()
     }
 
     /**
      * Triggered when the list of insulin applications changes.
      */
-    suspend fun onInsulinChanged() {
+    suspend fun onInsulinChanged() = mutex.withLock {
         calculationAlgorithm.updateInsulin()
     }
 
-    suspend fun getAssumedBg(timestamp: Timestamp): BgValue {
-        return calculationAlgorithm.getAssumedBg(timestamp)
+    suspend fun getAssumedBg(timestamp: Timestamp): BgValue = mutex.withLock {
+        calculationAlgorithm.getAssumedBg(timestamp)
     }
 
     fun getBolusCorrectionCalculator(): BolusCorrectionCalculator {
