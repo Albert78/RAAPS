@@ -185,10 +185,13 @@ interface MetabolicEventsDao {
     suspend fun insertInsulinApplication(insulin: InsulinEntity): Long
 
     @Insert
-    suspend fun insertInsulinApplications(insulin: List<InsulinEntity>)
+    suspend fun insertInsulinApplications(insulin: List<InsulinEntity>): List<Long>
 
     @Update
     suspend fun updateInsulinApplication(insulin: InsulinEntity)
+
+    @Update
+    suspend fun updateInsulinApplications(insulin: List<InsulinEntity>)
 
     @Query("DELETE FROM insulin where id = :id")
     suspend fun deleteInsulinApplication(id: Long)
