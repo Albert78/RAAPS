@@ -20,7 +20,7 @@ data class SimHistoryEntity(
 @Entity(tableName = "simulation_state")
 data class SimulationStateEntity(
     @PrimaryKey val id: Int = 0, // Only one state entry
-    val lastTickTimestampMs: Long,
+    val lastSimulationTimestampMs: Long,
     val exerciseIntensity: Double,
     val stressLevel: Double,
     val illnessFactor: Double,

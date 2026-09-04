@@ -197,11 +197,11 @@ class BodyModel(
         return dao.getEarliestHistoryEntry()?.bgMgDl ?: bloodGlucose
     }
 
-    private val _lastTickTimestamp = MutableStateFlow(Timestamp.now())
-    var lastTickTimestamp: Timestamp
-        get() = _lastTickTimestamp.value
+    private val _lastSimulationTimestamp = MutableStateFlow(Timestamp.now())
+    var lastSimulationTimestamp: Timestamp
+        get() = _lastSimulationTimestamp.value
         set(value) {
-            _lastTickTimestamp.value = value
+            _lastSimulationTimestamp.value = value
             persistState()
         }
 
@@ -215,7 +215,7 @@ class BodyModel(
                 // Load simulation state (UI settings)
                 val state = dao.getSimulationState()
                 if (state != null) {
-                    _lastTickTimestamp.value = Timestamp(state.lastTickTimestampMs)
+                    _lastSimulationTimestamp.value = Timestamp(state.lastSimulationTimestampMs)
                     _exerciseIntensity.value = state.exerciseIntensity
                     _stressLevel.value = state.stressLevel
                     _illnessFactor.value = state.illnessFactor
@@ -223,8 +223,8 @@ class BodyModel(
                     _sensorNoiseFactor.value = state.sensorNoiseFactor
                 } else {
                     // First run defaults
-                    // Set last tick to 5 minutes ago so heartbeat triggers immediately on start
-                    _lastTickTimestamp.value = Timestamp(Timestamp.now().ms - 5 * 60 * 1000L)
+                    // Set last simulation timestamp to 5 minutes ago so heartbeat triggers immediately on start
+                    _lastSimulationTimestamp.value = Timestamp(Timestamp.now().ms - 5 * 60 * 1000L)
                     _isSensorEnabled.value = true
                     _sensorNoiseFactor.value = 0.0
                 }
@@ -315,7 +315,7 @@ class BodyModel(
         scope.launch {
             dao.updateSimulationState(
                 SimulationStateEntity(
-                    lastTickTimestampMs = lastTickTimestamp.ms,
+                    lastSimulationTimestampMs = lastSimulationTimestamp.ms,
                     exerciseIntensity = exerciseIntensity,
                     stressLevel = stressLevel,
                     illnessFactor = illnessFactor,
@@ -355,14 +355,14 @@ class BodyModel(
      * Advances the simulation state to the [currentTimestamp].
      * Calculates the delta in blood glucose based on all active influences.
      */
-    fun advanceToTick(currentTimestamp: Timestamp = Timestamp.now()) {
-        val durationMs = currentTimestamp.ms - lastTickTimestamp.ms
+    fun advanceTo(currentTimestamp: Timestamp = Timestamp.now()) {
+        val durationMs = currentTimestamp.ms - lastSimulationTimestamp.ms
 
         val durationHours = durationMs / (1000.0 * 60 * 60)
 
         // Calculate deltas
-        val insulinImpact = calculateInsulinImpact(lastTickTimestamp, currentTimestamp)
-        val carbImpact = calculateCarbImpact(lastTickTimestamp, currentTimestamp)
+        val insulinImpact = calculateInsulinImpact(lastSimulationTimestamp, currentTimestamp)
+        val carbImpact = calculateCarbImpact(lastSimulationTimestamp, currentTimestamp)
 
         // Liver production offsets normal basal insulin.
         // Liver output is in grams of carbs per hour.
@@ -394,7 +394,7 @@ class BodyModel(
         )
 
         // Bypass setter to avoid redundant persistState calls
-        _lastTickTimestamp.value = currentTimestamp
+        _lastSimulationTimestamp.value = currentTimestamp
         persistState()
         cleanup(currentTimestamp)
     }

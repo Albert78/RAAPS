@@ -6,7 +6,6 @@ import de.dh.raaps.common.model.data.BgReading
 import de.dh.raaps.common.model.data.BgSampleKind
 import de.dh.raaps.common.model.data.BgValue
 import de.dh.raaps.common.model.data.Timestamp
-import de.dh.raaps.core.aps.SystemManager
 import de.dh.raaps.core.system.SystemWakeService
 import de.dh.raaps.core.system.WakeupHandler
 import kotlinx.coroutines.CoroutineScope
@@ -18,11 +17,13 @@ import kotlin.time.Duration.Companion.milliseconds
 
 /**
  * Handles the periodic wakeup of the SimBody simulation using the central [SystemWakeService].
- * This component acts as the external CGM trigger by emitting glucose values at regular intervals.
+ * This component acts as the external CGM trigger by advancing the simulation state
+ * and emitting glucose values at regular intervals.
  */
 class SimBodyHeartbeat(
     private val wakeService: SystemWakeService,
     private val bodyModel: BodyModel,
+    private val pumpDevice: SimBodyPumpDevice,
     private val onBgReading: (BgReading) -> Unit
 ) : WakeupHandler {
 
@@ -48,16 +49,14 @@ class SimBodyHeartbeat(
             Log.d(TAG, "SimBody Heartbeat starting (model loaded)")
 
             val now = Timestamp.now()
-            val lastTick = bodyModel.lastTickTimestamp
-            val intervalMs = TICK_INTERVAL_MINUTES * 60 * 1000L
+            val lastSimulation = bodyModel.lastSimulationTimestamp
+            val intervalMs = SIMULATION_INTERVAL_MINUTES * 60 * 1000L
 
-            // The system tick happens approx 20s after emission (SystemManager.EXECUTION_DELAY_AFTER_BG_MS).
-            // We try to maintain the rhythm relative to the last known tick.
-            val nextEmissionMs = lastTick.ms - SystemManager.EXECUTION_DELAY_AFTER_BG_MS + intervalMs
+            val nextEmissionMs = lastSimulation.ms + intervalMs
 
             if (now.ms >= nextEmissionMs) {
                 // We are past the next expected emission, or it's the first run
-                performTick()
+                performSimulationStep()
                 scheduleNext()
             } else {
                 // It's not time yet, wait for the next regular turnus
@@ -77,27 +76,31 @@ class SimBodyHeartbeat(
 
     override fun onWakeup(wakeupId: UInt?, intent: Intent?) {
         if (!started) return
-        if (wakeupId == WAKEUP_ID_TICK) {
-            performTick()
+        if (wakeupId == WAKEUP_ID_SIMULATION) {
+            performSimulationStep()
             scheduleNext()
         }
     }
 
     private val random = java.util.Random()
 
-    private fun performTick() {
+    private fun performSimulationStep() {
         scope.launch {
             val now = Timestamp.now()
-            Log.d(TAG, "SimBody Heartbeat Tick at $now")
-
-            if (!bodyModel.isSensorEnabled) {
-                Log.d(TAG, "Sensor is disabled, skipping BG reading emission")
-                return@launch
-            }
+            Log.d(TAG, "SimBody Heartbeat Simulation Step at $now")
 
             // Ensure the system stays awake during emission
             wakeService.acquireBusyState(WAKE_TAG)
             try {
+                // First advance pump device and body model to current timestamp
+                pumpDevice.advanceTo(now)
+                bodyModel.advanceTo(now)
+
+                if (!bodyModel.isSensorEnabled) {
+                    Log.d(TAG, "Sensor is disabled, skipping BG reading emission")
+                    return@launch
+                }
+
                 val baseBg = bodyModel.getDelayedBloodGlucose(
                     SimBodyCgmSource.DEFAULT_READINGS_DELAY.value.toInt()
                 )
@@ -126,23 +129,22 @@ class SimBodyHeartbeat(
     private fun scheduleNext(targetTime: Timestamp? = null) {
         if (!started) return
 
-        val nextTick = if (targetTime != null) {
+        val nextStep = if (targetTime != null) {
             targetTime
         } else {
             val now = Timestamp.now()
-            val lastTick = bodyModel.lastTickTimestamp
-            val intervalMs = TICK_INTERVAL_MINUTES * 60 * 1000L
+            val lastSimulation = bodyModel.lastSimulationTimestamp
+            val intervalMs = SIMULATION_INTERVAL_MINUTES * 60 * 1000L
 
-            // Calculate next tick based on last tick to maintain rhythm
-            var next = lastTick.ms - SystemManager.EXECUTION_DELAY_AFTER_BG_MS + intervalMs
+            var next = lastSimulation.ms + intervalMs
             while (next <= now.ms + 5000) { // 5s buffer
                 next += intervalMs
             }
             Timestamp(next)
         }
 
-        Log.d(TAG, "Scheduling next tick at $nextTick")
-        wakeService.scheduleWakeup(WAKE_TAG, WAKEUP_ID_TICK, nextTick)
+        Log.d(TAG, "Scheduling next simulation step at $nextStep")
+        wakeService.scheduleWakeup(WAKE_TAG, WAKEUP_ID_SIMULATION, nextStep)
     }
 
     companion object {
@@ -153,7 +155,7 @@ class SimBodyHeartbeat(
          */
         const val WAKE_TAG = "SIM_BODY"
 
-        private val WAKEUP_ID_TICK = 1u
-        private const val TICK_INTERVAL_MINUTES = 5
+        private val WAKEUP_ID_SIMULATION = 1u
+        private const val SIMULATION_INTERVAL_MINUTES = 5
     }
 }

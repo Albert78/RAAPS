@@ -18,7 +18,7 @@ private var simBodyPlugin: SimBodyPlugin? = null
  */
 fun setupSystem(registry: SystemRegistry, pluginManager: PluginManager, application: Application) {
     val pumpManager = registry.pumpManager
-    val plugin = SimBodyPlugin(application, registry.wakeService, registry.timeService)
+    val plugin = SimBodyPlugin(application, registry.wakeService)
     simBodyPlugin = plugin
     pluginManager.addPlugin(plugin)
     val glucoseSource = plugin.getGlucoseSource()

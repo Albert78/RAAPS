@@ -13,14 +13,14 @@ class SimBodyRepository(private val simBodyDao: SimBodyDao) {
     suspend fun getSimulationState() = simBodyDao.getSimulationState()
 
     suspend fun updateSimulationState(
-        lastTickTimestampMs: Long,
+        lastSimulationTimestampMs: Long,
         exerciseIntensity: Double,
         stressLevel: Double,
         illnessFactor: Double
     ) {
         simBodyDao.updateSimulationState(
             SimulationStateEntity(
-                lastTickTimestampMs = lastTickTimestampMs,
+                lastSimulationTimestampMs = lastSimulationTimestampMs,
                 exerciseIntensity = exerciseIntensity,
                 stressLevel = stressLevel,
                 illnessFactor = illnessFactor

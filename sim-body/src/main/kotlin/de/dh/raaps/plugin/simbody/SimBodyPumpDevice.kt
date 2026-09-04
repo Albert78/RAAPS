@@ -161,7 +161,7 @@ class SimBodyPumpDevice(
     /**
      * Advances the internal device state.
      */
-    fun advanceToTick(currentTimestamp: Timestamp) {
+    fun advanceTo(currentTimestamp: Timestamp) {
         handleBasal(currentTimestamp)
         return
     }
@@ -173,7 +173,7 @@ class SimBodyPumpDevice(
     private fun handleBasal(currentTimestamp: Timestamp) {
         val twentyMinutesMs = 20 * 60 * 1000L
 
-        // Initialize if first tick to prevent retroactive deliveries
+        // Initialize if first step to prevent retroactive deliveries
         if (lastBasalDeliveryTimestamp == 0L) {
             lastBasalDeliveryTimestamp = currentTimestamp.ms
             persistState()
