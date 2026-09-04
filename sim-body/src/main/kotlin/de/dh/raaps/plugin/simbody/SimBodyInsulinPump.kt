@@ -4,6 +4,7 @@ import de.dh.raaps.common.model.BasalStatus
 import de.dh.raaps.common.model.HardwareInformation
 import de.dh.raaps.common.model.InsulinAmount
 import de.dh.raaps.common.model.InsulinCategory
+import de.dh.raaps.common.model.InsulinConcentration
 import de.dh.raaps.common.model.InsulinHistory
 import de.dh.raaps.common.model.InsulinHistoryPoint
 import de.dh.raaps.common.model.InsulinPump
@@ -36,6 +37,8 @@ class SimBodyInsulinPump(
     private val device: SimBodyPumpDevice,
     private val scope: CoroutineScope = CoroutineScope(SupervisorJob() + Dispatchers.Default),
 ): InsulinPump {
+    override var insulinConcentration: InsulinConcentration = InsulinConcentration.U100
+
     companion object {
         const val SIM_PUMP_MIN_BASAL_RATE = 0.0
         val SIM_PUMP_MIN_BASAL_INCREMENT = InsulinAmount(0.05)
@@ -135,7 +138,7 @@ class SimBodyInsulinPump(
     private val _history = MutableStateFlow<InsulinHistory?>(null)
     override val history: StateFlow<InsulinHistory?> = _history
 
-    override suspend fun bolus(amount: InsulinAmount) {
+    override suspend fun bolus(amount: InsulinAmount, bolusId: String?) {
         if (!_isConnected.value) throw Exception("Pump not connected to App")
 
         if (device.deliverBolus(amount)) {

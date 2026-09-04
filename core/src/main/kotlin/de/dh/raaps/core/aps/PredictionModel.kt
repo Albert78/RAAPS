@@ -1,7 +1,7 @@
 package de.dh.raaps.core.aps
 
 import de.dh.raaps.common.model.InsulinAmount
-import de.dh.raaps.common.model.InsulinApplication
+import de.dh.raaps.common.model.InsulinDose
 import de.dh.raaps.common.model.MealEntry
 import de.dh.raaps.common.model.calculation.CarbsInsulinCalculator
 import de.dh.raaps.common.model.convertToBgDeltaFromUnits
@@ -84,7 +84,7 @@ class PredictionModel(
         currentBg: BgValue,
         avgCurrentDeviationPerTick: BgDelta,
         meals: List<MealEntry>,
-        insulinApplications: List<InsulinApplication>,
+        insulinDoses: List<InsulinDose>,
         dia: Minutes,
         insulinPeak: Minutes,
         therapyManager: TherapyManager,
@@ -108,7 +108,7 @@ class PredictionModel(
             }
             if (state.effectiveInsulin == null) {
                 state.effectiveInsulin = carbsInsulinCalculator.effectiveInsulin(
-                    insulinApplications = insulinApplications,
+                    insulinDoses = insulinDoses,
                     timestamp = timeline.timestamp(tick),
                     dia = dia,
                     peak = insulinPeak

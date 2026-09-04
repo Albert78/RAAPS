@@ -88,7 +88,7 @@ interface InsulinPump {
     val hardwareInformation: StateFlow<HardwareInformation?>
 
     /**
-     * Pump capabilities information. Null if not yet retrieved.
+     * Pump capabilities information.
      */
     val pumpCapabilities: StateFlow<PumpCapabilities>
 

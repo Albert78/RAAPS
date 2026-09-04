@@ -146,25 +146,63 @@ enum class InsulinStatus {
 }
 
 /**
- * Represents an insulin dose (administered or planned/scheduled).
+ * Represents a physical insulin dose (amount administered at a timestamp with a specific insulin profile).
+ * This is the pure domain model used for mathematical activity, IOB, and BGI calculations.
+ */
+data class InsulinDose(
+    val timestamp: Timestamp,
+    val amount: InsulinAmount,
+    val insulinType: InsulinType
+)
+
+/**
+ * Represents an insulin application tracking event (administered or planned/scheduled).
+ * Composes an [InsulinDose] with administrative and tracking metadata (origin, flags, status, database ID).
  */
 data class InsulinApplication(
     var id: Long = ID_UNDEFINED,
-    val timestamp: Timestamp,
-    val amount: InsulinAmount,
-    /**
-     * The type of the insulin (peak, dia etc.)
-     */
-    val insulinType: InsulinType,
-    /**
-     * If the application was injected via pump or manual.
-     */
+    val dose: InsulinDose,
     val origin: InsulinOrigin,
     val basal: Boolean = false,
     val correction: Boolean = false,
     val meal: Boolean = false,
     val status: InsulinStatus = InsulinStatus.Confirmed
-)
+) {
+    /**
+     * Secondary constructor for convenience and backward compatibility.
+     */
+    constructor(
+        id: Long = ID_UNDEFINED,
+        timestamp: Timestamp,
+        amount: InsulinAmount,
+        insulinType: InsulinType,
+        origin: InsulinOrigin,
+        basal: Boolean = false,
+        correction: Boolean = false,
+        meal: Boolean = false,
+        status: InsulinStatus = InsulinStatus.Confirmed
+    ) : this(
+        id = id,
+        dose = InsulinDose(timestamp, amount, insulinType),
+        origin = origin,
+        basal = basal,
+        correction = correction,
+        meal = meal,
+        status = status
+    )
+
+    val timestamp: Timestamp get() = dose.timestamp
+    val amount: InsulinAmount get() = dose.amount
+    val insulinType: InsulinType get() = dose.insulinType
+}
+
+/**
+ * Converts a list of [InsulinApplication] entries into a list of pure [InsulinDose] objects,
+ * filtering out cancelled applications and optionally basal applications.
+ */
+fun List<InsulinApplication>.toActiveDoses(excludeBasal: Boolean = false): List<InsulinDose> =
+    filter { it.status != InsulinStatus.Cancelled && (!excludeBasal || !it.basal) }
+        .map { it.dose }
 
 /**
  * Represents a bolus dose that is scheduled for future delivery by the system.

@@ -2,6 +2,7 @@ package de.dh.raaps.plugin.pump
 
 import de.dh.raaps.common.model.BasalStatus
 import de.dh.raaps.common.model.InsulinAmount
+import de.dh.raaps.common.model.InsulinConcentration
 import de.dh.raaps.common.model.HardwareInformation
 import de.dh.raaps.common.model.InsulinHistory
 import de.dh.raaps.common.model.InsulinPump
@@ -38,6 +39,8 @@ class SampleInsulinPumpPlugin : InsulinPump, Plugin, PumpPluginUiProvider {
 
     // *************************** Insulin pump members ********************************
 
+    override var insulinConcentration: InsulinConcentration = InsulinConcentration.U100
+
     override val hardwareInformation: StateFlow<HardwareInformation?> = MutableStateFlow(
         HardwareInformation(
             manufacturer = "Sample Manufacturer",
@@ -68,7 +71,7 @@ class SampleInsulinPumpPlugin : InsulinPump, Plugin, PumpPluginUiProvider {
     override val basalStatus: StateFlow<BasalStatus> = MutableStateFlow(BasalStatus(activeRate = InsulinAmount(0.5)))
     override val history: StateFlow<InsulinHistory?> = MutableStateFlow(null)
 
-    override suspend fun bolus(amount: InsulinAmount) {
+    override suspend fun bolus(amount: InsulinAmount, bolusId: String?) {
         // TODO: Implement bolus delivery
     }
 

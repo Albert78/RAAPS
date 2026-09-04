@@ -99,8 +99,7 @@ class BolusHistoryViewModel(
     ) {
         viewModelScope.launch {
             val updated = application.copy(
-                amount = newAmount,
-                insulinType = newType,
+                dose = application.dose.copy(amount = newAmount, insulinType = newType),
                 basal = basal,
                 correction = correction,
                 meal = meal

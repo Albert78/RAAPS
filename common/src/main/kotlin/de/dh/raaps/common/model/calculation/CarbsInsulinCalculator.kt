@@ -1,8 +1,7 @@
 package de.dh.raaps.common.model.calculation
 
 import de.dh.raaps.common.model.InsulinAmount
-import de.dh.raaps.common.model.InsulinApplication
-import de.dh.raaps.common.model.InsulinStatus
+import de.dh.raaps.common.model.InsulinDose
 import de.dh.raaps.common.model.MealEntry
 import de.dh.raaps.common.model.convertToBgDeltaFromUnits
 import de.dh.raaps.common.model.data.BgDelta
@@ -80,21 +79,18 @@ class CarbsInsulinCalculator(
     }
 
     /**
-     * Calculates the effective insulin amount which is expected as result of the given insulin applications
+     * Calculates the effective insulin amount which is expected as result of the given insulin doses
      * during the interval of the given timestamp.
      * @return Effective insulin in [InsulinAmount] / interval
      */
     fun effectiveInsulin(
-        insulinApplications: List<InsulinApplication>,
+        insulinDoses: List<InsulinDose>,
         timestamp: Timestamp,
         dia: Minutes,
         peak: Minutes
     ): InsulinAmount {
         var total = InsulinAmount.ZERO
-        insulinApplications.forEach { entry ->
-            if (entry.status == InsulinStatus.Cancelled) {
-                return@forEach
-            }
+        insulinDoses.forEach { entry ->
             val intervalsSinceApplication =
                 Minutes.timeDifference(entry.timestamp, timestamp).value / intervalSize.value
 
@@ -110,24 +106,17 @@ class CarbsInsulinCalculator(
 
     /**
      * Calculates the amount of Insulin On Board (IOB) which is expected as result of the given
-     * insulin applications during the interval of the given timestamp.
+     * insulin doses during the interval of the given timestamp.
      * @return IOB in [InsulinAmount]
      */
     fun iob(
-        insulinApplications: List<InsulinApplication>,
+        insulinDoses: List<InsulinDose>,
         timestamp: Timestamp,
         dia: Minutes,
-        peak: Minutes,
-        excludeBasal: Boolean = false
+        peak: Minutes
     ): InsulinAmount {
         var total = InsulinAmount.ZERO
-        insulinApplications.forEach { entry ->
-            if (entry.status == InsulinStatus.Cancelled) {
-                return@forEach
-            }
-            if (excludeBasal && entry.basal) {
-                return@forEach
-            }
+        insulinDoses.forEach { entry ->
             val intervalsSinceApplication =
                 Minutes.timeDifference(entry.timestamp, timestamp).value / intervalSize.value
 
@@ -142,15 +131,15 @@ class CarbsInsulinCalculator(
     }
 
     fun remainingInsulin(
-        insulinApplication: InsulinApplication,
+        insulinDose: InsulinDose,
         timestamp: Timestamp,
         dia: Minutes,
         peak: Minutes
     ): InsulinAmount {
         val intervalsSinceApplication =
-            Minutes.timeDifference(insulinApplication.timestamp, timestamp).value / intervalSize.value
+            Minutes.timeDifference(insulinDose.timestamp, timestamp).value / intervalSize.value
         return insulinCalculationCache.remainingInsulin(
-            insulinApplication.amount,
+            insulinDose.amount,
             dia = dia,
             peak = peak,
             intervalsSinceApplication = intervalsSinceApplication
@@ -176,17 +165,17 @@ class CarbsInsulinCalculator(
 
     /**
      * Calculates the blood glucose impact for an interval which is expected as result of the given
-     * insulin applications.
+     * insulin doses.
      */
     fun bgi(
-        insulinApplications: List<InsulinApplication>,
+        insulinDoses: List<InsulinDose>,
         isf: BgDelta,
         timestamp: Timestamp,
         dia: Minutes,
         peak: Minutes
     ): BgDelta {
         val effectiveInsulin = effectiveInsulin(
-            insulinApplications = insulinApplications,
+            insulinDoses = insulinDoses,
             timestamp = timestamp,
             dia = dia,
             peak = peak

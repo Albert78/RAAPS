@@ -123,7 +123,7 @@ class TreatmentRepository(
         val to = Timestamp(history.to)
         val historyStart = historyStart()
 
-        val scheduledInRange = metabolicEventsDao.getInsulinApplicationsSince(from.ms)
+        val scheduledInRange = metabolicEventsDao.getInsulinApplicationsSince((from - Minutes(5)).ms)
             .filter { it.origin == InsulinOrigin.Pump && it.status == InsulinStatus.Scheduled && it.timestamp <= to + Minutes(5) }
             .mapNotNull { entity ->
                 val typesMap = metabolicEventsDao.getAllInsulinTypes().associateBy { it.id }
@@ -145,8 +145,7 @@ class TreatmentRepository(
             if (match != null) {
                 matchedScheduledIds.add(match.id)
                 match.copy(
-                    timestamp = timestamp,
-                    amount = point.amount,
+                    dose = match.dose.copy(timestamp = timestamp, amount = point.amount),
                     status = InsulinStatus.Confirmed,
                     basal = point.category == InsulinCategory.Basal || match.basal
                 )

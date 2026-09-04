@@ -4,11 +4,11 @@ import android.util.Log
 import de.dh.raaps.common.model.DeferredBolus
 import de.dh.raaps.common.model.FAST_KE_DEFAULT_PEAK
 import de.dh.raaps.common.model.InsulinAmount
-import de.dh.raaps.common.model.InsulinApplication
-import de.dh.raaps.common.model.InsulinOrigin
+import de.dh.raaps.common.model.InsulinDose
 import de.dh.raaps.common.model.METABOLIC_EVENTS_HISTORY_HOURS
 import de.dh.raaps.common.model.MealType
 import de.dh.raaps.common.model.calculation.CarbsInsulinCalculator
+import de.dh.raaps.common.model.toActiveDoses
 import de.dh.raaps.common.model.convertToBgDeltaFromUnits
 import de.dh.raaps.common.model.convertToCarbsFromBgDelta
 import de.dh.raaps.common.model.convertToInsulinAmountFromBgDelta
@@ -98,11 +98,10 @@ class ApsAlgorithmImpl(
                 )
 
                 val projectedIob = carbsInsulinCalculator.iob(
-                    insulinApplications = insulinHistory,
+                    insulinDoses = insulinHistory.toActiveDoses(excludeBasal = true),
                     timestamp = mealTimestamp,
                     dia = dia,
-                    peak = peak,
-                    excludeBasal = true
+                    peak = peak
                 )
                 val projectedCob = carbsInsulinCalculator.cob(
                     meals = mealsHistory,
@@ -195,28 +194,22 @@ class ApsAlgorithmImpl(
     }
 
     /**
-     * Calculates a list of artificial basal insulin applications which reflect a 100% basal coverage
+     * Calculates a list of artificial basal insulin doses which reflect a 100% basal coverage
      * of the last hours.
      */
-    private suspend fun calculateArtificialNormalBasalApplications(): List<InsulinApplication> {
+    private suspend fun calculateArtificialNormalBasalDoses(): List<InsulinDose> {
         val diaHours = (therapyManager.getCurrentTherapySettings().insulinProfile.dia.value + 59) / 60
         val insulinType = therapyManager.getPumpInsulinType()
-        val basalApplications = mutableListOf<InsulinApplication>()
         val now = Timestamp.now()
-        for (hour in 0..diaHours) {
+        return (0..diaHours).map { hour ->
             val timestamp = now.minusHours(hour)
             val amount = therapyManager.getBasalPerHour(timestamp)
-            basalApplications.add(InsulinApplication(
+            InsulinDose(
                 timestamp = timestamp,
                 amount = amount,
-                insulinType = insulinType,
-                origin = InsulinOrigin.Pump,
-                basal = true,
-                correction = false,
-                meal = false)
+                insulinType = insulinType
             )
         }
-        return basalApplications
     }
 
     override suspend fun recalculate(): CalculationResult {
@@ -332,13 +325,15 @@ class ApsAlgorithmImpl(
             // Cache block 2: Profile data - the data is reused in succeeding calculation calls
             // until the profile changes, which invalidates the cache block
 
+            val activeDoses = insulinApplications.toActiveDoses()
+
             // Prediction block:
             // Update predicted BGI, update predicted BG
             predictionModel.calculate(
                 currentBg = currentBg,
                 avgCurrentDeviationPerTick = avgCurrentDeviationPerTick,
                 meals = meals,
-                insulinApplications = insulinApplications,
+                insulinDoses = activeDoses,
                 dia = dia,
                 insulinPeak = insulinPeak,
                 therapyManager = therapyManager,
@@ -400,38 +395,34 @@ class ApsAlgorithmImpl(
             val insulinPeakTimeStamp = now + insulinPeak
             val futureActiveCarbsAtPeak = carbsInsulinCalculator.cob(meals = meals, timestamp = insulinPeakTimeStamp, includeFutureMeals = true)
 
-            val artificialNormalBasalInjections = calculateArtificialNormalBasalApplications()
+            val artificialNormalBasalDoses = calculateArtificialNormalBasalDoses()
 
-            // Our insulinApplications contain basal rates.
+            // Our activeDoses contain basal rates.
             // To calculate net IOB values, normal basal rates need to be subtracted.
             // It is not sufficient to just leave out the basal applications since applications
             // which differ from the normal rate (e.g. low basal) will reduce (or increase) our net IOB.
             val iobNow = carbsInsulinCalculator.iob(
-                insulinApplications = insulinApplications,
+                insulinDoses = activeDoses,
                 timestamp = now,
                 dia = dia,
-                peak = insulinPeak,
-                excludeBasal = false
+                peak = insulinPeak
             ) - carbsInsulinCalculator.iob(
-                insulinApplications = artificialNormalBasalInjections,
+                insulinDoses = artificialNormalBasalDoses,
                 timestamp = now,
                 dia = dia,
-                peak = insulinPeak,
-                excludeBasal = false
+                peak = insulinPeak
             )
 
             val iobAtPeak = carbsInsulinCalculator.iob(
-                insulinApplications = insulinApplications,
+                insulinDoses = activeDoses,
                 timestamp = insulinPeakTimeStamp,
                 dia = dia,
-                peak = insulinPeak,
-                excludeBasal = false
+                peak = insulinPeak
             ) - carbsInsulinCalculator.iob(
-                insulinApplications = artificialNormalBasalInjections,
+                insulinDoses = artificialNormalBasalDoses,
                 timestamp = insulinPeakTimeStamp,
                 dia = dia,
-                peak = insulinPeak,
-                excludeBasal = false
+                peak = insulinPeak
             )
 
             val deferredBoluses = therapyManager.getDeferredBoluses()

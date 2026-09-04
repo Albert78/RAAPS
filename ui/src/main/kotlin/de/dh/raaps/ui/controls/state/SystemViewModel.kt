@@ -16,6 +16,7 @@ import de.dh.raaps.common.model.data.Tick
 import de.dh.raaps.common.model.data.TickHandler
 import de.dh.raaps.common.model.data.TickPriority
 import de.dh.raaps.common.model.data.Timestamp
+import de.dh.raaps.common.model.toActiveDoses
 import de.dh.raaps.core.SystemRegistry
 import de.dh.raaps.core.aps.ApsIssue
 import de.dh.raaps.core.aps.CoreState
@@ -85,7 +86,7 @@ class SystemViewModel(
                 val peak = settings.insulinProfile.peak
 
                 // Filter for IOB/COB calculation (usually last few hours is enough, but calculator handles it)
-                _iob.value = carbsInsulinCalculator.iob(insulinApplications = insulin, timestamp = now, dia = dia, peak = peak)
+                _iob.value = carbsInsulinCalculator.iob(insulinDoses = insulin.toActiveDoses(), timestamp = now, dia = dia, peak = peak)
                 _cob.value = carbsInsulinCalculator.cob(meals = meals, timestamp = now, includeFutureMeals = false)
 
                 updateUiModel(readings, coreState, apsIssues)
