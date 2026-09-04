@@ -17,7 +17,7 @@ interface ReadOnlyPredictionTickState {
     val cr: Double?
     val basalRateUph: InsulinAmount?
     val bgi: BgDelta
-    val cumulatedBasalInsulin: InsulinAmount
+    val cumulatedBasalActivity: InsulinAmount
 
     /**
      * Prediction for the future.
@@ -57,7 +57,7 @@ class PredictionTickState : ReadOnlyPredictionTickState {
 
     // The cumulated activity of 100% rate basal insulin from "now" to the time of this tick.
     // Can be used to calculate LOW or HIGH temp scenarios.
-    override var cumulatedBasalInsulin: InsulinAmount = InsulinAmount.ZERO
+    override var cumulatedBasalActivity: InsulinAmount = InsulinAmount.ZERO
 
     // Predicted BG depends on block 3 and current BG.
     override var predictedBg: BgValue = BgValue.INVALID // Calculated from a starting BG, applying BGIs of previous ticks
@@ -75,7 +75,7 @@ class PredictionTickState : ReadOnlyPredictionTickState {
         isf = null
         cr = null
         bgi = BgDelta.ZERO
-        cumulatedBasalInsulin = InsulinAmount.ZERO
+        cumulatedBasalActivity = InsulinAmount.ZERO
         predictedBg = BgValue.INVALID
     }
 }

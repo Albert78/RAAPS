@@ -148,7 +148,7 @@ class PredictionModel(
             if (tick > nowTick) {
                 // Calculations that only apply to the future prediction window
                 runningCumulatedBasal += normalBasalUnitsPerTick
-                state.cumulatedBasalInsulin = runningCumulatedBasal
+                state.cumulatedBasalActivity = runningCumulatedBasal
 
                 // Ease out the deviation
                 deviationPerTick *= DEVIATION_DECAY_FACTOR_PER_TICK
@@ -158,7 +158,7 @@ class PredictionModel(
                 state.assumedBg = bg
             } else {
                 // Clear values that are only meaningful for future predictions
-                state.cumulatedBasalInsulin = InsulinAmount.ZERO
+                state.cumulatedBasalActivity = InsulinAmount.ZERO
                 if (tick < nowTick) {
                     if (state.assumedBg.isInvalid() && state.predictedBg.isValid()) {
                         // This can happen if we didn't get a valid BG value input. In this case,
