@@ -174,18 +174,23 @@ class BodyModel(
         set(value) {
             _bloodGlucose.value = value
             // Explicitly persist a history entry when BG is set manually
-            persistHistory(Timestamp.now(), value)
+            scope.launch {
+                persistHistory(Timestamp.now(), value)
+            }
             persistState()
         }
     val bloodGlucoseFlow: StateFlow<Double> = _bloodGlucose.asStateFlow()
 
     /**
      * Retrieves the blood glucose value from the past (delayed).
-     * Falls back to the earliest available value if the simulation hasn't run long enough.
+     * Falls back to current blood glucose if no past entry is available.
      */
-    suspend fun getDelayedBloodGlucose(delayMinutes: Int): Double {
+    suspend fun getDelayedBloodGlucose(
+        delayMinutes: Int,
+        referenceTimestamp: Timestamp = Timestamp.now()
+    ): Double {
         val dao = simBodyDao ?: return bloodGlucose
-        val targetMs = Timestamp.now().ms - delayMinutes * 60 * 1000L
+        val targetMs = referenceTimestamp.ms - delayMinutes * 60 * 1000L
 
         // Try to find the value closest to the target time
         val delayedEntry = dao.getHistoryNear(targetMs)
@@ -193,7 +198,7 @@ class BodyModel(
             return delayedEntry.bgMgDl
         }
 
-        // Fallback: earliest available value
+        // Fallback: earliest available value or current blood glucose
         return dao.getEarliestHistoryEntry()?.bgMgDl ?: bloodGlucose
     }
 
@@ -326,7 +331,7 @@ class BodyModel(
         }
     }
 
-    private fun persistHistory(
+    private suspend fun persistHistory(
         timestamp: Timestamp,
         bg: Double,
         carbImpact: Double = 0.0,
@@ -336,26 +341,24 @@ class BodyModel(
         stressImpact: Double = 0.0
     ) {
         val dao = simBodyDao ?: return
-        scope.launch {
-            dao.insertHistory(
-                SimHistoryEntity(
-                    timestampMs = timestamp.ms,
-                    bgMgDl = bg,
-                    carbImpact = carbImpact,
-                    insulinImpact = insulinImpact,
-                    endogenousImpact = endogenousImpact,
-                    exerciseImpact = exerciseImpact,
-                    stressImpact = stressImpact
-                )
+        dao.insertHistory(
+            SimHistoryEntity(
+                timestampMs = timestamp.ms,
+                bgMgDl = bg,
+                carbImpact = carbImpact,
+                insulinImpact = insulinImpact,
+                endogenousImpact = endogenousImpact,
+                exerciseImpact = exerciseImpact,
+                stressImpact = stressImpact
             )
-        }
+        )
     }
 
     /**
      * Advances the simulation state to the [currentTimestamp].
      * Calculates the delta in blood glucose based on all active influences.
      */
-    fun advanceTo(currentTimestamp: Timestamp = Timestamp.now()) {
+    suspend fun advanceTo(currentTimestamp: Timestamp = Timestamp.now()) {
         val durationMs = currentTimestamp.ms - lastSimulationTimestamp.ms
 
         val durationHours = durationMs / (1000.0 * 60 * 60)

@@ -13,6 +13,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
+import java.util.Random
 import kotlin.time.Duration.Companion.milliseconds
 
 /**
@@ -77,52 +78,53 @@ class SimBodyHeartbeat(
     override fun onWakeup(wakeupId: UInt?, intent: Intent?) {
         if (!started) return
         if (wakeupId == WAKEUP_ID_SIMULATION) {
-            performSimulationStep()
-            scheduleNext()
+            scope.launch {
+                performSimulationStep()
+                scheduleNext()
+            }
         }
     }
 
-    private val random = java.util.Random()
+    private val random = Random()
 
-    private fun performSimulationStep() {
-        scope.launch {
-            val now = Timestamp.now()
-            Log.d(TAG, "SimBody Heartbeat Simulation Step at $now")
+    private suspend fun performSimulationStep() {
+        val now = Timestamp.now()
+        Log.d(TAG, "SimBody Heartbeat Simulation Step at $now")
 
-            // Ensure the system stays awake during emission
-            wakeService.acquireBusyState(WAKE_TAG)
-            try {
-                // First advance pump device and body model to current timestamp
-                pumpDevice.advanceTo(now)
-                bodyModel.advanceTo(now)
+        // Ensure the system stays awake during emission
+        wakeService.acquireBusyState(WAKE_TAG)
+        try {
+            // First advance pump device and body model to current timestamp
+            pumpDevice.advanceTo(now)
+            bodyModel.advanceTo(now)
 
-                if (!bodyModel.isSensorEnabled) {
-                    Log.d(TAG, "Sensor is disabled, skipping BG reading emission")
-                    return@launch
-                }
-
-                val baseBg = bodyModel.getDelayedBloodGlucose(
-                    SimBodyCgmSource.DEFAULT_READINGS_DELAY.value.toInt()
-                )
-                val noiseFactor = bodyModel.sensorNoiseFactor
-
-                val finalBg = if (noiseFactor > 0) {
-                    // Apply Gaussian noise with the noise factor as standard deviation
-                    val noise = random.nextGaussian() * noiseFactor
-                    (baseBg + noise).coerceIn(20.0, 500.0)
-                } else {
-                    baseBg
-                }
-
-                val reading = BgReading(
-                    value = BgValue.fromMgDl(finalBg.toInt()),
-                    sampleKind = BgSampleKind.Value,
-                    timestamp = now
-                )
-                onBgReading(reading)
-            } finally {
-                wakeService.releaseBusyState(WAKE_TAG)
+            if (!bodyModel.isSensorEnabled) {
+                Log.d(TAG, "Sensor is disabled, skipping BG reading emission")
+                return
             }
+
+            val baseBg = bodyModel.getDelayedBloodGlucose(
+                SimBodyCgmSource.DEFAULT_READINGS_DELAY.value.toInt(),
+                now
+            )
+            val noiseFactor = bodyModel.sensorNoiseFactor
+
+            val finalBg = if (noiseFactor > 0) {
+                // Apply Gaussian noise with the noise factor as standard deviation
+                val noise = random.nextGaussian() * noiseFactor
+                (baseBg + noise).coerceIn(20.0, 500.0)
+            } else {
+                baseBg
+            }
+
+            val reading = BgReading(
+                value = BgValue.fromMgDl(finalBg.toInt()),
+                sampleKind = BgSampleKind.Value,
+                timestamp = now
+            )
+            onBgReading(reading)
+        } finally {
+            wakeService.releaseBusyState(WAKE_TAG)
         }
     }
 
