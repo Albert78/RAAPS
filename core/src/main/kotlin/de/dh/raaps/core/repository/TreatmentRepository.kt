@@ -116,42 +116,52 @@ class TreatmentRepository(
 
     /**
      * Merges a range of insulin history from the pump.
-     * Replaces / updates Pump entries in the given range.
+     * Updates matching entries, inserts new entries, and cancels unconfirmed scheduled entries
+     * without destructive deletion of existing history.
      */
     suspend fun mergeInsulinHistory(history: InsulinHistory, insulinType: InsulinType) = mutex.withLock {
         val from = Timestamp(history.from)
         val to = Timestamp(history.to)
         val historyStart = historyStart()
 
-        val scheduledInRange = metabolicEventsDao.getInsulinApplicationsSince((from - Minutes(5)).ms)
-            .filter { it.origin == InsulinOrigin.Pump && it.status == InsulinStatus.Scheduled && it.timestamp <= to + Minutes(5) }
-            .mapNotNull { entity ->
-                val typesMap = metabolicEventsDao.getAllInsulinTypes().associateBy { it.id }
-                typesMap[entity.insulin_type_id]?.toModel()?.let { entity.toModel(it) }
-            }.toMutableList()
+        val typesMap = metabolicEventsDao.getAllInsulinTypes().associateBy { it.id }
 
-        val matchedScheduledIds = mutableSetOf<Long>()
+        // 1. Load existing pump applications in range (including safety margin)
+        val existingEntities = metabolicEventsDao.getInsulinApplicationsSince((from - Minutes(5)).ms)
+            .filter { it.origin == InsulinOrigin.Pump && it.timestamp <= to + Minutes(5) }
 
-        val newOrUpdatedApplications = history.points.map { point ->
+        val existingApplications = existingEntities.mapNotNull { entity ->
+            typesMap[entity.insulin_type_id]?.toModel()?.let { entity.toModel(it) }
+        }.toMutableList()
+
+        val matchedExistingIds = mutableSetOf<Long>()
+        val updatedOrInsertedApplications = mutableListOf<InsulinApplication>()
+
+        // 2. Match points with existing entries
+        history.points.forEach { point ->
+            if (point.amount < InsulinAmount.EPSILON) return@forEach
             val timestamp = Timestamp(point.timestamp)
 
-            // Find matching scheduled entry within 30 seconds and almost equal amount
-            val match = scheduledInRange.find { s ->
-                !matchedScheduledIds.contains(s.id) &&
-                        abs(s.timestamp.ms - timestamp.ms) <= 30_000 &&
-                        s.amount.isAlmostEqual(point.amount)
+            // Find match: 1. By pumpId, 2. By timestamp (<= 30s) + amount
+            val match = existingApplications.find { candidate ->
+                !matchedExistingIds.contains(candidate.id) && (
+                    (point.pumpId != null && candidate.pumpId == point.pumpId) ||
+                    (abs(candidate.timestamp.ms - timestamp.ms) <= 30_000 && candidate.amount.isAlmostEqual(point.amount))
+                )
             }
 
             if (match != null) {
-                matchedScheduledIds.add(match.id)
-                match.copy(
+                matchedExistingIds.add(match.id)
+                val updated = match.copy(
                     dose = match.dose.copy(timestamp = timestamp, amount = point.amount),
                     status = InsulinStatus.Confirmed,
                     basal = point.category == InsulinCategory.Basal || match.basal,
                     pumpId = point.pumpId ?: match.pumpId
                 )
+                metabolicEventsDao.updateInsulinApplication(updated.toEntity())
+                updatedOrInsertedApplications.add(updated)
             } else {
-                InsulinApplication(
+                val newApp = InsulinApplication(
                     timestamp = timestamp,
                     amount = point.amount,
                     insulinType = insulinType,
@@ -160,31 +170,30 @@ class TreatmentRepository(
                     status = InsulinStatus.Confirmed,
                     pumpId = point.pumpId
                 )
+                val newId = metabolicEventsDao.insertInsulinApplication(newApp.toEntity())
+                if (newId != -1L) {
+                    newApp.id = newId
+                }
+                updatedOrInsertedApplications.add(newApp)
             }
-        }.filter { it.amount >= InsulinAmount.EPSILON }
+        }
 
-        val cancelledApplications = scheduledInRange
-            .filter { !matchedScheduledIds.contains(it.id) && it.timestamp <= to }
+        // 3. Mark scheduled entries that were not matched as Cancelled
+        val cancelledApplications = existingApplications
+            .filter { it.status == InsulinStatus.Scheduled && it.timestamp in from..to && !matchedExistingIds.contains(it.id) }
             .map { it.copy(status = InsulinStatus.Cancelled) }
 
-        // 1. Database sync
-        metabolicEventsDao.replaceInsulinApplicationsInRange(
-            from = from.ms,
-            to = to.ms,
-            origin = InsulinOrigin.Pump,
-            newApplications = newOrUpdatedApplications.map { it.toEntity() }
-        )
         cancelledApplications.forEach { cancelled ->
             metabolicEventsDao.updateInsulinApplication(cancelled.toEntity())
         }
 
-        // 2. In-memory sync
+        // 4. Update in-memory cache safely
         if (to >= historyStart) {
-            val effectiveFrom = if (from < historyStart) historyStart else from
-            insulinHistory.removeIf {
-                it.origin == InsulinOrigin.Pump && it.timestamp in effectiveFrom..to
-            }
-            insulinHistory.addAll(newOrUpdatedApplications.filter { it.timestamp >= historyStart })
+            val processedIds = (updatedOrInsertedApplications + cancelledApplications).map { it.id }.toSet()
+
+            insulinHistory.removeIf { processedIds.contains(it.id) }
+
+            insulinHistory.addAll(updatedOrInsertedApplications.filter { it.timestamp >= historyStart })
             insulinHistory.addAll(cancelledApplications.filter { it.timestamp >= historyStart })
             insulinHistory.sortBy { it.timestamp }
         }
