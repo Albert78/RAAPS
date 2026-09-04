@@ -4,10 +4,13 @@ import android.util.Log
 import de.dh.raaps.common.model.DeferredBolus
 import de.dh.raaps.common.model.InsulinAmount
 import de.dh.raaps.common.model.MealEntry
+import de.dh.raaps.common.model.MealType
+import de.dh.raaps.common.model.PlannedInsulin
 import de.dh.raaps.common.model.calculation.CarbsInsulinCalculator
 import de.dh.raaps.common.model.data.BgDelta
 import de.dh.raaps.common.model.data.BgReading
 import de.dh.raaps.common.model.data.BgValue
+import de.dh.raaps.common.model.data.Minutes
 import de.dh.raaps.common.model.data.Timeline
 import de.dh.raaps.common.model.data.Timestamp
 import de.dh.raaps.core.repository.GlucoseRepository
@@ -331,7 +334,55 @@ class Core(
     }
 
     fun getBolusCorrectionCalculator(): BolusCorrectionCalculator {
-        return calculationAlgorithm.getBolusCorrectionCalculator()
+        return MutexProtectedBolusCorrectionCalculator(
+            calculationAlgorithm.getBolusCorrectionCalculator(),
+            mutex
+        )
+    }
+
+    private class MutexProtectedBolusCorrectionCalculator(
+        private val delegate: BolusCorrectionCalculator,
+        private val mutex: Mutex
+    ) : BolusCorrectionCalculator {
+        override suspend fun calculateBolusProjections(mealTimestamp: Timestamp): BolusProjections = mutex.withLock {
+            delegate.calculateBolusProjections(mealTimestamp)
+        }
+
+        override suspend fun calculateBolusParts(
+            carbsKe: Double,
+            mealTimestamp: Timestamp,
+            projectedBg: BgValue,
+            impendingLow: ProjectedBg?,
+            projectedIob: InsulinAmount,
+            projectedCob: Double,
+            futureCarbs: Double,
+            deferredBolusAmount: InsulinAmount
+        ): BolusParts = mutex.withLock {
+            delegate.calculateBolusParts(
+                carbsKe,
+                mealTimestamp,
+                projectedBg,
+                impendingLow,
+                projectedIob,
+                projectedCob,
+                futureCarbs,
+                deferredBolusAmount
+            )
+        }
+
+        override suspend fun distributeInsulinPlan(
+            manualBolus: InsulinAmount,
+            correctionPart: InsulinAmount,
+            mealType: MealType?,
+            suggestedImi: Minutes
+        ): List<PlannedInsulin> = mutex.withLock {
+            delegate.distributeInsulinPlan(
+                manualBolus,
+                correctionPart,
+                mealType,
+                suggestedImi
+            )
+        }
     }
 
     companion object {
