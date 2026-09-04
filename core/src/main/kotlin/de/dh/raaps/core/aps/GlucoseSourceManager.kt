@@ -47,7 +47,7 @@ class GlucoseSourceManager(
             restartGlucosePipeline()
         }
 
-    val history = RecentBgReadingsHistory(ApsAlgorithmImpl.DEVIATION_TIME_BASE)
+    val history = RecentBgReadingsHistory(ApsAlgorithmImpl.BG_HISTORY_TIME)
     val sampledBgReadings = SampledBgReadings(Timeline(timeService.tickInterval), history)
 
     /**
@@ -62,7 +62,7 @@ class GlucoseSourceManager(
         private set
 
     suspend fun initialize() {
-        val readings = glucoseRepository.loadBgReadings(from = Timestamp.now().minus(ApsAlgorithmImpl.DEVIATION_TIME_BASE))
+        val readings = glucoseRepository.loadBgReadings(from = Timestamp.now().minus(ApsAlgorithmImpl.BG_HISTORY_TIME))
         history.setAll(readings)
 
         val readingsHistory = history.toList()

@@ -19,7 +19,7 @@ class SampledBgReadings(
     private val timeline: Timeline,
     private val history: RecentBgReadingsHistory
 ) {
-    private val capacity = history.historySize.value / timeline.tickDuration.value
+    private val capacity = history.historySize.value / timeline.tickDuration.value + 1
     private val buffer = IntArray(capacity) // Scaled values
     var recentTick: Tick = Tick.invalid()
         private set

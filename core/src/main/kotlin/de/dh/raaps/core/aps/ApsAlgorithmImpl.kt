@@ -527,6 +527,7 @@ class ApsAlgorithmImpl(
 
         const val PREDICTION_WINDOW_HOURS = 10
         val DEVIATION_TIME_BASE = Minutes(30)
+        val BG_HISTORY_TIME = DEVIATION_TIME_BASE + Minutes(30)
         val PRESERVE_PREDICTIONS_PAST_TIME = DEVIATION_TIME_BASE
 
         const val DEVIATION_DECAY_FACTOR_PER_TICK = 0.9
