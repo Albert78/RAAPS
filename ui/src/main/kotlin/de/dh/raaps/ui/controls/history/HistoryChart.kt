@@ -31,7 +31,6 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import de.dh.raaps.common.R as CommonR
 import com.patrykandpatrick.vico.compose.cartesian.CartesianChartHost
 import com.patrykandpatrick.vico.compose.cartesian.CartesianDrawingContext
 import com.patrykandpatrick.vico.compose.cartesian.CartesianMeasuringContext
@@ -68,11 +67,7 @@ import de.dh.raaps.common.model.data.BgReading
 import de.dh.raaps.common.model.data.BgSampleKind
 import de.dh.raaps.common.model.data.GlucoseUnit
 import de.dh.raaps.common.model.data.Timestamp
-import de.dh.raaps.ui.R
 import de.dh.raaps.ui.common.LocalGlucoseUnit
-import de.dh.raaps.ui.common.LocalAppFormatters
-import de.dh.raaps.ui.common.LocalGlucoseUnit
-import de.dh.raaps.ui.common.glucoseValue
 import de.dh.raaps.ui.common.composables.BlueA200
 import de.dh.raaps.ui.common.composables.DeepOrangeA700
 import de.dh.raaps.ui.common.composables.RedA700
@@ -81,6 +76,7 @@ import de.dh.raaps.ui.common.theme.ExtendedTheme
 import kotlinx.coroutines.launch
 import java.util.Calendar
 import java.util.Locale
+import de.dh.raaps.common.R as CommonR
 
 private const val INITIAL_SHOW_HOURS = 4.0
 
@@ -116,7 +112,7 @@ data class HistoryDiagramData(
                 maxX = maxX,
                 xValues = validReadings.map { ((it.timestamp.ms - baseTimestamp).toDouble() / MS_PER_MINUTE * 10000).toLong() / 10000.0 },
                 yValues = validReadings.map {
-                    if (glucoseUnit == GlucoseUnit.MG_DL) it.value.mgdl.toDouble()
+                    if (glucoseUnit == GlucoseUnit.MG_DL) it.value.mgdl
                     else it.value.mmol
                 },
                 glucoseUnit = glucoseUnit,
@@ -452,10 +448,16 @@ fun BgOverviewChart(
                             )
                         )
                     ),
-                    rangeProvider = remember(diagramData.minX, diagramData.maxX) {
+                    rangeProvider = remember(diagramData.minX, diagramData.maxX, diagramData.glucoseUnit) {
                         object : CartesianLayerRangeProvider {
-                            override fun getMinY(minY: Double, maxY: Double, extraStore: ExtraStore) = 40.0
-                            override fun getMaxY(minY: Double, maxY: Double, extraStore: ExtraStore) = (maxY.coerceAtLeast(200.0) + 10.0).coerceAtMost(410.0)
+                            override fun getMinY(minY: Double, maxY: Double, extraStore: ExtraStore) =
+                                if (diagramData.glucoseUnit == GlucoseUnit.MG_DL) 40.0 else 2.2
+                            override fun getMaxY(minY: Double, maxY: Double, extraStore: ExtraStore) =
+                                if (diagramData.glucoseUnit == GlucoseUnit.MG_DL) {
+                                    (maxY.coerceAtLeast(200.0) + 10.0).coerceAtMost(410.0)
+                                } else {
+                                    (maxY.coerceAtLeast(11.1) + 0.5).coerceAtMost(22.7)
+                                }
                             override fun getMinX(minX: Double, maxX: Double, extraStore: ExtraStore) = diagramData.minX
                             override fun getMaxX(minX: Double, maxX: Double, extraStore: ExtraStore) = diagramData.maxX
                         }

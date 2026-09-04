@@ -191,7 +191,7 @@ data class HistoryAndImpactDiagramData(
                 maxX = maxX,
                 bgXValues = validReadings.map { ((it.timestamp.ms - baseTimestamp).toDouble() / MS_PER_MINUTE * 10000).toLong() / 10000.0 },
                 bgYValues = validReadings.map {
-                    if (glucoseUnit == GlucoseUnit.MG_DL) it.value.mgdl.toDouble()
+                    if (glucoseUnit == GlucoseUnit.MG_DL) it.value.mgdl
                     else it.value.mmol
                 },
                 glucoseUnit = glucoseUnit,
@@ -443,6 +443,16 @@ fun HistoryAndImpactChart(
         pointProvider = null
     )
 
+    val bgAxisValueFormatter = remember(diagramData.glucoseUnit) {
+        CartesianValueFormatter { _, value, _ ->
+            if (diagramData.glucoseUnit == GlucoseUnit.MG_DL) {
+                value.toInt().toString()
+            } else {
+                String.format(Locale.getDefault(), "%.1f", value)
+            }
+        }
+    }
+
     val bgAxisItemPlacer = remember(diagramData.glucoseUnit) {
         object : VerticalAxis.ItemPlacer {
             override fun getLabelValues(context: CartesianDrawingContext, axisHeight: Float, maxLabelHeight: Float, position: Axis.Position.Vertical) =
@@ -580,6 +590,7 @@ fun HistoryAndImpactChart(
                 startAxis = VerticalAxis.rememberStart(
                     label = rememberAxisLabelComponent(style = TextStyle(color = ExtendedTheme.semanticColors.highContrast)),
                     itemPlacer = bgAxisItemPlacer,
+                    valueFormatter = bgAxisValueFormatter,
                     horizontalLabelPosition = VerticalAxis.HorizontalLabelPosition.Inside,
                     line = null
                 ),
