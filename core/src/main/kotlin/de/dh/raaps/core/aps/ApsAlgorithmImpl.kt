@@ -481,7 +481,7 @@ class ApsAlgorithmImpl(
                 val percent = if (normalEffect.mgdl < 0.01)
                     0 // Safety guard
                 else
-                    ((needed * 100.0 / normalEffect).coerceIn(0.0, 100.0)).toInt()
+                    ((needed.mgdl * 100.0 / normalEffect.mgdl).coerceIn(0.0, 100.0)).toInt()
 
                 return CalculationResult.tempBasal(
                     percent = percent,

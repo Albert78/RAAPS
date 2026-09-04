@@ -17,6 +17,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import java.util.concurrent.CopyOnWriteArrayList
+import kotlin.math.round
 
 /**
  * Implementation of [TimeService] that synchronizes its ticking grid with an external reference.
@@ -116,26 +117,41 @@ class TimeServiceImpl(
     override fun synchronize(synchronizationTimestamp: Timestamp) {
         val tickSizeMs = timeline.tickSizeMs
 
-        // Desired offset relative to the Unix Epoch
+        if (!firstSyncDeferred.isCompleted) {
+            timeline.offsetMs = Math.floorMod(synchronizationTimestamp.ms, tickSizeMs)
+
+            firstSyncDeferred.complete(Unit)
+            return
+        }
+
         val targetOffsetMs = Math.floorMod(synchronizationTimestamp.ms, tickSizeMs)
 
-        if (!firstSyncDeferred.isCompleted) {
-            timeline.offsetMs = targetOffsetMs
-            Log.d(TAG, "Initial sync received. Setting timeline offset to ${timeline.offsetMs} ms")
-            firstSyncDeferred.complete(Unit)
-        } else {
-            // Gradual adjustment of the timeline offset
-            var diff = targetOffsetMs - timeline.offsetMs
-            if (diff > tickSizeMs / 2) diff -= tickSizeMs
-            if (diff < -tickSizeMs / 2) diff += tickSizeMs
+        val currentOffset = timeline.offsetMs
+        var target = targetOffsetMs
 
-            val adjustment = (diff * 0.2).toLong()
-            timeline.offsetMs += adjustment
-            Log.d(TAG, "Sync adjustment: targetOffset=$targetOffsetMs, currentOffset=${timeline.offsetMs}, adj=$adjustment")
-
-            // Re-schedule next tick to align with new offset
-            scheduleNextTick()
+        // Select the representation of target that is closest to the
+        // current (possibly out-of-range) offset.
+        while (target - currentOffset > tickSizeMs / 2) {
+            target -= tickSizeMs
         }
+        while (target - currentOffset < -tickSizeMs / 2) {
+            target += tickSizeMs
+        }
+
+        val diff = target - currentOffset
+        val adjustment = round(diff * SMOOTHING_FACTOR).toLong()
+        timeline.offsetMs += adjustment
+
+        /*
+         * Fold only after passing the hysteresis boundary.
+         */
+        if (timeline.offsetMs >= tickSizeMs + HYSTERESIS_MS) {
+            timeline.offsetMs -= tickSizeMs
+        } else if (timeline.offsetMs < -HYSTERESIS_MS) {
+            timeline.offsetMs += tickSizeMs
+        }
+
+        scheduleNextTick()
     }
 
     init {
@@ -152,6 +168,8 @@ class TimeServiceImpl(
 
     companion object {
         private val TAG = TimeServiceImpl::class.simpleName!!
-        private val WAKE_TAG = "TIME_SERVICE"
+        private const val WAKE_TAG = "TIME_SERVICE"
+        private const val SMOOTHING_FACTOR = 0.2
+        private const val HYSTERESIS_MS = 30_000L
     }
 }
