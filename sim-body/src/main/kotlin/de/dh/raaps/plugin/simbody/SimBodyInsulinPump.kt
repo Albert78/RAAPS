@@ -102,13 +102,13 @@ class SimBodyInsulinPump(
             override val pumpSuspended: Boolean = broken
             override val batteryRemainingPercent: Int = (battery * 100).toInt()
             override val reservoirRemainingUnits: InsulinAmount = reservoir
-            override val lastSyncTimestamp: Long = if (connected) System.currentTimeMillis() else 0L
+            override val lastSyncTimestamp: Timestamp = if (connected) Timestamp.now() else Timestamp.INVALID
         }
     }.stateIn(scope, SharingStarted.Eagerly, object : InsulinPumpStatus {
         override val pumpSuspended: Boolean = false
         override val batteryRemainingPercent: Int = 100
         override val reservoirRemainingUnits: InsulinAmount = InsulinAmount(300.0)
-        override val lastSyncTimestamp: Long = System.currentTimeMillis()
+        override val lastSyncTimestamp: Timestamp = Timestamp.now()
     })
 
     override val alerts: StateFlow<PumpAlerts> = combine(
@@ -154,37 +154,37 @@ class SimBodyInsulinPump(
     override suspend fun bolus(amount: InsulinAmount, bolusId: String?) {
         if (!_isConnected.value) throw Exception("Pump not connected to App")
 
-        val startTimestamp = System.currentTimeMillis()
+        val startTimestamp = Timestamp.now()
         _bolusStatus.value = BolusStatus(
             state = BolusDeliveryState.DELIVERING,
             bolusId = bolusId,
-            targetAmount = amount.iu,
-            deliveredAmount = 0.0,
+            targetAmount = amount,
+            deliveredAmount = InsulinAmount.ZERO,
             timestamp = startTimestamp
         )
-        _bolusEvents.emit(BolusEvent.Started(bolusId, amount.iu, startTimestamp))
+        _bolusEvents.emit(BolusEvent.Started(bolusId, amount, startTimestamp))
 
         if (device.deliverBolus(amount)) {
-            val completedTimestamp = System.currentTimeMillis()
+            val completedTimestamp = Timestamp.now()
             _bolusStatus.value = BolusStatus(
                 state = BolusDeliveryState.COMPLETED,
                 bolusId = bolusId,
-                targetAmount = amount.iu,
-                deliveredAmount = amount.iu,
+                targetAmount = amount,
+                deliveredAmount = amount,
                 timestamp = completedTimestamp
             )
-            _bolusEvents.emit(BolusEvent.Completed(bolusId, amount.iu, amount.iu, completedTimestamp))
+            _bolusEvents.emit(BolusEvent.Completed(bolusId, amount, amount, completedTimestamp))
             refreshStatus()
         } else {
-            val stoppedTimestamp = System.currentTimeMillis()
+            val stoppedTimestamp = Timestamp.now()
             _bolusStatus.value = BolusStatus(
                 state = BolusDeliveryState.STOPPED,
                 bolusId = bolusId,
-                targetAmount = amount.iu,
-                deliveredAmount = 0.0,
+                targetAmount = amount,
+                deliveredAmount = InsulinAmount.ZERO,
                 timestamp = stoppedTimestamp
             )
-            _bolusEvents.emit(BolusEvent.Stopped(bolusId, amount.iu, 0.0, stoppedTimestamp))
+            _bolusEvents.emit(BolusEvent.Stopped(bolusId, amount, InsulinAmount.ZERO, stoppedTimestamp))
 
             val errorReason = when {
                 device.isBroken.value -> "Hardware broken"
@@ -202,7 +202,7 @@ class SimBodyInsulinPump(
     override suspend fun stopBolus() {
         val current = _bolusStatus.value
         if (current.state == BolusDeliveryState.DELIVERING) {
-            val timestamp = System.currentTimeMillis()
+            val timestamp = Timestamp.now()
             _bolusStatus.value = current.copy(
                 state = BolusDeliveryState.STOPPED,
                 timestamp = timestamp

@@ -14,6 +14,7 @@ import de.dh.raaps.common.model.PluginManager
 import de.dh.raaps.common.model.PumpAlerts
 import de.dh.raaps.common.model.PumpCapabilities
 import de.dh.raaps.common.model.data.InsulinProfile
+import de.dh.raaps.common.model.data.Timestamp
 import de.dh.raaps.ui.screens.systemcontrol.PumpPluginUiProvider
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -68,7 +69,7 @@ class SampleInsulinPumpPlugin : InsulinPump, Plugin, PumpPluginUiProvider {
             override val pumpSuspended: Boolean = false
             override val batteryRemainingPercent: Int = 85
             override val reservoirRemainingUnits: InsulinAmount = InsulinAmount(120.5)
-            override val lastSyncTimestamp: Long = System.currentTimeMillis()
+            override val lastSyncTimestamp: Timestamp = Timestamp.now()
         }
     )
     override val alerts: StateFlow<PumpAlerts> = MutableStateFlow(PumpAlerts())

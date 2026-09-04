@@ -168,7 +168,6 @@ class TreatmentRepository(
             .map { it.copy(status = InsulinStatus.Cancelled) }
 
         // 1. Database sync
-        falsch
         metabolicEventsDao.replaceInsulinApplicationsInRange(
             from = from.ms,
             to = to.ms,
@@ -338,6 +337,35 @@ class TreatmentRepository(
      */
     suspend fun getScheduledInsulinApplication(id: Long): InsulinApplication? = mutex.withLock {
         return insulinHistory.find { it.id == id && it.status == InsulinStatus.Scheduled }
+    }
+
+    /**
+     * Confirms a scheduled insulin application by setting its status to Confirmed,
+     * and updating its timestamp and delivered amount.
+     * @return `true` if the scheduled application was found and confirmed, `false` otherwise.
+     */
+    suspend fun confirmScheduledBolus(
+        id: Long,
+        timestamp: Timestamp,
+        deliveredAmount: InsulinAmount
+    ): Boolean = mutex.withLock {
+        val application = insulinHistory.find { it.id == id && it.status == InsulinStatus.Scheduled } ?: return@withLock false
+        val finalAmount = if (deliveredAmount > InsulinAmount.ZERO) deliveredAmount else application.dose.amount
+        val finalTimestamp = if (timestamp.isValid()) timestamp else application.dose.timestamp
+
+        val updated = application.copy(
+            dose = application.dose.copy(
+                timestamp = finalTimestamp,
+                amount = finalAmount
+            ),
+            status = InsulinStatus.Confirmed
+        )
+        insulinHistory.removeIf { it.id == id }
+        insulinHistory.add(updated)
+        insulinHistory.sortBy { it.timestamp }
+
+        metabolicEventsDao.updateInsulinApplication(updated.toEntity())
+        return@withLock true
     }
 
     // --- Meal Types ---

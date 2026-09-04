@@ -8,7 +8,6 @@ import de.dh.raaps.common.model.BolusStatus
 import de.dh.raaps.common.model.DeferredBolus
 import de.dh.raaps.common.model.InsulinAmount
 import de.dh.raaps.common.model.InsulinHistory
-import de.dh.raaps.common.model.InsulinStatus
 import de.dh.raaps.common.model.InsulinType
 import de.dh.raaps.common.model.MealEntry
 import de.dh.raaps.common.model.ToDo
@@ -272,22 +271,16 @@ class TherapyManager(
         if (bolusStatus.state != BolusDeliveryState.COMPLETED) return
 
         val appId = bolusStatus.bolusId?.toLongOrNull() ?: return
-        val targetApplication = treatmentRepository.getScheduledInsulinApplication(appId) ?: return
 
-        val deliveredAmount = if (bolusStatus.deliveredAmount > InsulinAmount.ZERO) {
-            bolusStatus.deliveredAmount
-        } else {
-            targetApplication.dose.amount
-        }
-        val updated = targetApplication.copy(
-            dose = targetApplication.dose.copy(
-                timestamp = bolusStatus.timestamp,
-                amount = deliveredAmount
-            ),
-            status = InsulinStatus.Confirmed
+        val confirmed = treatmentRepository.confirmScheduledBolus(
+            id = appId,
+            timestamp = bolusStatus.timestamp,
+            deliveredAmount = bolusStatus.deliveredAmount
         )
-        treatmentRepository.updateInsulinApplication(updated)
-        Log.i(TAG, "Confirmed scheduled bolus application #${updated.id} with amount ${updated.dose.amount}")
+
+        if (confirmed) {
+            Log.i(TAG, "Confirmed scheduled bolus application #$appId")
+        }
     }
 
     /**
