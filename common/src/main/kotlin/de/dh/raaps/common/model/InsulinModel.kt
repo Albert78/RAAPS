@@ -1,5 +1,6 @@
 package de.dh.raaps.common.model
 
+import de.dh.raaps.common.model.InsulinAmount.Companion.EPSILON
 import de.dh.raaps.common.model.data.BgDelta
 import de.dh.raaps.common.model.data.Minutes
 import de.dh.raaps.common.model.data.Timestamp
@@ -228,6 +229,7 @@ interface InsulinHistoryPoint {
     val timestamp: Long
     val amount: InsulinAmount
     val category: InsulinCategory
+    val pumpId: String?
 }
 
 /**

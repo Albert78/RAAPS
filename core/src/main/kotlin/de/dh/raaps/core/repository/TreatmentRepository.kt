@@ -147,7 +147,8 @@ class TreatmentRepository(
                 match.copy(
                     dose = match.dose.copy(timestamp = timestamp, amount = point.amount),
                     status = InsulinStatus.Confirmed,
-                    basal = point.category == InsulinCategory.Basal || match.basal
+                    basal = point.category == InsulinCategory.Basal || match.basal,
+                    pumpId = point.pumpId ?: match.pumpId
                 )
             } else {
                 InsulinApplication(
@@ -156,7 +157,8 @@ class TreatmentRepository(
                     insulinType = insulinType,
                     origin = InsulinOrigin.Pump,
                     basal = point.category == InsulinCategory.Basal,
-                    status = InsulinStatus.Confirmed
+                    status = InsulinStatus.Confirmed,
+                    pumpId = point.pumpId
                 )
             }
         }.filter { it.amount >= InsulinAmount.EPSILON }

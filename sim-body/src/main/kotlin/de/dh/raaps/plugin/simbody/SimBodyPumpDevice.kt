@@ -17,6 +17,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import java.util.UUID
 import java.util.concurrent.CopyOnWriteArrayList
 
 /**
@@ -85,9 +86,10 @@ class SimBodyPumpDevice(
                 val threshold = System.currentTimeMillis() - horizonMs
                 val loadedHistory = dao.getHistorySince(threshold).map {
                     HistoryEntry(
-                        it.timestampMs,
-                        it.amount,
-                        if (it.deliveryType == PumpDeliveryType.Bolus) InsulinCategory.Bolus else InsulinCategory.Basal
+                        id = it.id.toString(),
+                        timestamp = it.timestampMs,
+                        amount = it.amount,
+                        category = if (it.deliveryType == PumpDeliveryType.Bolus) InsulinCategory.Bolus else InsulinCategory.Basal
                     )
                 }
                 _history.clear()
@@ -232,7 +234,9 @@ class SimBodyPumpDevice(
         bodyModel.bolus(units, timestamp = timestamp)
 
         // Record in history as an insulin delivery
+        val tempId = UUID.randomUUID().toString()
         val entry = HistoryEntry(
+            id = tempId,
             timestamp = timestamp.ms,
             amount = units,
             category = if (type == PumpDeliveryType.Bolus) InsulinCategory.Bolus else InsulinCategory.Basal
@@ -241,11 +245,15 @@ class SimBodyPumpDevice(
 
         pumpDao?.let { dao ->
             scope.launch {
-                dao.insertHistoryEntry(PumpHistoryEntity(
+                val dbId = dao.insertHistoryEntry(PumpHistoryEntity(
                     timestampMs = entry.timestamp,
                     amount = entry.amount,
                     deliveryType = type
                 ))
+                val index = _history.indexOf(entry)
+                if (index != -1) {
+                    _history[index] = entry.copy(id = dbId.toString())
+                }
             }
         }
 
@@ -318,6 +326,7 @@ class SimBodyPumpDevice(
     }
 
     data class HistoryEntry(
+        val id: String? = null,
         val timestamp: Long,
         val amount: InsulinAmount,
         val category: InsulinCategory

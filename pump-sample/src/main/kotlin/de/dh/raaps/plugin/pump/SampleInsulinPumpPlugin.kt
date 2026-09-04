@@ -1,6 +1,8 @@
 package de.dh.raaps.plugin.pump
 
 import de.dh.raaps.common.model.BasalStatus
+import de.dh.raaps.common.model.BolusEvent
+import de.dh.raaps.common.model.BolusStatus
 import de.dh.raaps.common.model.InsulinAmount
 import de.dh.raaps.common.model.InsulinConcentration
 import de.dh.raaps.common.model.HardwareInformation
@@ -23,7 +25,9 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
 
 class SampleInsulinPumpPlugin : InsulinPump, Plugin, PumpPluginUiProvider {
@@ -69,6 +73,8 @@ class SampleInsulinPumpPlugin : InsulinPump, Plugin, PumpPluginUiProvider {
     )
     override val alerts: StateFlow<PumpAlerts> = MutableStateFlow(PumpAlerts())
     override val basalStatus: StateFlow<BasalStatus> = MutableStateFlow(BasalStatus(activeRate = InsulinAmount(0.5)))
+    override val bolusStatus: StateFlow<BolusStatus> = MutableStateFlow(BolusStatus())
+    override val bolusEvents: SharedFlow<BolusEvent> = MutableSharedFlow()
     override val history: StateFlow<InsulinHistory?> = MutableStateFlow(null)
 
     override suspend fun bolus(amount: InsulinAmount, bolusId: String?) {

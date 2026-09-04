@@ -1,6 +1,9 @@
 package de.dh.raaps.plugin.simbody
 
 import de.dh.raaps.common.model.BasalStatus
+import de.dh.raaps.common.model.BolusDeliveryState
+import de.dh.raaps.common.model.BolusEvent
+import de.dh.raaps.common.model.BolusStatus
 import de.dh.raaps.common.model.HardwareInformation
 import de.dh.raaps.common.model.InsulinAmount
 import de.dh.raaps.common.model.InsulinCategory
@@ -18,9 +21,13 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asSharedFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
@@ -135,16 +142,50 @@ class SimBodyInsulinPump(
         )
     }.stateIn(scope, SharingStarted.Eagerly, BasalStatus())
 
+    private val _bolusStatus = MutableStateFlow(BolusStatus())
+    override val bolusStatus: StateFlow<BolusStatus> = _bolusStatus.asStateFlow()
+
+    private val _bolusEvents = MutableSharedFlow<BolusEvent>(extraBufferCapacity = 64)
+    override val bolusEvents: SharedFlow<BolusEvent> = _bolusEvents.asSharedFlow()
+
     private val _history = MutableStateFlow<InsulinHistory?>(null)
     override val history: StateFlow<InsulinHistory?> = _history
 
     override suspend fun bolus(amount: InsulinAmount, bolusId: String?) {
         if (!_isConnected.value) throw Exception("Pump not connected to App")
 
+        val startTimestamp = System.currentTimeMillis()
+        _bolusStatus.value = BolusStatus(
+            state = BolusDeliveryState.DELIVERING,
+            bolusId = bolusId,
+            targetAmount = amount.iu,
+            deliveredAmount = 0.0,
+            timestamp = startTimestamp
+        )
+        _bolusEvents.emit(BolusEvent.Started(bolusId, amount.iu, startTimestamp))
+
         if (device.deliverBolus(amount)) {
-            // Success - device level handled reporting to body and history
+            val completedTimestamp = System.currentTimeMillis()
+            _bolusStatus.value = BolusStatus(
+                state = BolusDeliveryState.COMPLETED,
+                bolusId = bolusId,
+                targetAmount = amount.iu,
+                deliveredAmount = amount.iu,
+                timestamp = completedTimestamp
+            )
+            _bolusEvents.emit(BolusEvent.Completed(bolusId, amount.iu, amount.iu, completedTimestamp))
             refreshStatus()
         } else {
+            val stoppedTimestamp = System.currentTimeMillis()
+            _bolusStatus.value = BolusStatus(
+                state = BolusDeliveryState.STOPPED,
+                bolusId = bolusId,
+                targetAmount = amount.iu,
+                deliveredAmount = 0.0,
+                timestamp = stoppedTimestamp
+            )
+            _bolusEvents.emit(BolusEvent.Stopped(bolusId, amount.iu, 0.0, stoppedTimestamp))
+
             val errorReason = when {
                 device.isBroken.value -> "Hardware broken"
                 device.hasHardwareError.value -> "Hardware error"
@@ -159,7 +200,22 @@ class SimBodyInsulinPump(
     }
 
     override suspend fun stopBolus() {
-        // Simple simulator: bolus is instant
+        val current = _bolusStatus.value
+        if (current.state == BolusDeliveryState.DELIVERING) {
+            val timestamp = System.currentTimeMillis()
+            _bolusStatus.value = current.copy(
+                state = BolusDeliveryState.STOPPED,
+                timestamp = timestamp
+            )
+            _bolusEvents.emit(
+                BolusEvent.Stopped(
+                    bolusId = current.bolusId,
+                    targetAmount = current.targetAmount,
+                    deliveredAmount = current.deliveredAmount,
+                    timestamp = timestamp
+                )
+            )
+        }
     }
 
     override suspend fun tempBasal(percent: Int, durationHours: Int) {
@@ -191,6 +247,7 @@ class SimBodyInsulinPump(
                 override val timestamp: Long = point.timestamp
                 override val amount: InsulinAmount = point.amount
                 override val category: InsulinCategory = point.category
+                override val pumpId: String? = point.id
             }
         }
         if (points.isNotEmpty()) {

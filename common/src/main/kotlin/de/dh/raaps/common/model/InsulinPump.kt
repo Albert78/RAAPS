@@ -3,6 +3,7 @@ package de.dh.raaps.common.model
 import de.dh.pump.PumpCommandException
 import de.dh.pump.PumpConnectionException
 import de.dh.raaps.common.model.data.InsulinProfile
+import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
 
 /**
@@ -79,6 +80,68 @@ data class BasalStatus(
 )
 
 /**
+ * Delivery state of an active or recent bolus.
+ */
+enum class BolusDeliveryState {
+    IDLE,
+    DELIVERING,
+    COMPLETED,
+    STOPPED
+}
+
+/**
+ * Status snapshot of bolus delivery.
+ */
+data class BolusStatus(
+    val state: BolusDeliveryState = BolusDeliveryState.IDLE,
+    val bolusId: String? = null,
+    val targetAmount: Double = 0.0,
+    val deliveredAmount: Double = 0.0,
+    val timestamp: Long = 0,
+) {
+    /**
+     * Delivery progress in percent (0 to 100).
+     */
+    val progressPercent: Int
+        get() = if (targetAmount > 0) ((deliveredAmount / targetAmount) * 100).coerceIn(0.0, 100.0).toInt() else 0
+}
+
+/**
+ * Real-time event for bolus delivery lifecycle updates.
+ */
+sealed interface BolusEvent {
+    val bolusId: String?
+    val timestamp: Long
+
+    data class Started(
+        override val bolusId: String?,
+        val targetAmount: Double,
+        override val timestamp: Long = System.currentTimeMillis(),
+    ) : BolusEvent
+
+    data class Progress(
+        override val bolusId: String?,
+        val targetAmount: Double,
+        val deliveredAmount: Double,
+        override val timestamp: Long = System.currentTimeMillis(),
+    ) : BolusEvent
+
+    data class Completed(
+        override val bolusId: String?,
+        val targetAmount: Double,
+        val deliveredAmount: Double,
+        override val timestamp: Long = System.currentTimeMillis(),
+    ) : BolusEvent
+
+    data class Stopped(
+        override val bolusId: String?,
+        val targetAmount: Double,
+        val deliveredAmount: Double,
+        override val timestamp: Long = System.currentTimeMillis(),
+    ) : BolusEvent
+}
+
+/**
  * Generic interface for an insulin pump.
  */
 interface InsulinPump {
@@ -113,6 +176,16 @@ interface InsulinPump {
 
     /**
      * History of insulin deliveries (Basal and Bolus) from the pump.
+     */
+    val bolusStatus: StateFlow<BolusStatus>
+
+    /**
+     * Event stream for bolus delivery lifecycle events.
+     */
+    val bolusEvents: SharedFlow<BolusEvent>
+
+    /**
+     * Current status of active or recent bolus delivery.
      */
     val history: StateFlow<InsulinHistory?>
 
