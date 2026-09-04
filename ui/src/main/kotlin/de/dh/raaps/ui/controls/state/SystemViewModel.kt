@@ -155,7 +155,7 @@ class SystemViewModel(
                     var sumXX = 0.0
                     recentReadings.forEach { reading ->
                         val x = (reading.timestamp.ms - firstTs) / 60000.0
-                        val y = reading.value.mgdl.toDouble()
+                        val y = reading.value.mgdl
                         sumX += x
                         sumY += y
                         sumXY += x * y
