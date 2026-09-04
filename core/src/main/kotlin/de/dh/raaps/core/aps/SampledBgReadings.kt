@@ -43,8 +43,8 @@ class SampledBgReadings(
         }
     }
 
-    fun calculatePTWMA(decayFactor: Double): BgValue {
-        return history.calculatePTWMA(decayFactor)
+    fun calculatePTWMA(decayFactor: Double, maxNumReadings: Int): BgValue {
+        return history.calculatePTWMA(decayFactor, maxNumReadings)
     }
 
     fun lastReading(): BgReading? {

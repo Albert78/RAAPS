@@ -263,7 +263,7 @@ class ApsAlgorithmImpl(
                 // If we have enough input values, we can use the better SavitzkyGolay filter, else fallback to PTWMA
                 var filtered = sampledBgReadings.calculateSavitzkyGolayEndBorder3()
                 if (filtered.isInvalid()) {
-                    filtered = sampledBgReadings.calculatePTWMA(0.7)
+                    filtered = sampledBgReadings.calculatePTWMA(decayFactor = 0.7, maxNumReadings = 5)
                 }
 
                 // TODO: Add detection for noisy values. If values are too noisy,

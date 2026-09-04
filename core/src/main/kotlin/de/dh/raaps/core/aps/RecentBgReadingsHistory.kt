@@ -145,11 +145,13 @@ class RecentBgReadingsHistory(
      * If there are no valid values, returns `BgValue.INVALID`.
      */
     fun calculatePTWMA(
-        decayFactor: Double
+        decayFactor: Double,
+        maxNumReadings: Int
     ): BgValue {
         val validReadings = (0 until size)
             .mapNotNull { buffer[it] }
             .filter { it.sampleKind == BgSampleKind.Value }
+            .takeLast(maxNumReadings)
 
         if (validReadings.isEmpty()) {
             return BgValue.INVALID
