@@ -15,12 +15,12 @@ import de.dh.raaps.core.aps.SystemManagerImpl
 import de.dh.raaps.core.aps.TherapyManager
 import de.dh.raaps.core.pump.PumpManager
 import de.dh.raaps.core.pump.PumpManagerImpl
-import de.dh.raaps.core.repository.SystemMetricsRepository
 import de.dh.raaps.core.repository.DatabaseInitializer
 import de.dh.raaps.core.repository.DeviceManagementRepository
 import de.dh.raaps.core.repository.FoodRepository
 import de.dh.raaps.core.repository.GlucoseRepository
 import de.dh.raaps.core.repository.SettingsRepository
+import de.dh.raaps.core.repository.SystemMetricsRepository
 import de.dh.raaps.core.repository.TherapyRepository
 import de.dh.raaps.core.repository.TreatmentRepository
 import de.dh.raaps.core.repository.db.AppDatabase
@@ -106,6 +106,7 @@ class SystemRegistryImpl(
             }
 
             val systemManager = SystemManagerImpl(
+                glucoseSourceManager = glucoseSourceManager,
                 glucoseRepository = glucoseRepository,
                 wakeService = wakeService,
                 settingsRepository = settingsRepository,

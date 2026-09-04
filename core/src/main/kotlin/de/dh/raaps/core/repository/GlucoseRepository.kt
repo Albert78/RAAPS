@@ -2,8 +2,6 @@ package de.dh.raaps.core.repository
 
 import de.dh.raaps.common.model.DataProvider
 import de.dh.raaps.common.model.data.BgReading
-import de.dh.raaps.common.model.data.BgReadingsInterval
-import de.dh.raaps.common.model.data.Minutes
 import de.dh.raaps.common.model.data.SensorType
 import de.dh.raaps.common.model.data.Timestamp
 import de.dh.raaps.core.aps.ApsAlgorithmImpl
@@ -56,20 +54,6 @@ class GlucoseRepository(appDatabase: AppDatabase) {
             lastBg = _currentBg.value
             _currentBg.value = reading
         }
-    }
-
-    fun getLastDataTime(): Timestamp? {
-        return history.last()?.timestamp
-    }
-
-    fun predictNextValueTimestamp(readingsInterval: BgReadingsInterval, readingsTimeDelay: Minutes): Timestamp {
-        val lastTime = getLastDataTime() ?: Timestamp.now()
-        val intervalMinutes = when (readingsInterval) {
-            BgReadingsInterval.OneMinute -> 1
-            BgReadingsInterval.FiveMinutes -> 5
-            else -> readingsTimeDelay.value.toInt()
-        }
-        return lastTime.plusMinutes(intervalMinutes)
     }
 
     fun observeBgReadings(): Flow<List<BgReading>> = providerDao.observeAllReadings()

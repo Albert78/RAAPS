@@ -61,12 +61,7 @@ class SystemControlViewModel(
             sensorTypeName = source?.getSensorTypeName(),
             readingsInterval = source?.readingsInterval,
             lastBgReading = currentBg,
-            nextPredictedTimestamp = if (source != null) {
-                glucoseRepository.predictNextValueTimestamp(
-                    glucoseSourceManager.readingsInterval,
-                    glucoseSourceManager.readingsTimeDelay
-                )
-            } else Timestamp.INVALID,
+            nextPredictedTimestamp = glucoseSourceManager.predictNextValueTimestamp(),
             glucoseUnit = preferences.glucoseUnit,
             pluginUiProvider = source as? CgmPluginUiProvider
         )

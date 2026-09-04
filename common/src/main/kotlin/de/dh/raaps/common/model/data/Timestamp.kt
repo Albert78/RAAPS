@@ -46,6 +46,10 @@ value class Timestamp(val ms: Long): Comparable<Timestamp> {
 
     fun isValid() = this != INVALID
 
+    fun isInvalid() = this == INVALID
+
+    fun ifValidOrNow() = if (this.isValid()) this else now()
+
     override fun toString(): String {
         return SimpleDateFormat("HH:mm:ss.SSS", Locale.getDefault()).format(Date(ms))
     }

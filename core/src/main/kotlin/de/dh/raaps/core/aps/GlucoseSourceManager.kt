@@ -4,6 +4,7 @@ import android.util.Log
 import de.dh.raaps.common.model.GlucoseSource
 import de.dh.raaps.common.model.data.BgReadingsInterval
 import de.dh.raaps.common.model.data.Minutes
+import de.dh.raaps.common.model.data.Timestamp
 import de.dh.raaps.core.repository.GlucoseRepository
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -26,6 +27,9 @@ class GlucoseSourceManager(
 
     private val _glucoseSource = MutableStateFlow<GlucoseSource?>(null)
     val activeGlucoseSource: StateFlow<GlucoseSource?> = _glucoseSource.asStateFlow()
+
+    private val _lastInputTimestamp = MutableStateFlow<Timestamp>(Timestamp.INVALID)
+    val lastInputTimestamp: StateFlow<Timestamp> = _lastInputTimestamp.asStateFlow()
 
     var glucoseSource: GlucoseSource?
         get() = _glucoseSource.value
@@ -60,9 +64,9 @@ class GlucoseSourceManager(
             readingsTimeDelay = plugin.readingsTimeDelay
             readingsInterval = plugin.readingsInterval
 
-            // Persist values and update in-memory history in repository
             plugin.getValues()
                 .collect { reading ->
+                    _lastInputTimestamp.value = Timestamp.now()
                     glucoseRepository.addReading(reading, dataProvider, sensorType)
                 }
         }
@@ -72,6 +76,19 @@ class GlucoseSourceManager(
         glucoseSource?.stop()
         glucoseSource = null
         scope.cancel()
+    }
+
+    fun predictNextValueTimestamp(): Timestamp {
+        val lastTime = lastInputTimestamp.value
+        if (glucoseSource == null || lastTime.isInvalid()) {
+            return Timestamp.INVALID
+        }
+        val intervalMinutes = when (readingsInterval) {
+            BgReadingsInterval.OneMinute -> 1
+            BgReadingsInterval.FiveMinutes -> 5
+            else -> readingsTimeDelay.value.toInt()
+        }
+        return lastTime.plusMinutes(intervalMinutes)
     }
 
     companion object {

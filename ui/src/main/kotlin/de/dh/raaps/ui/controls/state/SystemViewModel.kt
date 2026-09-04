@@ -30,7 +30,7 @@ import kotlinx.coroutines.launch
  * ViewModel for real-time system status including current glucose, IOB, COB and APS state.
  */
 class SystemViewModel(
-    private val systemRegistry: SystemRegistry
+    systemRegistry: SystemRegistry
 ) : ViewModel(), TickHandler {
     private val _currentBgUiState = MutableStateFlow(CurrentBgUiState(
         isLoading = true,
@@ -44,10 +44,13 @@ class SystemViewModel(
     private val _cob = MutableStateFlow(0.0)
     val cob = _cob.asStateFlow()
 
+    private val timeService = systemRegistry.timeService
+    private val glucoseSourceManager = systemRegistry.glucoseSourceManager
     private val glucoseRepository = systemRegistry.glucoseRepository
     private val treatmentRepository = systemRegistry.treatmentRepository
     private val therapyManager = systemRegistry.therapyManager
     private val systemManager = systemRegistry.systemManager
+    private val appPreferencesRepository = systemRegistry.appPreferencesRepository
 
     val carbsInsulinCalculator = systemRegistry.carbsInsulinCalculator
 
@@ -58,7 +61,7 @@ class SystemViewModel(
     }
 
     init {
-        systemRegistry.timeService.registerTickHandler(TickPriority.UI, this, "SystemUI")
+        timeService.registerTickHandler(TickPriority.UI, this, "SystemUI")
 
         viewModelScope.launch {
             combine(
@@ -95,7 +98,7 @@ class SystemViewModel(
         coreState: CoreState,
         apsIssues: Set<ApsIssue>
     ) {
-        val glucoseUnit = systemRegistry.appPreferencesRepository.cachedPreferences.value?.glucoseUnit ?: GlucoseUnit.MG_DL
+        val glucoseUnit = appPreferencesRepository.cachedPreferences.value?.glucoseUnit ?: GlucoseUnit.MG_DL
 
         val now = Timestamp.now()
         val timestampNowMs = now.ms
@@ -107,11 +110,8 @@ class SystemViewModel(
 
         val latest = recentReadings.lastOrNull()
 
-        val nextExpectedTimestamp = systemRegistry.glucoseRepository.predictNextValueTimestamp(
-            systemRegistry.glucoseSourceManager.readingsInterval,
-            systemRegistry.glucoseSourceManager.readingsTimeDelay
-        )
-        val readingsTimeDelay = systemRegistry.glucoseSourceManager.readingsTimeDelay
+        val nextExpectedTimestamp = glucoseSourceManager.predictNextValueTimestamp()
+        val readingsTimeDelay = glucoseSourceManager.readingsTimeDelay
 
         _currentBgUiState.update {
             if (latest == null) {
@@ -201,7 +201,7 @@ class SystemViewModel(
 
     override fun onCleared() {
         super.onCleared()
-        systemRegistry.timeService.unregisterTickHandler(this)
+        timeService.unregisterTickHandler(this)
     }
 
     companion object {

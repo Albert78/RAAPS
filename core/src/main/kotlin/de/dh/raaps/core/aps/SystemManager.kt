@@ -24,13 +24,13 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.asCoroutineDispatcher
-import kotlinx.coroutines.withContext
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.drop
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import java.util.concurrent.Executors
 
 enum class ApsIssue {
@@ -112,6 +112,7 @@ interface SystemManager {
  * Implementation of [SystemManager].
  */
 class SystemManagerImpl(
+    private val glucoseSourceManager: GlucoseSourceManager,
     private val glucoseRepository: GlucoseRepository,
     private val wakeService: SystemWakeService,
     private val settingsRepository: SettingsRepository,
@@ -411,13 +412,13 @@ class SystemManagerImpl(
     }
 
     fun isBgStale(): Boolean {
-        val lastDataTime = glucoseRepository.getLastDataTime()
-        return lastDataTime == null || lastDataTime + STALE_BG_THRESHOLD < Timestamp.now()
+        val lastDataTime = glucoseSourceManager.lastInputTimestamp.value
+        return lastDataTime.isInvalid() || lastDataTime + STALE_BG_THRESHOLD < Timestamp.now()
     }
 
     private fun nextBgStaleCheckAt(): Timestamp {
-        val lastDataTime = glucoseRepository.getLastDataTime()
-        return (lastDataTime ?: Timestamp.now()) + STALE_BG_THRESHOLD
+        val lastDataTime = glucoseSourceManager.lastInputTimestamp.value
+        return lastDataTime.ifValidOrNow() + STALE_BG_THRESHOLD
     }
 
     companion object {
