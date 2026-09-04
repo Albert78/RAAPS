@@ -141,32 +141,40 @@ class RecentBgReadingsHistory(
 
     /**
      * Returns a filtered BG value by calculating the Parametrized Time-Weighted Moving Average.
-     * If there aren't enough valid values in the given window, this method returns `BgValue(0)`, else it
-     * returns the PTWMA-smoothed value.
+     * Newer readings have higher weight (1.0), and older readings have lower weight (1.0 - decayFactor * ageRatio).
+     * If there are no valid values, returns `BgValue.INVALID`.
      */
     fun calculatePTWMA(
-        weightSlope: Double
+        decayFactor: Double
     ): BgValue {
+        val validReadings = (0 until size)
+            .mapNotNull { buffer[it] }
+            .filter { it.sampleKind == BgSampleKind.Value }
+
+        if (validReadings.isEmpty()) {
+            return BgValue.INVALID
+        }
+        if (validReadings.size == 1) {
+            return validReadings.first().value
+        }
+
+        val latestTimestamp = validReadings.last().timestamp.ms
+        val oldestTimestamp = validReadings.first().timestamp.ms
+        val windowMs = (latestTimestamp - oldestTimestamp).toDouble()
+
         var weightedSum = 0.0
         var weightTotal = 0.0
 
-        if (size == 1) {
-            return buffer[0]!!.value
-        } else if (size > 0) {
-            val windowStart = buffer[0]!!.timestamp
-            val windowMs = buffer[size - 1]!!.timestamp - windowStart
-
-            for (i in 0 until size) {
-                val reading = buffer[i]
-                if (reading != null && reading.sampleKind != BgSampleKind.Invalid) {
-                    val weight = weightSlope * (reading.timestamp.ms - windowStart.ms) + (1.0 - weightSlope) * windowMs
-                    weightedSum += reading.value.mgdl * weight
-                    weightTotal += weight
-                }
-            }
+        for (reading in validReadings) {
+            val ageMs = (latestTimestamp - reading.timestamp.ms).toDouble().coerceAtLeast(0.0)
+            val ageRatio = if (windowMs > 0.0) (ageMs / windowMs).coerceIn(0.0, 1.0) else 0.0
+            // Weight decreases linearly from 1.0 (newest reading) down to (1.0 - decayFactor) (oldest reading)
+            val weight = (1.0 - (decayFactor * ageRatio)).coerceAtLeast(0.01)
+            weightedSum += reading.value.mgdl * weight
+            weightTotal += weight
         }
 
-        if (weightTotal <= 0) {
+        if (weightTotal <= 0.0) {
             return BgValue.INVALID
         }
         return BgValue.fromMgDl(weightedSum / weightTotal)

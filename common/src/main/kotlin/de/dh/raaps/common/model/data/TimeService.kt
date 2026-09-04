@@ -30,6 +30,11 @@ interface TimeService {
     val tickInterval: Minutes
 
     /**
+     * An offset in milliseconds relative to the tick boundary at which tick handlers are executed.
+     */
+    var executionOffsetMs: Long
+
+    /**
      * The current tick based on the system time and current synchronization.
      */
     val currentTick: Tick

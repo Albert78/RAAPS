@@ -6,6 +6,7 @@ import android.content.Intent
 import de.dh.raaps.AppPreferencesRepository
 import de.dh.raaps.common.model.ApsMode
 import de.dh.raaps.common.model.calculation.CarbsInsulinCalculator
+import de.dh.raaps.common.model.data.BgReadingsInterval
 import de.dh.raaps.common.model.data.BgValue
 import de.dh.raaps.common.model.data.Tick
 import de.dh.raaps.common.model.data.TickHandler
@@ -202,6 +203,13 @@ class SystemManagerImpl(
         this.treatmentRepository = treatmentRepository
         this.carbsInsulinCalculator = carbsInsulinCalculator
 
+        // Configure execution offset on timeService:
+        // The 5-minute tick interval is centered around the BG reading (halfTickMs = 2.5 minutes).
+        // Tick handlers should execute 20 seconds after the expected BG reading arrival.
+        val halfTickMs = timeService.timeline.tickSizeMs / 2
+        val delayAfterBgMs = 20_000L
+        timeService.executionOffsetMs = halfTickMs + delayAfterBgMs
+
         wakeService.registerHandler(WAKE_TAG, SystemWakeupHandler())
 
         scope.launch {
@@ -223,8 +231,17 @@ class SystemManagerImpl(
                     val nextCheck = nextBgStaleCheckAt()
                     wakeService.scheduleWakeup(WAKE_TAG, WAKEUP_STALE_CHECK, nextCheck)
 
-                    // Synchronize our internal ticking grid to fire 20s after the BG reading.
-                    timeService.synchronize(Timestamp.now().plusSeconds(20))
+                    if (glucoseSourceManager.readingsInterval == BgReadingsInterval.FiveMinutes) {
+                        // Center the 5-minute tick interval around the BG reading timestamp
+                        // (bg.timestamp lies in the center: [bg.timestamp - 2.5m, bg.timestamp + 2.5m)).
+                        // This ensures that timing fluctuations in incoming BG readings do not cause tick boundary jumps.
+                        val halfTickMs = timeService.timeline.tickSizeMs / 2
+                        val centeredTimestamp = Timestamp(bg.timestamp.ms - halfTickMs)
+                        timeService.synchronize(centeredTimestamp)
+                    } else {
+                        // Reset offset if BG values do not arrive in a 5-minute interval
+                        timeService.synchronize(Timestamp(0))
+                    }
 
                     // Update notification immediately
                     androidNotifications.updateMainAppNotification(glucoseRepository)
@@ -384,8 +401,6 @@ class SystemManagerImpl(
 
     override fun setApsMode(mode: ApsMode) {
         _apsMode.value = mode
-        // Trigger a tick to update predictions immediately
-        timeService.synchronize(Timestamp.now())
 
         scope.launch {
             val currentSettings = settingsRepository.getCurrentSettings()

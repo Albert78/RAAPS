@@ -29,6 +29,14 @@ class TimeServiceImpl(
 ) : TimeService, WakeupHandler {
     override val timeline = Timeline(tickInterval)
 
+    override var executionOffsetMs: Long = 0L
+        set(value) {
+            field = value
+            if (firstSyncDeferred.isCompleted) {
+                scheduleNextTick()
+            }
+        }
+
     private val _tickFlow = MutableStateFlow(timeline.getNowTick())
     override val tickFlow: StateFlow<Tick> = _tickFlow.asStateFlow()
 
@@ -52,8 +60,9 @@ class TimeServiceImpl(
         scope.launch {
             try {
                 wakeService.acquireBusyState(WAKE_TAG)
-                val tick = timeline.getNowTick()
-                Log.d(TAG, "Tick triggered via system wakeup: $tick (timelineOffset=${timeline.offsetMs})")
+                val now = Timestamp.now()
+                val tick = timeline.tick(Timestamp(now.ms - executionOffsetMs))
+                Log.d(TAG, "Tick triggered via system wakeup: $tick (timelineOffset=${timeline.offsetMs}, executionOffset=$executionOffsetMs)")
 
                 // Sequential execution of handlers
                 handlers.forEach { entry ->
@@ -86,19 +95,18 @@ class TimeServiceImpl(
 
     private fun scheduleNextTick() {
         val now = Timestamp.now()
-        val currentTick = timeline.getNowTick()
+        var currentTick = timeline.getNowTick()
+        var nextWakeupTimeMs = timeline.timestamp(currentTick).ms + executionOffsetMs
 
-        // Calculate next scheduled tick time based on the synchronized timeline
-        var nextTickTimeMs = timeline.timestamp(currentTick + 1).ms
-
-        // Safety: If we already passed the next tick time, go to the one after
-        if (nextTickTimeMs <= now.ms) {
-            nextTickTimeMs += timeline.tickSizeMs
+        // Safety: If we already passed the wakeup time for currentTick, schedule for the next tick
+        if (nextWakeupTimeMs <= now.ms) {
+            currentTick += 1
+            nextWakeupTimeMs = timeline.timestamp(currentTick).ms + executionOffsetMs
         }
 
-        val nextTickTimestamp = Timestamp(nextTickTimeMs)
+        val nextTickTimestamp = Timestamp(nextWakeupTimeMs)
         wakeService.scheduleWakeup(WAKE_TAG, null, nextTickTimestamp)
-        Log.d(TAG, "Scheduled next system wakeup at $nextTickTimestamp")
+        Log.d(TAG, "Scheduled next system wakeup at $nextTickTimestamp for tick $currentTick (executionOffset=$executionOffsetMs ms)")
     }
 
     override fun unregisterTickHandler(handler: TickHandler) {
@@ -109,7 +117,7 @@ class TimeServiceImpl(
         val tickSizeMs = timeline.tickSizeMs
 
         // Desired offset relative to the Unix Epoch
-        val targetOffsetMs = synchronizationTimestamp.ms % tickSizeMs
+        val targetOffsetMs = Math.floorMod(synchronizationTimestamp.ms, tickSizeMs)
 
         if (!firstSyncDeferred.isCompleted) {
             timeline.offsetMs = targetOffsetMs

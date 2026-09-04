@@ -220,9 +220,10 @@ class ApsAlgorithmImpl(
     }
 
     override suspend fun recalculate(): CalculationResult {
+        val now = Timestamp.now()
+        history.prune(now.minus(BG_HISTORY_TIME))
         sampledBgReadings.sampleAvgValues()
         val nowTick = timeline.getNowTick()
-        val now = Timestamp.now()
 
         var insight = CoreInsight(
             timestamp = now,
@@ -287,7 +288,6 @@ class ApsAlgorithmImpl(
                     // Fallback to safe basal
                     return@recalculate CalculationResult.safetyBasal(CoreReasoning.INVALID_VALUES).withMetrics(insight)
                 }
-                insight = insight.copy(bgFiltered = filtered)
                 filtered
             }
 
@@ -305,8 +305,6 @@ class ApsAlgorithmImpl(
             val avgCurrentDeviationPerTick = calcAvgDeviationPerTick(DEVIATION_TIME_BASE)
             // Assumption: That deviation will be continued in the future but will fade away
 
-            insight = insight.copy(deviationPerTick = avgCurrentDeviationPerTick)
-
             val meals = treatmentRepository.getMeals()
             val insulinApplications = treatmentRepository.getInsulinApplications()
             val settings = therapyManager.getCurrentTherapySettings()
@@ -321,6 +319,8 @@ class ApsAlgorithmImpl(
             val crValue = therapyManager.getCrFactor(now)
 
             insight = insight.copy(
+                bgFiltered = currentBg,
+                deviationPerTick = avgCurrentDeviationPerTick,
                 targetBg = targetBg,
                 isf = isfValue,
                 cr = crValue

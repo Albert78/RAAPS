@@ -52,9 +52,13 @@ class SampledBgReadings(
     }
 
     fun calculateSavitzkyGolayEndBorder3(): BgValue {
-        val current0 = buffer[0] // Last value
-        val current1 = buffer[1] // Second to last value
-        val current2 = buffer[2] // Third to last value
+        val (current0, current1, current2) = if (buffer[0] > 0) {
+            Triple(buffer[0], buffer[1], buffer[2])
+        } else if (capacity >= 4) {
+            Triple(buffer[1], buffer[2], buffer[3])
+        } else {
+            Triple(0, 0, 0)
+        }
         if (current0 == 0 || current1 == 0 || current2 == 0) return BgValue.INVALID
 
         val coeffs = SavitzkyGolayFilterWin5Order2.COEFFS
