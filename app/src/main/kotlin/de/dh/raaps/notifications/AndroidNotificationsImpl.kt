@@ -15,7 +15,7 @@ import de.dh.raaps.common.model.data.BgValue
 import de.dh.raaps.common.model.data.GlucoseUnit
 import de.dh.raaps.core.aps.ApsRecommendation
 import de.dh.raaps.core.aps.CoreIssue
-import de.dh.raaps.core.aps.GlucoseSourceManager
+import de.dh.raaps.core.repository.GlucoseRepository
 import de.dh.raaps.core.system.AndroidNotifications
 import de.dh.raaps.core.system.RegistryProvider
 import de.dh.raaps.ui.activities.MainActivity
@@ -89,8 +89,8 @@ class AndroidNotificationsImpl(
         return context.getString(UiR.string.bg_delta_format, valStr, unitStr)
     }
 
-    override fun createMainAppNotification(glucoseSourceManager: GlucoseSourceManager): Notification {
-        val data = MainAppNotificationData.create(glucoseSourceManager)
+    override fun createMainAppNotification(glucoseRepository: GlucoseRepository): Notification {
+        val data = MainAppNotificationData.create(glucoseRepository)
         Log.d(TAG, "Build notification for ${data.lastBgSample}")
         val unit = getGlucoseUnit()
         val bgValueStr = getBgValueString(data.lastBgSample?.value, unit, false)
@@ -115,8 +115,8 @@ class AndroidNotificationsImpl(
             .build()
     }
 
-    override fun updateMainAppNotification(glucoseSourceManager: GlucoseSourceManager) {
-        val notification: Notification = createMainAppNotification(glucoseSourceManager)
+    override fun updateMainAppNotification(glucoseRepository: GlucoseRepository) {
+        val notification: Notification = createMainAppNotification(glucoseRepository)
         notify(AndroidNotifications.FOREGROUND_NOTIFICATION_ID, notification)
     }
 

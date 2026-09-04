@@ -27,7 +27,7 @@ data class SystemControlUiState(
     val sensorTypeName: String? = null,
     val readingsInterval: BgReadingsInterval? = null,
     val lastBgReading: BgReading? = null,
-    val nextPredictedTimestamp: Timestamp? = null,
+    val nextPredictedTimestamp: Timestamp = Timestamp.INVALID,
     val glucoseUnit: GlucoseUnit = GlucoseUnit.MG_DL,
 
     val cgmPluginUiProvider: CgmPluginUiProvider? = null,
@@ -46,13 +46,14 @@ class SystemControlViewModel(
     systemRegistry: SystemRegistry
 ) : ViewModel() {
     private val systemMetricsRepository = systemRegistry.systemMetricsRepository
+    private val glucoseRepository = systemRegistry.glucoseRepository
     private val glucoseSourceManager = systemRegistry.glucoseSourceManager
     private val appPreferencesRepository = systemRegistry.appPreferencesRepository
     private val pumpManager = systemRegistry.pumpManager
 
     private val glucoseInfo = combine(
         glucoseSourceManager.activeGlucoseSource,
-        glucoseSourceManager.currentBg,
+        glucoseRepository.currentBg,
         appPreferencesRepository.cachedPreferences
     ) { source, currentBg, preferences ->
         GlucoseUiData(
@@ -60,7 +61,12 @@ class SystemControlViewModel(
             sensorTypeName = source?.getSensorTypeName(),
             readingsInterval = source?.readingsInterval,
             lastBgReading = currentBg,
-            nextPredictedTimestamp = if (source != null) glucoseSourceManager.predictNextValueTimestamp() else null,
+            nextPredictedTimestamp = if (source != null) {
+                glucoseRepository.predictNextValueTimestamp(
+                    glucoseSourceManager.readingsInterval,
+                    glucoseSourceManager.readingsTimeDelay
+                )
+            } else Timestamp.INVALID,
             glucoseUnit = preferences.glucoseUnit,
             pluginUiProvider = source as? CgmPluginUiProvider
         )
@@ -123,7 +129,7 @@ class SystemControlViewModel(
         val sensorTypeName: String?,
         val readingsInterval: BgReadingsInterval?,
         val lastBgReading: BgReading?,
-        val nextPredictedTimestamp: Timestamp?,
+        val nextPredictedTimestamp: Timestamp,
         val glucoseUnit: GlucoseUnit,
         val pluginUiProvider: CgmPluginUiProvider?
     )

@@ -17,6 +17,7 @@ import de.dh.raaps.common.model.data.Minutes
 import de.dh.raaps.common.model.data.Tick
 import de.dh.raaps.common.model.data.Timeline
 import de.dh.raaps.common.model.data.Timestamp
+import de.dh.raaps.core.repository.GlucoseRepository
 import de.dh.raaps.core.repository.TreatmentRepository
 import kotlin.math.ceil
 
@@ -186,6 +187,7 @@ class ApsAlgorithmImpl(
     }
 
     override suspend fun recalculate(): CalculationResult {
+        sampledBgReadings.sampleAvgValues()
         val nowTick = timeline.getNowTick()
         val now = Timestamp.now()
 
@@ -536,7 +538,7 @@ class ApsAlgorithmImpl(
 
         suspend fun create(
             treatmentRepository: TreatmentRepository,
-            sampledBgReadings: SampledBgReadings,
+            glucoseRepository: GlucoseRepository,
             therapyManager: TherapyManager,
             timeline: Timeline,
             carbsInsulinCalculator: CarbsInsulinCalculator,
@@ -546,6 +548,8 @@ class ApsAlgorithmImpl(
                 timeline = timeline
             )
             predictionModel.initializeToTick(Timestamp.now().minus(PRESERVE_PREDICTIONS_PAST_TIME))
+
+            val sampledBgReadings = SampledBgReadings(timeline, glucoseRepository.history)
 
             return ApsAlgorithmImpl(
                 timeline = timeline,

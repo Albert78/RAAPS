@@ -3,7 +3,7 @@ package de.dh.raaps.notifications
 import de.dh.raaps.common.model.data.BgReading
 import de.dh.raaps.common.model.data.BgSampleKind
 import de.dh.raaps.common.model.data.BgValue
-import de.dh.raaps.core.aps.GlucoseSourceManager
+import de.dh.raaps.core.repository.GlucoseRepository
 
 data class MainAppNotificationData(
     val lastBgSample: BgReading?,
@@ -19,9 +19,9 @@ data class MainAppNotificationData(
     }
 
     companion object {
-        fun create(glucoseSourceManager: GlucoseSourceManager): MainAppNotificationData {
-            val lastBg = glucoseSourceManager.currentBg.value
-            val secondToLastBg = glucoseSourceManager.lastBg
+        fun create(glucoseRepository: GlucoseRepository): MainAppNotificationData {
+            val lastBg = glucoseRepository.currentBg.value
+            val secondToLastBg = glucoseRepository.lastBg
             return MainAppNotificationData(lastBg, secondToLastBg)
         }
     }

@@ -98,15 +98,15 @@ class SystemRegistryImpl(
             val pumpManager = PumpManagerImpl(scope = scope, wakeService = wakeService)
 
             val glucoseSourceManager = GlucoseSourceManager(
-                glucoseRepository = glucoseRepository,
-                timeService = timeService
+                glucoseRepository = glucoseRepository
             )
+
             runBlocking {
-                glucoseSourceManager.initialize()
+                glucoseRepository.initialize()
             }
 
             val systemManager = SystemManagerImpl(
-                glucoseSourceManager = glucoseSourceManager,
+                glucoseRepository = glucoseRepository,
                 wakeService = wakeService,
                 settingsRepository = settingsRepository,
                 timeService = timeService,

@@ -9,6 +9,7 @@ import de.dh.raaps.common.model.data.BgDelta
 import de.dh.raaps.common.model.data.BgValue
 import de.dh.raaps.common.model.data.Timeline
 import de.dh.raaps.common.model.data.Timestamp
+import de.dh.raaps.core.repository.GlucoseRepository
 import de.dh.raaps.core.repository.SystemMetricsRepository
 import de.dh.raaps.core.repository.TreatmentRepository
 import kotlinx.coroutines.CoroutineScope
@@ -60,7 +61,7 @@ class Core(
     val therapyManager: TherapyManager,
     private val timeline: Timeline,
     private val carbsInsulinCalculator: CarbsInsulinCalculator,
-    private val glucoseSourceManager: GlucoseSourceManager,
+    private val glucoseRepository: GlucoseRepository,
 
     private val onCoreStateChanged: () -> Unit,
     private val onAcquireBusyState: () -> Unit,
@@ -120,7 +121,7 @@ class Core(
 
             calculationAlgorithm = ApsAlgorithmImpl.create(
                 treatmentRepository,
-                glucoseSourceManager.sampledBgReadings,
+                glucoseRepository,
                 therapyManager,
                 timeline = timeline,
                 carbsInsulinCalculator = carbsInsulinCalculator
@@ -330,7 +331,7 @@ class Core(
             treatmentRepository: TreatmentRepository,
             timeline: Timeline,
             carbsInsulinCalculator: CarbsInsulinCalculator,
-            glucoseSourceManager: GlucoseSourceManager,
+            glucoseRepository: GlucoseRepository,
 
             onCoreStateChanged: () -> Unit,
             onAcquireBusyState: () -> Unit,
@@ -351,7 +352,7 @@ class Core(
                 therapyManager = therapyManager,
                 timeline = timeline,
                 carbsInsulinCalculator = carbsInsulinCalculator,
-                glucoseSourceManager = glucoseSourceManager,
+                glucoseRepository = glucoseRepository,
 
                 onCoreStateChanged = onCoreStateChanged,
                 onAcquireBusyState = onAcquireBusyState,

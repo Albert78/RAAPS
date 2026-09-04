@@ -24,6 +24,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import de.dh.raaps.common.model.data.BgReadingsInterval
+import de.dh.raaps.common.model.data.GlucoseUnit
+import de.dh.raaps.common.model.data.Timestamp
 import de.dh.raaps.ui.R
 import de.dh.raaps.ui.common.LocalGlucoseUnit
 import de.dh.raaps.ui.common.glucoseValue
@@ -34,6 +36,7 @@ import de.dh.raaps.ui.common.shortRelativeTimeUntil
 import de.dh.raaps.ui.common.theme.AppTheme
 import java.text.SimpleDateFormat
 import java.util.Date
+import androidx.compose.ui.platform.LocalLocale
 
 @Composable
 fun CgmTabContent(
@@ -134,7 +137,7 @@ fun CgmOverviewCard(uiState: SystemControlUiState, timeFormat: SimpleDateFormat,
                     )
                 }
 
-                if (uiState.nextPredictedTimestamp != null) {
+                if (uiState.nextPredictedTimestamp.isValid()) {
                     Spacer(modifier = Modifier.height(12.dp))
                     ControlDetailRow(
                         label = stringResource(id = R.string.system_control_cgm_next_value_label),
@@ -232,8 +235,8 @@ fun CgmTabPreview() {
                 sensorTypeName = "G6-Sensor",
                 readingsInterval = BgReadingsInterval.FiveMinutes,
                 lastBgReading = null,
-                nextPredictedTimestamp = de.dh.raaps.common.model.data.Timestamp(System.currentTimeMillis() + 300000),
-                glucoseUnit = de.dh.raaps.common.model.data.GlucoseUnit.MG_DL,
+                nextPredictedTimestamp = Timestamp(System.currentTimeMillis() + 300000),
+                glucoseUnit = GlucoseUnit.MG_DL,
                 pumpConnected = true,
                 pumpModel = "DANA-i",
                 cgmPluginUiProvider = object : CgmPluginUiProvider {
@@ -252,7 +255,7 @@ fun CgmTabPreview() {
                     }
                 }
             ),
-            timeFormat = SimpleDateFormat("HH:mm:ss", java.util.Locale.getDefault()),
+            timeFormat = SimpleDateFormat("HH:mm:ss", LocalLocale.current.platformLocale),
             tick = System.currentTimeMillis()
         )
     }

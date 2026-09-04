@@ -2,12 +2,8 @@ package de.dh.raaps.core.aps
 
 import android.util.Log
 import de.dh.raaps.common.model.GlucoseSource
-import de.dh.raaps.common.model.data.BgReading
 import de.dh.raaps.common.model.data.BgReadingsInterval
 import de.dh.raaps.common.model.data.Minutes
-import de.dh.raaps.common.model.data.TimeService
-import de.dh.raaps.common.model.data.Timeline
-import de.dh.raaps.common.model.data.Timestamp
 import de.dh.raaps.core.repository.GlucoseRepository
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -20,20 +16,13 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 
 /**
- * Manages the glucose source and the history of blood glucose readings.
+ * Manages the glucose source plugin and its pipeline.
  */
 class GlucoseSourceManager(
-    private val glucoseRepository: GlucoseRepository,
-    private val timeService: TimeService
+    private val glucoseRepository: GlucoseRepository
 ) {
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default.limitedParallelism(1))
     private var glucoseJob: Job? = null
-
-    private val _currentBg = MutableStateFlow<BgReading?>(null)
-    val currentBg: StateFlow<BgReading?> = _currentBg.asStateFlow()
-
-    var lastBg: BgReading? = null
-        private set
 
     private val _glucoseSource = MutableStateFlow<GlucoseSource?>(null)
     val activeGlucoseSource: StateFlow<GlucoseSource?> = _glucoseSource.asStateFlow()
@@ -47,9 +36,6 @@ class GlucoseSourceManager(
             restartGlucosePipeline()
         }
 
-    val history = RecentBgReadingsHistory(ApsAlgorithmImpl.BG_HISTORY_TIME)
-    val sampledBgReadings = SampledBgReadings(Timeline(timeService.tickInterval), history)
-
     /**
      * Time delay between a glucose value in blood and the given Timestamp of the bg reading.
      * Typically, the bg reading timestamp represents the time of measure of the CGM system, which
@@ -60,16 +46,6 @@ class GlucoseSourceManager(
 
     var readingsInterval: BgReadingsInterval = BgReadingsInterval.FiveMinutes
         private set
-
-    suspend fun initialize() {
-        val readings = glucoseRepository.loadBgReadings(from = Timestamp.now().minus(ApsAlgorithmImpl.BG_HISTORY_TIME))
-        history.setAll(readings)
-
-        val readingsHistory = history.toList()
-        _currentBg.value = readingsHistory.lastOrNull()
-        lastBg = if (readingsHistory.size >= 2) readingsHistory[readingsHistory.size - 2] else null
-        sampledBgReadings.sampleAvgValues()
-    }
 
     private fun restartGlucosePipeline() {
         glucoseJob?.cancel()
@@ -84,38 +60,12 @@ class GlucoseSourceManager(
             readingsTimeDelay = plugin.readingsTimeDelay
             readingsInterval = plugin.readingsInterval
 
-            // Persist values and update in-memory history
+            // Persist values and update in-memory history in repository
             plugin.getValues()
-                .persist(glucoseRepository, dataProvider, sensorType)
                 .collect { reading ->
-                    addReading(reading)
+                    glucoseRepository.addReading(reading, dataProvider, sensorType)
                 }
         }
-    }
-
-    fun addReading(reading: BgReading) {
-        history.add(reading)
-
-        if (_currentBg.value == null || reading.timestamp >= _currentBg.value!!.timestamp) {
-            lastBg = _currentBg.value
-            _currentBg.value = reading
-        }
-
-        sampledBgReadings.sampleAvgValues()
-    }
-
-    fun getLastDataTime(): Timestamp? {
-        return history.last()?.timestamp
-    }
-
-    fun predictNextValueTimestamp(): Timestamp {
-        val lastTime = getLastDataTime() ?: Timestamp.now()
-        val intervalMinutes = when (readingsInterval) {
-            BgReadingsInterval.OneMinute -> 1
-            BgReadingsInterval.FiveMinutes -> 5
-            else -> readingsTimeDelay.value.toInt()
-        }
-        return lastTime.plusMinutes(intervalMinutes)
     }
 
     fun stop() {

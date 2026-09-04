@@ -64,7 +64,7 @@ data class CurrentBgUiState(
     val isLoading: Boolean,
     val isError: Boolean,
     val currentBgValue: CurrentBgData? = null,
-    val nextExpectedTimestamp: Timestamp = Timestamp(0),
+    val nextExpectedTimestamp: Timestamp = Timestamp.INVALID,
     val readingsTimeDelay: Minutes = Minutes(5),
     val coreState: CoreState = CoreState.Uninitialized,
     val apsIssues: Set<ApsIssue> = emptySet()

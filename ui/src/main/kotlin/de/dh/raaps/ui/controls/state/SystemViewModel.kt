@@ -107,7 +107,10 @@ class SystemViewModel(
 
         val latest = recentReadings.lastOrNull()
 
-        val nextExpectedTimestamp = systemRegistry.glucoseSourceManager.predictNextValueTimestamp()
+        val nextExpectedTimestamp = systemRegistry.glucoseRepository.predictNextValueTimestamp(
+            systemRegistry.glucoseSourceManager.readingsInterval,
+            systemRegistry.glucoseSourceManager.readingsTimeDelay
+        )
         val readingsTimeDelay = systemRegistry.glucoseSourceManager.readingsTimeDelay
 
         _currentBgUiState.update {

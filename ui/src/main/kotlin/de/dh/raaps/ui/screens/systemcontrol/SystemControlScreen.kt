@@ -34,6 +34,8 @@ import de.dh.raaps.common.R as CommonR
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import de.dh.raaps.common.model.InsulinAmount
 import de.dh.raaps.common.model.data.BgReadingsInterval
+import de.dh.raaps.common.model.data.GlucoseUnit
+import de.dh.raaps.common.model.data.Timestamp
 import de.dh.raaps.core.pump.PumpCommand
 import de.dh.raaps.core.pump.PumpJob
 import de.dh.raaps.ui.R
@@ -223,8 +225,8 @@ private fun previewUiState() = SystemControlUiState(
     sensorTypeName = "G6-Sensor",
     readingsInterval = BgReadingsInterval.FiveMinutes,
     lastBgReading = null,
-    nextPredictedTimestamp = de.dh.raaps.common.model.data.Timestamp(System.currentTimeMillis() + 300000),
-    glucoseUnit = de.dh.raaps.common.model.data.GlucoseUnit.MG_DL,
+    nextPredictedTimestamp = Timestamp(System.currentTimeMillis() + 300000),
+    glucoseUnit = GlucoseUnit.MG_DL,
     pumpConnected = true,
     pumpModel = "DANA-i"
 )

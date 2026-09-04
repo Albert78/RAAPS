@@ -12,6 +12,7 @@ import de.dh.raaps.common.model.data.TickHandler
 import de.dh.raaps.common.model.data.TickPriority
 import de.dh.raaps.common.model.data.TimeService
 import de.dh.raaps.common.model.data.Timestamp
+import de.dh.raaps.core.repository.GlucoseRepository
 import de.dh.raaps.core.repository.SettingsRepository
 import de.dh.raaps.core.repository.SystemMetricsRepository
 import de.dh.raaps.core.repository.TreatmentRepository
@@ -111,7 +112,7 @@ interface SystemManager {
  * Implementation of [SystemManager].
  */
 class SystemManagerImpl(
-    private val glucoseSourceManager: GlucoseSourceManager,
+    private val glucoseRepository: GlucoseRepository,
     private val wakeService: SystemWakeService,
     private val settingsRepository: SettingsRepository,
     private val timeService: TimeService,
@@ -140,7 +141,7 @@ class SystemManagerImpl(
 
     private inner class NotificationTickHandler : TickHandler {
         override suspend fun onTick(tick: Tick) {
-            androidNotifications.updateMainAppNotification(glucoseSourceManager)
+            androidNotifications.updateMainAppNotification(glucoseRepository)
         }
     }
 
@@ -211,7 +212,7 @@ class SystemManagerImpl(
         }
 
         scope.launch {
-            glucoseSourceManager.currentBg.drop(1).collect { bg ->
+            glucoseRepository.currentBg.drop(1).collect { bg ->
                 if (bg != null) {
                     // Schedule stale check for the next window
                     val nextCheck = nextBgStaleCheckAt()
@@ -221,7 +222,7 @@ class SystemManagerImpl(
                     timeService.synchronize(Timestamp.now().plusSeconds(20))
 
                     // Update notification immediately
-                    androidNotifications.updateMainAppNotification(glucoseSourceManager)
+                    androidNotifications.updateMainAppNotification(glucoseRepository)
                 }
             }
         }
@@ -231,7 +232,7 @@ class SystemManagerImpl(
 
         scope.launch {
             appPreferencesRepository.glucoseUnit.drop(1).collect {
-                androidNotifications.updateMainAppNotification(glucoseSourceManager)
+                androidNotifications.updateMainAppNotification(glucoseRepository)
             }
         }
 
@@ -260,7 +261,7 @@ class SystemManagerImpl(
             treatmentRepository = treatmentRepository,
             timeline = timeService.timeline,
             carbsInsulinCalculator = carbsInsulinCalculator,
-            glucoseSourceManager = glucoseSourceManager,
+            glucoseRepository = glucoseRepository,
 
             onCoreStateChanged = { handleCoreStateChanged() },
             onAcquireBusyState = { acquireBusyState() },
@@ -341,7 +342,7 @@ class SystemManagerImpl(
     }
 
     override fun createForegroundServiceNotification(): Notification {
-        return androidNotifications.createMainAppNotification(glucoseSourceManager)
+        return androidNotifications.createMainAppNotification(glucoseRepository)
     }
 
     override fun stop() {
@@ -365,7 +366,7 @@ class SystemManagerImpl(
         return if (::core.isInitialized) {
             core.getBolusCorrectionCalculator()
         } else if (tm != null && tr != null && cic != null) {
-            SimpleBolusCorrectionCalculator(tm, glucoseSourceManager)
+            SimpleBolusCorrectionCalculator(tm, glucoseRepository)
         } else {
             NoopAlgorithm().getBolusCorrectionCalculator()
         }
@@ -410,12 +411,12 @@ class SystemManagerImpl(
     }
 
     fun isBgStale(): Boolean {
-        val lastDataTime = glucoseSourceManager.getLastDataTime()
+        val lastDataTime = glucoseRepository.getLastDataTime()
         return lastDataTime == null || lastDataTime + STALE_BG_THRESHOLD < Timestamp.now()
     }
 
     private fun nextBgStaleCheckAt(): Timestamp {
-        val lastDataTime = glucoseSourceManager.getLastDataTime()
+        val lastDataTime = glucoseRepository.getLastDataTime()
         return (lastDataTime ?: Timestamp.now()) + STALE_BG_THRESHOLD
     }
 

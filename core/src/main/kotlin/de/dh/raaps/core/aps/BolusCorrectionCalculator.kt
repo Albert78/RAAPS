@@ -11,6 +11,7 @@ import de.dh.raaps.common.model.data.BgDelta
 import de.dh.raaps.common.model.data.BgValue
 import de.dh.raaps.common.model.data.Minutes
 import de.dh.raaps.common.model.data.Timestamp
+import de.dh.raaps.core.repository.GlucoseRepository
 import kotlin.math.abs
 import kotlin.math.ceil
 import kotlin.math.max
@@ -283,10 +284,10 @@ object BolusCalculationMath {
  */
 class SimpleBolusCorrectionCalculator(
     private val therapyManager: TherapyManager,
-    private val glucoseSourceManager: GlucoseSourceManager
+    private val glucoseRepository: GlucoseRepository
 ) : BolusCorrectionCalculator {
 
-    private fun getCurrentBg() = glucoseSourceManager.currentBg.value?.value ?: BgValue.INVALID
+    private fun getCurrentBg() = glucoseRepository.currentBg.value?.value ?: BgValue.INVALID
 
     override suspend fun calculateBolusProjections(mealTimestamp: Timestamp) = BolusProjections(
         bg = getCurrentBg()
