@@ -154,12 +154,12 @@ class TreatmentRepository(
 
             // Priority 2: Timestamp window search (±30 seconds)
             if (match == null) {
-                val minTime = timestamp.ms - 30_000
-                val maxTime = timestamp.ms + 30_000
+                val minTime = timestamp.minusSeconds(30)
+                val maxTime = timestamp.plusSeconds(30)
 
                 for (candidate in existingApplications) {
-                    if (candidate.timestamp.ms < minTime) continue
-                    if (candidate.timestamp.ms > maxTime) break // Early break as list is sorted
+                    if (candidate.timestamp < minTime) continue
+                    if (candidate.timestamp > maxTime) break // Early break as list is sorted
                     if (!matchedExistingIds.contains(candidate.id) && candidate.amount.isAlmostEqual(point.amount)) {
                         match = candidate
                         break
