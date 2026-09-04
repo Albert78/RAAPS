@@ -28,6 +28,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalLocale
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -39,13 +40,11 @@ import de.dh.raaps.ui.R
 import de.dh.raaps.ui.common.LocalGlucoseUnit
 import de.dh.raaps.ui.common.composables.screenTitle
 import de.dh.raaps.ui.common.crValue
-import de.dh.raaps.ui.common.deltaValue
 import de.dh.raaps.ui.common.glucoseValue
 import de.dh.raaps.ui.common.insulinValue
 import de.dh.raaps.ui.common.isfValue
 import java.text.SimpleDateFormat
 import java.util.Date
-import java.util.Locale
 import de.dh.raaps.common.R as CommonR
 
 @Composable
@@ -110,11 +109,16 @@ fun CoreDecisionsContent(
 
 @Composable
 fun InsightCard(insight: CoreInsight) {
-    val dateTimeFormat = remember { SimpleDateFormat("HH:mm:ss", Locale.getDefault()) }
+    val locale = LocalLocale.current.platformLocale
+    val dateTimeFormat = remember(locale) { SimpleDateFormat("HH:mm:ss", locale) }
     val glucoseUnit = LocalGlucoseUnit.current
     val unitStr = when (glucoseUnit) {
         GlucoseUnit.MG_DL -> stringResource(CommonR.string.glucose_unit_mgdl)
         GlucoseUnit.MMOL -> stringResource(CommonR.string.glucose_unit_mmol)
+    }
+    val devStr = when (glucoseUnit) {
+        GlucoseUnit.MG_DL -> String.format(locale, "%+.1f", insight.deviationPerTick.mgdl)
+        GlucoseUnit.MMOL -> String.format(locale, "%+.2f", insight.deviationPerTick.mmol)
     }
 
     Card(
@@ -148,7 +152,7 @@ fun InsightCard(insight: CoreInsight) {
             Row(modifier = Modifier.fillMaxWidth()) {
                 MetricItem(stringResource(id = R.string.core_insight_label_pred_peak), "${glucoseValue(insight.predictedBgAtPeak, glucoseUnit)} $unitStr")
                 Spacer(modifier = Modifier.width(16.dp))
-                MetricItem(stringResource(id = R.string.core_insight_label_dev), deltaValue(insight.deviationPerTick, glucoseUnit))
+                MetricItem(stringResource(id = R.string.core_insight_label_dev), devStr)
                 Spacer(modifier = Modifier.width(16.dp))
                 MetricItem(stringResource(id = R.string.core_insight_label_target), "${glucoseValue(insight.targetBg, glucoseUnit)} $unitStr")
             }
