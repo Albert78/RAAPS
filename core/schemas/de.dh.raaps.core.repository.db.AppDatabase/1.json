@@ -2,7 +2,7 @@
   "formatVersion": 1,
   "database": {
     "version": 1,
-    "identityHash": "e0265a649e167c1a98bbb3179eff8016",
+    "identityHash": "ce703454d09ffcb6b628120f852b2257",
     "entities": [
       {
         "tableName": "sensor_type",
@@ -447,7 +447,7 @@
       },
       {
         "tableName": "insulin",
-        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `insulin_type_id` TEXT NOT NULL, `timestamp` INTEGER NOT NULL, `amount` REAL NOT NULL, `origin` TEXT NOT NULL, `basal` INTEGER NOT NULL, `correction` INTEGER NOT NULL, `meal` INTEGER NOT NULL, `status` TEXT NOT NULL, FOREIGN KEY(`insulin_type_id`) REFERENCES `insulin_type`(`id`) ON UPDATE NO ACTION ON DELETE RESTRICT )",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `insulin_type_id` TEXT NOT NULL, `timestamp` INTEGER NOT NULL, `amount` REAL NOT NULL, `origin` TEXT NOT NULL, `basal` INTEGER NOT NULL, `correction` INTEGER NOT NULL, `meal` INTEGER NOT NULL, `status` TEXT NOT NULL, `pump_id` TEXT, FOREIGN KEY(`insulin_type_id`) REFERENCES `insulin_type`(`id`) ON UPDATE NO ACTION ON DELETE RESTRICT )",
         "fields": [
           {
             "fieldPath": "id",
@@ -502,6 +502,11 @@
             "columnName": "status",
             "affinity": "TEXT",
             "notNull": true
+          },
+          {
+            "fieldPath": "pump_id",
+            "columnName": "pump_id",
+            "affinity": "TEXT"
           }
         ],
         "primaryKey": {
@@ -789,7 +794,7 @@
     ],
     "setupQueries": [
       "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
-      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, 'e0265a649e167c1a98bbb3179eff8016')"
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, 'ce703454d09ffcb6b628120f852b2257')"
     ]
   }
 }

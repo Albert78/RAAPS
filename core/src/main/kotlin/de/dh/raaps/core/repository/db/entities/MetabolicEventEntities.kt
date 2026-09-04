@@ -79,7 +79,8 @@ data class InsulinEntity(
     val basal: Boolean = false,
     val correction: Boolean = false,
     val meal: Boolean = false,
-    val status: InsulinStatus = InsulinStatus.Confirmed
+    val status: InsulinStatus = InsulinStatus.Confirmed,
+    val pump_id: String? = null
 )
 
 @Entity(

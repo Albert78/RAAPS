@@ -157,7 +157,7 @@ data class InsulinDose(
 
 /**
  * Represents an insulin application tracking event (administered or planned/scheduled).
- * Composes an [InsulinDose] with administrative and tracking metadata (origin, flags, status, database ID).
+ * Composes an [InsulinDose] with administrative and tracking metadata (origin, flags, status, database ID, pump ID).
  */
 data class InsulinApplication(
     var id: Long = ID_UNDEFINED,
@@ -166,7 +166,8 @@ data class InsulinApplication(
     val basal: Boolean = false,
     val correction: Boolean = false,
     val meal: Boolean = false,
-    val status: InsulinStatus = InsulinStatus.Confirmed
+    val status: InsulinStatus = InsulinStatus.Confirmed,
+    val pumpId: String? = null
 ) {
     /**
      * Secondary constructor for convenience and backward compatibility.
@@ -180,7 +181,8 @@ data class InsulinApplication(
         basal: Boolean = false,
         correction: Boolean = false,
         meal: Boolean = false,
-        status: InsulinStatus = InsulinStatus.Confirmed
+        status: InsulinStatus = InsulinStatus.Confirmed,
+        pumpId: String? = null
     ) : this(
         id = id,
         dose = InsulinDose(timestamp, amount, insulinType),
@@ -188,7 +190,8 @@ data class InsulinApplication(
         basal = basal,
         correction = correction,
         meal = meal,
-        status = status
+        status = status,
+        pumpId = pumpId
     )
 
     val timestamp: Timestamp get() = dose.timestamp

@@ -92,7 +92,8 @@ fun InsulinApplication.toEntity() = InsulinEntity(
     basal = this.basal,
     correction = this.correction,
     meal = this.meal,
-    status = this.status
+    status = this.status,
+    pump_id = this.pumpId
 )
 
 fun InsulinEntity.toModel(type: InsulinType) = InsulinApplication(
@@ -104,7 +105,8 @@ fun InsulinEntity.toModel(type: InsulinType) = InsulinApplication(
     basal = this.basal,
     correction = this.correction,
     meal = this.meal,
-    status = this.status
+    status = this.status,
+    pumpId = this.pump_id
 )
 
 // Deferred Bolus Converters
