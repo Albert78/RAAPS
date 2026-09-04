@@ -135,10 +135,10 @@ class TreatmentRepository(
         val newOrUpdatedApplications = history.points.map { point ->
             val timestamp = Timestamp(point.timestamp)
 
-            // Find matching scheduled entry within 120 seconds and almost equal amount
+            // Find matching scheduled entry within 30 seconds and almost equal amount
             val match = scheduledInRange.find { s ->
                 !matchedScheduledIds.contains(s.id) &&
-                        abs(s.timestamp.ms - timestamp.ms) <= 120_000 &&
+                        abs(s.timestamp.ms - timestamp.ms) <= 30_000 &&
                         s.amount.isAlmostEqual(point.amount)
             }
 
@@ -168,6 +168,7 @@ class TreatmentRepository(
             .map { it.copy(status = InsulinStatus.Cancelled) }
 
         // 1. Database sync
+        falsch
         metabolicEventsDao.replaceInsulinApplicationsInRange(
             from = from.ms,
             to = to.ms,
@@ -325,6 +326,20 @@ class TreatmentRepository(
         }.toList()
     }
 
+    /**
+     * Returns a list of scheduled (unconfirmed) insulin applications from the cache.
+     */
+    suspend fun getScheduledInsulinApplications(): List<InsulinApplication> = mutex.withLock {
+        return insulinHistory.filter { it.status == InsulinStatus.Scheduled }.toList()
+    }
+
+    /**
+     * Returns a scheduled (unconfirmed) insulin application by its ID, if present.
+     */
+    suspend fun getScheduledInsulinApplication(id: Long): InsulinApplication? = mutex.withLock {
+        return insulinHistory.find { it.id == id && it.status == InsulinStatus.Scheduled }
+    }
+
     // --- Meal Types ---
 
     /**
@@ -436,7 +451,7 @@ class TreatmentRepository(
         basal: Boolean,
         correction: Boolean,
         meal: Boolean
-    ) {
+    ): InsulinApplication {
         val application = InsulinApplication(
             timestamp = timestamp,
             amount = amount,
@@ -448,6 +463,7 @@ class TreatmentRepository(
             status = InsulinStatus.Scheduled
         )
         addInsulinApplication(application)
+        return application
     }
 
     suspend fun setInsulinAdministered(administeredMealIds: MutableSet<Long>) {

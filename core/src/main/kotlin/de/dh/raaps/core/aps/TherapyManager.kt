@@ -3,9 +3,12 @@ package de.dh.raaps.core.aps
 import android.util.Log
 import de.dh.raaps.AppPreferencesRepository
 import de.dh.raaps.common.model.ApsMode
+import de.dh.raaps.common.model.BolusDeliveryState
+import de.dh.raaps.common.model.BolusStatus
 import de.dh.raaps.common.model.DeferredBolus
 import de.dh.raaps.common.model.InsulinAmount
 import de.dh.raaps.common.model.InsulinHistory
+import de.dh.raaps.common.model.InsulinStatus
 import de.dh.raaps.common.model.InsulinType
 import de.dh.raaps.common.model.MealEntry
 import de.dh.raaps.common.model.ToDo
@@ -93,6 +96,10 @@ class TherapyManager(
     fun startInitialization() {
         pumpManager.setOnHistoryUpdateListener { history ->
             updatePumpHistory(history)
+        }
+
+        pumpManager.setOnBolusStatusUpdateListener { bolusStatus ->
+            updateBolusStatus(bolusStatus)
         }
 
         pumpManager.issueCommand(PumpCommand.SyncHistory)
@@ -255,11 +262,32 @@ class TherapyManager(
      */
     suspend fun updatePumpHistory(history: InsulinHistory) {
         val cts = getCurrentTherapySettings()
-        // Update history. I don't think it makes sense to wait for the treatmentLock;
-        // If the pump history sync happens during MealCorrectionBolusScreen or during core calculation,
-        // something is wrong. In normal operation, all pump commands should have been executed
-        // before we acquire the lock.
         treatmentRepository.mergeInsulinHistory(history, cts.insulinProfile.insulinType)
+    }
+
+    /**
+     * Triggered when the bolus status of the pump was updated.
+     */
+    suspend fun updateBolusStatus(bolusStatus: BolusStatus) {
+        if (bolusStatus.state != BolusDeliveryState.COMPLETED) return
+
+        val appId = bolusStatus.bolusId?.toLongOrNull() ?: return
+        val targetApplication = treatmentRepository.getScheduledInsulinApplication(appId) ?: return
+
+        val deliveredAmount = if (bolusStatus.deliveredAmount > InsulinAmount.ZERO) {
+            bolusStatus.deliveredAmount
+        } else {
+            targetApplication.dose.amount
+        }
+        val updated = targetApplication.copy(
+            dose = targetApplication.dose.copy(
+                timestamp = bolusStatus.timestamp,
+                amount = deliveredAmount
+            ),
+            status = InsulinStatus.Confirmed
+        )
+        treatmentRepository.updateInsulinApplication(updated)
+        Log.i(TAG, "Confirmed scheduled bolus application #${updated.id} with amount ${updated.dose.amount}")
     }
 
     /**
@@ -298,7 +326,7 @@ class TherapyManager(
         }
         // Preserve delivery metadata until history sync
         val cts = getCurrentTherapySettings()
-        treatmentRepository.addScheduledPumpInsulinEntry(
+        val scheduledEntry = treatmentRepository.addScheduledPumpInsulinEntry(
             timestamp = Timestamp.now(),
             amount = amount,
             insulinType = cts.insulinProfile.insulinType,
@@ -306,6 +334,7 @@ class TherapyManager(
             correction = containsCorrectionPart,
             meal = administeredMealIds.isNotEmpty()
         )
+        val bolusId = if (scheduledEntry.id != 0L) scheduledEntry.id.toString() else null
 
         val minBolusIncrement = pumpManager.insulinPump?.pumpCapabilities?.value?.minBolusIncrement
         if (minBolusIncrement != null && amount < minBolusIncrement) {
@@ -317,7 +346,7 @@ class TherapyManager(
             ApsMode.BasalOnly -> recommendBolus(treatmentLock, amount)
             ApsMode.AutoCorrection -> {
                 scope.launch {
-                    pumpManager.issueCommand(PumpCommand.DeliverBolus(amount))
+                    pumpManager.issueCommand(PumpCommand.DeliverBolus(amount, bolusId))
                 }
             }
         }

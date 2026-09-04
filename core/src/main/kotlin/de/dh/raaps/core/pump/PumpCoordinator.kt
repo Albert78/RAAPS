@@ -33,7 +33,7 @@ sealed class PumpCommand {
     data class SetProfile(val profile: InsulinProfile) : PumpCommand()
     data class SetTempBasal(val percent: Int, val durationHours: Int) : PumpCommand()
     object CancelTempBasal : PumpCommand()
-    data class DeliverBolus(val amount: InsulinAmount) : PumpCommand()
+    data class DeliverBolus(val amount: InsulinAmount, val bolusId: String? = null) : PumpCommand()
     object CancelBolus : PumpCommand()
 }
 
@@ -268,7 +268,7 @@ class PumpCoordinator(
                 pump.syncHistory()
             }
             is PumpCommand.DeliverBolus -> {
-                pump.bolus(command.amount)
+                pump.bolus(command.amount, command.bolusId)
             }
             is PumpCommand.SetTempBasal -> {
                 pump.tempBasal(command.percent, command.durationHours)

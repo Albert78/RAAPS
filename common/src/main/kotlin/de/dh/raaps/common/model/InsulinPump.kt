@@ -3,6 +3,7 @@ package de.dh.raaps.common.model
 import de.dh.pump.PumpCommandException
 import de.dh.pump.PumpConnectionException
 import de.dh.raaps.common.model.data.InsulinProfile
+import de.dh.raaps.common.model.data.Timestamp
 import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.StateFlow
 
@@ -40,7 +41,7 @@ interface InsulinPumpStatus {
     val pumpSuspended: Boolean
     val batteryRemainingPercent: Int
     val reservoirRemainingUnits: InsulinAmount
-    val lastSyncTimestamp: Long
+    val lastSyncTimestamp: Timestamp
 }
 
 /**
@@ -95,15 +96,15 @@ enum class BolusDeliveryState {
 data class BolusStatus(
     val state: BolusDeliveryState = BolusDeliveryState.IDLE,
     val bolusId: String? = null,
-    val targetAmount: Double = 0.0,
-    val deliveredAmount: Double = 0.0,
-    val timestamp: Long = 0,
+    val targetAmount: InsulinAmount = InsulinAmount.ZERO,
+    val deliveredAmount: InsulinAmount = InsulinAmount.ZERO,
+    val timestamp: Timestamp = Timestamp.INVALID,
 ) {
     /**
      * Delivery progress in percent (0 to 100).
      */
     val progressPercent: Int
-        get() = if (targetAmount > 0) ((deliveredAmount / targetAmount) * 100).coerceIn(0.0, 100.0).toInt() else 0
+        get() = if (targetAmount > InsulinAmount.ZERO) ((deliveredAmount / targetAmount) * 100).coerceIn(0.0, 100.0).toInt() else 0
 }
 
 /**
@@ -111,33 +112,33 @@ data class BolusStatus(
  */
 sealed interface BolusEvent {
     val bolusId: String?
-    val timestamp: Long
+    val timestamp: Timestamp
 
     data class Started(
         override val bolusId: String?,
-        val targetAmount: Double,
-        override val timestamp: Long = System.currentTimeMillis(),
+        val targetAmount: InsulinAmount,
+        override val timestamp: Timestamp = Timestamp.now(),
     ) : BolusEvent
 
     data class Progress(
         override val bolusId: String?,
-        val targetAmount: Double,
-        val deliveredAmount: Double,
-        override val timestamp: Long = System.currentTimeMillis(),
+        val targetAmount: InsulinAmount,
+        val deliveredAmount: InsulinAmount,
+        override val timestamp: Timestamp = Timestamp.now(),
     ) : BolusEvent
 
     data class Completed(
         override val bolusId: String?,
-        val targetAmount: Double,
-        val deliveredAmount: Double,
-        override val timestamp: Long = System.currentTimeMillis(),
+        val targetAmount: InsulinAmount,
+        val deliveredAmount: InsulinAmount,
+        override val timestamp: Timestamp = Timestamp.now(),
     ) : BolusEvent
 
     data class Stopped(
         override val bolusId: String?,
-        val targetAmount: Double,
-        val deliveredAmount: Double,
-        override val timestamp: Long = System.currentTimeMillis(),
+        val targetAmount: InsulinAmount,
+        val deliveredAmount: InsulinAmount,
+        override val timestamp: Timestamp = Timestamp.now(),
     ) : BolusEvent
 }
 

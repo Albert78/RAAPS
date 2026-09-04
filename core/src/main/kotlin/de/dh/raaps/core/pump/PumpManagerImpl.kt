@@ -2,6 +2,7 @@ package de.dh.raaps.core.pump
 
 import android.content.Intent
 import android.util.Log
+import de.dh.raaps.common.model.BolusStatus
 import de.dh.raaps.common.model.InsulinHistory
 import de.dh.raaps.common.model.InsulinPump
 import de.dh.raaps.common.model.data.Timestamp
@@ -35,6 +36,7 @@ class PumpManagerImpl(
 
     private var pumpMonitorJob: Job? = null
     private var historyUpdateListener: (suspend (InsulinHistory) -> Unit)? = null
+    private var bolusStatusUpdateListener: (suspend (BolusStatus) -> Unit)? = null
 
     init {
         wakeService.registerHandler(WAKE_TAG, this)
@@ -87,6 +89,12 @@ class PumpManagerImpl(
                             history?.let { historyUpdateListener?.invoke(it) }
                         }
                     }
+                    // Bolus status
+                    launch {
+                        pc.pump.bolusStatus.collect { status ->
+                            bolusStatusUpdateListener?.invoke(status)
+                        }
+                    }
                 }
                 pc
             }
@@ -119,7 +127,16 @@ class PumpManagerImpl(
     override fun setOnHistoryUpdateListener(listener: suspend (InsulinHistory) -> Unit) {
         historyUpdateListener = listener
         scope.launch {
+            // Call the listener once with the current history value
             pumpCoordinator?.pump?.history?.value?.let { listener(it) }
+        }
+    }
+
+    override fun setOnBolusStatusUpdateListener(listener: suspend (BolusStatus) -> Unit) {
+        bolusStatusUpdateListener = listener
+        scope.launch {
+            // Call the listener once with the current bolus status value
+            pumpCoordinator?.pump?.bolusStatus?.value?.let { listener(it) }
         }
     }
 

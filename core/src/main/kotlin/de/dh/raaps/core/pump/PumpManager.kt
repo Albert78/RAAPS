@@ -1,5 +1,6 @@
 package de.dh.raaps.core.pump
 
+import de.dh.raaps.common.model.BolusStatus
 import de.dh.raaps.common.model.InsulinHistory
 import de.dh.raaps.common.model.InsulinPump
 import kotlinx.coroutines.flow.StateFlow
@@ -67,4 +68,9 @@ interface PumpManager {
      * Sets a listener to be notified when new insulin history data is received from the pump.
      */
     fun setOnHistoryUpdateListener(listener: suspend (InsulinHistory) -> Unit)
+
+    /**
+     * Sets a listener to be notified when bolus status is updated by the pump.
+     */
+    fun setOnBolusStatusUpdateListener(listener: suspend (BolusStatus) -> Unit)
 }
