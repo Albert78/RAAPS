@@ -197,20 +197,38 @@ data class InsulinHistory(
     val points: List<InsulinHistoryPoint>
 )
 
-inline fun convertToInsulinAmountFromBgDelta(bgDelta: BgDelta, isf: BgDelta): InsulinAmount =
-    InsulinAmount(bgDelta.mgdl / isf.mgdl)
+inline fun convertToInsulinAmountFromBgDelta(bgDelta: BgDelta, isf: BgDelta): InsulinAmount {
+    validateIsf(isf.mgdl)
+    validateBgDelta(bgDelta.mgdl)
+    return InsulinAmount(bgDelta.mgdl / isf.mgdl)
+}
 
-inline fun convertToCarbsFromBgDelta(bgDelta: BgDelta, isf: BgDelta, cr: Double): Double =
-    convertToCarbsFromUnits(convertToInsulinAmountFromBgDelta(bgDelta, isf), cr)
+inline fun convertToCarbsFromBgDelta(bgDelta: BgDelta, isf: BgDelta, cr: Double): Double {
+    validateCr(cr)
+    return convertToCarbsFromUnits(convertToInsulinAmountFromBgDelta(bgDelta, isf), cr)
+}
 
-inline fun convertToBgDeltaFromUnits(amount: InsulinAmount, isf: BgDelta): BgDelta =
-    BgDelta.fromMgDl((amount.iu * isf.mgdl).toInt())
+inline fun convertToBgDeltaFromUnits(amount: InsulinAmount, isf: BgDelta): BgDelta {
+    validateIsf(isf.mgdl)
+    validateInsulin(amount.iu)
+    return BgDelta.fromMgDl((amount.iu * isf.mgdl).toInt())
+}
 
-inline fun convertToBgDeltaFromCarbs(carbs: Double, isf: BgDelta, cr: Double): BgDelta =
-    BgDelta.fromMgDl((carbs / cr * isf.mgdl).toInt())
+inline fun convertToBgDeltaFromCarbs(carbs: Double, isf: BgDelta, cr: Double): BgDelta {
+    validateCr(cr)
+    validateIsf(isf.mgdl)
+    validateCarbs(carbs)
+    return BgDelta.fromMgDl((carbs / cr * isf.mgdl).toInt())
+}
 
-inline fun convertToInsulinAmountFromCarbs(carbs: Double, cr: Double): InsulinAmount =
-    InsulinAmount(carbs / cr)
+inline fun convertToInsulinAmountFromCarbs(carbs: Double, cr: Double): InsulinAmount {
+    validateCr(cr)
+    validateCarbs(carbs)
+    return InsulinAmount(carbs / cr)
+}
 
-inline fun convertToCarbsFromUnits(amount: InsulinAmount, cr: Double): Double =
-    amount.iu * cr
+inline fun convertToCarbsFromUnits(amount: InsulinAmount, cr: Double): Double {
+    validateCr(cr)
+    validateInsulin(amount.iu)
+    return amount.iu * cr
+}

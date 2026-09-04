@@ -429,7 +429,10 @@ class ApsAlgorithmImpl(
                 // Else go on with decreased basal
                 val needed = -(normalBasalEffectUntilPeak - bgErrorAtPeak).coerceAtMost(BgDelta.ZERO)
                 val normalEffect = -normalBasalEffectUntilPeak
-                val percent = ((needed * 100.0 / normalEffect).coerceIn(0.0, 100.0)).toInt()
+                val percent = if (normalBasalEffectUntilPeak.mgdl < 0.01)
+                    0 // Safety guard
+                else
+                    ((needed * 100.0 / normalEffect).coerceIn(0.0, 100.0)).toInt()
 
                 return CalculationResult.tempBasal(
                     percent = percent,

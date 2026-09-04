@@ -117,7 +117,7 @@ data class HistoryAndImpactDiagramData(
              * Y-Axis (Impact): Insulin Activity (I.E./h) or Carb Absorption (KE/h)
              * The calculation interval is based on the default system tick interval to match BG data density.
              */
-            val validReadings = readings.filter { it.sampleKind == BgSampleKind.Value }
+            val validReadings = readings.filter { it.sampleKind == BgSampleKind.Value && it.value.isValid() }
             if (validReadings.isEmpty()) return null
 
             val firstTs = validReadings.first().timestamp.ms
