@@ -6,6 +6,7 @@ import de.dh.raaps.common.model.data.BgReading
 import de.dh.raaps.common.model.data.BgSampleKind
 import de.dh.raaps.common.model.data.BgValue
 import de.dh.raaps.common.model.data.Timestamp
+import de.dh.raaps.core.aps.SystemManager
 import de.dh.raaps.core.system.SystemWakeService
 import de.dh.raaps.core.system.WakeupHandler
 import kotlinx.coroutines.CoroutineScope
@@ -50,9 +51,9 @@ class SimBodyHeartbeat(
             val lastTick = bodyModel.lastTickTimestamp
             val intervalMs = TICK_INTERVAL_MINUTES * 60 * 1000L
 
-            // The system tick happens approx 20s after emission.
+            // The system tick happens approx 20s after emission (SystemManager.EXECUTION_DELAY_AFTER_BG_MS).
             // We try to maintain the rhythm relative to the last known tick.
-            val nextEmissionMs = lastTick.ms - 20000L + intervalMs
+            val nextEmissionMs = lastTick.ms - SystemManager.EXECUTION_DELAY_AFTER_BG_MS + intervalMs
 
             if (now.ms >= nextEmissionMs) {
                 // We are past the next expected emission, or it's the first run
@@ -133,7 +134,7 @@ class SimBodyHeartbeat(
             val intervalMs = TICK_INTERVAL_MINUTES * 60 * 1000L
 
             // Calculate next tick based on last tick to maintain rhythm
-            var next = lastTick.ms - 20000L + intervalMs
+            var next = lastTick.ms - SystemManager.EXECUTION_DELAY_AFTER_BG_MS + intervalMs
             while (next <= now.ms + 5000) { // 5s buffer
                 next += intervalMs
             }

@@ -107,6 +107,10 @@ interface SystemManager {
      * Returns whether the meal bolus screen can be opened.
      */
     fun canOpenMealCorrectionBolus(): Boolean
+
+    companion object {
+        const val EXECUTION_DELAY_AFTER_BG_MS = 20_000L
+    }
 }
 
 /**
@@ -207,8 +211,7 @@ class SystemManagerImpl(
         // The 5-minute tick interval is centered around the BG reading (halfTickMs = 2.5 minutes).
         // Tick handlers should execute 20 seconds after the expected BG reading arrival.
         val halfTickMs = timeService.timeline.tickSizeMs / 2
-        val delayAfterBgMs = 20_000L
-        timeService.executionOffsetMs = halfTickMs + delayAfterBgMs
+        timeService.executionOffsetMs = halfTickMs + SystemManager.EXECUTION_DELAY_AFTER_BG_MS
 
         wakeService.registerHandler(WAKE_TAG, SystemWakeupHandler())
 
@@ -223,14 +226,11 @@ class SystemManagerImpl(
         scope.launch {
             glucoseRepository.currentBg.drop(1).collect { bg ->
                 if (bg != null) {
-                    inCoreThreadAsync {
-                        core.onNewBgReading(bg)
-                    }
-
                     // Schedule stale check for the next window
                     val nextCheck = nextBgStaleCheckAt()
                     wakeService.scheduleWakeup(WAKE_TAG, WAKEUP_STALE_CHECK, nextCheck)
 
+                    // First sync the timeline to our BG...
                     if (glucoseSourceManager.readingsInterval == BgReadingsInterval.FiveMinutes) {
                         // Center the 5-minute tick interval around the BG reading timestamp
                         // (bg.timestamp lies in the center: [bg.timestamp - 2.5m, bg.timestamp + 2.5m)).
@@ -243,6 +243,10 @@ class SystemManagerImpl(
                         timeService.synchronize(Timestamp(0))
                     }
 
+                    // ...then add BG value
+                    inCoreThreadAsync {
+                        core.onNewBgReading(bg)
+                    }
                     // Update notification immediately
                     androidNotifications.updateMainAppNotification(glucoseRepository)
                 }
