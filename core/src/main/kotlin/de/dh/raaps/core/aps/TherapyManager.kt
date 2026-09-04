@@ -297,9 +297,11 @@ class TherapyManager(
             treatmentRepository.removeDeferredBoluses(it)
         }
         // Preserve delivery metadata until history sync
+        val cts = getCurrentTherapySettings()
         treatmentRepository.addScheduledPumpInsulinEntry(
             timestamp = Timestamp.now(),
             amount = amount,
+            insulinType = cts.insulinProfile.insulinType,
             basal = containsBasalPart,
             correction = containsCorrectionPart,
             meal = administeredMealIds.isNotEmpty()

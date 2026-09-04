@@ -58,6 +58,7 @@ import de.dh.raaps.common.model.BOLUS_MIN
 import de.dh.raaps.common.model.InsulinAmount
 import de.dh.raaps.common.model.InsulinApplication
 import de.dh.raaps.common.model.InsulinOrigin
+import de.dh.raaps.common.model.InsulinStatus
 import de.dh.raaps.common.model.InsulinType
 import de.dh.raaps.common.model.data.Minutes
 import de.dh.raaps.common.model.data.Timestamp
@@ -271,13 +272,12 @@ fun BolusItem(
                         color = Color.DarkGray
                     )
                 }
-                if (entry.basal || entry.correction || entry.meal) {
-                    Spacer(Modifier.height(4.dp))
-                    Row {
-                        if (entry.basal) CategoryBadge(stringResource(R.string.bolus_category_basal))
-                        if (entry.correction) CategoryBadge(stringResource(R.string.bolus_category_correction))
-                        if (entry.meal) CategoryBadge(stringResource(R.string.bolus_category_meal))
-                    }
+                Spacer(Modifier.height(4.dp))
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    StatusBadge(entry.status)
+                    if (entry.basal) CategoryBadge(stringResource(R.string.bolus_category_basal))
+                    if (entry.correction) CategoryBadge(stringResource(R.string.bolus_category_correction))
+                    if (entry.meal) CategoryBadge(stringResource(R.string.bolus_category_meal))
                 }
             }
         },
@@ -311,6 +311,40 @@ fun BolusItem(
             }
         }
     )
+}
+
+@Composable
+fun StatusBadge(status: InsulinStatus) {
+    val (text, containerColor, contentColor) = when (status) {
+        InsulinStatus.Scheduled -> Triple(
+            stringResource(R.string.bolus_status_scheduled),
+            MaterialTheme.colorScheme.tertiaryContainer,
+            MaterialTheme.colorScheme.onTertiaryContainer
+        )
+        InsulinStatus.Confirmed -> Triple(
+            stringResource(R.string.bolus_status_confirmed),
+            MaterialTheme.colorScheme.primaryContainer,
+            MaterialTheme.colorScheme.onPrimaryContainer
+        )
+        InsulinStatus.Cancelled -> Triple(
+            stringResource(R.string.bolus_status_cancelled),
+            MaterialTheme.colorScheme.errorContainer,
+            MaterialTheme.colorScheme.onErrorContainer
+        )
+    }
+
+    Surface(
+        shape = MaterialTheme.shapes.extraSmall,
+        color = containerColor,
+        modifier = Modifier.padding(end = 4.dp)
+    ) {
+        Text(
+            text = text,
+            style = MaterialTheme.typography.labelSmall,
+            modifier = Modifier.padding(horizontal = 4.dp, vertical = 2.dp),
+            color = contentColor
+        )
+    }
 }
 
 @Composable

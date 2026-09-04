@@ -8,14 +8,12 @@ import de.dh.raaps.common.model.InsulinConcentration
 import de.dh.raaps.common.model.InsulinType
 import de.dh.raaps.common.model.MealEntry
 import de.dh.raaps.common.model.MealType
-import de.dh.raaps.common.model.ScheduledPumpInsulin
 import de.dh.raaps.common.model.data.Minutes
 import de.dh.raaps.core.repository.db.entities.DeferredBolusEntity
 import de.dh.raaps.core.repository.db.entities.InsulinEntity
 import de.dh.raaps.core.repository.db.entities.InsulinTypeEntity
 import de.dh.raaps.core.repository.db.entities.MealEntity
 import de.dh.raaps.core.repository.db.entities.MealTypeEntity
-import de.dh.raaps.core.repository.db.entities.ScheduledPumpInsulinEntity
 
 // Meal Converters
 fun carbCurveComponentListToString(components: List<CarbCurveComponentData>): String {
@@ -93,7 +91,8 @@ fun InsulinApplication.toEntity() = InsulinEntity(
     origin = this.origin,
     basal = this.basal,
     correction = this.correction,
-    meal = this.meal
+    meal = this.meal,
+    status = this.status
 )
 
 fun InsulinEntity.toModel(type: InsulinType) = InsulinApplication(
@@ -104,26 +103,8 @@ fun InsulinEntity.toModel(type: InsulinType) = InsulinApplication(
     origin = this.origin,
     basal = this.basal,
     correction = this.correction,
-    meal = this.meal
-)
-
-// Scheduled Pump Insulin Converters
-fun ScheduledPumpInsulin.toEntity() = ScheduledPumpInsulinEntity(
-    id = this.id,
-    timestamp = this.timestamp,
-    amount = this.amount,
-    basal = this.basal,
-    correction = this.correction,
-    meal = this.meal
-)
-
-fun ScheduledPumpInsulinEntity.toModel() = ScheduledPumpInsulin(
-    id = this.id,
-    timestamp = this.timestamp,
-    amount = this.amount,
-    basal = this.basal,
-    correction = this.correction,
-    meal = this.meal
+    meal = this.meal,
+    status = this.status
 )
 
 // Deferred Bolus Converters

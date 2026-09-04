@@ -2,6 +2,7 @@ package de.dh.raaps.common.model.calculation
 
 import de.dh.raaps.common.model.InsulinAmount
 import de.dh.raaps.common.model.InsulinApplication
+import de.dh.raaps.common.model.InsulinStatus
 import de.dh.raaps.common.model.MealEntry
 import de.dh.raaps.common.model.convertToBgDeltaFromUnits
 import de.dh.raaps.common.model.data.BgDelta
@@ -91,6 +92,9 @@ class CarbsInsulinCalculator(
     ): InsulinAmount {
         var total = InsulinAmount.ZERO
         insulinApplications.forEach { entry ->
+            if (entry.status == InsulinStatus.Cancelled) {
+                return@forEach
+            }
             val intervalsSinceApplication =
                 Minutes.timeDifference(entry.timestamp, timestamp).value / intervalSize.value
 
@@ -118,6 +122,9 @@ class CarbsInsulinCalculator(
     ): InsulinAmount {
         var total = InsulinAmount.ZERO
         insulinApplications.forEach { entry ->
+            if (entry.status == InsulinStatus.Cancelled) {
+                return@forEach
+            }
             if (excludeBasal && entry.basal) {
                 return@forEach
             }

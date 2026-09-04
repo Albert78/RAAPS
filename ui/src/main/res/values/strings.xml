@@ -244,6 +244,9 @@
     <string name="drawer_header_title">RAAPS</string>
     <string name="menu_meals_label">Mahlzeiten</string>
     <string name="menu_bolus_history_label">Bolus-History</string>
+    <string name="bolus_status_scheduled">Geplant</string>
+    <string name="bolus_status_confirmed">Bestätigt</string>
+    <string name="bolus_status_cancelled">Abgesetzt</string>
     <string name="menu_food_database_label">Essensdatenbank</string>
     <string name="menu_system_control_label">Systemsteuerung</string>
     <string name="menu_alarms_label">Warnungen und Alarme</string>

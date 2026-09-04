@@ -49,6 +49,17 @@ value class InsulinAmount(val iu: Double): Comparable<InsulinAmount> {
     }
 
     /**
+     * Checks if this insulin amount is almost equal to [other] within a given [tolerance].
+     *
+     * @param other The other insulin amount to compare with.
+     * @param tolerance The maximum allowed absolute difference (defaults to [EPSILON], i.e. 0.01 IU).
+     * @return True if the absolute difference is less than or equal to [tolerance].
+     */
+    fun isAlmostEqual(other: InsulinAmount, tolerance: InsulinAmount = EPSILON): Boolean {
+        return abs(iu - other.iu) <= tolerance.iu
+    }
+
+    /**
      * Calculates the physical amount that the pump must actually deliver.
      *
      * @param concentration The concentration of the insulin used.
@@ -128,10 +139,14 @@ enum class InsulinCategory {
     Basal, Bolus
 }
 
+enum class InsulinStatus {
+    Scheduled,
+    Confirmed,
+    Cancelled
+}
+
 /**
- * Represents a historical insulin dose that is assumed to have been administered.
- * For insulin deliveries that are planned but not yet confirmed as delivered,
- * use [ScheduledPumpInsulin].
+ * Represents an insulin dose (administered or planned/scheduled).
  */
 data class InsulinApplication(
     var id: Long = ID_UNDEFINED,
@@ -147,22 +162,8 @@ data class InsulinApplication(
     val origin: InsulinOrigin,
     val basal: Boolean = false,
     val correction: Boolean = false,
-    val meal: Boolean = false
-)
-
-/**
- * Represents an insulin dose that is scheduled to be delivered by the pump.
- *
- * This entity serves as temporary storage for delivery metadata until the pump
- * confirms the delivery. Once confirmed, the data is migrated to an [InsulinApplication].
- */
-data class ScheduledPumpInsulin(
-    var id: Long = ID_UNDEFINED,
-    val timestamp: Timestamp,
-    val amount: InsulinAmount,
-    val basal: Boolean = false,
-    val correction: Boolean = false,
-    val meal: Boolean = false
+    val meal: Boolean = false,
+    val status: InsulinStatus = InsulinStatus.Confirmed
 )
 
 /**

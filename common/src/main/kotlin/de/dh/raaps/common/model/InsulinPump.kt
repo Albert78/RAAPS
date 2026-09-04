@@ -1,5 +1,7 @@
 package de.dh.raaps.common.model
 
+import de.dh.pump.PumpCommandException
+import de.dh.pump.PumpConnectionException
 import de.dh.raaps.common.model.data.InsulinProfile
 import kotlinx.coroutines.flow.StateFlow
 
@@ -115,51 +117,60 @@ interface InsulinPump {
     val history: StateFlow<InsulinHistory?>
 
     /**
-     * Initiates a bolus delivery.
-     *
-     * @throws Exception if the command cannot be sent or the pump connection fails.
+     * Concentration of the insulin loaded in the pump. Default is [InsulinConcentration.U100].
      */
-    suspend fun bolus(amount: InsulinAmount)
+    var insulinConcentration: InsulinConcentration
+
+    /**
+     * Initiates a bolus delivery with an optional tracking [bolusId].
+     *
+     * @throws PumpConnectionException if the technical connection fails.
+     * @throws PumpCommandException if the command is rejected by the pump hardware.
+     */
+    suspend fun bolus(amount: InsulinAmount, bolusId: String? = null)
 
     /**
      * Immediately stops any currently running bolus delivery.
      *
-     * @throws Exception if the command cannot be sent or the pump connection fails.
+     * @throws PumpConnectionException if the technical connection fails.
+     * @throws PumpCommandException if the command is rejected by the pump hardware.
      */
     suspend fun stopBolus()
 
     /**
      * Starts a temporary basal rate.
      *
-     * @throws Exception if the command cannot be sent or the pump connection fails.
+     * @throws PumpConnectionException if the technical connection fails.
+     * @throws PumpCommandException if the command is rejected by the pump hardware.
      */
     suspend fun tempBasal(percent: Int, durationHours: Int)
 
     /**
      * Cancels the currently active temporary basal rate.
      *
-     * @throws Exception if the command cannot be sent or the pump connection fails.
+     * @throws PumpConnectionException if the technical connection fails.
+     * @throws PumpCommandException if the command is rejected by the pump hardware.
      */
     suspend fun cancelTempBasal()
 
     /**
      * Sets the active therapy profile on the pump.
      *
-     * @throws Exception if the command cannot be sent or the pump connection fails.
+     * @throws PumpConnectionException if the technical connection fails.
      */
     suspend fun setProfile(profile: InsulinProfile)
 
     /**
      * Performs a synchronization of the pump's history events.
      *
-     * @throws Exception if the command cannot be sent or the pump connection fails.
+     * @throws PumpConnectionException if the technical connection fails.
      */
     suspend fun syncHistory()
 
     /**
      * Refreshes the last known data and status from the pump.
      *
-     * @throws Exception if the command cannot be sent or the pump connection fails.
+     * @throws PumpConnectionException if the technical connection fails.
      */
     suspend fun refreshStatus()
 

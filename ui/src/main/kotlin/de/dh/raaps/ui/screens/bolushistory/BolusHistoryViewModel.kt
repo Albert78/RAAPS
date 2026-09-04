@@ -42,7 +42,7 @@ class BolusHistoryViewModel(
     }
 
     val uiState: StateFlow<BolusHistoryUiState> = combine(
-        treatmentRepository.observeInsulinApplications(),
+        treatmentRepository.observeInsulinApplications(includeCancelled = true),
         _insulinTypes,
         _defaultInsulinType
     ) { entries, types, defaultType ->

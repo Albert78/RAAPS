@@ -2,6 +2,7 @@ package de.dh.raaps.core.repository.db
 
 import androidx.room.TypeConverter
 import de.dh.raaps.common.model.ApsMode
+import de.dh.raaps.common.model.InsulinStatus
 import de.dh.raaps.common.model.data.BgDelta
 import de.dh.raaps.common.model.data.BgValue
 import de.dh.raaps.common.model.data.Minutes
@@ -22,6 +23,18 @@ class DbTypeConverters {
             return ApsMode.valueOf(value)
         } catch (_: Exception) {
             return ApsMode.BasalOnly
+        }
+    }
+
+    @TypeConverter
+    fun fromInsulinStatus(status: InsulinStatus): String = status.name
+
+    @TypeConverter
+    fun toInsulinStatus(value: String): InsulinStatus {
+        return try {
+            InsulinStatus.valueOf(value)
+        } catch (_: Exception) {
+            InsulinStatus.Confirmed
         }
     }
 

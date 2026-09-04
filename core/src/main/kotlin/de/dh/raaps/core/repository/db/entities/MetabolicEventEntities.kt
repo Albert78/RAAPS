@@ -11,6 +11,8 @@ import de.dh.raaps.common.model.ID_UNDEFINED
 import de.dh.raaps.common.model.data.Minutes
 import de.dh.raaps.common.model.data.Timestamp
 
+import de.dh.raaps.common.model.InsulinStatus
+
 @Entity(
     tableName = "meal_type"
 )
@@ -76,7 +78,8 @@ data class InsulinEntity(
     val origin: InsulinOrigin,
     val basal: Boolean = false,
     val correction: Boolean = false,
-    val meal: Boolean = false
+    val meal: Boolean = false,
+    val status: InsulinStatus = InsulinStatus.Confirmed
 )
 
 @Entity(
@@ -97,18 +100,4 @@ data class DeferredBolusEntity(
     val timestamp: Timestamp,
     val amount: Double,
     val meal_id: Long? = null
-)
-
-@Entity(
-    tableName = "scheduled_pump_insulin",
-    indices = [Index("timestamp")]
-)
-data class ScheduledPumpInsulinEntity(
-    @PrimaryKey(autoGenerate = true)
-    var id: Long = ID_UNDEFINED,
-    val timestamp: Timestamp,
-    val amount: InsulinAmount,
-    val basal: Boolean = false,
-    val correction: Boolean = false,
-    val meal: Boolean = false
 )

@@ -59,8 +59,8 @@ import de.dh.raaps.common.model.DEFAULT_DIA_MINUTES
 import de.dh.raaps.common.model.DEFAULT_PEAK_MINUTES
 import de.dh.raaps.common.model.InsulinAmount
 import de.dh.raaps.common.model.InsulinApplication
-import de.dh.raaps.common.model.InsulinCategory
 import de.dh.raaps.common.model.InsulinOrigin
+import de.dh.raaps.common.model.InsulinStatus
 import de.dh.raaps.common.model.InsulinType
 import de.dh.raaps.common.model.MS_PER_HOUR
 import de.dh.raaps.common.model.MS_PER_MINUTE
@@ -161,6 +161,7 @@ data class HistoryAndImpactDiagramData(
 
                 var totalInsulinActivity = 0.0
                 for (app in insulinApplications) {
+                    if (app.status == InsulinStatus.Cancelled) continue
                     val xStart = (app.timestamp.ms - baseTimestamp).toDouble() / MS_PER_MINUTE
                     val timeSinceApp = x - xStart
                     // normalizedActivity * 60.0 gives activity as hourly rate (IU/h)
