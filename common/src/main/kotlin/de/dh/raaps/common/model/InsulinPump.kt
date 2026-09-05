@@ -192,12 +192,15 @@ interface InsulinPump {
 
     /**
      * Concentration of the insulin loaded in the pump. Default is [InsulinConcentration.U100].
+     * Needed to convert [InsulinAmount] to pump units and vice versa.
      */
     var insulinConcentration: InsulinConcentration
 
     /**
      * Initiates a bolus delivery with an optional tracking [bolusId].
-     *
+     * @param amount The amount of insulin to deliver.
+     * @param bolusId Optional tracking ID for the bolus. This ID will be used
+     * in [bolusEvents] and [bolusStatus] for the duration of this bolus delivery.
      * @throws PumpConnectionException if the technical connection fails.
      * @throws PumpCommandException if the command is rejected by the pump hardware.
      */
@@ -220,7 +223,7 @@ interface InsulinPump {
     suspend fun tempBasal(percent: Int, durationHours: Int)
 
     /**
-     * Cancels the currently active temporary basal rate.
+     * Cancels the currently active temporary basal rate and switches back to the normal basal rate.
      *
      * @throws PumpConnectionException if the technical connection fails.
      * @throws PumpCommandException if the command is rejected by the pump hardware.

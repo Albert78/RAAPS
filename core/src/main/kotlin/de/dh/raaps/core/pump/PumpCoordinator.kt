@@ -8,7 +8,6 @@ import de.dh.raaps.common.model.data.Minutes
 import de.dh.raaps.common.model.data.Timestamp
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -89,16 +88,18 @@ class PumpCoordinator(
     private val onJobError: (job: PumpJob, code: JobErrorCode) -> Unit,
     private val scope: CoroutineScope,
 ) {
+    private val _pendingJobs = MutableStateFlow<List<PumpJob>>(emptyList())
+    val pendingJobs: StateFlow<List<PumpJob>> = _pendingJobs.asStateFlow()
+
     /**
      * Current execution state of the coordinator.
      * Used as a concurrency gate to ensure serial execution of pump commands.
      */
+    // Must only be set by [operate]
     private val _pumpCoordinatorState = MutableStateFlow(PumpCoordinatorState.Idle)
     val pumpCoordinatorState: StateFlow<PumpCoordinatorState> = _pumpCoordinatorState.asStateFlow()
 
-    private val _pendingJobs = MutableStateFlow<List<PumpJob>>(emptyList())
-    val pendingJobs: StateFlow<List<PumpJob>> = _pendingJobs.asStateFlow()
-
+    // Must only be set by [operate]
     private val _pumpCommunicationErrorSince = MutableStateFlow<Timestamp>(Timestamp.INVALID)
     val pumpCommunicationErrorSince: StateFlow<Timestamp> = _pumpCommunicationErrorSince.asStateFlow()
 
