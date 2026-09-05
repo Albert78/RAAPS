@@ -47,6 +47,7 @@ class ApsAlgorithmImpl(
      */
     override suspend fun updateTherapySettings() {
         predictionModel.invalidateTherapySettingsCache()
+        recalculatePredictionModel()
     }
 
     /**
@@ -55,6 +56,7 @@ class ApsAlgorithmImpl(
      */
     override suspend fun updateMeals() {
         predictionModel.invalidateCarbsCache()
+        recalculatePredictionModel()
     }
 
     /**
@@ -63,6 +65,33 @@ class ApsAlgorithmImpl(
      */
     override suspend fun updateInsulin() {
         predictionModel.invalidateInsulinCache()
+        recalculatePredictionModel()
+    }
+
+    private suspend fun recalculatePredictionModel() {
+        var currentBg = sampledBgReadings.calculateSavitzkyGolayEndBorder3()
+        if (currentBg.isInvalid()) {
+            currentBg = sampledBgReadings.calculatePTWMA(decayFactor = 0.7, maxNumReadings = 5)
+        }
+        val avgCurrentDeviationPerTick = calcAvgDeviationPerTick(DEVIATION_TIME_BASE)
+
+        val meals = treatmentRepository.getMeals()
+        val insulinApplications = treatmentRepository.getInsulinApplications()
+        val settings = therapyManager.getCurrentTherapySettings()
+        val dia = settings.insulinProfile.dia
+        val insulinPeak = settings.insulinProfile.peak
+        val activeDoses = insulinApplications.toActiveDoses()
+
+        predictionModel.calculate(
+            currentBg = currentBg,
+            avgCurrentDeviationPerTick = avgCurrentDeviationPerTick,
+            meals = meals,
+            insulinDoses = activeDoses,
+            dia = dia,
+            insulinPeak = insulinPeak,
+            therapyManager = therapyManager,
+            carbsInsulinCalculator = carbsInsulinCalculator
+        )
     }
 
     override suspend fun getAssumedBg(timestamp: Timestamp): BgValue {
@@ -284,10 +313,12 @@ class ApsAlgorithmImpl(
                 filtered
             }
 
-            // TODO: We should check if there is much more insulin then carbs, e.g. BG prediction dropping fast.
+            // TODO: We should check if there is much more insulin then carbs,
             //  If this is the situation, tell the user to manually check the situation.
 
             // TODO: We should check extremely high BG and switch off the algorithm.
+
+            // TODO: Check fast dropping or raising BG and tell the user
 
             // ------------------------------ Calculate predictions ------------------------------------
 
