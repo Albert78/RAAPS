@@ -3,7 +3,7 @@
 
 RAAPS is an open-source project focused on developing a modern, full-featured Automated Insulin Delivery (AID/APS) app for Android.
 
-**Note on UI & Localization:** The UI is currently only available in German. If needed, localization can be performed using an AI tool like Gemini. Furthermore, the interface is currently optimized for the Samsung Galaxy S21.
+**Note on UI & Localization:** The UI is currently only available in German. If needed, localization can be performed using an AI tool like Gemini. Furthermore, the interface is currently optimized for the Samsung Galaxy S26.
 
 ## Project Goal
 
@@ -56,7 +56,7 @@ RAAPS relies on a strict separation of concerns through a modular system:
 
 RAAPS ist ein Open-Source-Projekt zur Entwicklung einer modernen, vollumfänglichen Automated Insulin Delivery (AID/APS) App für Android.
 
-**Hinweis zu UI & Lokalisierung:** Die Benutzeroberfläche existiert aktuell nur auf Deutsch. Die Lokalisierung kann bei Bedarf mithilfe von Gemini übersetzt werden. Zudem ist die UI derzeit auf das Samsung Galaxy S21 optimiert.
+**Hinweis zu UI & Lokalisierung:** Die Benutzeroberfläche existiert aktuell nur auf Deutsch. Die Lokalisierung kann bei Bedarf mithilfe von Gemini übersetzt werden. Zudem ist die UI derzeit auf das Samsung Galaxy S26 optimiert.
 
 ## Projektziel
 
