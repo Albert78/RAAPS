@@ -244,6 +244,8 @@ class SystemOrchestratorImpl(
                     state.issues.forEach { issues.add(ApsIssue.Core(it)) }
                 }
                 pIssues.forEach { issues.add(ApsIssue.Pump(it)) }
+
+                // TODO: Depending on severity, switch APS mode to manual and issue alarm
                 issues
             }.collect { combinedIssues ->
                 _apsIssues.value = combinedIssues
