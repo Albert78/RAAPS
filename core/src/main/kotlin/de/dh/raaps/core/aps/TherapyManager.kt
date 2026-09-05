@@ -338,9 +338,7 @@ class TherapyManager(
             ApsMode.Suspend -> return
             ApsMode.BasalOnly -> recommendBolus(treatmentLock, amount)
             ApsMode.AutoCorrection -> {
-                scope.launch {
-                    pumpManager.issueCommand(PumpCommand.DeliverBolus(amount, bolusId))
-                }
+                pumpManager.issueCommand(PumpCommand.DeliverBolus(amount, bolusId))
             }
         }
     }
@@ -358,14 +356,12 @@ class TherapyManager(
             ApsMode.Suspend -> return
             ApsMode.BasalOnly -> return
             ApsMode.AutoCorrection -> {
-                scope.launch {
-                    pumpManager.issueCommand(
-                        PumpCommand.SetTempBasal(
-                            percent = percent,
-                            durationHours = durationInHours
-                        )
+                pumpManager.issueCommand(
+                    PumpCommand.SetTempBasal(
+                        percent = percent,
+                        durationHours = durationInHours
                     )
-                }
+                )
             }
         }
     }
@@ -379,11 +375,9 @@ class TherapyManager(
             ApsMode.Suspend -> return
             ApsMode.BasalOnly -> return
             ApsMode.AutoCorrection -> {
-                scope.launch {
-                    pumpManager.issueCommand(
-                        PumpCommand.CancelTempBasal
-                    )
-                }
+                pumpManager.issueCommand(
+                    PumpCommand.CancelTempBasal
+                )
             }
         }
     }
