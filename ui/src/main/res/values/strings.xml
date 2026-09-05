@@ -148,6 +148,7 @@
     <string name="pump_issue_inoperative">Die Insulinpumpe ist nicht betriebsbereit.</string>
     <string name="pump_issue_command_failed">Befehl an die Insulinpumpe fehlgeschlagen.</string>
     <string name="pump_issue_other">Fehler bei der Kommunikation mit der Insulinpumpe.</string>
+    <string name="multiple_issues_title">System-Warnungen (%1$d)</string>
 
     <string name="insulin_unit_label_format">%1$.2f I.E.</string>
 

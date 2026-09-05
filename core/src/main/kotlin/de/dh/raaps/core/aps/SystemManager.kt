@@ -321,7 +321,7 @@ class SystemManagerImpl(
         scope.launch {
             apsIssues.collect { issues ->
                 if (issues.isNotEmpty()) {
-                    androidNotifications.showApsIssueNotification(issues.first())
+                    androidNotifications.showApsIssueNotification(issues)
                 } else {
                     androidNotifications.cancelApsIssueNotification()
                 }

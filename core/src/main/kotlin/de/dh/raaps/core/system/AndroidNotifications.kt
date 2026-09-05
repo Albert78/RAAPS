@@ -10,7 +10,7 @@ interface AndroidNotifications {
     fun showRecommendationNotification(recommendation: ApsRecommendation)
     fun cancelRecommendationNotification()
 
-    fun showApsIssueNotification(issue: ApsIssue)
+    fun showApsIssueNotification(issues: Set<ApsIssue>)
     fun cancelApsIssueNotification()
 
     fun createMainAppNotification(glucoseRepository: GlucoseRepository): Notification

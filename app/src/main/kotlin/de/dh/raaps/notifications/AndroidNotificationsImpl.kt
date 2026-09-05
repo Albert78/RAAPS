@@ -164,39 +164,34 @@ class AndroidNotificationsImpl(
         manager.cancel(RECOMMENDATION_NOTIFICATION_ID)
     }
 
-    override fun showApsIssueNotification(issue: ApsIssue) {
-        val title = when (issue) {
-            is ApsIssue.Core -> context.getString(UiR.string.core_issue_title)
-            is ApsIssue.Pump -> context.getString(UiR.string.pump_issue_title)
-            ApsIssue.StaleBG -> context.getString(UiR.string.core_issue_title)
-            is ApsIssue.Other -> context.getString(UiR.string.core_issue_title)
+    override fun showApsIssueNotification(issues: Set<ApsIssue>) {
+        if (issues.isEmpty()) {
+            cancelApsIssueNotification()
+            return
         }
 
-        val text = when (issue) {
-            ApsIssue.StaleBG -> context.getString(
-                UiR.string.core_issue_no_recent_values,
-                STALE_BG_THRESHOLD.value.toInt()
-            )
-            is ApsIssue.Core -> when (val coreIssue = issue.issue) {
-                is CoreIssue.NoRecentValues -> context.getString(
-                    UiR.string.core_issue_no_recent_values,
-                    coreIssue.minutes
-                )
-                is CoreIssue.NoisyValues -> context.getString(UiR.string.core_issue_noisy_values)
-                is CoreIssue.InternalError -> context.getString(
-                    UiR.string.core_issue_internal_error,
-                    coreIssue.message ?: context.getString(UiR.string.unknown_label)
-                )
-                CoreIssue.TherapyLockBusy -> context.getString(UiR.string.core_issue_therapy_lock_busy)
-                is CoreIssue.NoPumpConnection -> context.getString(UiR.string.core_issue_no_pump_connection)
+        val title = if (issues.size == 1) {
+            when (issues.first()) {
+                is ApsIssue.Core -> context.getString(UiR.string.core_issue_title)
+                is ApsIssue.Pump -> context.getString(UiR.string.pump_issue_title)
+                ApsIssue.StaleBG -> context.getString(UiR.string.core_issue_title)
+                is ApsIssue.Other -> context.getString(UiR.string.core_issue_title)
             }
-            is ApsIssue.Pump -> when (issue.issue) {
-                PumpIssue.ConnectionMissing -> context.getString(UiR.string.pump_issue_connection_missing)
-                PumpIssue.Inoperative -> context.getString(UiR.string.pump_issue_inoperative)
-                is PumpIssue.CommandFailed -> context.getString(UiR.string.pump_issue_command_failed)
-                PumpIssue.Other -> context.getString(UiR.string.pump_issue_other)
-            }
-            is ApsIssue.Other -> issue.message ?: context.getString(UiR.string.unknown_label)
+        } else {
+            context.getString(UiR.string.multiple_issues_title, issues.size)
+        }
+
+        val messages = issues.map { getIssueMessage(it) }
+        val contentText = if (messages.size == 1) {
+            messages.first()
+        } else {
+            messages.joinToString("; ")
+        }
+
+        val bigText = if (messages.size == 1) {
+            messages.first()
+        } else {
+            messages.joinToString("\n") { "• $it" }
         }
 
         val dashboardIntent = MainActivity.createStartDashboardIntent(context)
@@ -207,7 +202,8 @@ class AndroidNotificationsImpl(
 
         val notification = NotificationCompat.Builder(context, ALGORITHM_ISSUE_CHANNEL_ID)
             .setContentTitle(title)
-            .setContentText(text)
+            .setContentText(contentText)
+            .setStyle(NotificationCompat.BigTextStyle().bigText(bigText))
             .setSmallIcon(R.mipmap.ic_launcher)
             .setContentIntent(pendingIntent)
             .setAutoCancel(false) // Keep it until resolved
@@ -217,6 +213,33 @@ class AndroidNotificationsImpl(
             .build()
 
         notify(ALGORITHM_ISSUE_NOTIFICATION_ID, notification)
+    }
+
+    private fun getIssueMessage(issue: ApsIssue): String = when (issue) {
+        ApsIssue.StaleBG -> context.getString(
+            UiR.string.core_issue_no_recent_values,
+            STALE_BG_THRESHOLD.value.toInt()
+        )
+        is ApsIssue.Core -> when (val coreIssue = issue.issue) {
+            is CoreIssue.NoRecentValues -> context.getString(
+                UiR.string.core_issue_no_recent_values,
+                coreIssue.minutes
+            )
+            is CoreIssue.NoisyValues -> context.getString(UiR.string.core_issue_noisy_values)
+            is CoreIssue.InternalError -> context.getString(
+                UiR.string.core_issue_internal_error,
+                coreIssue.message ?: context.getString(UiR.string.unknown_label)
+            )
+            CoreIssue.TherapyLockBusy -> context.getString(UiR.string.core_issue_therapy_lock_busy)
+            is CoreIssue.NoPumpConnection -> context.getString(UiR.string.core_issue_no_pump_connection)
+        }
+        is ApsIssue.Pump -> when (issue.issue) {
+            PumpIssue.ConnectionMissing -> context.getString(UiR.string.pump_issue_connection_missing)
+            PumpIssue.Inoperative -> context.getString(UiR.string.pump_issue_inoperative)
+            is PumpIssue.CommandFailed -> context.getString(UiR.string.pump_issue_command_failed)
+            PumpIssue.Other -> context.getString(UiR.string.pump_issue_other)
+        }
+        is ApsIssue.Other -> issue.message ?: context.getString(UiR.string.unknown_label)
     }
 
     override fun cancelApsIssueNotification() {
