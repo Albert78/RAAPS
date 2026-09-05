@@ -1,6 +1,9 @@
 package de.dh.raaps.core.pump
 
 import android.util.Log
+import de.dh.pump.PumpCommandException
+import de.dh.pump.PumpConnectionException
+import de.dh.pump.PumpStatus
 import de.dh.raaps.common.model.InsulinAmount
 import de.dh.raaps.common.model.InsulinPump
 import de.dh.raaps.common.model.data.InsulinProfile
@@ -21,7 +24,7 @@ import java.util.UUID
 import kotlin.time.Duration.Companion.milliseconds
 
 enum class PumpCoordinatorState {
-    Idle, Running
+    Idle, Running, Error
 }
 
 /**
@@ -53,7 +56,9 @@ data class PumpJob(
 
 sealed interface JobErrorCode {
     data object Expired : JobErrorCode
-    data class Other(val reason: String) : JobErrorCode
+    data class ConnectionFailed(val cause: Throwable? = null) : JobErrorCode
+    data class CommandFailed(val status: PumpStatus, val cause: Throwable? = null) : JobErrorCode
+    data class TechnicalError(val cause: Throwable? = null) : JobErrorCode
 }
 
 /**
@@ -138,7 +143,7 @@ class PumpCoordinator(
      * [pumpCommunicationErrorSince] signals a communication error.
      */
     private fun operate() {
-        // Early exit if already running to avoid unnecessary coroutine launches
+        // Early exit if already running or in error state to avoid unnecessary coroutine launches
         if (_pumpCoordinatorState.value != PumpCoordinatorState.Idle) {
             return
         }
@@ -160,12 +165,12 @@ class PumpCoordinator(
                                 _pumpCommunicationErrorSince.value = Timestamp.now()
                             } // Else keep former error time
                             // On communication error, stop the loop and rely on the next
-                            // scheduled wakeup or manual trigger to retry.
+                            // scheduled wakeup, reset or manual trigger to retry.
                             return@launch
                         }
                     } finally {
-                        // Reset to Idle to allow subsequent 'operate' calls to trigger a new cycle
-                        _pumpCoordinatorState.value = PumpCoordinatorState.Idle
+                        // Reset to Idle only if we were Running (don't overwrite Error state if set by job)
+                        _pumpCoordinatorState.compareAndSet(PumpCoordinatorState.Running, PumpCoordinatorState.Idle)
                     }
                     // Catch-up check: To avoid race conditions with issueCommand(), we must verify
                     // if new jobs were added while we were processing. If so, re-enter the loop.
@@ -177,9 +182,10 @@ class PumpCoordinator(
     }
 
     suspend fun waitForJobsOrError() {
-        // Wait for Idle and all jobs processed (or error in communication)
+        // Wait for Idle or Error and all jobs processed (or error in communication)
         combine(pumpCoordinatorState, pendingJobs, pumpCommunicationErrorSince) { state, jobs, errorSince ->
-            state == PumpCoordinatorState.Idle && (jobs.none { it.isReady() } || errorSince.isValid())
+            (state == PumpCoordinatorState.Idle || state == PumpCoordinatorState.Error) &&
+                    (jobs.none { it.isReady() } || errorSince.isValid())
         }.first { it }
     }
 
@@ -232,6 +238,9 @@ class PumpCoordinator(
             if (success) {
                 _pendingJobs.update { it - job }
             } else {
+                if (_pumpCoordinatorState.value == PumpCoordinatorState.Error) {
+                    return false
+                }
                 // Schedule for 1 minute later
                 val updatedJob = job.copy(
                     retryCount = job.retryCount + 3,
@@ -252,12 +261,38 @@ class PumpCoordinator(
                 executeOnPump(command)
                 _lastConnectionTime.value = Timestamp.now()
                 return true
-            } catch (e: Exception) {
-                Log.w(TAG, "Exception while executing pump job", e)
-                // TODO: Handle different types of exceptions: Connection/Operation/Runtime
-                // Connection -> retry
-                // Operation, Runtime -> User message, algorithm issue
+            } catch (e: PumpConnectionException) {
+                // If we've lost the connection, try again in some seconds
                 if (it < 2) delay(RETRY_INTERVAL_MS.milliseconds)
+            } catch (e: PumpCommandException) {
+                when (val status = e.status) {
+                    PumpStatus.REJECTED,
+                    PumpStatus.INVALID_PARAMETER,
+                    PumpStatus.NOT_AUTHORIZED,
+                    PumpStatus.DEVICE_ERROR,
+                    PumpStatus.ILLEGAL_STATE,
+                    PumpStatus.UNKNOWN -> {
+                        _pumpCoordinatorState.value = PumpCoordinatorState.Error
+                        // Since this is an unexpected situation, don't remove the job from the queue.
+                        // The user must manually remove it in the management interface.
+                        // _pendingJobs.update { pending -> pending - job }
+                        onJobError(job, JobErrorCode.CommandFailed(status, e))
+                        return false
+                    }
+                    PumpStatus.OK,
+                    PumpStatus.BUSY,
+                    PumpStatus.TIMEOUT -> {
+                        return false
+                    }
+                }
+            } catch (e: Exception) {
+                Log.w(TAG, "Unknown exception while executing pump job", e)
+                _pumpCoordinatorState.value = PumpCoordinatorState.Error
+                // Since this is an unexpected situation, don't remove the job from the queue.
+                // The user must manually remove it in the management interface.
+                // _pendingJobs.update { pending -> pending - job }
+                onJobError(job, JobErrorCode.TechnicalError(e))
+                return false
             }
         }
         return false
@@ -348,6 +383,19 @@ class PumpCoordinator(
      */
     internal fun wakeup() {
         operate()
+    }
+
+    /**
+     * Resets the coordinator from an error state back to idle, clears communication errors,
+     * schedules the next wakeup, and resumes processing.
+     */
+    fun reset() {
+        if (_pumpCoordinatorState.value == PumpCoordinatorState.Error) {
+            _pumpCoordinatorState.value = PumpCoordinatorState.Idle
+            _pumpCommunicationErrorSince.value = Timestamp.INVALID
+            scheduleNextWakeup()
+            operate()
+        }
     }
 
     /**

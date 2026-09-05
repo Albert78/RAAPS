@@ -65,6 +65,11 @@ interface PumpManager {
     fun getPendingJobsCount(): Int
 
     /**
+     * Resets the pump coordinator from an error state back to idle and clears command errors.
+     */
+    fun reset()
+
+    /**
      * Sets a listener to be notified when new insulin history data is received from the pump.
      */
     fun setOnHistoryUpdateListener(listener: suspend (InsulinHistory) -> Unit)

@@ -12,11 +12,11 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
-import kotlinx.coroutines.plus
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.plus
 
 /**
  * Implementation of [PumpManager].
@@ -116,6 +116,11 @@ class PumpManagerImpl(
         pumpCoordinator?.wakeup()
     }
 
+    override fun reset() {
+        _pumpIssues.value = emptySet()
+        pumpCoordinator?.reset()
+    }
+
     override fun hasPendingJobs(): Boolean {
         return pumpCoordinator?.hasPendingJobs() ?: false
     }
@@ -160,9 +165,14 @@ class PumpManagerImpl(
 
     private fun handleJobError(job: PumpJob, jobErrorCode: JobErrorCode) {
         when (jobErrorCode) {
-            JobErrorCode.Expired -> addIssue(PumpIssue.ConnectionMissing)
-            else -> {
-                Log.e(TAG, "Pump job error: $jobErrorCode for job $job")
+            JobErrorCode.Expired,
+            is JobErrorCode.ConnectionFailed -> addIssue(PumpIssue.ConnectionMissing)
+            is JobErrorCode.CommandFailed -> {
+                Log.e(TAG, "Pump command failed with status ${jobErrorCode.status} for job $job")
+                addIssue(PumpIssue.CommandFailed(jobErrorCode.status))
+            }
+            is JobErrorCode.TechnicalError -> {
+                Log.e(TAG, "Pump technical error: ${jobErrorCode.cause} for job $job")
                 addIssue(PumpIssue.Other)
             }
         }
