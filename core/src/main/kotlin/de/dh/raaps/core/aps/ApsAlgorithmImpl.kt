@@ -230,7 +230,8 @@ class ApsAlgorithmImpl(
         val diaHours = (therapyManager.getCurrentTherapySettings().insulinProfile.dia.value + 59) / 60
         val insulinType = therapyManager.getPumpInsulinType()
         val now = Timestamp.now()
-        return (0..diaHours).map { hour ->
+        // For the more distant past, it's sufficient to approximate the basal with one delivery per hour
+        val hourlyDoses = (1..diaHours).map { hour ->
             val timestamp = now.minusHours(hour)
             val amount = therapyManager.getBasalPerHour(timestamp)
             InsulinDose(
@@ -239,6 +240,16 @@ class ApsAlgorithmImpl(
                 insulinType = insulinType
             )
         }
+        // For the new past, we chose a more precise approach
+        val quarterBasalAmount = therapyManager.getBasalPerHour(now) / 4.0
+        val quarterDosesLastHour = (1..4).map { quarter ->
+            InsulinDose(
+                timestamp = now.minusMinutes(quarter * 15),
+                amount = quarterBasalAmount,
+                insulinType = insulinType
+            )
+        }
+        return hourlyDoses + quarterDosesLastHour
     }
 
     override suspend fun recalculate(): CalculationResult {
@@ -288,7 +299,7 @@ class ApsAlgorithmImpl(
                     filtered = sampledBgReadings.calculatePTWMA(decayFactor = 0.7, maxNumReadings = 5)
                 }
 
-                // TODO: Add detection for noisy values. If values are too noisy,
+                // TODO: Add detection for noisy values.
                 // If too noisy, return CalculationResult.coreIssues(NoisyValues)
 
                 // ----------------------------- Switch off algorithm handling -----------------------------
