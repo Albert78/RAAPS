@@ -67,7 +67,7 @@ class MainApplication : Application(), RegistryProvider {
     override fun onTerminate() {
         if (::registry.isInitialized) {
             registry.glucoseSourceManager.stop()
-            registry.systemManager.stop()
+            registry.systemOrchestrator.stop()
         }
         applicationScope.cancel()
         super.onTerminate()

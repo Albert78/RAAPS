@@ -11,7 +11,7 @@ Complex repositories that manage in-memory state (like `TreatmentRepository`) mu
 - This ensures atomicity and visibility across all threads.
 
 ## 3. Core Threading & Reentrancy Protection
-The APS Core execution is orchestrated by `SystemManager` and `Core`:
+The APS Core execution is orchestrated by `SystemOrchestrator` and `Core`:
 - **Single-Threaded Dispatcher**: Core operations run on a dedicated single-thread dispatcher (`Executors.newSingleThreadExecutor().asCoroutineDispatcher()`). This guarantees thread affinity, FIFO execution ordering, and CPU cache locality.
 - **Mutex Protection for Reentrancy**: Because coroutines suspend at I/O boundaries (e.g. database access or pump synchronization), a `kotlinx.coroutines.sync.Mutex` inside `Core` protects all entry points (`processCalculation`, `onNewBgReading`, `onTherapySettingsChanged`, `onMealsChanged`, `onInsulinChanged`, `getAssumedBg`). This prevents reentrancy and logical race conditions across suspension points.
 - **External Interface Protection**: Objects exposed to external threads or UI ViewModels (such as `BolusCorrectionCalculator`) are wrapped in a Mutex decorator (`MutexProtectedBolusCorrectionCalculator`). This ensures UI calls acquire the Core's Mutex and wait for active Core ticks to complete, guaranteeing consistent, atomic snapshots.

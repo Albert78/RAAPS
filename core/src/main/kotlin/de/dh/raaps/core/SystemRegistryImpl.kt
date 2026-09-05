@@ -10,8 +10,8 @@ import de.dh.raaps.common.model.calculation.CarbsInsulinCalculator
 import de.dh.raaps.common.model.data.Minutes
 import de.dh.raaps.common.model.data.TimeService
 import de.dh.raaps.core.aps.GlucoseSourceManager
-import de.dh.raaps.core.aps.SystemManager
-import de.dh.raaps.core.aps.SystemManagerImpl
+import de.dh.raaps.core.aps.SystemOrchestrator
+import de.dh.raaps.core.aps.SystemOrchestratorImpl
 import de.dh.raaps.core.aps.TherapyManager
 import de.dh.raaps.core.pump.PumpManager
 import de.dh.raaps.core.pump.PumpManagerImpl
@@ -47,7 +47,7 @@ class SystemRegistryImpl(
     override val appPreferencesRepository: AppPreferencesRepository,
     override val glucoseSourceManager: GlucoseSourceManager,
     override val therapyManager: TherapyManager,
-    override val systemManager: SystemManager,
+    override val systemOrchestrator: SystemOrchestrator,
     override val pluginManager: PluginManager,
     override val wakeService: SystemWakeService,
     override val timeService: TimeService,
@@ -105,7 +105,7 @@ class SystemRegistryImpl(
                 glucoseRepository.initialize()
             }
 
-            val systemManager = SystemManagerImpl(
+            val systemOrchestrator = SystemOrchestratorImpl(
                 glucoseSourceManager = glucoseSourceManager,
                 glucoseRepository = glucoseRepository,
                 wakeService = wakeService,
@@ -120,7 +120,7 @@ class SystemRegistryImpl(
                 treatmentRepository = treatmentRepository,
                 appPreferencesRepository = appPreferencesRepository,
                 pumpManager = pumpManager,
-                systemManager = systemManager,
+                systemOrchestrator = systemOrchestrator,
                 scope = scope
             )
             val carbsInsulinCalculator = CarbsInsulinCalculator(timeService.tickInterval)
@@ -132,7 +132,7 @@ class SystemRegistryImpl(
 
             therapyManager.startInitialization()
 
-            systemManager.startInitialization(
+            systemOrchestrator.startInitialization(
                 treatmentRepository = treatmentRepository,
                 therapyManager = therapyManager,
                 pumpManager = pumpManager,
@@ -159,7 +159,7 @@ class SystemRegistryImpl(
                 appPreferencesRepository = appPreferencesRepository,
                 therapyManager = therapyManager,
                 glucoseSourceManager = glucoseSourceManager,
-                systemManager = systemManager,
+                systemOrchestrator = systemOrchestrator,
                 pluginManager = pluginManager,
                 wakeService = wakeService,
                 timeService = timeService,

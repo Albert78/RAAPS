@@ -174,7 +174,7 @@ class MealCorrectionBolusViewModel(
 
     private val therapyManager = registry.therapyManager
     private val treatmentRepository = registry.treatmentRepository
-    private val bolusCorrectionCalculator = registry.systemManager.getBolusCorrectionCalculator()
+    private val bolusCorrectionCalculator = registry.systemOrchestrator.getBolusCorrectionCalculator()
 
     private var calculationJob: kotlinx.coroutines.Job? = null
 

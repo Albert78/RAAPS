@@ -13,6 +13,8 @@ import de.dh.raaps.common.model.data.TickHandler
 import de.dh.raaps.common.model.data.TickPriority
 import de.dh.raaps.common.model.data.TimeService
 import de.dh.raaps.common.model.data.Timestamp
+import de.dh.raaps.core.pump.PumpIssue
+import de.dh.raaps.core.pump.PumpManager
 import de.dh.raaps.core.repository.GlucoseRepository
 import de.dh.raaps.core.repository.SettingsRepository
 import de.dh.raaps.core.repository.SystemMetricsRepository
@@ -20,8 +22,6 @@ import de.dh.raaps.core.repository.TreatmentRepository
 import de.dh.raaps.core.system.AndroidNotifications
 import de.dh.raaps.core.system.SystemWakeService
 import de.dh.raaps.core.system.WakeupHandler
-import de.dh.raaps.core.pump.PumpIssue
-import de.dh.raaps.core.pump.PumpManager
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -60,10 +60,10 @@ sealed interface ApsIssue {
 }
 
 /**
- * Manages the application mode, specifically the [ApsMode].
- * Handles persistence and provides a reactive state for other components to observe.
+ * Orchestrates the different subsystems, manages the application mode, dispatches
+ * notifications. It also handles persistence and provides a reactive state for other components to observe.
  */
-interface SystemManager {
+interface SystemOrchestrator {
     /**
      * The current APS mode.
      */
@@ -133,9 +133,9 @@ interface SystemManager {
 }
 
 /**
- * Implementation of [SystemManager].
+ * Implementation of [SystemOrchestrator].
  */
-class SystemManagerImpl(
+class SystemOrchestratorImpl(
     private val glucoseSourceManager: GlucoseSourceManager,
     private val glucoseRepository: GlucoseRepository,
     private val wakeService: SystemWakeService,
@@ -143,7 +143,7 @@ class SystemManagerImpl(
     private val timeService: TimeService,
     private val androidNotifications: AndroidNotifications,
     private val scope: CoroutineScope
-) : SystemManager {
+) : SystemOrchestrator {
     // Threading: Single background thread to avoid race conditions in the core logic
     private val coreDispatcher = Executors.newSingleThreadExecutor().asCoroutineDispatcher()
     private val coreScope = CoroutineScope(coreDispatcher + SupervisorJob())
@@ -254,7 +254,7 @@ class SystemManagerImpl(
         // The 5-minute tick interval is centered around the BG reading (halfTickMs = 2.5 minutes).
         // Tick handlers should execute 20 seconds after the expected BG reading arrival.
         val halfTickMs = timeService.timeline.tickSizeMs / 2
-        timeService.executionOffsetMs = halfTickMs + SystemManager.EXECUTION_DELAY_AFTER_BG_MS
+        timeService.executionOffsetMs = halfTickMs + SystemOrchestrator.EXECUTION_DELAY_AFTER_BG_MS
 
         wakeService.registerHandler(WAKE_TAG, SystemWakeupHandler())
 
@@ -475,7 +475,7 @@ class SystemManagerImpl(
     }
 
     companion object {
-        const val WAKE_TAG = "SystemManager"
+        const val WAKE_TAG = "SystemOrchestrator"
         const val WAKEUP_STALE_CHECK = 0u
     }
 }

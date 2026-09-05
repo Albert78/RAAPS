@@ -31,18 +31,18 @@ data class DashboardUiState(
 class DashboardViewModel(
     private val systemRegistry: SystemRegistry
 ) : ViewModel() {
-    private val systemManager = systemRegistry.systemManager
+    private val systemOrchestrator = systemRegistry.systemOrchestrator
     private val _uiState = MutableStateFlow(DashboardUiState())
 
     val uiState: StateFlow<DashboardUiState> = combine(
         _uiState,
-        systemManager.apsMode,
+        systemOrchestrator.apsMode,
         systemRegistry.therapyManager.recommendations
     ) { state, mode, recommendations ->
         state.copy(
             apsMode = mode,
             recommendations = recommendations,
-            isMealCorrectionBolusAllowed = systemManager.canOpenMealCorrectionBolus()
+            isMealCorrectionBolusAllowed = systemOrchestrator.canOpenMealCorrectionBolus()
         )
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), DashboardUiState())
 
@@ -74,7 +74,7 @@ class DashboardViewModel(
     }
 
     fun setApsMode(mode: ApsMode) {
-        systemManager.setApsMode(mode)
+        systemOrchestrator.setApsMode(mode)
     }
 
     companion object {

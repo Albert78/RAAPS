@@ -50,7 +50,7 @@ class SystemViewModel(
     private val glucoseRepository = systemRegistry.glucoseRepository
     private val treatmentRepository = systemRegistry.treatmentRepository
     private val therapyManager = systemRegistry.therapyManager
-    private val systemManager = systemRegistry.systemManager
+    private val systemOrchestrator = systemRegistry.systemOrchestrator
     private val appPreferencesRepository = systemRegistry.appPreferencesRepository
 
     val carbsInsulinCalculator = systemRegistry.carbsInsulinCalculator
@@ -70,8 +70,8 @@ class SystemViewModel(
                 treatmentRepository.observeInsulinApplications(),
                 treatmentRepository.observeMeals(),
                 therapyManager.currentTherapySettingsFlow,
-                systemManager.coreState,
-                systemManager.apsIssues,
+                systemOrchestrator.coreState,
+                systemOrchestrator.apsIssues,
                 _tickCounter
             ) { args ->
                 val readings = args[0] as List<BgReading>

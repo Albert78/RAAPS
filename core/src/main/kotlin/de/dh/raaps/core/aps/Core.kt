@@ -55,7 +55,7 @@ sealed interface CoreState {
  * The computation core of the APS system.
  *
  * **Architecture**
- * This class is NOT thread-safe by itself and must be called from a controlled threading environment (like SystemManager facade).
+ * This class is NOT thread-safe by itself and must be called from a controlled threading environment (like SystemOrchestrator facade).
  *
  * **Android integration**
  * This class should remain as free as possible of workarounds for the Android system.

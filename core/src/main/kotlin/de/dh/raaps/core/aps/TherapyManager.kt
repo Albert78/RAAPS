@@ -77,7 +77,7 @@ class TherapyManager(
     private val treatmentRepository: TreatmentRepository,
     private val appPreferencesRepository: AppPreferencesRepository,
     private val pumpManager: PumpManager,
-    private val systemManager: SystemManager,
+    private val systemOrchestrator: SystemOrchestrator,
     private val scope: CoroutineScope
 ) {
     private val mutex = Mutex()
@@ -334,7 +334,7 @@ class TherapyManager(
             Log.i(TAG, "Skipping bolus which is too low for pump (amount=$amount, minBolusIncrement=$minBolusIncrement)")
             return
         }
-        when (systemManager.apsMode.value) {
+        when (systemOrchestrator.apsMode.value) {
             ApsMode.Suspend -> return
             ApsMode.BasalOnly -> recommendBolus(treatmentLock, amount)
             ApsMode.AutoCorrection -> {
@@ -354,7 +354,7 @@ class TherapyManager(
      */
     fun setTempBasal(treatmentLock: TreatmentLock, durationInHours: Int, percent: Int) {
         checkLock(treatmentLock)
-        when (systemManager.apsMode.value) {
+        when (systemOrchestrator.apsMode.value) {
             ApsMode.Suspend -> return
             ApsMode.BasalOnly -> return
             ApsMode.AutoCorrection -> {
@@ -375,7 +375,7 @@ class TherapyManager(
      */
     fun clearTempBasal(treatmentLock: TreatmentLock) {
         checkLock(treatmentLock)
-        when (systemManager.apsMode.value) {
+        when (systemOrchestrator.apsMode.value) {
             ApsMode.Suspend -> return
             ApsMode.BasalOnly -> return
             ApsMode.AutoCorrection -> {
