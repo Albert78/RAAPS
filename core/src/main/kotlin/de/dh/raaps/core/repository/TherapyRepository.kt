@@ -27,6 +27,9 @@ class TherapyRepository(
     private val therapyDao: TherapyDao = appDatabase.therapyDao()
     private val metabolicEventsDao: MetabolicEventsDao = appDatabase.metabolicEventsDao()
 
+    @Volatile
+    private var cachedCurrentTherapySettings: CurrentTherapySettings? = null
+
     // --- Insulin Types (Lookup Helper) ---
 
     /**
@@ -78,19 +81,30 @@ class TherapyRepository(
 
     suspend fun updateInsulinProfile(profile: InsulinProfile) {
         therapyDao.updateInsulinProfile(profile.toEntity())
+        clearCache()
     }
 
     suspend fun deleteInsulinProfile(profile: InsulinProfile) {
         therapyDao.deleteInsulinProfile(profile.id)
+        clearCache()
     }
 
     // --- Current Therapy Settings Operations ---
+
+    /**
+     * Clears the in-memory cache for CurrentTherapySettings.
+     */
+    fun clearCache() {
+        cachedCurrentTherapySettings = null
+    }
 
     fun observeCurrentTherapySettings(): Flow<CurrentTherapySettings> = combine(
         therapyDao.observeCurrentTherapySettings(),
         therapyDao.observeAllInsulinProfiles()
     ) { _, _ ->
-        getCurrentTherapySettingsOrNull()
+        fetchCurrentTherapySettingsFromDb()?.also { fresh ->
+            cachedCurrentTherapySettings = fresh
+        }
     }.mapNotNull { it }
 
     suspend fun getCurrentTherapySettings(): CurrentTherapySettings {
@@ -98,7 +112,16 @@ class TherapyRepository(
             ?: throw IllegalStateException("No current therapy settings found in database")
     }
 
-    suspend fun getCurrentTherapySettingsOrNull(): CurrentTherapySettings? {
+    suspend fun getCurrentTherapySettingsOrNull(forceRefresh: Boolean = false): CurrentTherapySettings? {
+        if (!forceRefresh) {
+            cachedCurrentTherapySettings?.let { return it }
+        }
+        return fetchCurrentTherapySettingsFromDb()?.also {
+            cachedCurrentTherapySettings = it
+        }
+    }
+
+    private suspend fun fetchCurrentTherapySettingsFromDb(): CurrentTherapySettings? {
         val entity = therapyDao.getCurrentTherapySettings() ?: return null
         val profile = getInsulinProfileById(entity.insulin_profile_id) ?: return null
         val settings = entity.toModel(profile)
@@ -130,5 +153,6 @@ class TherapyRepository(
             therapyDao.updateCurrentTherapySettings(entity.copy(id = existing.id))
             currentTherapySettings.id = existing.id
         }
+        cachedCurrentTherapySettings = currentTherapySettings
     }
 }
