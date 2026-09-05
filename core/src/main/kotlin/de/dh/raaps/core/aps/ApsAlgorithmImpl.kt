@@ -350,15 +350,15 @@ class ApsAlgorithmImpl(
             val targetBg = bgSettings.first
             val lowThreshold = bgSettings.second
 
-            val isfValue = therapyManager.getIsfFactor(now)
-            val crValue = therapyManager.getCrFactor(now)
+            val isfNow = therapyManager.getIsfFactor(now)
+            val crNow = therapyManager.getCrFactor(now)
 
             insight = insight.copy(
                 bgFiltered = currentBg,
                 deviationPerTick = avgCurrentDeviationPerTick,
                 targetBg = targetBg,
-                isf = isfValue,
-                cr = crValue
+                isf = isfNow,
+                cr = crNow
             )
 
             // Cache block 1: Influence of meals and insulin - the data is reused in succeeding calculation
@@ -391,7 +391,7 @@ class ApsAlgorithmImpl(
             // Find the next tick where the value falls below the minimum within the next LOW_WARNING_THRESHOLD minutes
             val impendingLowTick = predictionModel.findNext(
                 startAt = nowTick,
-                until = nowTick.plusMinutes(LOW_WARNING_THRESHOLD.value.toInt()),
+                until = nowTick.plusMinutes(LOW_WARNING_LOOKAHEAD.value.toInt()),
                 predicate = { it.assumedBg.isValid() && it.assumedBg < lowThreshold + LOW_BG_SAFETY_MARGIN },
                 block = { it.tick }
             )
@@ -400,7 +400,7 @@ class ApsAlgorithmImpl(
                 // We're too low or becoming too low soon.
                 val recovery = predictionModel.findNext(
                     startAt = impendingLowTick,
-                    until = impendingLowTick.plusMinutes(LOW_RECOVERY_THRESHOLD.value.toInt()),
+                    until = impendingLowTick.plusMinutes(LOW_RECOVERY_LOOKAHEAD.value.toInt()),
                     predicate = { it.assumedBg.isValid() && it.assumedBg > lowThreshold + LOW_BG_SAFETY_MARGIN },
                     block = { true }
                 ) ?: false
@@ -418,8 +418,8 @@ class ApsAlgorithmImpl(
                         val bgErrorAtMin = targetBg - bgMin
                         val neededLowCorrectionCarbsForMinInG = convertToCarbsFromBgDelta(
                             bgDelta = bgErrorAtMin,
-                            isf = isfValue,
-                            cr = crValue
+                            isf = isfNow,
+                            cr = crNow
                         )
                         val recentCarbsInG = meals.
                             filter { meal -> meal.timestamp > now.minusMinutes(20) && meal.timestamp < now.plusMinutes(15) }.
@@ -446,12 +446,6 @@ class ApsAlgorithmImpl(
             // which differ from the normal rate (e.g. low basal) will reduce (or increase) our net IOB.
             val iobNow = carbsInsulinCalculator.iob(
                 insulinDoses = activeDoses,
-                timestamp = now,
-                dia = dia,
-                peak = insulinPeak
-            )
-            val normalBasalIOBNow = carbsInsulinCalculator.iob(
-                insulinDoses = artificialNormalBasalDoses,
                 timestamp = now,
                 dia = dia,
                 peak = insulinPeak
@@ -488,19 +482,22 @@ class ApsAlgorithmImpl(
                 ?: return CalculationResult.safetyBasal().withMetrics(insight)
             val cumulatedBasalActivityUntilPeak = tickStateAtPeakValues.second
 
+            val isfAtPeak = therapyManager.getIsfFactor(insulinPeakTimeStamp)
+            val crAtPeak = therapyManager.getCrFactor(insulinPeakTimeStamp)
+
             insight = insight.copy(predictedBgAtPeak = predictedBgAtPeak)
             val bgErrorAtPeak = predictedBgAtPeak - targetBg // < 0 if too low
 
             // Low protection for "lower than target" situations
-            if (bgErrorAtPeak < LOW_CORRECTION_THRESHOLD) {
+            if (bgErrorAtPeak < LOW_TEMP_BASAL_TRIGGER) {
                 // Prediction is too low under normal basal;
                 // Either BG is falling, or, raising too slow -> Lower basal rate and defer meals
 
                 // cumulatedInsulinActivityUntilPeak is what we expect to be active from past
                 // injections, with normal basal from now until peak, and without any new meal or correction treatments.
                 val cumulatedInsulinActivityUntilPeak = iobNow - iobAtPeak
-                val insulinEffectUntilPeak = -convertToBgDeltaFromUnits(cumulatedInsulinActivityUntilPeak, isfValue)
-                val normalBasalEffectUntilPeak = -convertToBgDeltaFromUnits(cumulatedBasalActivityUntilPeak, isfValue)
+                val insulinEffectUntilPeak = -convertToBgDeltaFromUnits(cumulatedInsulinActivityUntilPeak, isfAtPeak)
+                val normalBasalEffectUntilPeak = -convertToBgDeltaFromUnits(cumulatedBasalActivityUntilPeak, isfAtPeak)
 
                 // All predictions are based on the assumption that we deliver normal basal. So
                 // to calculate the low temp scenario, we just subtract the normal basal effect.
@@ -547,29 +544,36 @@ class ApsAlgorithmImpl(
                 filter { it.timestamp >= now }.
                 fold(InsulinAmount.ZERO) { acc, next -> acc + next.amount }
 
-            val insulinEquivalentOfCarbsAtPeak = convertToInsulinAmountFromCarbs(carbs = futureActiveCarbsAtPeak, cr = crValue)
+            val insulinEquivalentOfCarbsAtPeak = convertToInsulinAmountFromCarbs(carbs = futureActiveCarbsAtPeak, cr = crAtPeak)
 
-            val bgErrorCorrectionUnits = (convertToInsulinAmountFromBgDelta(bgErrorAtPeak, isfValue) * AGGRESSIVENESS_ERROR_CORRECTION)
+            val bgErrorCorrectionUnits = (convertToInsulinAmountFromBgDelta(bgErrorAtPeak, isfAtPeak) * AGGRESSIVENESS_ERROR_CORRECTION)
                 .coerceAtLeast(InsulinAmount.ZERO)
 
             // Simplified calculation. We mix remaining insulin/carbs activity of now and peak.
-            val futureInsulin = iobAtPeak - normalBasalIOBAtPeak + dueMealBolusAmount + sumFutureDeferredBoluses
+            val netIobAtPeak = iobAtPeak - normalBasalIOBAtPeak
+            val futureInsulin = netIobAtPeak + dueMealBolusAmount + sumFutureDeferredBoluses
             if (futureInsulin + InsulinAmount.EPSILON >= insulinEquivalentOfCarbsAtPeak + bgErrorCorrectionUnits) {
                 // Meals and BG error are covered by IOB/planned boluses.
                 // Return to normal basal rate and wait for insulin/carbs to act.
                 if (dueDeferredBoluses.isEmpty()) {
-                    CalculationResult.normalSafetyBasal().withMetrics(insight)
+                    return CalculationResult.normalSafetyBasal().withMetrics(insight)
                 } else {
                     // Administer due deferred bolus.
                     // It might be that this is too much for the COB but this is in the
                     // responsibility of the user.
-                    CalculationResult.mealBolus(
+                    return CalculationResult.mealBolus(
                         bolusAmount = dueMealBolusAmount,
                         handledDeferredBoluses = dueDeferredBoluses,
                     ).withMetrics(insight)
                 }
             } else {
-                // Situation is: BG > Target, i.e. a correction is necessary.
+                // Situation is: BG > Target
+
+                if (bgErrorAtPeak <= HIGH_CORRECTION_BOLUS_TRIGGER) {
+                    return CalculationResult.normalSafetyBasal().withMetrics(insight)
+                }
+
+                // A correction is necessary.
 
                 // If we don't have insulin/carbs influence, we can just correct the BG error.
                 // But IF we have insulin/carbs influence, we must not just add predicted
@@ -577,26 +581,50 @@ class ApsAlgorithmImpl(
                 // 1) Insulin and carbs activity can be so different in time that we would risk low BG
                 // 2) Future carbs should be covered by deferred boluses
 
-                if (bgErrorAtPeak <= HIGH_CORRECTION_THRESHOLD) {
-                    CalculationResult.normalSafetyBasal().withMetrics(insight)
-                }
+                // A correction is always dangerous, so we simulate its impact up to DIA.
+                // If any future BG value falls too low, we scale down the correction so that
+                // the threshold is not violated.
+                val candidateCorrection = bgErrorCorrectionUnits - netIobAtPeak
+                val correctionPart = if (candidateCorrection > InsulinAmount.ZERO) {
+                    val diaTicks = timeline.inTicks(dia)
+                    val endTick = nowTick + diaTicks
+                    val bgThreshold = targetBg - CORRECTION_ALLOWED_DROP_BELOW_TARGET
+                    var minAllowedCorrection = candidateCorrection
+                    var cumulatedBgDrop = BgDelta.ZERO
 
-                // Strategy is, just correct the BG error and take into account the net IOB.
-                var correctionPart = bgErrorCorrectionUnits
+                    predictionModel.forEach(from = nowTick + 1, to = endTick) { tick, state ->
+                        val baselineBg = state.assumedBg
+                        if (baselineBg.isValid()) {
+                            val tickIsf = state.isf ?: therapyManager.getIsfFactor(timeline.timestamp(tick))
+                            val intervalsSinceApplication = tick.value - nowTick.value
+                            val effectiveInsulin = carbsInsulinCalculator.insulinCalculationCache.effectiveInsulin(
+                                amount = candidateCorrection,
+                                dia = dia,
+                                peak = insulinPeak,
+                                intervalsSinceApplication = intervalsSinceApplication
+                            )
+                            val bgDropInTick = convertToBgDeltaFromUnits(effectiveInsulin, tickIsf)
+                            cumulatedBgDrop += bgDropInTick
+                            val simulatedBg = baselineBg - cumulatedBgDrop
 
-                // We must be careful with IOB:
-                val netIobAtPeak = iobAtPeak - normalBasalIOBAtPeak
-                if (netIobAtPeak > InsulinAmount.ZERO) {
-                    // A positive IOB can be added completely, it will correct the BG eventually
-                    correctionPart -= netIobAtPeak
+                            if (simulatedBg < bgThreshold) {
+                                if (cumulatedBgDrop.mgdl > 0.0) {
+                                    val maxAllowedBgDrop = (baselineBg - bgThreshold).coerceAtLeast(BgDelta.ZERO)
+                                    val allowedFraction = maxAllowedBgDrop.mgdl / cumulatedBgDrop.mgdl
+                                    val allowedCorrection = candidateCorrection * allowedFraction
+                                    if (allowedCorrection < minAllowedCorrection) {
+                                        minAllowedCorrection = allowedCorrection
+                                    }
+                                } else {
+                                    minAllowedCorrection = InsulinAmount.ZERO
+                                }
+                            }
+                        }
+                    }
+
+                    minAllowedCorrection.coerceAtLeast(InsulinAmount.ZERO)
                 } else {
-                    // A negative IOB means a basal deficit; we must not just add the complete deficit
-                    // to the correction, the activity curve will be too steep. Instead, we add
-                    // a part of the negative IOB.
-                    // A more accurate strategy would be to find the lowest future BG under the
-                    // influence of our IOB correction and to adapt the correction part, if we come
-                    // too low.
-                    correctionPart -= netIobAtPeak.times(0.5)
+                    InsulinAmount.ZERO
                 }
                 val mealCorrectionBolusAmount = dueMealBolusAmount + correctionPart
 
@@ -612,7 +640,7 @@ class ApsAlgorithmImpl(
                     }
                 } else null
 
-                CalculationResult.mealOrCorrectionBolus(
+                return CalculationResult.mealOrCorrectionBolus(
                     bolusAmount = mealCorrectionBolusAmount,
                     handledDeferredBoluses = dueDeferredBoluses,
                     correctionPart = correctionPart,
@@ -621,7 +649,7 @@ class ApsAlgorithmImpl(
             }
         } catch (e: Exception) {
             Log.e(TAG, "Error while recalculating", e)
-            CalculationResult.internalError("Error while recalculating", e).withMetrics(insight)
+            return CalculationResult.internalError("Error while recalculating", e).withMetrics(insight)
         }
     }
 
