@@ -20,6 +20,8 @@ import de.dh.raaps.core.repository.TreatmentRepository
 import de.dh.raaps.core.system.AndroidNotifications
 import de.dh.raaps.core.system.SystemWakeService
 import de.dh.raaps.core.system.WakeupHandler
+import de.dh.raaps.core.pump.PumpIssue
+import de.dh.raaps.core.pump.PumpManager
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -29,21 +31,32 @@ import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.drop
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.util.concurrent.Executors
 
-enum class ApsIssue {
+sealed interface ApsIssue {
     /**
      * No recent glucose value available, the loop cannot calculate new treatments.
      */
-    StaleBG,
+    data object StaleBG : ApsIssue
+
+    /**
+     * Active core issue preventing calculation or normal loop execution.
+     */
+    data class Core(val issue: CoreIssue) : ApsIssue
+
+    /**
+     * Active pump issue preventing insulin delivery or pump operation.
+     */
+    data class Pump(val issue: PumpIssue) : ApsIssue
 
     /**
      * Any other issue that prevents the core from working.
      */
-    Other
+    data class Other(val message: String? = null) : ApsIssue
 }
 
 /**
@@ -62,6 +75,11 @@ interface SystemManager {
     val apsIssues: StateFlow<Set<ApsIssue>>
 
     /**
+     * Signal flow indicating whether the blood glucose value is stale.
+     */
+    val isBgStale: StateFlow<Boolean>
+
+    /**
      * State of the core loop.
      */
     val coreState: StateFlow<CoreState>
@@ -77,6 +95,7 @@ interface SystemManager {
     fun startInitialization(
         treatmentRepository: TreatmentRepository,
         therapyManager: TherapyManager,
+        pumpManager: PumpManager,
         appPreferencesRepository: AppPreferencesRepository,
         carbsInsulinCalculator: CarbsInsulinCalculator,
         systemMetricsRepository: SystemMetricsRepository,
@@ -134,6 +153,9 @@ class SystemManagerImpl(
 
     private val _apsIssues = MutableStateFlow<Set<ApsIssue>>(emptySet())
     override val apsIssues: StateFlow<Set<ApsIssue>> = _apsIssues.asStateFlow()
+
+    private val _isBgStale = MutableStateFlow(false)
+    override val isBgStale: StateFlow<Boolean> = _isBgStale.asStateFlow()
 
     private val _coreState = MutableStateFlow<CoreState>(CoreState.Initializing)
     override val coreState: StateFlow<CoreState> = _coreState.asStateFlow()
@@ -198,6 +220,7 @@ class SystemManagerImpl(
     override fun startInitialization(
         treatmentRepository: TreatmentRepository,
         therapyManager: TherapyManager,
+        pumpManager: PumpManager,
         appPreferencesRepository: AppPreferencesRepository,
         carbsInsulinCalculator: CarbsInsulinCalculator,
         systemMetricsRepository: SystemMetricsRepository,
@@ -206,6 +229,26 @@ class SystemManagerImpl(
         this.therapyManager = therapyManager
         this.treatmentRepository = treatmentRepository
         this.carbsInsulinCalculator = carbsInsulinCalculator
+
+        scope.launch {
+            combine(
+                _isBgStale,
+                coreState,
+                pumpManager.pumpIssues
+            ) { stale, state, pIssues ->
+                val issues = mutableSetOf<ApsIssue>()
+                if (stale) {
+                    issues.add(ApsIssue.StaleBG)
+                }
+                if (state is CoreState.Active) {
+                    state.issues.forEach { issues.add(ApsIssue.Core(it)) }
+                }
+                pIssues.forEach { issues.add(ApsIssue.Pump(it)) }
+                issues
+            }.collect { combinedIssues ->
+                _apsIssues.value = combinedIssues
+            }
+        }
 
         // Configure execution offset on timeService:
         // The 5-minute tick interval is centered around the BG reading (halfTickMs = 2.5 minutes).
@@ -276,11 +319,11 @@ class SystemManagerImpl(
         }
 
         scope.launch {
-            coreState.collect { state ->
-                if (state is CoreState.Active && state.issues.isNotEmpty()) {
-                    androidNotifications.showCoreIssueNotification(state.issues.first())
+            apsIssues.collect { issues ->
+                if (issues.isNotEmpty()) {
+                    androidNotifications.showApsIssueNotification(issues.first())
                 } else {
-                    androidNotifications.cancelCoreIssueNotification()
+                    androidNotifications.cancelApsIssueNotification()
                 }
             }
         }
@@ -418,23 +461,7 @@ class SystemManagerImpl(
     }
 
     private fun staleCheck() {
-        if (isBgStale()) {
-            addIssue(ApsIssue.StaleBG)
-        } else {
-            removeIssue(ApsIssue.StaleBG)
-        }
-    }
-
-    private fun addIssue(issue: ApsIssue) {
-        if (issue !in _apsIssues.value) {
-            _apsIssues.value += issue
-        }
-    }
-
-    private fun removeIssue(issue: ApsIssue) {
-        if (issue in _apsIssues.value) {
-            _apsIssues.value -= issue
-        }
+        _isBgStale.value = isBgStale()
     }
 
     fun isBgStale(): Boolean {

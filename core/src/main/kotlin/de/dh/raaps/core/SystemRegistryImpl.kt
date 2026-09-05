@@ -135,6 +135,7 @@ class SystemRegistryImpl(
             systemManager.startInitialization(
                 treatmentRepository = treatmentRepository,
                 therapyManager = therapyManager,
+                pumpManager = pumpManager,
                 appPreferencesRepository = appPreferencesRepository,
                 carbsInsulinCalculator = carbsInsulinCalculator,
                 systemMetricsRepository = systemMetricsRepository,

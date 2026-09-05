@@ -143,6 +143,12 @@
     <string name="core_issue_therapy_lock_busy">Therapie-Sperre aktiv (Nutzer-Aktion)</string>
     <string name="core_issue_no_pump_connection">Pumpen-Kommunikation ist fehlgeschlagen</string>
 
+    <string name="pump_issue_title">Pumpen-Problem</string>
+    <string name="pump_issue_connection_missing">Keine Verbindung zur Insulinpumpe.</string>
+    <string name="pump_issue_inoperative">Die Insulinpumpe ist nicht betriebsbereit.</string>
+    <string name="pump_issue_command_failed">Befehl an die Insulinpumpe fehlgeschlagen.</string>
+    <string name="pump_issue_other">Fehler bei der Kommunikation mit der Insulinpumpe.</string>
+
     <string name="insulin_unit_label_format">%1$.2f I.E.</string>
 
     <string name="aps_mode_dialog_title">Modus wählen</string>
