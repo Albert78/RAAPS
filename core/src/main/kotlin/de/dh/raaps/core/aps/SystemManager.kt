@@ -239,7 +239,10 @@ class SystemManagerImpl(
                         val centeredTimestamp = Timestamp(bg.timestamp.ms - halfTickMs)
                         timeService.synchronize(centeredTimestamp)
                     } else {
-                        // Reset offset if BG values do not arrive in a 5-minute interval
+                        // For reading intervals smaller than our 5-minute tick interval, it's ok
+                        // if BG values arrive around the interval border. Even if both readings
+                        // at the interval borders (start and end) go to the neighbor interval,
+                        // we have enough values in the interval left.
                         timeService.synchronize(Timestamp(0))
                     }
 
