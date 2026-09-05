@@ -243,7 +243,7 @@ class PumpCoordinator(
                 }
                 // Schedule for 1 minute later
                 val updatedJob = job.copy(
-                    retryCount = job.retryCount + 3,
+                    retryCount = job.retryCount + 1,
                     nextAttemptAt = Timestamp.now().plusMinutes(1)
                 )
 
@@ -255,33 +255,46 @@ class PumpCoordinator(
     }
 
     private suspend fun tryExecuteJobWithRetries(job: PumpJob): Boolean {
-        repeat(3) {
+        var connectionRetryCount = 0
+        var busyRetryCount = 0
+
+        while (true) {
             try {
                 val command = job.command
                 executeOnPump(command)
                 _lastConnectionTime.value = Timestamp.now()
                 return true
-            } catch (e: PumpConnectionException) {
-                // If we've lost the connection, try again in some seconds
-                if (it < 2) delay(RETRY_INTERVAL_MS.milliseconds)
+            } catch (_: PumpConnectionException) {
+                if (connectionRetryCount < MAX_CONNECTION_RETRIES) {
+                    connectionRetryCount++
+                    delay(RETRY_INTERVAL_MS.milliseconds)
+                } else {
+                    return false
+                }
             } catch (e: PumpCommandException) {
                 when (val status = e.status) {
+                    PumpStatus.BUSY -> {
+                        if (busyRetryCount < BUSY_RETRY_DELAYS_MS.size) {
+                            val delayMs = BUSY_RETRY_DELAYS_MS[busyRetryCount]
+                            busyRetryCount++
+                            delay(delayMs.milliseconds)
+                        } else {
+                            return false
+                        }
+                    }
+                    PumpStatus.OK, // Should not happen
                     PumpStatus.REJECTED,
                     PumpStatus.INVALID_PARAMETER,
                     PumpStatus.NOT_AUTHORIZED,
                     PumpStatus.DEVICE_ERROR,
                     PumpStatus.ILLEGAL_STATE,
+                    PumpStatus.TIMEOUT,
                     PumpStatus.UNKNOWN -> {
                         _pumpCoordinatorState.value = PumpCoordinatorState.Error
                         // Since this is an unexpected situation, don't remove the job from the queue.
                         // The user must manually remove it in the management interface.
                         // _pendingJobs.update { pending -> pending - job }
                         onJobError(job, JobErrorCode.CommandFailed(status, e))
-                        return false
-                    }
-                    PumpStatus.OK,
-                    PumpStatus.BUSY,
-                    PumpStatus.TIMEOUT -> {
                         return false
                     }
                 }
@@ -295,7 +308,6 @@ class PumpCoordinator(
                 return false
             }
         }
-        return false
     }
 
     private suspend fun executeOnPump(command: PumpCommand) {
@@ -409,6 +421,8 @@ class PumpCoordinator(
         val TAG = PumpCoordinator::class.simpleName
         private val HEARTBEAT_INTERVAL = Minutes(15)
         private const val RETRY_INTERVAL_MS: Long = 10_000
+        private const val MAX_CONNECTION_RETRIES = 3
+        private val BUSY_RETRY_DELAYS_MS = listOf(10_000L, 20_000L, 30_000L)
 
         fun create(
             pump: InsulinPump,
