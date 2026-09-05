@@ -8,7 +8,6 @@ import de.dh.raaps.common.model.InsulinDose
 import de.dh.raaps.common.model.METABOLIC_EVENTS_HISTORY_HOURS
 import de.dh.raaps.common.model.MealType
 import de.dh.raaps.common.model.calculation.CarbsInsulinCalculator
-import de.dh.raaps.common.model.toActiveDoses
 import de.dh.raaps.common.model.convertToBgDeltaFromUnits
 import de.dh.raaps.common.model.convertToCarbsFromBgDelta
 import de.dh.raaps.common.model.convertToInsulinAmountFromBgDelta
@@ -20,6 +19,7 @@ import de.dh.raaps.common.model.data.Minutes
 import de.dh.raaps.common.model.data.Tick
 import de.dh.raaps.common.model.data.Timeline
 import de.dh.raaps.common.model.data.Timestamp
+import de.dh.raaps.common.model.toActiveDoses
 import de.dh.raaps.core.repository.GlucoseRepository
 import de.dh.raaps.core.repository.TreatmentRepository
 import kotlin.math.ceil
@@ -389,7 +389,7 @@ class ApsAlgorithmImpl(
                 // We're too low or becoming too low soon.
                 val recovery = predictionModel.findNext(
                     startAt = impendingLowTick,
-                    until = nowTick.plusMinutes(30),
+                    until = impendingLowTick.plusMinutes(LOW_RECOVERY_THRESHOLD.value.toInt()),
                     predicate = { it.assumedBg.isValid() && it.assumedBg > lowThreshold + LOW_BG_SAFETY_MARGIN },
                     block = { true }
                 ) ?: false
@@ -478,7 +478,7 @@ class ApsAlgorithmImpl(
             val bgErrorAtPeak = predictedBgAtPeak - targetBg // < 0 if too low
 
             // Low protection for "lower than target" situations
-            if (bgErrorAtPeak < BgDelta.ZERO) {
+            if (bgErrorAtPeak < LOW_CORRECTION_THRESHOLD) {
                 // Prediction is too low under normal basal;
                 // Either BG is falling, or, raising too slow -> Lower basal rate and defer meals
 
@@ -564,6 +564,10 @@ class ApsAlgorithmImpl(
                 // 2) Future carbs should be covered by deferred boluses
 
                 // So strategy is, just correct the BG error, taking into account the IOB.
+                if (bgErrorAtPeak <= HIGH_CORRECTION_THRESHOLD) {
+                    CalculationResult.normalSafetyBasal().withMetrics(insight)
+                }
+
                 val correctionPart = bgErrorCorrectionUnits - iobAtPeak
                 val mealCorrectionBolusAmount = dueMealBolusAmount + correctionPart
 
@@ -601,8 +605,6 @@ class ApsAlgorithmImpl(
         val PRESERVE_PREDICTIONS_PAST_TIME = DEVIATION_TIME_BASE
 
         const val DEVIATION_DECAY_FACTOR_PER_TICK = 0.9
-
-        val LOW_BG_SAFETY_MARGIN = BgDelta.fromMgDl(10)
 
         suspend fun create(
             treatmentRepository: TreatmentRepository,
