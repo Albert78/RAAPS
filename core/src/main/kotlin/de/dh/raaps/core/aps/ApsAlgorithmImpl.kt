@@ -434,7 +434,8 @@ class ApsAlgorithmImpl(
             }
 
             // Expected future carbs and insulin activity
-            val insulinPeakTimeStamp = now + insulinPeak
+            val peakTick = nowTick + insulinPeakTicks
+            val insulinPeakTimeStamp = timeline.timestamp(peakTick) // The same timestamp as in prediction model
             val futureActiveCarbsAtPeak = carbsInsulinCalculator.cob(meals = meals, timestamp = insulinPeakTimeStamp, includeFutureMeals = true)
 
             val artificialNormalBasalDoses = calculateArtificialNormalBasalDoses()
@@ -448,7 +449,8 @@ class ApsAlgorithmImpl(
                 timestamp = now,
                 dia = dia,
                 peak = insulinPeak
-            ) - carbsInsulinCalculator.iob(
+            )
+            val normalBasalIOBNow = carbsInsulinCalculator.iob(
                 insulinDoses = artificialNormalBasalDoses,
                 timestamp = now,
                 dia = dia,
@@ -460,7 +462,8 @@ class ApsAlgorithmImpl(
                 timestamp = insulinPeakTimeStamp,
                 dia = dia,
                 peak = insulinPeak
-            ) - carbsInsulinCalculator.iob(
+            )
+            val normalBasalIOBAtPeak = carbsInsulinCalculator.iob(
                 insulinDoses = artificialNormalBasalDoses,
                 timestamp = insulinPeakTimeStamp,
                 dia = dia,
@@ -550,7 +553,7 @@ class ApsAlgorithmImpl(
                 .coerceAtLeast(InsulinAmount.ZERO)
 
             // Simplified calculation. We mix remaining insulin/carbs activity of now and peak.
-            val futureInsulin = iobAtPeak + dueMealBolusAmount + sumFutureDeferredBoluses
+            val futureInsulin = iobAtPeak - normalBasalIOBAtPeak + dueMealBolusAmount + sumFutureDeferredBoluses
             if (futureInsulin + InsulinAmount.EPSILON >= insulinEquivalentOfCarbsAtPeak + bgErrorCorrectionUnits) {
                 // Meals and BG error are covered by IOB/planned boluses.
                 // Return to normal basal rate and wait for insulin/carbs to act.
@@ -574,12 +577,27 @@ class ApsAlgorithmImpl(
                 // 1) Insulin and carbs activity can be so different in time that we would risk low BG
                 // 2) Future carbs should be covered by deferred boluses
 
-                // So strategy is, just correct the BG error, taking into account the IOB.
                 if (bgErrorAtPeak <= HIGH_CORRECTION_THRESHOLD) {
                     CalculationResult.normalSafetyBasal().withMetrics(insight)
                 }
 
-                val correctionPart = bgErrorCorrectionUnits - iobAtPeak
+                // Strategy is, just correct the BG error and take into account the net IOB.
+                var correctionPart = bgErrorCorrectionUnits
+
+                // We must be careful with IOB:
+                val netIobAtPeak = iobAtPeak - normalBasalIOBAtPeak
+                if (netIobAtPeak > InsulinAmount.ZERO) {
+                    // A positive IOB can be added completely, it will correct the BG eventually
+                    correctionPart -= netIobAtPeak
+                } else {
+                    // A negative IOB means a basal deficit; we must not just add the complete deficit
+                    // to the correction, the activity curve will be too steep. Instead, we add
+                    // a part of the negative IOB.
+                    // A more accurate strategy would be to find the lowest future BG under the
+                    // influence of our IOB correction and to adapt the correction part, if we come
+                    // too low.
+                    correctionPart -= netIobAtPeak.times(0.5)
+                }
                 val mealCorrectionBolusAmount = dueMealBolusAmount + correctionPart
 
                 // We assume that the current blood glucose deviation is primarily caused by faster

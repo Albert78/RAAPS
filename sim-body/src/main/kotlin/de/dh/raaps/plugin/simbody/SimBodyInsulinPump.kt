@@ -48,9 +48,9 @@ class SimBodyInsulinPump(
 
     companion object {
         const val SIM_PUMP_MIN_BASAL_RATE = 0.0
-        val SIM_PUMP_MIN_BASAL_INCREMENT = InsulinAmount(0.05)
-        val SIM_PUMP_MIN_BOLUS_INCREMENT = InsulinAmount(0.05)
-        val SIM_PUMP_MAX_BOLUS_SIZE = InsulinAmount(25.0)
+        val SIM_PUMP_MIN_BASAL_INCREMENT = InsulinAmount(0.01)
+        val SIM_PUMP_MIN_BOLUS_INCREMENT = InsulinAmount(0.01)
+        val SIM_PUMP_MAX_BOLUS_SIZE = InsulinAmount(40.0)
     }
 
     override val hardwareInformation: StateFlow<HardwareInformation?> = MutableStateFlow(
@@ -164,6 +164,7 @@ class SimBodyInsulinPump(
         )
         _bolusEvents.emit(BolusEvent.Started(bolusId, amount, startTimestamp))
 
+        // TODO: deliverBolus should return a pump status which can be used with a PumpCommandException
         if (device.deliverBolus(amount)) {
             val completedTimestamp = Timestamp.now()
             _bolusStatus.value = BolusStatus(

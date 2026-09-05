@@ -268,7 +268,7 @@ class SimBodyPumpDevice(
         if (isBroken.value || hasHardwareError.value || isOccluded.value || !isPrimed.value) {
             return false
         }
-        if (amount < SimBodyInsulinPump.SIM_PUMP_MIN_BOLUS_INCREMENT) {
+        if (amount < SimBodyInsulinPump.SIM_PUMP_MIN_BOLUS_INCREMENT - InsulinAmount.EPSILON) {
             return false
         }
         if (reservoirLevel.value < amount) {
