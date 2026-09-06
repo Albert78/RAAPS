@@ -315,22 +315,20 @@ fun BolusItem(
 
 @Composable
 fun StatusBadge(status: InsulinStatus) {
+    if (status == InsulinStatus.Confirmed) return
+
     val (text, containerColor, contentColor) = when (status) {
         InsulinStatus.Scheduled -> Triple(
             stringResource(R.string.bolus_status_scheduled),
             MaterialTheme.colorScheme.tertiaryContainer,
             MaterialTheme.colorScheme.onTertiaryContainer
         )
-        InsulinStatus.Confirmed -> Triple(
-            stringResource(R.string.bolus_status_confirmed),
-            MaterialTheme.colorScheme.primaryContainer,
-            MaterialTheme.colorScheme.onPrimaryContainer
-        )
         InsulinStatus.Cancelled -> Triple(
             stringResource(R.string.bolus_status_cancelled),
             MaterialTheme.colorScheme.errorContainer,
             MaterialTheme.colorScheme.onErrorContainer
         )
+        InsulinStatus.Confirmed -> return
     }
 
     Surface(

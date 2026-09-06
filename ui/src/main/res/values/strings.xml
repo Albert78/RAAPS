@@ -250,10 +250,6 @@
 
     <string name="drawer_header_title">RAAPS</string>
     <string name="menu_meals_label">Mahlzeiten</string>
-    <string name="menu_bolus_history_label">Bolus-History</string>
-    <string name="bolus_status_scheduled">Geplant</string>
-    <string name="bolus_status_confirmed">Bestätigt</string>
-    <string name="bolus_status_cancelled">Abgesetzt</string>
     <string name="menu_food_database_label">Essensdatenbank</string>
     <string name="menu_system_control_label">Systemsteuerung</string>
     <string name="menu_alarms_label">Warnungen und Alarme</string>
@@ -281,8 +277,12 @@
     <string name="cd_add_meal">Mahlzeit hinzufügen</string>
     <string name="meal_entry_grams_format">%1$.1f g KH</string>
 
-    <string name="bolus_history_screen_title">Bolus-History</string>
     <string name="food_database_screen_title">Essensdatenbank</string>
+
+    <string name="bolus_history_screen_title">Bolus-History</string>
+    <string name="menu_bolus_history_label">Bolus-History</string>
+    <string name="bolus_status_scheduled">Geplant</string>
+    <string name="bolus_status_cancelled">Abgebrochen</string>
     <string name="bolus_history_empty_list">Keine Bolus-Einträge vorhanden</string>
     <string name="bolus_history_add_manual_title">Pen-Bolus</string>
     <string name="bolus_history_edit_manual_title">Bolus bearbeiten</string>
@@ -292,6 +292,7 @@
     <string name="bolus_category_meal">Mahlzeit</string>
     <string name="bolus_origin_pump">Pumpe</string>
     <string name="bolus_origin_manual">Manuell</string>
+
     <string name="system_control_screen_title">Systemsteuerung</string>
     <string name="system_control_tab_cgm">CGM</string>
     <string name="system_control_cgm_source_label">Quelle:</string>
