@@ -272,7 +272,7 @@ class ApsAlgorithmImpl(
             reasoning = CoreReasoning.INTERNAL_ERROR
         )
 
-        return try {
+        try {
             Log.d(TAG, "Algorithm is calculating...")
 
             // Move the prediction window forward. It always covers roughly our BG readings history cache
@@ -464,13 +464,15 @@ class ApsAlgorithmImpl(
                 peak = insulinPeak
             )
 
+            val netIobAtPeak = iobAtPeak - normalBasalIOBAtPeak
+
             val deferredBoluses = therapyManager.getDeferredBoluses()
             val sumDeferredBolusesAtPeak = deferredBoluses.
                 filter { it.timestamp >= insulinPeakTimeStamp }.
                 fold(InsulinAmount.ZERO) { acc, next -> acc + next.amount }
 
             insight = insight.copy(
-                futureActiveInsulin = iobAtPeak + sumDeferredBolusesAtPeak,
+                futureActiveInsulin = netIobAtPeak + sumDeferredBolusesAtPeak,
                 futureActiveCarbs = futureActiveCarbsAtPeak
             )
 
@@ -550,18 +552,17 @@ class ApsAlgorithmImpl(
                 .coerceAtLeast(InsulinAmount.ZERO)
 
             // Simplified calculation. We mix remaining insulin/carbs activity of now and peak.
-            val netIobAtPeak = iobAtPeak - normalBasalIOBAtPeak
             val futureInsulin = netIobAtPeak + dueMealBolusAmount + sumFutureDeferredBoluses
             if (futureInsulin + InsulinAmount.EPSILON >= insulinEquivalentOfCarbsAtPeak + bgErrorCorrectionUnits) {
                 // Meals and BG error are covered by IOB/planned boluses.
                 // Return to normal basal rate and wait for insulin/carbs to act.
-                if (dueDeferredBoluses.isEmpty()) {
-                    return CalculationResult.normalSafetyBasal().withMetrics(insight)
+                return if (dueDeferredBoluses.isEmpty()) {
+                    CalculationResult.normalSafetyBasal().withMetrics(insight)
                 } else {
                     // Administer due deferred bolus.
                     // It might be that this is too much for the COB but this is in the
                     // responsibility of the user.
-                    return CalculationResult.mealBolus(
+                    CalculationResult.mealBolus(
                         bolusAmount = dueMealBolusAmount,
                         handledDeferredBoluses = dueDeferredBoluses,
                     ).withMetrics(insight)
