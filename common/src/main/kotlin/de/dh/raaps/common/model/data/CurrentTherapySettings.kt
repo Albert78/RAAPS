@@ -14,4 +14,21 @@ data class CurrentTherapySettings(
     val targetBgOverride: BgValue? = null,
     val lowThresholdOverride: BgValue? = null,
     val adjustmentHint: String? = null,
-)
+) {
+    /**
+     * Calculates and caches the effective insulin profile considering [insulinAdjustmentPercentage].
+     * Evaluated lazily once per instance.
+     */
+    val effectiveInsulinProfile: InsulinProfile by lazy {
+        if (insulinAdjustmentPercentage == 0) {
+            insulinProfile
+        } else {
+            val factor = (100.0 + insulinAdjustmentPercentage) / 100.0
+            insulinProfile.copy(
+                basalBlocks = insulinProfile.basalBlocks.map { it.copy(amount = it.amount * factor) },
+                crBlocks = insulinProfile.crBlocks.map { it.copy(amount = it.amount / factor) },
+                isfBlocks = insulinProfile.isfBlocks.map { it.copy(amount = (it.amount / factor)) }
+            )
+        }
+    }
+}

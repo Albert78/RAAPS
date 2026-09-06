@@ -28,6 +28,8 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
@@ -104,11 +106,14 @@ class TherapyManager(
         pumpManager.issueCommand(PumpCommand.SyncHistory)
 
         scope.launch {
-            currentTherapySettingsFlow.collect { settings ->
-                pumpManager.issueCommand(
-                    PumpCommand.SetProfile(settings.insulinProfile)
-                )
-            }
+            currentTherapySettingsFlow
+                .map { it.effectiveInsulinProfile }
+                .distinctUntilChanged()
+                .collect { effectiveProfile ->
+                    pumpManager.issueCommand(
+                        PumpCommand.SetProfile(effectiveProfile)
+                    )
+                }
         }
     }
 
@@ -123,10 +128,8 @@ class TherapyManager(
      */
     suspend fun getBasalPerHour(timestamp: Timestamp): InsulinAmount {
         val settings = getCurrentTherapySettings()
-        val profile = settings.insulinProfile
-        val baseBasal = profile.basalBlocks.getAmountForMinute(timestamp.minutesSinceMidnight())
-        val factor = (100.0 + settings.insulinAdjustmentPercentage) / 100.0
-        return InsulinAmount(baseBasal * factor)
+        val baseBasal = settings.effectiveInsulinProfile.basalBlocks.getAmountForMinute(timestamp.minutesSinceMidnight())
+        return InsulinAmount(baseBasal)
     }
 
     /**
@@ -136,10 +139,7 @@ class TherapyManager(
      */
     suspend fun getCrFactor(timestamp: Timestamp): Double {
         val settings = getCurrentTherapySettings()
-        val profile = settings.insulinProfile
-        val baseCr = profile.crBlocks.getAmountForMinute(timestamp.minutesSinceMidnight())
-        val factor = (100.0 + settings.insulinAdjustmentPercentage) / 100.0
-        return baseCr / factor
+        return settings.effectiveInsulinProfile.crBlocks.getAmountForMinute(timestamp.minutesSinceMidnight())
     }
 
     /**
@@ -150,10 +150,8 @@ class TherapyManager(
      */
     suspend fun getIsfFactor(timestamp: Timestamp): BgDelta {
         val settings = getCurrentTherapySettings()
-        val profile = settings.insulinProfile
-        val amount = profile.isfBlocks.getAmountForMinute(timestamp.minutesSinceMidnight())
-        val factor = (100.0 + settings.insulinAdjustmentPercentage) / 100.0
-        return BgDelta.fromMgDl((amount / factor).toInt())
+        val amount = settings.effectiveInsulinProfile.isfBlocks.getAmountForMinute(timestamp.minutesSinceMidnight())
+        return BgDelta.fromMgDl(amount.toInt())
     }
 
     suspend fun getBgSettings(timestamp: Timestamp = Timestamp.now()): Pair<BgValue, BgValue> {
