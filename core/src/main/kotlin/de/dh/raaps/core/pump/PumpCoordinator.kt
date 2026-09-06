@@ -34,6 +34,7 @@ enum class PumpCoordinatorState {
  * Commands that can be sent to the pump.
  */
 sealed class PumpCommand {
+    object RefreshStatus : PumpCommand()
     object SyncHistory : PumpCommand()
     data class SetProfile(val profile: InsulinProfile) : PumpCommand()
     data class SetTempBasal(val percent: Int, val durationHours: Int) : PumpCommand()
@@ -342,6 +343,9 @@ class PumpCoordinator(
 
     private suspend fun executeOnPump(command: PumpCommand) {
         when (command) {
+            is PumpCommand.RefreshStatus -> {
+                pump.refreshStatus()
+            }
             is PumpCommand.SyncHistory -> {
                 pump.syncHistory()
             }

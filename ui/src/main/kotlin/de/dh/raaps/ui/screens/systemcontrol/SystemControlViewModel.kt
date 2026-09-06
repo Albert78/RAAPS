@@ -11,6 +11,7 @@ import de.dh.raaps.common.model.data.GlucoseUnit
 import de.dh.raaps.common.model.data.Timestamp
 import de.dh.raaps.core.SystemRegistry
 import de.dh.raaps.core.aps.CoreInsight
+import de.dh.raaps.core.pump.PumpCommand
 import de.dh.raaps.core.pump.PumpJob
 import de.dh.raaps.glucoseUnit
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -116,7 +117,7 @@ class SystemControlViewModel(
     }
 
     fun refreshPumpStatus() {
-        pumpManager.wakeup()
+        pumpManager.issueCommand(PumpCommand.RefreshStatus)
     }
 
     private data class GlucoseUiData(

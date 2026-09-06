@@ -326,6 +326,7 @@
     <string name="system_control_pump_jobs_empty">Keine ausstehenden Jobs</string>
     <string name="system_control_pump_job_cancel">Abbrechen</string>
     <string name="system_control_plugin_title">Plugin</string>
+    <string name="system_control_pump_job_type_refresh_status">Status aktualisieren</string>
     <string name="system_control_pump_job_type_history_sync">History übertragen</string>
     <string name="system_control_pump_job_type_bolus">Bolus: %1$s I.E.</string>
     <string name="system_control_pump_job_type_temp_basal">Temp-Basal: %1$d%%</string>

@@ -28,11 +28,13 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalLocale
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import de.dh.raaps.common.model.InsulinAmount
 import de.dh.raaps.common.model.data.Timestamp
 import de.dh.raaps.core.pump.JobErrorCode
 import de.dh.raaps.core.pump.PumpCommand
@@ -41,9 +43,6 @@ import de.dh.raaps.ui.R
 import de.dh.raaps.ui.common.theme.AppTheme
 import java.text.SimpleDateFormat
 import java.util.Date
-import java.util.Locale
-import androidx.compose.ui.platform.LocalLocale
-import de.dh.raaps.common.model.InsulinAmount
 
 @Composable
 fun PumpTabContent(
@@ -242,6 +241,7 @@ fun PumpJobsCard(uiState: SystemControlUiState, onCancelJob: (String) -> Unit) {
                     )
                     Spacer(modifier = Modifier.width(8.dp))
                     val commandText = when (val cmd = job.command) {
+                        is PumpCommand.RefreshStatus -> stringResource(id = R.string.system_control_pump_job_type_refresh_status)
                         is PumpCommand.SyncHistory -> stringResource(id = R.string.system_control_pump_job_type_history_sync)
                         is PumpCommand.DeliverBolus -> stringResource(id = R.string.system_control_pump_job_type_bolus, cmd.amount.iu)
                         is PumpCommand.SetTempBasal -> stringResource(id = R.string.system_control_pump_job_type_temp_basal, cmd.percent)
