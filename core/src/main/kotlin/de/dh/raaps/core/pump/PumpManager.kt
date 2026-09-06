@@ -5,6 +5,8 @@ import de.dh.raaps.common.model.InsulinHistory
 import de.dh.raaps.common.model.InsulinPump
 import kotlinx.coroutines.flow.StateFlow
 
+import kotlin.time.Duration
+
 /**
  * Central manager for insulin pump interactions and status monitoring. Pump manager and [PumpCoordinator]
  * have a similar job but [PumpCoordinator] is bound to a pump connection, while [PumpManager]
@@ -45,9 +47,9 @@ interface PumpManager {
     fun cancelJobs(predicate: (PumpJob) -> Boolean)
 
     /**
-     * Waits until all pending pump jobs are completed.
+     * Waits until all pending pump jobs are completed or until the timeout expires.
      */
-    suspend fun waitForJobsOrError()
+    suspend fun waitForJobsOrError(timeout: Duration = PumpCoordinator.DEFAULT_WAIT_FOR_JOBS_TIMEOUT)
 
     /**
      * Explicitly wakes up the pump connection to process pending jobs or refresh status.

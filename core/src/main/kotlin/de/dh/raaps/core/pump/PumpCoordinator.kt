@@ -20,8 +20,11 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withTimeoutOrNull
 import java.util.UUID
+import kotlin.time.Duration
 import kotlin.time.Duration.Companion.milliseconds
+import kotlin.time.Duration.Companion.seconds
 
 enum class PumpCoordinatorState {
     Idle, Running, Error
@@ -182,12 +185,17 @@ class PumpCoordinator(
         }
     }
 
-    suspend fun waitForJobsOrError() {
+    suspend fun waitForJobsOrError(timeout: Duration = DEFAULT_WAIT_FOR_JOBS_TIMEOUT) {
         // Wait for Idle or Error and all jobs processed (or error in communication)
-        combine(pumpCoordinatorState, pendingJobs, pumpCommunicationErrorSince) { state, jobs, errorSince ->
-            (state == PumpCoordinatorState.Idle || state == PumpCoordinatorState.Error) &&
-                    (jobs.none { it.isReady() } || errorSince.isValid())
-        }.first { it }
+        val completed = withTimeoutOrNull(timeout) {
+            combine(pumpCoordinatorState, pendingJobs, pumpCommunicationErrorSince) { state, jobs, errorSince ->
+                (state == PumpCoordinatorState.Idle || state == PumpCoordinatorState.Error) &&
+                        (jobs.none { it.isReady() } || errorSince.isValid())
+            }.first { it }
+        }
+        if (completed == null) {
+            Log.w(TAG, "waitForJobsOrError timed out after $timeout while waiting for pump jobs to complete.")
+        }
     }
 
     private suspend fun sync(): Boolean {
@@ -441,6 +449,7 @@ class PumpCoordinator(
 
     companion object {
         val TAG = PumpCoordinator::class.simpleName
+        val DEFAULT_WAIT_FOR_JOBS_TIMEOUT: Duration = 30.seconds
         private val HEARTBEAT_INTERVAL = Minutes(15)
         private const val RETRY_INTERVAL_MS: Long = 10_000
         private const val MAX_CONNECTION_RETRIES = 3

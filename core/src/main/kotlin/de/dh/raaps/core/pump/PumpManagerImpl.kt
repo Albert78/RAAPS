@@ -17,6 +17,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.plus
+import kotlin.time.Duration
 
 /**
  * Implementation of [PumpManager].
@@ -108,8 +109,8 @@ class PumpManagerImpl(
         pumpCoordinator?.cancelJobs(predicate)
     }
 
-    override suspend fun waitForJobsOrError() {
-        pumpCoordinator?.waitForJobsOrError()
+    override suspend fun waitForJobsOrError(timeout: Duration) {
+        pumpCoordinator?.waitForJobsOrError(timeout)
     }
 
     override fun wakeup() {
