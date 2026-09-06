@@ -25,13 +25,13 @@ import de.dh.raaps.core.repository.TreatmentRepository
 import kotlin.math.ceil
 
 class ApsAlgorithmImpl(
-    val timeline: Timeline,
-    val treatmentRepository: TreatmentRepository,
-    val sampledBgReadings: SampledBgReadings,
-    val history: RecentBgReadingsHistory,
-    val predictionModel: PredictionModel,
-    val carbsInsulinCalculator: CarbsInsulinCalculator,
-    val therapyManager: TherapyManager
+    private val timeline: Timeline,
+    private val treatmentRepository: TreatmentRepository,
+    private val sampledBgReadings: SampledBgReadings,
+    private val history: RecentBgReadingsHistory,
+    private val predictionModel: PredictionModel,
+    private val carbsInsulinCalculator: CarbsInsulinCalculator,
+    private val therapyManager: TherapyManager
 ): ApsAlgorithm {
     // --- Time-based extensions for Tick to provide a Timestamp-like API ---
     private fun Tick.plusMinutes(minutes: Int): Tick = this + (minutes / timeline.tickDuration.value.toInt())
@@ -108,51 +108,53 @@ class ApsAlgorithmImpl(
      */
     private inner class BolusCorrectionCalculatorImpl : BolusCorrectionCalculator {
         override suspend fun calculateBolusProjections(mealTimestamp: Timestamp): BolusProjections {
+            val assumedBg = getAssumedBg(mealTimestamp)
+            if (assumedBg.isInvalid()) {
+                return BolusProjections()
+            }
+            val historyLimit = mealTimestamp.minusHours(METABOLIC_EVENTS_HISTORY_HOURS)
+            val insulinHistory = treatmentRepository.getInsulinApplications(from = historyLimit)
+            val mealsHistory = treatmentRepository.getMeals(from = historyLimit)
+
+            val settings = therapyManager.getCurrentTherapySettings()
+            val dia = settings.insulinProfile.dia
+            val peak = settings.insulinProfile.peak
+            val lowThreshold = therapyManager.getBgSettings().second
+
             val mealTimeTick = timeline.tick(mealTimestamp)
-            return predictionModel.withTickState(mealTimeTick) { state ->
-                val historyLimit = mealTimestamp.minusHours(METABOLIC_EVENTS_HISTORY_HOURS)
-                val insulinHistory = treatmentRepository.getInsulinApplications(from = historyLimit)
-                val mealsHistory = treatmentRepository.getMeals(from = historyLimit)
+            val impendingLow = predictionModel.findNext(
+                startAt = mealTimeTick + 1,
+                until = mealTimeTick.plusMinutes(BOLUS_CALCULATOR_LOW_PREDICTION_LOOKAHEAD.value.toInt()),
+                predicate = { it.assumedBg.isValid() && it.assumedBg < lowThreshold },
+                block = { ProjectedBg(bg = it.assumedBg, timestamp = timeline.timestamp(it.tick)) }
+            )
 
-                val settings = therapyManager.getCurrentTherapySettings()
-                val dia = settings.insulinProfile.dia
-                val peak = settings.insulinProfile.peak
-                val lowThreshold = therapyManager.getBgSettings().second
+            val projectedIob = carbsInsulinCalculator.iob(
+                insulinDoses = insulinHistory.toActiveDoses(excludeBasal = true),
+                timestamp = mealTimestamp,
+                dia = dia,
+                peak = peak
+            )
+            val projectedCob = carbsInsulinCalculator.cob(
+                meals = mealsHistory,
+                timestamp = mealTimestamp,
+                includeFutureMeals = false
+            )
+            val sumFutureCarbs = mealsHistory.sumOf { if (it.timestamp > mealTimestamp) it.carbGrams else 0.0 }
+            val deferredBoluses = treatmentRepository.getDeferredBoluses()
+            val sumFutureDeferredBolus = deferredBoluses
+                .fold(InsulinAmount.ZERO) { acc, next -> acc + next.amount }
 
-                val impendingLow = predictionModel.findNextWithLock(
-                    startAt = mealTimeTick + 1,
-                    until = mealTimeTick.plusMinutes(BOLUS_CALCULATOR_LOW_PREDICTION_LOOKAHEAD.value.toInt()),
-                    predicate = { it.assumedBg.isValid() && it.assumedBg < lowThreshold },
-                    block = { ProjectedBg(bg = it.assumedBg, timestamp = timeline.timestamp(it.tick)) }
-                )
-
-                val projectedIob = carbsInsulinCalculator.iob(
-                    insulinDoses = insulinHistory.toActiveDoses(excludeBasal = true),
-                    timestamp = mealTimestamp,
-                    dia = dia,
-                    peak = peak
-                )
-                val projectedCob = carbsInsulinCalculator.cob(
-                    meals = mealsHistory,
-                    timestamp = mealTimestamp,
-                    includeFutureMeals = false
-                )
-                val sumFutureCarbs = mealsHistory.sumOf { if (it.timestamp > mealTimestamp) it.carbGrams else 0.0 }
-                val deferredBoluses = treatmentRepository.getDeferredBoluses()
-                val sumFutureDeferredBolus = deferredBoluses
-                    .fold(InsulinAmount.ZERO) { acc, next -> acc + next.amount }
-
-                BolusProjections(
-                    timestamp = mealTimestamp,
-                    bg = state.assumedBg,
-                    isProjected = mealTimestamp > Timestamp.now(),
-                    impendingLow = impendingLow,
-                    iob = projectedIob,
-                    cob = projectedCob,
-                    futureCarbs = sumFutureCarbs,
-                    deferredBolusAmount = sumFutureDeferredBolus
-                )
-            } ?: BolusProjections()
+            return BolusProjections(
+                timestamp = mealTimestamp,
+                bg = assumedBg,
+                isProjected = mealTimestamp > Timestamp.now(),
+                impendingLow = impendingLow,
+                iob = projectedIob,
+                cob = projectedCob,
+                futureCarbs = sumFutureCarbs,
+                deferredBolusAmount = sumFutureDeferredBolus
+            )
         }
 
         override suspend fun calculateBolusParts(

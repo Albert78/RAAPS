@@ -121,7 +121,7 @@ class Core(
         onCoreStateChanged()
     }
 
-    suspend fun initialize() = mutex.withLock {
+    suspend fun initialize() {
         busyWork {
             Log.d(TAG, "Initializing...")
             setCoreState(CoreState.Initializing)
@@ -139,9 +139,9 @@ class Core(
         }
     }
 
-    internal suspend fun processCalculation() = mutex.withLock {
+    internal suspend fun processCalculation() {
         val currentCoreState = coreState
-        if (currentCoreState !is CoreState.Active) return@withLock
+        if (currentCoreState !is CoreState.Active) return
 
         // This is the outer part of the process tick.
         // We acquire the wake lock, we acquire the therapy manager's treatment lock,
@@ -181,7 +181,7 @@ class Core(
                     }
                     onClearRecommendations(treatmentLock)
 
-                    val result = calculationAlgorithm.recalculate()
+                    val result = doRecalculate()
 
                     val insight = result.metrics ?: CoreInsight(
                         timestamp = now,
@@ -299,6 +299,10 @@ class Core(
                 }
             }
         }
+    }
+
+    internal suspend fun doRecalculate(): CalculationResult = mutex.withLock {
+        return calculationAlgorithm.recalculate()
     }
 
     /**
