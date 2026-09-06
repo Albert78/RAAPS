@@ -1,6 +1,5 @@
 package de.dh.raaps.ui.screens.systemcontrol
 
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -31,9 +30,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import de.dh.raaps.common.model.data.Timestamp
+import de.dh.raaps.core.pump.JobErrorCode
 import de.dh.raaps.core.pump.PumpCommand
 import de.dh.raaps.core.pump.PumpJob
 import de.dh.raaps.ui.R
@@ -68,7 +69,7 @@ fun PumpTabContent(
 
         if (uiState.pumpPluginUiProvider != null) {
             Spacer(modifier = Modifier.height(24.dp))
-            SectionHeader(title = "Plugin")
+            SectionHeader(title = stringResource(id = R.string.system_control_plugin_title))
             Spacer(modifier = Modifier.height(8.dp))
             uiState.pumpPluginUiProvider.PumpControlSection()
         }
@@ -177,8 +178,7 @@ fun PumpActionsCard(
                 .fillMaxWidth()
         ) {
             Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceEvenly
+                modifier = Modifier.fillMaxWidth()
             ) {
                 val isSuspended = uiState.pumpStatus?.pumpSuspended == true
                 ActionButton(
@@ -186,18 +186,21 @@ fun PumpActionsCard(
                     label = if (isSuspended) stringResource(id = R.string.system_control_pump_action_resume)
                             else stringResource(id = R.string.system_control_pump_action_suspend),
                     onClick = { /* TODO: Implement Suspend/Resume */ },
-                    enabled = uiState.pumpConnected
+                    enabled = uiState.pumpConnected,
+                    modifier = Modifier.weight(1f)
                 )
                 ActionButton(
                     icon = Icons.Default.Sync,
                     label = stringResource(id = R.string.system_control_pump_action_sync),
                     onClick = onRefreshPumpStatus,
-                    enabled = uiState.pumpConnected
+                    enabled = uiState.pumpConnected,
+                    modifier = Modifier.weight(1f)
                 )
                 ActionButton(
                     icon = Icons.Default.Settings,
                     label = stringResource(id = R.string.system_control_pump_action_manage),
-                    onClick = onNavigateToPumpManagement
+                    onClick = onNavigateToPumpManagement,
+                    modifier = Modifier.weight(1f)
                 )
             }
         }
@@ -230,11 +233,12 @@ fun PumpJobsCard(uiState: SystemControlUiState, onCancelJob: (String) -> Unit) {
                         .padding(vertical = 4.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
+                    val hasError = job.lastError != null
                     Icon(
                         imageVector = Icons.Default.Info,
                         contentDescription = null,
                         modifier = Modifier.size(16.dp),
-                        tint = MaterialTheme.colorScheme.secondary
+                        tint = if (hasError) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.secondary
                     )
                     Spacer(modifier = Modifier.width(8.dp))
                     val commandText = when (val cmd = job.command) {
@@ -245,11 +249,35 @@ fun PumpJobsCard(uiState: SystemControlUiState, onCancelJob: (String) -> Unit) {
                         is PumpCommand.CancelTempBasal -> stringResource(id = R.string.system_control_pump_job_type_cancel_temp_basal)
                         is PumpCommand.CancelBolus -> stringResource(id = R.string.system_control_pump_job_type_cancel_bolus)
                     }
-                    Text(
-                        text = commandText,
-                        style = MaterialTheme.typography.bodyMedium,
-                        modifier = Modifier.weight(1f)
-                    )
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                            text = commandText,
+                            style = MaterialTheme.typography.bodyMedium
+                        )
+                        job.lastError?.let { error ->
+                            val errorText = when (error) {
+                                JobErrorCode.Expired -> stringResource(id = R.string.system_control_pump_job_error_expired)
+                                is JobErrorCode.ConnectionFailed -> stringResource(
+                                    id = R.string.system_control_pump_job_error_connection_failed,
+                                    error.message?.let { ": $it" } ?: ""
+                                )
+                                is JobErrorCode.CommandFailed -> stringResource(
+                                    id = R.string.system_control_pump_job_error_command_failed,
+                                    error.status.name,
+                                    error.message?.let { ": $it" } ?: ""
+                                )
+                                is JobErrorCode.TechnicalError -> stringResource(
+                                    id = R.string.system_control_pump_job_error_technical,
+                                    error.message?.let { ": $it" } ?: ""
+                                )
+                            }
+                            Text(
+                                text = errorText,
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MaterialTheme.colorScheme.error
+                            )
+                        }
+                    }
                     IconButton(
                         onClick = { onCancelJob(job.id) },
                         modifier = Modifier.size(24.dp)
@@ -292,10 +320,16 @@ private fun StatusItem(icon: ImageVector, label: String, value: String) {
 }
 
 @Composable
-private fun ActionButton(icon: ImageVector, label: String, onClick: () -> Unit, enabled: Boolean = true) {
+private fun ActionButton(
+    icon: ImageVector,
+    label: String,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    enabled: Boolean = true
+) {
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
-        modifier = Modifier.padding(4.dp)
+        modifier = modifier.padding(4.dp)
     ) {
         IconButton(
             onClick = onClick,
@@ -311,6 +345,7 @@ private fun ActionButton(icon: ImageVector, label: String, onClick: () -> Unit, 
         Text(
             text = label,
             style = MaterialTheme.typography.labelSmall,
+            textAlign = TextAlign.Center,
             color = if (enabled) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f)
         )
     }

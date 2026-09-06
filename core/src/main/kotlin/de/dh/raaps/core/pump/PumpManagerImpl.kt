@@ -172,7 +172,7 @@ class PumpManagerImpl(
                 addIssue(PumpIssue.CommandFailed(jobErrorCode.status))
             }
             is JobErrorCode.TechnicalError -> {
-                Log.e(TAG, "Pump technical error: ${jobErrorCode.cause} for job $job")
+                Log.e(TAG, "Pump technical error: ${jobErrorCode.message} for job $job")
                 addIssue(PumpIssue.Other)
             }
         }

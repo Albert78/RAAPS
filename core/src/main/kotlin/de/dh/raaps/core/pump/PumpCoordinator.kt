@@ -48,7 +48,8 @@ data class PumpJob(
     val createdAt: Timestamp = Timestamp.now(),
     val expiresAt: Timestamp? = null,
     val retryCount: Int = 0,
-    val nextAttemptAt: Timestamp = createdAt
+    val nextAttemptAt: Timestamp = createdAt,
+    val lastError: JobErrorCode? = null
 ) {
     fun isExpired(): Boolean = expiresAt?.let { it < Timestamp.now() } ?: false
     fun isReady(): Boolean = nextAttemptAt <= Timestamp.now()
@@ -56,9 +57,9 @@ data class PumpJob(
 
 sealed interface JobErrorCode {
     data object Expired : JobErrorCode
-    data class ConnectionFailed(val cause: Throwable? = null) : JobErrorCode
-    data class CommandFailed(val status: PumpStatus, val cause: Throwable? = null) : JobErrorCode
-    data class TechnicalError(val cause: Throwable? = null) : JobErrorCode
+    data class ConnectionFailed(val message: String? = null) : JobErrorCode
+    data class CommandFailed(val status: PumpStatus, val message: String? = null) : JobErrorCode
+    data class TechnicalError(val message: String? = null) : JobErrorCode
 }
 
 /**
@@ -224,7 +225,10 @@ class PumpCoordinator(
         val expired = _pendingJobs.value.filter { it.isExpired() }
         if (expired.isNotEmpty()) {
             _pendingJobs.update { it - expired.toSet() }
-            expired.forEach { onJobError(it, JobErrorCode.Expired) }
+            expired.forEach { job ->
+                val expiredJob = job.copy(lastError = JobErrorCode.Expired)
+                onJobError(expiredJob, JobErrorCode.Expired)
+            }
         }
 
         // Execute jobs
@@ -236,18 +240,24 @@ class PumpCoordinator(
             val success = tryExecuteJobWithRetries(job)
 
             if (success) {
-                _pendingJobs.update { it - job }
+                _pendingJobs.update { pending -> pending.filterNot { it.id == job.id } }
             } else {
                 if (_pumpCoordinatorState.value == PumpCoordinatorState.Error) {
                     return false
                 }
                 // Schedule for 1 minute later
-                val updatedJob = job.copy(
-                    retryCount = job.retryCount + 1,
-                    nextAttemptAt = Timestamp.now().plusMinutes(1)
-                )
-
-                _pendingJobs.update { (it - job) + updatedJob }
+                _pendingJobs.update { pending ->
+                    pending.map { j ->
+                        if (j.id == job.id) {
+                            j.copy(
+                                retryCount = j.retryCount + 1,
+                                nextAttemptAt = Timestamp.now().plusMinutes(1)
+                            )
+                        } else {
+                            j
+                        }
+                    }
+                }
                 // Return with pending jobs in the queue
                 return false
             }
@@ -264,11 +274,15 @@ class PumpCoordinator(
                 executeOnPump(command)
                 _lastConnectionTime.value = Timestamp.now()
                 return true
-            } catch (_: PumpConnectionException) {
+            } catch (e: PumpConnectionException) {
                 if (connectionRetryCount < MAX_CONNECTION_RETRIES) {
                     connectionRetryCount++
                     delay(RETRY_INTERVAL_MS.milliseconds)
                 } else {
+                    val errorCode = JobErrorCode.ConnectionFailed(e.message)
+                    val failedJob = job.copy(lastError = errorCode)
+                    _pendingJobs.update { pending -> pending.map { if (it.id == job.id) failedJob else it } }
+                    onJobError(failedJob, errorCode)
                     return false
                 }
             } catch (e: PumpCommandException) {
@@ -279,6 +293,10 @@ class PumpCoordinator(
                             busyRetryCount++
                             delay(delayMs.milliseconds)
                         } else {
+                            val errorCode = JobErrorCode.CommandFailed(status, e.message)
+                            val failedJob = job.copy(lastError = errorCode)
+                            _pendingJobs.update { pending -> pending.map { if (it.id == job.id) failedJob else it } }
+                            onJobError(failedJob, errorCode)
                             return false
                         }
                     }
@@ -291,20 +309,24 @@ class PumpCoordinator(
                     PumpStatus.TIMEOUT,
                     PumpStatus.UNKNOWN -> {
                         _pumpCoordinatorState.value = PumpCoordinatorState.Error
-                        // Since this is an unexpected situation, don't remove the job from the queue.
+                        // Since this is an unexpected situation, we don't remove the job from the queue.
                         // The user must manually remove it in the management interface.
-                        // _pendingJobs.update { pending -> pending - job }
-                        onJobError(job, JobErrorCode.CommandFailed(status, e))
+                        val errorCode = JobErrorCode.CommandFailed(status, e.message)
+                        val failedJob = job.copy(lastError = errorCode)
+                        _pendingJobs.update { pending -> pending.map { if (it.id == job.id) failedJob else it } }
+                        onJobError(failedJob, errorCode)
                         return false
                     }
                 }
             } catch (e: Exception) {
                 Log.w(TAG, "Unknown exception while executing pump job", e)
                 _pumpCoordinatorState.value = PumpCoordinatorState.Error
-                // Since this is an unexpected situation, don't remove the job from the queue.
+                // Since this is an unexpected situation, we don't remove the job from the queue.
                 // The user must manually remove it in the management interface.
-                // _pendingJobs.update { pending -> pending - job }
-                onJobError(job, JobErrorCode.TechnicalError(e))
+                val errorCode = JobErrorCode.TechnicalError(e.message)
+                val failedJob = job.copy(lastError = errorCode)
+                _pendingJobs.update { pending -> pending.map { if (it.id == job.id) failedJob else it } }
+                onJobError(failedJob, errorCode)
                 return false
             }
         }
