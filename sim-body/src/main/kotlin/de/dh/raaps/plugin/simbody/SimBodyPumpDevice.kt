@@ -1,6 +1,8 @@
 package de.dh.raaps.plugin.simbody
 
 import android.util.Log
+import de.dh.pump.PumpCommandException
+import de.dh.pump.PumpStatus
 import de.dh.raaps.common.model.InsulinAmount
 import de.dh.raaps.common.model.InsulinCategory
 import de.dh.raaps.common.model.MS_PER_DAY
@@ -260,26 +262,91 @@ class SimBodyPumpDevice(
         cleanupHistory()
     }
 
+    private fun checkGeneralErrors(commandName: String) {
+        if (isBroken.value || hasHardwareError.value) {
+            val vendorMessage = when {
+                isBroken.value -> "Pump is broken"
+                hasHardwareError.value -> "Pump hardware error"
+                else -> "Pump device error"
+            }
+            throw PumpCommandException(
+                status = PumpStatus.DEVICE_ERROR,
+                commandName = commandName,
+                vendorMessage = vendorMessage
+            )
+        }
+    }
+
+    private fun checkOcclusion(commandName: String) {
+        if (isOccluded.value) {
+            throw PumpCommandException(
+                status = PumpStatus.REJECTED,
+                commandName = commandName,
+                vendorMessage = "Occlusion detected"
+            )
+        }
+    }
+
     /**
      * Simulates insulin delivery. Reduces reservoir level and reports to BodyModel.
-     * Returns true if delivery was successful on the hardware level.
+     * Throws [PumpCommandException] if delivery fails.
      */
-    fun deliverBolus(amount: InsulinAmount): Boolean {
-        if (isBroken.value || hasHardwareError.value || isOccluded.value || !isPrimed.value) {
-            return false
+    fun deliverBolus(amount: InsulinAmount) {
+        checkGeneralErrors("deliverBolus")
+        checkOcclusion("deliverBolus")
+        if (!isPrimed.value) {
+            throw PumpCommandException(
+                status = PumpStatus.DEVICE_ERROR,
+                commandName = "deliverBolus",
+                vendorMessage = "Pump not primed"
+            )
         }
         if (amount < SimBodyInsulinPump.SIM_PUMP_MIN_BOLUS_INCREMENT - InsulinAmount.EPSILON) {
-            return false
+            throw PumpCommandException(
+                status = PumpStatus.INVALID_PARAMETER,
+                commandName = "deliverBolus",
+                vendorMessage = "Amount below minimum increment (${SimBodyInsulinPump.SIM_PUMP_MIN_BOLUS_INCREMENT.iu} IU)"
+            )
         }
         if (reservoirLevel.value < amount) {
-            return false
+            throw PumpCommandException(
+                status = PumpStatus.REJECTED,
+                commandName = "deliverBolus",
+                vendorMessage = "Insulin reservoir level (${reservoirLevel.value.iu} IU) is less than requested amount (${amount.iu} IU)"
+            )
         }
 
         deliverInternalBolus(amount, Timestamp.now(), PumpDeliveryType.Bolus)
-        return true
     }
 
+    /**
+     * Sets or clears temporary basal percentage.
+     * Throws [PumpCommandException] if updating temporary basal fails.
+     */
     fun updateTempBasalPercent(percent: Int?, durationHours: Int? = null) {
+        checkGeneralErrors("updateTempBasalPercent")
+        if ((percent != null) != (durationHours != null)) {
+            throw PumpCommandException(
+                status = PumpStatus.INVALID_PARAMETER,
+                commandName = "updateTempBasalPercent",
+                vendorMessage = "Percent and durationHours must both be specified or both be null"
+            )
+        }
+        if (percent != null && percent !in 0..500) {
+            throw PumpCommandException(
+                status = PumpStatus.INVALID_PARAMETER,
+                commandName = "updateTempBasalPercent",
+                vendorMessage = "Percent must be between 1 and 500 (was $percent)"
+            )
+        }
+        if (durationHours != null && durationHours !in 1..24) {
+            throw PumpCommandException(
+                status = PumpStatus.INVALID_PARAMETER,
+                commandName = "updateTempBasalPercent",
+                vendorMessage = "Duration must be between 1 and 24 hours (was $durationHours)"
+            )
+        }
+
         _tempBasalPercent.value = percent
         if (percent != null && durationHours != null) {
             _tempBasalExpiryMs.value = Timestamp.now().plusHours(durationHours).ms

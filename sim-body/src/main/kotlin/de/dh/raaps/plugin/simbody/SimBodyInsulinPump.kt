@@ -1,5 +1,6 @@
 package de.dh.raaps.plugin.simbody
 
+import de.dh.pump.PumpConnectionException
 import de.dh.raaps.common.model.BasalStatus
 import de.dh.raaps.common.model.BolusDeliveryState
 import de.dh.raaps.common.model.BolusEvent
@@ -152,7 +153,7 @@ class SimBodyInsulinPump(
     override val history: StateFlow<InsulinHistory?> = _history
 
     override suspend fun bolus(amount: InsulinAmount, bolusId: String?) {
-        if (!_isConnected.value) throw Exception("Pump not connected to App")
+        if (!_isConnected.value) throw PumpConnectionException("Pump not connected to App")
 
         val startTimestamp = Timestamp.now()
         _bolusStatus.value = BolusStatus(
@@ -164,8 +165,8 @@ class SimBodyInsulinPump(
         )
         _bolusEvents.emit(BolusEvent.Started(bolusId, amount, startTimestamp))
 
-        // TODO: deliverBolus should return a pump status which can be used with a PumpCommandException
-        if (device.deliverBolus(amount)) {
+        try {
+            device.deliverBolus(amount)
             val completedTimestamp = Timestamp.now()
             _bolusStatus.value = BolusStatus(
                 state = BolusDeliveryState.COMPLETED,
@@ -176,7 +177,7 @@ class SimBodyInsulinPump(
             )
             _bolusEvents.emit(BolusEvent.Completed(bolusId, amount, amount, completedTimestamp))
             refreshStatus()
-        } else {
+        } catch (e: Exception) {
             val stoppedTimestamp = Timestamp.now()
             _bolusStatus.value = BolusStatus(
                 state = BolusDeliveryState.STOPPED,
@@ -186,17 +187,7 @@ class SimBodyInsulinPump(
                 timestamp = stoppedTimestamp
             )
             _bolusEvents.emit(BolusEvent.Stopped(bolusId, amount, InsulinAmount.ZERO, stoppedTimestamp))
-
-            val errorReason = when {
-                device.isBroken.value -> "Hardware broken"
-                device.hasHardwareError.value -> "Hardware error"
-                device.isOccluded.value -> "Occlusion detected"
-                !device.isPrimed.value -> "Pump not primed"
-                device.reservoirLevel.value < amount -> "Insulin reservoir empty"
-                amount < SIM_PUMP_MIN_BOLUS_INCREMENT -> "Amount below minimum increment (${SIM_PUMP_MIN_BOLUS_INCREMENT.iu} IU)"
-                else -> "Unknown hardware failure"
-            }
-            throw Exception("Bolus failed: $errorReason")
+            throw e
         }
     }
 
@@ -220,18 +211,13 @@ class SimBodyInsulinPump(
     }
 
     override suspend fun tempBasal(percent: Int, durationHours: Int) {
-        if (!_isConnected.value) throw Exception("Pump not connected to App")
-
-        if (device.isBroken.value || device.hasHardwareError.value) {
-            throw Exception("Pump hardware error - cannot set temp basal")
-        }
-
+        if (!_isConnected.value) throw PumpConnectionException("Pump not connected to App")
         device.updateTempBasalPercent(percent, durationHours)
         refreshStatus()
     }
 
     override suspend fun cancelTempBasal() {
-        if (!_isConnected.value) throw Exception("Pump not connected to App")
+        if (!_isConnected.value) throw PumpConnectionException("Pump not connected to App")
         device.updateTempBasalPercent(null) // Clear temp basal override
         refreshStatus()
     }
